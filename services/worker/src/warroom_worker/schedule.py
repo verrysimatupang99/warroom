@@ -89,6 +89,22 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="prompts-sync",
+        interval_s=3600,
+        enabled=True,
+        payload={"ttl_s": 86400},
+        note="sinkronkan registry prompt berkas → tabel `prompts` (versi baru, tidak menimpa).",
+    ),
+    JobSpec(
+        name="llm-brief",
+        interval_s=21600,
+        enabled=True,
+        # 6 jam sekali: cukup untuk kartu agen, jauh di bawah batas biaya harian; cache gateway
+        # 900 s membuat panggilan berulang tidak menambah biaya.
+        payload={"area": "crypto", "max_facts": 8, "ttl_s": 21600},
+        note="narasi narrator dari fakta nyata; gagal → `status` dicatat di fakta ai.brief.",
+    ),
+    JobSpec(
         name="learner",
         interval_s=86400,
         enabled=True,

@@ -1494,6 +1494,7 @@ dependencies = [
     { name = "pyotp" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "warroom-core" },
+    { name = "warroom-llm" },
 ]
 
 [package.metadata]
@@ -1502,6 +1503,7 @@ requires-dist = [
     { name = "pyotp", specifier = ">=2.9,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32,<1" },
     { name = "warroom-core", editable = "packages/core" },
+    { name = "warroom-llm", editable = "services/llm" },
 ]
 
 [[package]]
@@ -1551,12 +1553,14 @@ version = "0.1.0"
 source = { editable = "services/worker" }
 dependencies = [
     { name = "warroom-core" },
+    { name = "warroom-llm" },
     { name = "warroom-notifier" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "warroom-core", editable = "packages/core" },
+    { name = "warroom-llm", editable = "services/llm" },
     { name = "warroom-notifier", editable = "services/notifier" },
 ]
 

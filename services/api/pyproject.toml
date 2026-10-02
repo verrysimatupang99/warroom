@@ -5,10 +5,15 @@ description = "War Room API — REST /api/v1/*, SSE, auth/RBAC (FastAPI)"
 requires-python = ">=3.12"
 dependencies = [
     "warroom-core",
+    "warroom-llm",
     "fastapi>=0.115,<1",
     "uvicorn[standard]>=0.32,<1",
     "pyotp>=2.9,<3",
 ]
+
+[tool.uv.sources]
+warroom-core = { workspace = true }
+warroom-llm = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

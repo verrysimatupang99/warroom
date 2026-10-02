@@ -392,6 +392,93 @@ def _pelajaran_terakhir() -> dict[str, Any] | None:
     return None
 
 
+def handler_prompts_sync(s: SASession, job: Job) -> str:
+    """Sinkronkan registry prompt dari berkas → tabel `prompts` (versi baru, bukan timpa)."""
+    from warroom_core import prompts_dir
+    from warroom_llm.prompts import load_prompts, sync_prompts
+
+    direktori = str(job.payload_json.get("dir") or prompts_dir())
+    prompts = load_prompts(direktori)
+    jumlah = sync_prompts(s, prompts)
+    versi = {r: p.version for r, p in prompts.items()}
+    _tulis_fakta(
+        s,
+        kind="ai.prompt_registry",
+        key="registry",
+        value={"jumlah_disinkron": jumlah, "peran": versi, "sumber": direktori},
+        source=direktori,
+        ttl_s=int(job.payload_json.get("ttl_s", 86400)),
+    )
+    return f"prompts: {jumlah} baris disinkronkan dari {len(prompts)} berkas; versi={versi}"
+
+
+def handler_llm_brief(s: SASession, job: Job) -> str:
+    """Narasi ringkas terjadwal dari fakta nyata (peran narrator). Gagal → dicatat, bukan dipaksa."""
+    from warroom_core import prompts_dir
+    from warroom_llm import CallRequest, FactRef, Gateway
+    from warroom_llm.config import default_config
+    from warroom_llm.prompts import PromptRegistry
+
+    area = str(job.payload_json.get("area", "crypto"))
+    kunci = job.payload_json.get("keys") or []
+    terbaru = _fakta_terbaru(s, kunci or None, batas=int(job.payload_json.get("max_facts", 8)))
+    fakta = tuple(
+        FactRef(
+            fact_id=f.id,
+            label=f"F{i + 1}",
+            text=f"{f.key}={str(f.value_json)[:80]} (sumber={f.source}, umur_s="
+            f"{int((datetime.now(UTC) - f.observed_at).total_seconds())})",
+        )
+        for i, f in enumerate(terbaru)
+    )
+    if not fakta:
+        return "lewati: belum ada fakta untuk dinarasikan"
+    gw = Gateway(
+        config=default_config(),
+        prompts=PromptRegistry.from_dir(str(job.payload_json.get("prompts_dir") or prompts_dir())),
+    )
+    hasil = gw.call(
+        CallRequest(
+            role="narrator",
+            user=f"Ringkas 2 kalimat untuk area {area} berdasarkan fakta.",
+            facts=fakta,
+            min_facts=1,
+        )
+    )
+    _tulis_fakta(
+        s,
+        kind="ai.brief",
+        key=area,
+        value={
+            "status": hasil.status,
+            "provider": hasil.provider,
+            "fallback_from": hasil.fallback_from,
+            "prompt_version": hasil.prompt_version,
+            "latency_ms": hasil.latency_ms,
+            "fact_ids": list(hasil.fact_ids),
+            "output": hasil.output,
+            "error_code": hasil.error_code,
+        },
+        source=f"gateway:{hasil.provider or '-'}",
+        ttl_s=int(job.payload_json.get("ttl_s", 21600)),
+    )
+    return f"narrator {hasil.status} via {hasil.provider} ({hasil.latency_ms} ms, {len(fakta)} fakta)"
+
+
+def _fakta_terbaru(s: SASession, kunci: list[str] | None, *, batas: int) -> list[Any]:
+    """Fakta terbaru per kunci (atau semua kunci bila `kunci` kosong)."""
+    from warroom_core.db import Fact
+
+    q = select(Fact).order_by(Fact.observed_at.desc()).limit(batas * 6 if kunci else batas)
+    if kunci:
+        q = q.where(Fact.key.in_(kunci))
+    baris = list(s.scalars(q).all())
+    unik: dict[str, Any] = {}
+    for f in baris:
+        unik.setdefault(f.key, f)
+    return list(unik.values())[:batas]
+
+
 def register_handlers() -> dict[str, Any]:
     """Daftarkan handler ke `schedule.HANDLERS` (dipanggil sekali saat worker start)."""
     schedule.HANDLERS.update(
@@ -407,6 +494,8 @@ def register_handlers() -> dict[str, Any]:
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,
             "learner": handler_learner,
+            "prompts-sync": handler_prompts_sync,
+            "llm-brief": handler_llm_brief,
         }
     )
     return schedule.HANDLERS

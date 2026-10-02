@@ -33,6 +33,7 @@ _JOB_BERAT = (
     "collect",
     "backup",
     "poly-sync",         # membaca /var/lib lewat sudo
+    "llm-brief",         # memanggil provider LLM sungguhan (biaya + jaringan)
     "parity-drift",
     "gmgn-sync",
     "reconcile",
@@ -61,9 +62,10 @@ def test_daftar_job_idempoten(db) -> None:
     assert set(pertama) == {
         "publish-facts", "freshness", "notify", "refresh-snapshot", "collect", "backup",
         "poly-sync", "parity-drift", "gmgn-sync", "reconcile", "learner",
+        "prompts-sync", "llm-brief",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 11
+    assert total == 13
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -263,7 +265,7 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         schedule.ensure_jobs(s)
     _matikan_job_berat()
     hasil = run_once()
-    assert {h["job"] for h in hasil} == {"publish-facts", "freshness", "notify"}
+    assert {h["job"] for h in hasil} == {"publish-facts", "freshness", "notify", "prompts-sync"}
     with session_scope() as s:
         jenis = {e.type for e in s.scalars(select(Event)).all()}
     assert {"job.ran", "snapshot.published", "freshness.checked"} <= jenis

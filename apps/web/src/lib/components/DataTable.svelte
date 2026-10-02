@@ -134,8 +134,14 @@
 					{#each terlihat as b, i (i)}
 						<tr class="border-b border-line-soft last:border-0 hover:bg-surface-2/60">
 							{#each kolom as k (k.kunci)}
-								<td class="px-2 {padat ? 'py-1' : 'py-2'} {k.numerik ? 'angka text-right' : 'text-text-2'}">
-									{teksNilai(b[k.kunci])}
+								{@const t = teksNilai(b[k.kunci])}
+								<td
+									class="px-2 {padat ? 'py-1' : 'py-2'} {k.numerik
+										? 'angka text-right'
+										: 'max-w-[38ch] break-words text-text-2'}"
+									title={t.length > 90 ? t : undefined}
+								>
+									{t.length > 90 ? t.slice(0, 90) + '…' : t}
 								</td>
 							{/each}
 						</tr>

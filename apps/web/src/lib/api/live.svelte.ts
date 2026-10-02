@@ -6,7 +6,7 @@
  * daftar nama tetap. Parser manual juga memberi kontrol koneksi/putus → fallback polling.
  */
 import type { Kejadian } from './types';
-import { getKesegaran } from './client';
+import { getKesegaran, urlApi } from './client';
 
 export type StatusLive = 'menyambung' | 'live' | 'polling' | 'n/a';
 
@@ -51,9 +51,10 @@ class StoreLive {
 		this.#abort?.abort();
 		this.#abort = new AbortController();
 		this.status = 'menyambung';
-		const jalur =
+		const jalur = urlApi(
 			`/api/v1/stream?topics=${encodeURIComponent(this.#topik)}` +
-			(this.idTerakhir != null ? `&last_event_id=${this.idTerakhir}` : '');
+				(this.idTerakhir != null ? `&last_event_id=${this.idTerakhir}` : '')
+		);
 		try {
 			const res = await fetch(jalur, {
 				credentials: 'include',

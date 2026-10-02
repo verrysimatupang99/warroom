@@ -3,6 +3,7 @@
  * vite.config.ts) sehingga cookie sesi `wr_session` ikut tanpa CORS.
  * Semua panggilan membawa `credentials: 'include'`.
  */
+import { env as envPublik } from '$env/dynamic/public';
 import type {
 	AreaPayload,
 	AreasPayload,
@@ -26,8 +27,22 @@ export class ApiError extends Error {
 	}
 }
 
-const BASE = (import.meta.env?.PUBLIC_API_BASE as string | undefined) ?? '';
+/**
+ * Base URL API dari `$env/dynamic/public` (`PUBLIC_API_BASE`) — dibaca saat RUNTIME, bukan
+ * saat build: `import.meta.env.PUBLIC_*` tidak pernah terisi karena Vite hanya menyuntik
+ * variabel berawalan `VITE_`, sehingga fetch jadi relatif ke origin web dan berakhir 404.
+ * Kosong = same-origin (produksi lewat Caddy; dev lewat proxy vite).
+ */
+const BASE = (envPublik.PUBLIC_API_BASE ?? '').replace(/\/$/, '');
 const TIMEOUT_MS = 12000;
+
+/**
+ * URL absolut ke API. Wajib dipakai semua pemanggil (termasuk SSE): tanpa ini, fetch dari
+ * browser menuju origin web dan berakhir 404 karena web tidak mem-proxy `/api/v1/*`.
+ */
+export function urlApi(jalur: string): string {
+	return `${BASE}${jalur}`;
+}
 
 /** Balasan error API: `{error:{code,message}}` — pesan asli diteruskan ke UI. */
 function pesanDari(n: number, body: unknown): ApiError {

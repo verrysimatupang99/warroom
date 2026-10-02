@@ -9,6 +9,7 @@ Aturan yang dikodekan: setiap angka berasal dari tabel `facts` (punya `fact_id`,
 
 from __future__ import annotations
 
+import hmac
 import os
 from datetime import UTC, datetime
 from typing import Annotated, Any
@@ -17,12 +18,13 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, Res
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
-from warroom_core import autonomy
+from warroom_core import autonomy, prompts_dir
 from warroom_core.db import Fact, User, session_scope
+from warroom_core.db.session import SASession
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 
 from warroom_api import auth, live
-from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area
+from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area, latest_facts
 from warroom_api.errors import install_error_handlers
 from warroom_api.metrics import collect_metrics, render_prometheus
 from warroom_api.stream import event_stream
@@ -65,6 +67,25 @@ class FactsBody(BaseModel):
     facts: list[FactBody]
 
 
+def _riwayat_kunci(s: SASession, kind: str, key: str, n: int) -> list[dict[str, Any]]:
+    """N versi terbaru satu kunci fakta (untuk menarik riwayat di UI)."""
+    rows = s.scalars(
+        select(Fact).where(Fact.kind == kind, Fact.key == key).order_by(Fact.observed_at.desc()).limit(n)
+    ).all()
+    now = datetime.now(UTC)
+    return [
+        {
+            "fact_id": f.id,
+            "value": f.value_json,
+            "source": f.source,
+            "observed_at": f.observed_at.isoformat(),
+            "ttl_s": f.ttl_s,
+            "status": "segar" if (now - f.observed_at).total_seconds() <= f.ttl_s else "basi",
+        }
+        for f in rows
+    ]
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="War Room API",
@@ -73,6 +94,22 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     install_error_handlers(app)
+
+    # CORS hanya bila diminta eksplisit lewat env. Produksi menaruh web dan API di origin
+    # yang sama (Caddy), jadi tidak butuh CORS; daftar kosong = tidak ada header CORS.
+    asal_diizinkan = [
+        o.strip() for o in os.environ.get("WARROOM_CORS_ORIGINS", "").split(",") if o.strip()
+    ]
+    if asal_diizinkan:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=asal_diizinkan,
+            allow_credentials=True,
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type", "X-Warroom-Token"],
+        )
 
     # --- auth -------------------------------------------------------------------------
 
@@ -211,6 +248,25 @@ def create_app() -> FastAPI:
         return {"saved": saved, "by": user.username}
 
     # --- baca per-area (P1-T6) ----------------------------------------------------------
+
+    @app.get("/api/v1/areas/{area}")
+    def area_detail(
+        area: str,
+        user: Annotated[User, Depends(auth.current_user)],
+        riwayat: int = Query(0, ge=0, le=50, description="sertakan N versi lama per kunci"),
+    ) -> dict[str, Any]:
+        """Fakta satu area lengkap dengan metadata (`fact_id`, sumber, umur, status).
+
+        Area tak dikenal tidak melempar 500 — balasannya menyebut daftar area yang ada.
+        """
+        with session_scope() as s:
+            info = facts_for_area(s, area)
+            if not info.get("dikenal", False):
+                return info
+            if riwayat:
+                for f in info["facts"]:
+                    f["riwayat"] = _riwayat_kunci(s, f["kind"], f["key"], riwayat)
+            return info
 
     @app.get("/api/v1/areas")
     def areas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
@@ -465,6 +521,164 @@ def create_app() -> FastAPI:
         """Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3."""
         sub = str(body.get("subperintah", "depth"))
         return live.jalankan_kering_kedalaman(sub)
+
+    # --- P3: LLM gateway (konsol, prompt, narasi) ----------------------------------------
+
+    @app.get("/api/v1/ai/llm-console")
+    def llm_console(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Kesehatan provider dari `llm_calls` — tanpa perhitungan manual."""
+        from warroom_core.db import LLMCall
+
+        with session_scope() as s:
+            total = s.scalar(select(func.count()).select_from(LLMCall)) or 0
+            per_provider = [
+                {"provider": p, "n": n, "gagal": g, "fallback": f, "p50_ms": p50, "p95_ms": p95,
+                 "token_in": ti, "token_out": to}
+                for (p, n, g, f, p50, p95, ti, to) in s.execute(
+                    select(
+                        LLMCall.provider,
+                        func.count(),
+                        func.count().filter(LLMCall.ok.is_(False)),
+                        func.count().filter(LLMCall.fallback_from.is_not(None)),
+                        func.percentile_cont(0.5).within_group(LLMCall.latency_ms.asc().nulls_last()),
+                        func.percentile_cont(0.95).within_group(LLMCall.latency_ms.asc().nulls_last()),
+                        func.coalesce(func.sum(LLMCall.tokens_in), 0),
+                        func.coalesce(func.sum(LLMCall.tokens_out), 0),
+                    ).group_by(LLMCall.provider)
+                ).all()
+            ]
+            per_peran = [
+                {"role": r, "n": n, "gagal": g}
+                for (r, n, g) in s.execute(
+                    select(LLMCall.role, func.count(), func.count().filter(LLMCall.ok.is_(False)))
+                    .group_by(LLMCall.role)
+                ).all()
+            ]
+            biaya = float(s.scalar(select(func.coalesce(func.sum(LLMCall.cost_usd), 0))) or 0)
+        fallback_rate = (
+            round(sum(p["fallback"] for p in per_provider) / total, 4) if total else None
+        )
+        return {
+            "total_panggilan": total,
+            "fallback_rate": fallback_rate,
+            "biaya_usd": biaya,
+            "per_provider": per_provider,
+            "per_peran": per_peran,
+            "catatan": "angka dihitung dari tabel llm_calls, bukan penghitung di memori",
+        }
+
+    @app.get("/api/v1/ai/prompts")
+    def ai_prompts(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        from warroom_core.db import Prompt
+
+        with session_scope() as s:
+            rows = s.scalars(select(Prompt).order_by(Prompt.role, Prompt.version)).all()
+            data = [
+                {"role": p.role, "versi": p.version, "aktif": p.active,
+                 "skema": bool(p.schema_json), "contoh": len(p.contoh_json or [])}
+                for p in rows
+            ]
+        return {"prompts": data, "count": len(data)}
+
+    @app.post("/api/v1/ai/narrate")
+    def ai_narrate(
+        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
+    ) -> dict[str, Any]:
+        """Narasi ber-grounding dari fakta di DB. Tanpa fakta → `insufficient`, bukan tebakan."""
+        from warroom_llm import CallRequest, FactRef, Gateway
+        from warroom_llm.config import default_config
+        from warroom_llm.prompts import PromptRegistry
+
+        area = str(body.get("area", "crypto"))
+        kunci = AREA_KEYS.get(area, ())
+        with session_scope() as s:
+            terbaru = latest_facts(s)
+            dipakai = [terbaru[k] for k in kunci if k in terbaru][:8]
+            fakta = [
+                FactRef(fact_id=f.id, label=f"F{i + 1}",
+                        text=f"{f.key}={str(f.value_json)[:80]} (sumber={f.source}, umur_s="
+                             f"{int((datetime.now(UTC) - f.observed_at).total_seconds())})")
+                for i, f in enumerate(dipakai)
+            ]
+        gw = Gateway(config=default_config(), prompts=PromptRegistry.from_dir(str(prompts_dir())))
+        hasil = gw.call(
+            CallRequest(
+                role="narrator",
+                user=str(body.get("pertanyaan", f"Ringkas 2 kalimat untuk area {area}.")),
+                facts=tuple(fakta),
+                min_facts=1,
+                use_cache=bool(body.get("cache", True)),
+            )
+        )
+        return {
+            "status": hasil.status,
+            "provider": hasil.provider,
+            "model": hasil.model,
+            "fallback_from": hasil.fallback_from,
+            "prompt_version": hasil.prompt_version,
+            "latency_ms": hasil.latency_ms,
+            "fact_ids": list(hasil.fact_ids),
+            "output": hasil.output,
+            "error_code": hasil.error_code,
+            "catatan": "semua angka di keluaran harus berasal dari fact_ids di atas",
+        }
+
+    @app.post("/api/v1/ai/verifier")
+    def ai_verifier(
+        body: dict[str, Any],
+        request: Request,
+        user: Annotated[User | None, Depends(auth.optional_user)],
+    ) -> dict[str, Any]:
+        """Penilai kedua untuk kartu pod (P3-T5).
+
+        Dipanggil **hanya** dari proses lokal: wajib sesi pengguna ATAU token layanan
+        (`WARROOM_SERVICE_TOKEN`) ATAU berasal dari 127.0.0.1. Semua jalur lain ditolak —
+        endpoint ini membakar token LLM, jadi tidak boleh terbuka.
+        """
+        token_env = os.environ.get("WARROOM_SERVICE_TOKEN", "")
+        token_kirim = request.headers.get("x-warroom-token", "")
+        dari_lokal = request.client is not None and request.client.host in {"127.0.0.1", "::1"}
+        token_sah = bool(token_env) and hmac.compare_digest(token_env, token_kirim)
+        if user is None and not token_sah and not dari_lokal:
+            raise HTTPException(
+                status_code=401,
+                detail={"code": "unauthenticated", "message": "butuh sesi, token layanan, atau lokal"},
+            )
+        klaim = [str(k) for k in (body.get("klaim") or [])][:12]
+        if not klaim:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "klaim_kosong", "message": "kirim daftar `klaim` ringkas"},
+            )
+        from warroom_llm import CallRequest, FactRef, Gateway
+        from warroom_llm.config import default_config
+        from warroom_llm.prompts import PromptRegistry
+
+        gw = Gateway(config=default_config(), prompts=PromptRegistry.from_dir(str(prompts_dir())))
+        fakta = tuple(
+            FactRef(fact_id=int(f["id"]), label=f"F{i + 1}",
+                    text=f"{f['key']}={str(f['value_json'])[:80]} (sumber={f['source']})")
+            for i, f in enumerate(body.get("fakta") or [])
+            if isinstance(f, dict) and "id" in f and "key" in f
+        )
+        hasil = gw.call(
+            CallRequest(
+                role="verifier",
+                user=f"Klaim pod {body.get('nama', '?')}: " + " | ".join(klaim),
+                facts=fakta,
+                min_facts=int(body.get("min_facts", 0)),
+                use_cache=bool(body.get("cache", True)),
+            )
+        )
+        return {
+            "status": hasil.status,
+            "setuju": (hasil.output or {}).get("setuju"),
+            "catatan": (hasil.output or {}).get("catatan"),
+            "provider": hasil.provider,
+            "fallback_from": hasil.fallback_from,
+            "fact_ids": list(hasil.fact_ids),
+            "error_code": hasil.error_code,
+        }
 
     return app
 
