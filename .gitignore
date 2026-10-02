@@ -1,0 +1,26 @@
+# Virtualenv / Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node / SvelteKit
+node_modules/
+apps/web/.svelte-kit/
+apps/web/build/
+
+# Runtime state — TIDAK pernah masuk repo (bisa memuat data akun)
+state/
+logs/
+*.log
+
+# Rahasia — tidak pernah masuk repo
+secrets/
+*.env
+.env
+/etc/warroom/**
+
+# Arsip lokal
+backups/
+*.tar.gz

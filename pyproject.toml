@@ -1,0 +1,47 @@
+[project]
+name = "warroom-workspace"
+version = "0.1.0"
+description = "War Room platform — super-app (crypto / IDX / forex / Polymarket / GMGN / Sistem & AI)"
+requires-python = ">=3.12"
+# Root menarik seluruh anggota supaya `uv sync` tunggal menyiapkan env dev lengkap.
+dependencies = [
+    "warroom-core",
+    "warroom-api",
+    "warroom-worker",
+    "warroom-llm",
+    "warroom-notifier",
+]
+
+# Root adalah virtual workspace (tidak dipaketkan); anggota di packages/* dan services/*.
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*", "services/*"]
+
+[tool.uv.sources]
+warroom-core = { workspace = true }
+warroom-api = { workspace = true }
+warroom-worker = { workspace = true }
+warroom-llm = { workspace = true }
+warroom-notifier = { workspace = true }
+# live-trading tetap repo & paketnya sendiri (219 tes di tempatnya). Dikonsumsi sebagai
+# dependensi path dari packages/core — tidak ada satu baris domain yang disalin ke sini.
+
+[dependency-groups]
+dev = [
+    "ruff>=0.7,<1",
+    "pytest>=8.3,<9",
+    "pytest-asyncio>=0.24,<1",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = [".venv", "apps/web", "node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+addopts = "-q"

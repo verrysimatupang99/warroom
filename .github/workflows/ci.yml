@@ -1,0 +1,91 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  # Jaring pengaman domain: 219 tes harus tetap hijau sepanjang migrasi (03-backend.md §1).
+  domain:
+    name: domain (live-trading) — ruff + pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: live-trading
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: verrysimatupang99/live-trading
+          path: live-trading
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+
+  # Platform: workspace + dependensi path ke domain (tanpa salinan kode) — ADR-002.
+  platform:
+    name: platform (warroom) — sync + ruff + import domain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: warroom
+      # Wajib berdampingan: [tool.uv.sources] memakai path relatif ke domain (ADR-002).
+      - uses: actions/checkout@v4
+        with:
+          repository: verrysimatupang99/live-trading
+          path: live-trading
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: uv sync (workspace + domain editable)
+        working-directory: warroom
+        run: uv sync --frozen
+      - name: ruff
+        working-directory: warroom
+        run: uv run ruff check .
+      - name: bukti domain bisa diimpor dari platform
+        working-directory: warroom
+        run: uv run python -c "import live_trading, warroom_core; print(live_trading.__version__, warroom_core.paths())"
+
+  # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
+  secrets:
+    name: secrets — gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks (git history)
+        run: |
+          curl -sSL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks git . --redact --no-banner --verbose
+
+  # "build web kosong" (P0-T2) — kerangka SvelteKit; UI penuh menyusul di P2.
+  web:
+    name: web — npm ci + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
