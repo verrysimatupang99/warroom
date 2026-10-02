@@ -3,7 +3,12 @@ name = "warroom-api"
 version = "0.1.0"
 description = "War Room API — REST /api/v1/*, SSE, auth/RBAC (FastAPI)"
 requires-python = ">=3.12"
-dependencies = ["warroom-core"]
+dependencies = [
+    "warroom-core",
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "pyotp>=2.9,<3",
+]
 
 [build-system]
 requires = ["hatchling"]

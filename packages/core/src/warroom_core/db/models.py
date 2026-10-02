@@ -1,0 +1,358 @@
+"""Skema data platform War Room (Postgres 16) — `03-backend.md` §5.
+
+Prinsip yang dikodekan di sini:
+
+- **`facts`**: satu nilai = satu baris, berversi, wajib punya `source`, `observed_at`, `ttl_s`.
+  Tidak ada angka di UI/AI tanpa `fact_id` (ADR-005).
+- **`events`**: append-only. Tidak ada alur kode yang boleh UPDATE/DELETE tabel ini.
+- **Uang nyata ≠ paper ≠ warisan**: dipisahkan lewat `trades.venue`/`trades.mode`
+  (bukan lewat kolom boolean yang mudah lupa).
+- Semua waktu `timestamptz` (UTC); batas zona tampilan urusan UI.
+
+Uang disimpan sebagai `numeric(20,8)`, bukan float — pembulatan float pada saldo adalah
+kelas bug yang tidak perlu.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+from typing import Any
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+__all__ = ["Base", "Fact", "Event", "Verdict", "Trade", "Strategy", "Parameter", "Proposal",
+           "LLMCall", "Prompt", "Alert", "Service", "Heartbeat", "User", "Session", "AuditLog",
+           "Dataset"]
+
+Money = Numeric(20, 8)
+
+
+class Base(DeclarativeBase):
+    """Basis deklaratif. Semua tabel memakai skema publik."""
+
+
+class Fact(Base):
+    """Nilai tunggal berversi. Kunci: (kind, key, observed_at)."""
+
+    __tablename__ = "facts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    key: Mapped[str] = mapped_column(String(160), nullable=False)
+    value_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    source: Mapped[str] = mapped_column(String(160), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ttl_s: Mapped[int] = mapped_column(Integer, nullable=False)
+    hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("kind", "key", "observed_at", name="uq_facts_kind_key_observed"),
+        Index("ix_facts_kind_key_observed_at", "kind", "key", "observed_at"),
+        Index("ix_facts_observed_at", "observed_at"),
+    )
+
+
+class Event(Base):
+    """Log kejadian append-only. `fact_ids` menautkan bukti."""
+
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    type: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor: Mapped[str] = mapped_column(String(80), nullable=False, default="system")
+    payload_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    fact_ids: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="info")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_events_type_created_at", "type", "created_at"),
+        Index("ix_events_created_at", "created_at"),
+    )
+
+
+class Verdict(Base):
+    """Hasil gate per subjek/aturan — keluaran `warroom_core.gate.evaluate`."""
+
+    __tablename__ = "verdicts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    subject: Mapped[str] = mapped_column(String(160), nullable=False)
+    rule: Mapped[str] = mapped_column(String(120), nullable=False)
+    n: Mapped[int] = mapped_column(Integer, nullable=False)
+    win: Mapped[int] = mapped_column(Integer, nullable=False)
+    be: Mapped[float] = mapped_column(Float, nullable=False)
+    ci_low: Mapped[float] = mapped_column(Float, nullable=False)
+    ci_high: Mapped[float] = mapped_column(Float, nullable=False)
+    verdict: Mapped[str] = mapped_column(String(16), nullable=False)  # lolos|gagal|insufficient
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    required_n: Mapped[int | None] = mapped_column(Integer)
+    policy_version: Mapped[str] = mapped_column(String(40), nullable=False, default="gate/0.1.0")
+    split: Mapped[str] = mapped_column(String(80), nullable=False, default="")
+    label: Mapped[str] = mapped_column(String(16), nullable=False, default="konfirmasi")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("subject", "rule", "policy_version", "created_at",
+                         name="uq_verdicts_subject_rule_policy_created"),
+        Index("ix_verdicts_subject_created", "subject", "created_at"),
+    )
+
+
+class Strategy(Base):
+    """Definisi mesin/arm (A–D, agen, strategi lain) + status + ringkasan."""
+
+    __tablename__ = "strategies"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    arm_id: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    area: Mapped[str] = mapped_column(String(32), nullable=False)  # poly|crypto|idx|forex|gmgn
+    label: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="aktif")
+    summary_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Trade(Base):
+    """Paper & live dibedakan tegas lewat (venue, mode) — bukan boolean."""
+
+    __tablename__ = "trades"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    venue: Mapped[str] = mapped_column(String(40), nullable=False)  # polymarket|binance|paper|...
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)   # paper|live|warisan
+    ext_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    strategy_id: Mapped[int | None] = mapped_column(ForeignKey("strategies.id"))
+    side: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    qty: Mapped[Decimal | None] = mapped_column(Money)
+    price: Mapped[Decimal | None] = mapped_column(Money)
+    pnl_usd: Mapped[Decimal | None] = mapped_column(Money)
+    pnl_r: Mapped[Decimal | None] = mapped_column(Money)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    evidence_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("venue", "mode", "ext_id", name="uq_trades_venue_mode_ext"),
+        Index("ix_trades_closed_at", "closed_at"),
+    )
+
+
+class Parameter(Base):
+    """Registry parameter + batas beku. Hanya nilai dalam `bounds` yang boleh diterapkan."""
+
+    __tablename__ = "parameters"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    scope: Mapped[str] = mapped_column(String(24), nullable=False, default="paper")  # paper|live
+    value_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    bounds_json: Mapped[Any | None] = mapped_column(JSONB)
+    locked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Proposal(Base):
+    """Usulan perubahan parameter (bounded autonomy). Append-only."""
+
+    __tablename__ = "proposals"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    parameter_name: Mapped[str] = mapped_column(ForeignKey("parameters.name"), nullable=False)
+    from_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    to_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    gate_verdict: Mapped[str] = mapped_column(String(24), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="diusulkan")
+    decided_by: Mapped[str | None] = mapped_column(String(80))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejected_reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    config_hash: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Prompt(Base):
+    """Registry prompt: perubahan = versi baru, tidak pernah menimpa."""
+
+    __tablename__ = "prompts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    role: Mapped[str] = mapped_column(String(40), nullable=False)
+    version: Mapped[str] = mapped_column(String(40), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    contoh_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (UniqueConstraint("role", "version", name="uq_prompts_role_version"),)
+
+
+class LLMCall(Base):
+    """Setiap panggilan LLM wajib meninggalkan jejak (ADR-004)."""
+
+    __tablename__ = "llm_calls"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    role: Mapped[str] = mapped_column(String(40), nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    model: Mapped[str] = mapped_column(String(80), nullable=False, default="")
+    prompt_version: Mapped[str] = mapped_column(String(40), nullable=False, default="")
+    tokens_in: Mapped[int | None] = mapped_column(Integer)
+    tokens_out: Mapped[int | None] = mapped_column(Integer)
+    cost_usd: Mapped[Decimal | None] = mapped_column(Money)
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    ok: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    fallback_from: Mapped[str | None] = mapped_column(String(40))
+    error_code: Mapped[str | None] = mapped_column(String(60))
+    result_hash: Mapped[str | None] = mapped_column(String(64))
+    fact_ids: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("ix_llm_calls_role_created", "role", "created_at"),)
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="info")
+    subject: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    suggested_action: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    fact_ids: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
+    ack_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    snooze_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Service(Base):
+    """Unit lintas host (Webdock/Azure/Tencent) — status dibaca, bukan ditebak."""
+
+    __tablename__ = "services"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    host: Mapped[str] = mapped_column(String(80), nullable=False)
+    unit: Mapped[str] = mapped_column(String(120), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="unknown")
+    detail_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (UniqueConstraint("host", "unit", name="uq_services_host_unit"),)
+
+
+class Heartbeat(Base):
+    __tablename__ = "heartbeats"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    host: Mapped[str] = mapped_column(String(80), nullable=False)
+    unit: Mapped[str] = mapped_column(String(120), nullable=False)
+    beat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    payload_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+
+    __table_args__ = (Index("ix_heartbeats_host_unit_beat", "host", "unit", "beat_at"),)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    role: Mapped[str] = mapped_column(String(16), nullable=False, default="viewer")  # viewer|operator|owner
+    pass_hash: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    totp_secret_enc: Mapped[str | None] = mapped_column(String(400))
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AuditLog(Base):
+    """Jejak aksi operator (siapa/apa/kapan/alasan)."""
+
+    __tablename__ = "audit"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    actor: Mapped[str] = mapped_column(String(80), nullable=False)
+    action: Mapped[str] = mapped_column(String(80), nullable=False)
+    target: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    detail_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class Dataset(Base):
+    """Katalog dataset (recorder Polymarket dll)."""
+
+    __tablename__ = "datasets"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True)
+    path: Mapped[str] = mapped_column(String(400), nullable=False)
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, default="")
+    range_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    range_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rows: Mapped[int | None] = mapped_column(BigInteger)
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    quality_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
