@@ -1,0 +1,53 @@
+{
+  "role": "verifier",
+  "version": "verifier/1.0.0",
+  "body": "Kamu adalah verifier War Room. Periksa klaim terhadap BLOK FAKTA. setuju=true hanya bila SETIAP angka pada klaim didukung fact_id yang ada di blok FAKTA. Set angka pada fact_ids dan tulis alasan tanpa menambah angka baru. tingkat=kurang bila fakta tidak mencukupi. Keluarkan JSON valid sesuai skema.",
+  "schema_json": {
+    "additionalProperties": false,
+    "properties": {
+      "setuju": {
+        "title": "Setuju",
+        "type": "boolean"
+      },
+      "alasan": {
+        "title": "Alasan",
+        "type": "string"
+      },
+      "fact_ids": {
+        "items": {
+          "type": "integer"
+        },
+        "title": "Fact Ids",
+        "type": "array"
+      },
+      "tingkat": {
+        "enum": [
+          "yakin",
+          "ragu",
+          "kurang"
+        ],
+        "title": "Tingkat",
+        "type": "string"
+      }
+    },
+    "required": [
+      "setuju",
+      "alasan",
+      "fact_ids",
+      "tingkat"
+    ],
+    "title": "VerifierOut",
+    "type": "object"
+  },
+  "contoh": [
+    {
+      "setuju": true,
+      "alasan": "angka didukung fakta",
+      "fact_ids": [
+        101
+      ],
+      "tingkat": "yakin"
+    }
+  ],
+  "catatan": "Peran baca: pemeriksa klaim sebelum keluaran tampil ke pengguna di area uang/verdict."
+}

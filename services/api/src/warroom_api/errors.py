@@ -39,6 +39,11 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def _http(_: Request, exc: HTTPException) -> JSONResponse:
         code = _CODES.get(exc.status_code, f"http_{exc.status_code}")
+        # `detail` boleh berupa objek (mis. daftar grant yang kurang) — diteruskan apa adanya
+        # supaya klien bisa menampilkan kekurangan spesifik, bukan pesan kabur.
+        if isinstance(exc.detail, (dict, list)):
+            pesan = str(exc.detail.get("catatan") if isinstance(exc.detail, dict) else "detail terstruktur")
+            return JSONResponse(status_code=exc.status_code, content=_body(code, pesan, exc.detail))
         return JSONResponse(status_code=exc.status_code, content=_body(code, str(exc.detail)))
 
     @app.exception_handler(RequestValidationError)

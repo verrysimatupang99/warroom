@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+
+/* Design tokens — blueprint 02-frontend-uiux.md §2, dipakai apa adanya. */
+@theme {
+	--color-bg: #05070c;
+	--color-bg-2: #080b12;
+	--color-surface: #0c1017;
+	--color-surface-2: #111823;
+	--color-surface-3: #16202f;
+	--color-line: #202a3a;
+	--color-line-soft: #151c29;
+	--color-text: #e9eff8;
+	--color-text-2: #a7b2c4;
+	--color-text-3: #7c8aa0;
+	--color-accent: #f4a63a; /* amber: aksi, angka utama, brand */
+	--color-accent-2: #55c7df; /* cyan: info, sekunder, tautan, penanda AI */
+	--color-pos: #3ed68f;
+	--color-neg: #ff6b7d;
+	--color-warn: #f4a63a;
+	--color-paper: #8f7ff7; /* ungu: penanda "paper" */
+	--color-live: #ff8a5c; /* oranye: penanda "live/uang nyata" */
+	--color-inherit: #6b7280; /* abu: "warisan"/legacy */
+
+	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+	--text-11: 11px;
+	--text-12: 12px;
+	--text-13: 13px;
+	--text-15: 15px;
+	--text-19: 19px;
+	--text-26: 26px;
+	--text-34: 34px;
+
+	--radius-card: 8px;
+	--radius-control: 6px;
+
+	--ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+:root {
+	/* Nama token mentah dari blueprint — dokumentasi + kompatibilitas CSS langsung. */
+	--bg: #05070c;
+	--bg-2: #080b12;
+	--surface: #0c1017;
+	--surface-2: #111823;
+	--surface-3: #16202f;
+	--line: #202a3a;
+	--line-soft: #151c29;
+	--text: #e9eff8;
+	--text-2: #a7b2c4;
+	--text-3: #7c8aa0;
+	--accent: #f4a63a;
+	--accent-2: #55c7df;
+	--pos: #3ed68f;
+	--neg: #ff6b7d;
+	--warn: #f4a63a;
+	--paper: #8f7ff7;
+	--live: #ff8a5c;
+	--inherit: #6b7280;
+}
+
+@layer base {
+	html {
+		color-scheme: dark;
+	}
+	body {
+		margin: 0;
+		background: var(--color-bg);
+		color: var(--color-text);
+		font-family: var(--font-sans);
+		font-size: 15px;
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+	}
+	/* Fokus terlihat (cyan) — a11y keyboard penuh. */
+	:focus-visible {
+		outline: 2px solid var(--color-accent-2);
+		outline-offset: 2px;
+		border-radius: 4px;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}
+
+@layer components {
+	/* Label mikro: mono, uppercase, tracking .08em (warisan terminal). */
+	.label-mikro {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		line-height: 1.2;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-text-3);
+	}
+	/* Angka: mono + tabular supaya kolom tidak bergoyang. */
+	.angka {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: 'tnum' 1;
+	}
+	.kartu {
+		background: var(--color-surface);
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-card);
+	}
+	.permukaan-2 {
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line-soft);
+		border-radius: var(--radius-card);
+	}
+	.target-44 {
+		min-height: 44px;
+		min-width: 44px;
+	}
+	.transisi {
+		transition:
+			color 160ms var(--ease-out),
+			background-color 160ms var(--ease-out),
+			border-color 160ms var(--ease-out),
+			opacity 160ms var(--ease-out);
+	}
+}

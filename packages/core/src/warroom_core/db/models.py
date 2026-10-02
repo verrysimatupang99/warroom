@@ -384,3 +384,28 @@ class Job(Base):
     )
 
     __table_args__ = (Index("ix_jobs_enabled_next", "enabled", "next_run_at"),)
+
+class Grant(Base):
+    """Izin aksi live (P6-T1) — pola harness Polymarket: `grantedBy/messageId/scope/at`.
+
+    Izin **wajib berasal dari pesan user** dan punya masa berlaku; satu scope = satu izin.
+    Aksi live tanpa grant aktif → 409 dengan daftar grant yang kurang (bukan 403 kabur).
+    """
+
+    __tablename__ = "grants"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    scope: Mapped[str] = mapped_column(String(80), nullable=False)
+    granted_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    message_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        Index("ix_grants_scope_expires", "scope", "expires_at"),
+        UniqueConstraint("scope", "message_id", name="uq_grants_scope_message"),
+    )

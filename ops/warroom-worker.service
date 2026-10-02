@@ -18,7 +18,11 @@ Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-NoNewPrivileges=true
+# CATATAN KEAMANAN: `NoNewPrivileges` sengaja TIDAK dipakai.
+# Sumber /var/lib/poly-* dan /etc/poly-pilot dimiliki user lain (mode 700), dan pola
+# yang SUDAH ADA di host ini adalah `sudo -n cat` (unit domain juga begitu).
+# Alternatifnya — memberi ACL baca ke admin di direktori proyek lain — ditolak karena
+# berarti mengubah permission milik proyek yang tidak boleh kita sentuh.
 PrivateTmp=true
 
 [Install]

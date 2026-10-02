@@ -17,10 +17,11 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, Res
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
+from warroom_core import autonomy
 from warroom_core.db import Fact, User, session_scope
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 
-from warroom_api import auth
+from warroom_api import auth, live
 from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area
 from warroom_api.errors import install_error_handlers
 from warroom_api.metrics import collect_metrics, render_prometheus
@@ -287,6 +288,183 @@ def create_app() -> FastAPI:
         with session_scope() as s:
             teks = render_prometheus(collect_metrics(s))
         return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
+
+    # --- P5: parameter, usulan, kill switch AI -------------------------------------------
+
+    @app.get("/api/v1/params")
+    def params(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        from warroom_core.db import Parameter
+
+        with session_scope() as s:
+            rows = s.scalars(select(Parameter).order_by(Parameter.name)).all()
+            data = [
+                {
+                    "nama": p.name,
+                    "nilai": p.value_json,
+                    "batas": p.bounds_json,
+                    "terkunci": p.locked,
+                    "scope": p.scope,
+                    "catatan": p.note,
+                    "diperbarui": p.updated_at.isoformat() if p.updated_at else None,
+                }
+                for p in rows
+            ]
+        return {"params": data, "count": len(data)}
+
+    @app.get("/api/v1/proposals")
+    def proposals(
+        user: Annotated[User, Depends(auth.current_user)],
+        limit: int = Query(50, ge=1, le=500),
+    ) -> dict[str, Any]:
+        from warroom_core.db import Proposal
+
+        with session_scope() as s:
+            rows = s.scalars(
+                select(Proposal).order_by(Proposal.created_at.desc()).limit(limit)
+            ).all()
+            data = [
+                {
+                    "id": pr.id,
+                    "parameter": pr.parameter_name,
+                    "dari": pr.from_json,
+                    "ke": pr.to_json,
+                    "alasan": pr.reason,
+                    "bukti": pr.evidence_json,
+                    "gate": pr.gate_verdict,
+                    "status": pr.status,
+                    "ditolak_karena": pr.rejected_reason,
+                    "diputuskan_oleh": pr.decided_by,
+                    "diterapkan_pada": pr.applied_at.isoformat() if pr.applied_at else None,
+                    "config_hash": pr.config_hash,
+                    "dibuat": pr.created_at.isoformat() if pr.created_at else None,
+                }
+                for pr in rows
+            ]
+        return {"proposals": data, "count": len(data)}
+
+    @app.post("/api/v1/proposals/{pid}/apply")
+    def proposal_apply(
+        pid: int, user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        with session_scope() as s:
+            ok = autonomy.terapkan(s, pid, actor=user.username)
+        if not ok:
+            raise HTTPException(
+                status_code=409,
+                detail="usulan tidak bisa diterapkan (sudah diterapkan atau parameter terkunci)",
+            )
+        return {"ok": True, "oleh": user.username}
+
+    @app.post("/api/v1/proposals/{pid}/rollback")
+    def proposal_rollback(
+        pid: int, user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        with session_scope() as s:
+            ok = autonomy.rollback(s, pid, actor=user.username)
+        if not ok:
+            raise HTTPException(status_code=409, detail="usulan belum pernah diterapkan")
+        return {"ok": True, "oleh": user.username}
+
+    @app.get("/api/v1/ai/status")
+    def ai_status(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        from warroom_core.db import LLMCall, Proposal
+
+        with session_scope() as s:
+            return {
+                "kill_switch": autonomy.kill_switch_aktif(s),
+                "usulan_menunggu": s.scalar(
+                    select(func.count()).select_from(Proposal).where(Proposal.status == "butuh_manusia")
+                )
+                or 0,
+                "panggilan_llm": s.scalar(select(func.count()).select_from(LLMCall)) or 0,
+            }
+
+    @app.post("/api/v1/ai/kill-switch")
+    def ai_kill_switch(
+        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        aktif = bool(body.get("aktif"))
+        with session_scope() as s:
+            ok = autonomy.set_kill_switch(s, aktif, actor=user.username)
+        if not ok:
+            raise HTTPException(status_code=409, detail="parameter kill switch belum terdaftar")
+        return {"ok": True, "kill_switch": aktif, "oleh": user.username}
+
+    # --- P6: kesiapan live + grant -------------------------------------------------------
+
+    @app.get("/api/v1/live/arming")
+    def live_arming(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        return live.arming_status().to_dict()
+
+    @app.get("/api/v1/live/grants")
+    def live_grants(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        from warroom_core.db import Grant
+
+        with session_scope() as s:
+            rows = s.scalars(select(Grant).order_by(Grant.granted_at.desc()).limit(100)).all()
+            data = [
+                {
+                    "id": g.id,
+                    "scope": g.scope,
+                    "oleh": g.granted_by,
+                    "message_id": g.message_id,
+                    "alasan": g.reason,
+                    "diberikan": g.granted_at.isoformat() if g.granted_at else None,
+                    "kedaluwarsa": g.expires_at.isoformat() if g.expires_at else None,
+                    "dicabut": g.revoked_at.isoformat() if g.revoked_at else None,
+                }
+                for g in rows
+            ]
+        return {"grants": data, "count": len(data), "scope_dikenal": list(live.SCOPE_DIKENAL)}
+
+    @app.post("/api/v1/live/grant")
+    def live_grant(
+        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        try:
+            with session_scope() as s:
+                hasil = live.grant_baru(
+                    s,
+                    scope=str(body.get("scope", "")),
+                    granted_by=user.username,
+                    message_id=str(body.get("message_id", "")),
+                    reason=str(body.get("reason", "")),
+                    ttl_s=body.get("ttl_s", 3600),
+                )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"ok": True, **hasil}
+
+    @app.post("/api/v1/live/action")
+    def live_action(
+        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        """Tidak pernah mengeksekusi apa pun. Hanya memeriksa grant → 409 bila kurang."""
+        scope = str(body.get("scope", ""))
+        with session_scope() as s:
+            kurang = live.scope_kurang(s, scope)
+        if kurang:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "aksi": scope,
+                    "kurang": kurang,
+                    "catatan": "eksekusi nyata tetap milik owner di luar repo ini",
+                },
+            )
+        return {
+            "ok": True,
+            "scope": scope,
+            "catatan": "grant lengkap; tidak ada aksi yang dijalankan oleh API ini",
+        }
+
+    @app.post("/api/v1/live/dry-run")
+    def live_dry_run(
+        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
+    ) -> dict[str, Any]:
+        """Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3."""
+        sub = str(body.get("subperintah", "depth"))
+        return live.jalankan_kering_kedalaman(sub)
 
     return app
 

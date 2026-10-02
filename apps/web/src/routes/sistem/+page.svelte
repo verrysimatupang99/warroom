@@ -1,0 +1,196 @@
+<script lang="ts">
+	// Sistem & AI: sub-nav 7 bagian. Bagian yang belum punya endpoint menampilkan EmptyState
+	// jujur (bukan angka/teks karangan).
+	import { getAreas, getKesegaran, getKesehatan, getMetrikTeks } from '$lib/api/client';
+	import type { AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import { live } from '$lib/api/live.svelte';
+	import { AREAS } from '$lib/nav';
+	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
+	import Block from '$lib/components/Block.svelte';
+	import SubNav from '$lib/components/SubNav.svelte';
+	import DataTable from '$lib/components/DataTable.svelte';
+	import EventFeed from '$lib/components/EventFeed.svelte';
+
+	const area = AREAS.find((a) => a.kunci === 'sistem')!;
+	let sub = $state('layanan');
+
+	let areas = $state<AreasPayload | null>(null);
+	let kesegaran = $state<KesegaranPayload | null>(null);
+	let sehat = $state<Kesehatan | null>(null);
+	let metrik = $state<string | null>(null);
+	let galatMetrik = $state<string | null>(null);
+	let memuat = $state(true);
+
+	async function muat() {
+		const [a, k, h] = await Promise.allSettled([getAreas(), getKesegaran(), getKesehatan()]);
+		if (a.status === 'fulfilled') areas = a.value;
+		if (k.status === 'fulfilled') kesegaran = k.value;
+		if (h.status === 'fulfilled') sehat = h.value;
+		try {
+			metrik = await getMetrikTeks();
+			galatMetrik = null;
+		} catch (e) {
+			galatMetrik = e instanceof Error ? e.message : String(e);
+		}
+		memuat = false;
+	}
+
+	$effect(() => {
+		void muat();
+		const t = setInterval(() => void muat(), 15000);
+		return () => clearInterval(t);
+	});
+
+	// /metrics Prometheus → baris tabel. Baris tak terurai diabaikan (jujur, bukan tebakan).
+	const barisMetrik = $derived.by(() => {
+		if (!metrik) return [];
+		const out: { nama: string; label: string; nilai: string }[] = [];
+		for (const baris of metrik.split('\n')) {
+			if (!baris || baris.startsWith('#')) continue;
+			const m = baris.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{[^}]*\})?\s+(.+?)\s*$/);
+			if (m) out.push({ nama: m[1], label: m[2] ?? '', nilai: m[3] });
+		}
+		return out;
+	});
+	const barisLlm = $derived(barisMetrik.filter((m) => m.nama.includes('llm')));
+	const barisBiaya = $derived(
+		barisMetrik.filter((m) => /quota|biaya|cost|token|arjum|llm/.test(m.nama))
+	);
+	const barisAudit = $derived(
+		(kesegaran?.facts ?? []).map((f) => ({
+			kind: f.kind,
+			key: f.key,
+			sumber: f.source,
+			umur: umurDetik(f.age_s),
+			status: f.status
+		}))
+	);
+</script>
+
+<div class="space-y-3">
+	<div>
+		<h1 class="text-19 text-text">Sistem &amp; AI</h1>
+		<p class="text-12 text-text-3">Unit lintas host, kesegaran, biaya, event, AI, kebijakan, audit.</p>
+	</div>
+
+	<SubNav {area} aktif={sub} onpilih={(s) => (sub = s)} />
+
+	{#if sub === 'layanan'}
+		<Block judul="Layanan" deskripsi="/api/v1/health + registry area" memuat={memuat && !sehat}>
+			<div class="angka grid gap-2 text-13 sm:grid-cols-2 lg:grid-cols-4">
+				<p><span class="label-mikro block">status</span>{sehat?.status ?? '—'}</p>
+				<p><span class="label-mikro block">db</span>{sehat ? (sehat.db ? 'ok' : 'gagal') : '—'}</p>
+				<p><span class="label-mikro block">waktu</span>{sehat ? waktuWIB(sehat.time) : '—'}</p>
+				<p><span class="label-mikro block">pengguna</span>{sehat?.user ?? '—'}</p>
+			</div>
+		</Block>
+		<Block judul="Area" memuat={memuat && !areas}>
+			<DataTable
+				kolom={[
+					{ kunci: 'area', label: 'area' },
+					{ kunci: 'fakta', label: 'fakta', numerik: true },
+					{ kunci: 'hilang', label: 'hilang', numerik: true },
+					{ kunci: 'basi', label: 'basi', numerik: true }
+				]}
+				baris={(areas?.areas ?? []).map((a) => ({
+					area: a.area,
+					fakta: a.fakta,
+					hilang: a.hilang,
+					basi: a.basi
+				}))}
+				cari="cari area…"
+				ekspor="sistem-area.csv"
+			/>
+		</Block>
+	{:else if sub === 'kesegaran'}
+		<Block
+			judul="Matriks kesegaran"
+			deskripsi={`${kesegaran?.count ?? 0} fakta · dicek ${kesegaran ? waktuWIB(kesegaran.checked_at) : '—'}`}
+			memuat={memuat && !kesegaran}
+			kosong={!!kesegaran && kesegaran.facts.length === 0}
+			kosongPesan="Belum ada fakta."
+		>
+			<DataTable
+				kolom={[
+					{ kunci: 'kind', label: 'kind' },
+					{ kunci: 'key', label: 'kunci' },
+					{ kunci: 'sumber', label: 'sumber' },
+					{ kunci: 'umur', label: 'umur' },
+					{ kunci: 'ttl', label: 'ttl' },
+					{ kunci: 'status', label: 'status' }
+				]}
+				baris={(kesegaran?.facts ?? []).map((f) => ({
+					kind: f.kind,
+					key: f.key,
+					sumber: f.source,
+					umur: umurDetik(f.age_s),
+					ttl: umurDetik(f.ttl_s),
+					status: f.status
+				}))}
+				cari="cari kunci…"
+				ekspor="sistem-kesegaran.csv"
+			/>
+		</Block>
+	{:else if sub === 'biaya'}
+		<Block
+			judul="Biaya &amp; kuota"
+			deskripsi="Angka dari /metrics; metrik yang tidak ada tidak ditampilkan"
+			memuat={memuat && !metrik}
+			galat={galatMetrik}
+			kosong={barisBiaya.length === 0}
+			kosongPesan="Tidak ada metrik biaya/kuota di /metrics saat ini."
+		>
+			<DataTable
+				kolom={[
+					{ kunci: 'nama', label: 'metrik' },
+					{ kunci: 'label', label: 'label' },
+					{ kunci: 'nilai', label: 'nilai' }
+				]}
+				baris={barisBiaya}
+				cari="cari metrik…"
+				ekspor="sistem-biaya.csv"
+				padat
+			/>
+		</Block>
+	{:else if sub === 'event'}
+		<Block judul="Event log" deskripsi="SSE; gagal → polling 15 dtk">
+			<EventFeed kejadian={live.kejadian} memuat={live.status === 'menyambung'} galat={live.pesan} />
+		</Block>
+	{:else if sub === 'ai'}
+		<Block
+			judul="LLMConsole"
+			deskripsi="Kesehatan provider, latensi, biaya, fallback"
+			memuat={memuat && !metrik}
+			galat={galatMetrik}
+			kosong={barisLlm.length === 0}
+			kosongPesan="Belum ada metrik llm_* di /metrics; endpoint services/llm belum diekspos API ini."
+		>
+			<DataTable
+				kolom={[
+					{ kunci: 'nama', label: 'metrik' },
+					{ kunci: 'label', label: 'label' },
+					{ kunci: 'nilai', label: 'nilai' }
+				]}
+				baris={barisLlm}
+				cari="cari metrik llm…"
+				ekspor="sistem-llm.csv"
+				padat
+			/>
+		</Block>
+	{:else if sub === 'kebijakan'}
+		<Block judul="Kebijakan" deskripsi="agent-policy.json — tier, red lines, gate">
+			<p class="text-13 text-text-2">
+				— belum ada endpoint API untuk membaca <span class="angka">agent-policy.json</span> pada
+				P2. Halaman ini sengaja tidak mengarang isi kebijakan.
+			</p>
+		</Block>
+	{:else if sub === 'audit'}
+		<Block judul="Audit" deskripsi="Jejak perubahan parameter &amp; konfigurasi">
+			<EventFeed
+				kejadian={live.berdasarkanTopik(['param.', 'policy.', 'proposal.'])}
+				memuat={live.status === 'menyambung'}
+				galat={live.pesan}
+			/>
+		</Block>
+	{/if}
+</div>

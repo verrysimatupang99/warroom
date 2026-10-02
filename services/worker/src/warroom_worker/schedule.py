@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Event, Job
 
-__all__ = ["DEFAULT_JOBS", "JobSpec", "due_jobs", "ensure_jobs", "run_due", "run_one"]
+__all__ = ["DEFAULT_JOBS", "JobSpec", "due_jobs", "ensure_jobs", "run_due", "run_one", "set_enabled"]
 
 
 @dataclass(frozen=True)
@@ -58,33 +58,74 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
-        name="snapshot",
+        name="poly-sync",
+        interval_s=300,
+        enabled=True,
+        payload={"base": "/var/lib", "ttl_s": 1800},
+        note="baca-saja arm/agen/dataset Polymarket → fakta (P4-T1). Tidak menulis ke sumber.",
+    ),
+    JobSpec(
+        name="parity-drift",
         interval_s=900,
-        enabled=False,
+        enabled=True,
+        payload={"n": 400},
+        note="bandingkan keputusan mirror vs eksekutor; drift>0 → alert (P4-T2).",
+    ),
+    JobSpec(
+        name="gmgn-sync",
+        interval_s=600,
+        enabled=True,
+        payload={"ttl_s": 1800},
+        note="baca-saja state GMGN + radar (dari cache) → fakta (P4-T4).",
+    ),
+    JobSpec(
+        name="reconcile",
+        interval_s=3600,
+        enabled=True,
+        payload={"alamat": None},
+        note=(
+            "verifikasi klaim uang ke on-chain (P4-T5). Tanpa WARROOM_POLYGON_RPC hasilnya "
+            "'belum terverifikasi' + alert — angka uang tidak pernah ditampilkan sebagai nyata."
+        ),
+    ),
+    JobSpec(
+        name="learner",
+        interval_s=86400,
+        enabled=True,
         payload={},
         note=(
-            "NONAKTIF: `live-trading-snapshot.timer` masih penulis tunggal snapshot. "
-            "Menyalakan ini = dua penulis untuk berkas yang sama. Cutover menunggu keputusan owner."
+            "usulan parameter berbatas dari bukti nyata (P5-T2). Bukti tanpa split beku "
+            "DITOLAK oleh gate — itu disengaja, bukan bug."
+        ),
+    ),
+    JobSpec(
+        name="refresh-snapshot",
+        interval_s=900,
+        enabled=True,
+        payload={"timeout_s": 300},
+        note=(
+            "`lt snapshot` — pindahan dari `live-trading-snapshot.timer` (irama 15 mnt). "
+            "Cutover 3 Okt: timer domain dimatikan supaya hanya ada SATU penulis snapshot."
         ),
     ),
     JobSpec(
         name="collect",
         interval_s=1800,
-        enabled=False,
-        payload={},
+        enabled=True,
+        payload={"timeout_s": 900},
         note=(
-            "NONAKTIF: `live-trading-collect.timer` masih jalan dan `lt scan` memakai kuota Arjum. "
-            "Dua penulis = kuota dobel. Cutover menunggu keputusan owner."
+            "`lt scan` — pindahan dari `live-trading-collect.timer` (irama 30 mnt). "
+            "Tanpa kuota Arjum (kripto saja). Cutover 3 Okt: timer domain dimatikan."
         ),
     ),
     JobSpec(
         name="backup",
         interval_s=21600,
-        enabled=False,
-        payload={},
+        enabled=True,
+        payload={"timeout_s": 600},
         note=(
-            "NONAKTIF: `live-trading-backup.timer` (6 jam, rotasi 14) sudah berjalan dan "
-            "langkah restore-nya sudah teruji — tidak perlu penulis kedua."
+            "skrip backup domain (state + rotasi 14) — pindahan dari `live-trading-backup.timer` "
+            "(6 jam). Cutover 3 Okt: timer domain dimatikan."
         ),
     ),
 )
@@ -94,25 +135,50 @@ HANDLERS: dict[str, Any] = {}
 
 
 def ensure_jobs(s: SASession, specs: tuple[JobSpec, ...] = DEFAULT_JOBS) -> list[str]:
-    """Daftarkan job yang belum ada. Tidak menimpa `enabled` yang sudah diubah manusia."""
+    """Sinkronkan jadwal dengan spesifikasi kode.
+
+    - Job yang belum ada → dibuat.
+    - Job yang sudah ada → `interval_s`/`payload_json`/`note` **disinkronkan** dengan kode
+      (supaya perubahan rumus/parameter tidak diam-diam tertinggal di DB).
+    - `enabled` **tidak pernah** diubah di sini: mematikan/menyalakan job adalah keputusan
+      manusia, dan kode tidak boleh membatalkannya diam-diam.
+    """
     ada = {j.name: j for j in s.scalars(select(Job)).all()}
     dibuat: list[str] = []
     for spec in specs:
-        if spec.name in ada:
-            continue
-        s.add(
-            Job(
-                name=spec.name,
-                interval_s=spec.interval_s,
-                enabled=spec.enabled,
-                payload_json=spec.payload,
-                note=spec.note,
-                next_run_at=datetime.now(UTC),
+        baris = ada.get(spec.name)
+        if baris is None:
+            s.add(
+                Job(
+                    name=spec.name,
+                    interval_s=spec.interval_s,
+                    enabled=spec.enabled,
+                    payload_json=spec.payload,
+                    note=spec.note,
+                    next_run_at=datetime.now(UTC),
+                )
             )
-        )
-        dibuat.append(spec.name)
+            dibuat.append(spec.name)
+            continue
+        baris.interval_s = spec.interval_s
+        baris.payload_json = spec.payload
+        baris.note = spec.note
     s.flush()
     return dibuat
+
+
+def set_enabled(s: SASession, name: str, enabled: bool) -> bool:
+    """Nyalakan/matikan job secara eksplisit (dipakai cutover & manusia). True bila berubah."""
+    job = s.scalar(select(Job).where(Job.name == name))
+    if job is None:
+        return False
+    if job.enabled == enabled:
+        return False
+    job.enabled = enabled
+    if enabled:
+        job.next_run_at = datetime.now(UTC)
+    s.flush()
+    return True
 
 
 def due_jobs(s: SASession, now: datetime | None = None) -> list[Job]:

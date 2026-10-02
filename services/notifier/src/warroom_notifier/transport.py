@@ -10,13 +10,21 @@ HTTP lokal sungguhan supaya "terkirim" terbukti, bukan diasumsikan.
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
-__all__ = ["DeliveryResult", "HttpTransport", "NullTransport", "Transport", "transport_from_env"]
+__all__ = [
+    "DeliveryResult",
+    "HttpTransport",
+    "NullTransport",
+    "TelegramTransport",
+    "Transport",
+    "transport_from_env",
+]
 
 ENV_FILE = Path("/etc/warroom/notifier.env")
 
@@ -70,6 +78,70 @@ class HttpTransport:
             return DeliveryResult(False, f"{type(exc).__name__}: {exc}")
 
 
+class TelegramTransport:
+    """Kirim langsung ke Bot API Telegram (tanpa bridge tambahan).
+
+    Butuh tiga hal dari owner di `/etc/warroom/notifier.env` (mode 600, root):
+
+        WARROOM_TELEGRAM_BOT_TOKEN=...
+        WARROOM_TELEGRAM_CHAT_ID=...
+        WARROOM_TELEGRAM_THREAD_ID=...   # opsional: topik di dalam grup
+
+    Token **tidak pernah** masuk ke badan pesan, log, atau repo. Pesan memuat subjek,
+    tingkat, pesan, dan aksi yang disarankan — tanpa satu pun angka yang tidak berasal
+    dari fakta.
+    """
+
+    name = "telegram"
+
+    def __init__(
+        self,
+        token: str,
+        chat_id: str,
+        thread_id: str | None = None,
+        timeout_s: float = 8.0,
+        api_base: str | None = None,
+    ) -> None:
+        self.token = token
+        self.chat_id = chat_id
+        self.thread_id = thread_id
+        self.timeout_s = timeout_s
+        # api_base bisa ditimpa untuk pengujian (server lokal), tanpa mengubah produksi.
+        self.api_base = (api_base or os.environ.get("WARROOM_TELEGRAM_API_BASE")
+                         or "https://api.telegram.org").rstrip("/")
+
+    @property
+    def url(self) -> str:
+        return f"{self.api_base}/bot{self.token}/sendMessage"
+
+    def send(self, subject: str, message: str, severity: str, payload: dict) -> DeliveryResult:
+        aksi = str(payload.get("suggested_action") or "").strip()
+        teks = f"[{severity.upper()}] {subject}\n{message}"
+        if aksi:
+            teks += f"\n\nYang bisa dilakukan: {aksi}"
+        body: dict[str, object] = {
+            "chat_id": self.chat_id,
+            "text": teks,
+            "disable_web_page_preview": True,
+        }
+        if self.thread_id:
+            body["message_thread_id"] = self.thread_id
+        req = urllib.request.Request(
+            self.url,
+            data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:  # noqa: S310
+                return DeliveryResult(200 <= resp.status < 300, f"telegram {resp.status}")
+        except urllib.error.HTTPError as exc:
+            # Badan respons bisa memuat id chat, bukan token — tetap dipotong pendek.
+            return DeliveryResult(False, f"telegram http {exc.code}")
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            return DeliveryResult(False, f"{type(exc).__name__}: {exc}")
+
+
 def _env_file() -> Path:
     import os
 
@@ -97,11 +169,21 @@ def _from_file(key: str) -> str | None:
 
 
 def transport_from_env() -> Transport:
-    """URL webhook dari env `WARROOM_ALERT_WEBHOOK` atau berkas root-only; default Null."""
+    """Pilih transport dari env/berkas root-only.
+
+    Urutan: Telegram (bila token+chat ada) → webhook HTTP → Null (alert tetap di DB,
+    tidak pernah diklaim terkirim).
+    """
     import os
 
+    token = os.environ.get("WARROOM_TELEGRAM_BOT_TOKEN") or _from_file("WARROOM_TELEGRAM_BOT_TOKEN")
+    chat = os.environ.get("WARROOM_TELEGRAM_CHAT_ID") or _from_file("WARROOM_TELEGRAM_CHAT_ID")
+    if token and chat:
+        thread = os.environ.get("WARROOM_TELEGRAM_THREAD_ID") or _from_file("WARROOM_TELEGRAM_THREAD_ID")
+        return TelegramTransport(token, chat, thread)
+
     url = os.environ.get("WARROOM_ALERT_WEBHOOK") or _from_file("WARROOM_ALERT_WEBHOOK")
-    if not url:
-        return NullTransport()
-    token = os.environ.get("WARROOM_ALERT_TOKEN") or _from_file("WARROOM_ALERT_TOKEN")
-    return HttpTransport(url, token)
+    if url:
+        wtoken = os.environ.get("WARROOM_ALERT_TOKEN") or _from_file("WARROOM_ALERT_TOKEN")
+        return HttpTransport(url, wtoken)
+    return NullTransport()

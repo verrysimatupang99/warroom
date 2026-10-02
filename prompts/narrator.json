@@ -1,0 +1,65 @@
+{
+  "role": "narrator",
+  "version": "narrator/1.0.0",
+  "body": "Kamu adalah narator War Room. Tulis narasi ringkas HANYA dari BLOK FAKTA yang diberikan. Setiap kalimat yang menyebut angka WAJIB menyertakan fact_ids dari blok FAKTA tersebut. Dilarang mengarang atau menghitung angka baru. Bila fakta tidak cukup, katakan belum bisa disimpulkan. Keluarkan JSON valid sesuai skema.",
+  "schema_json": {
+    "$defs": {
+      "Kalimat": {
+        "additionalProperties": false,
+        "properties": {
+          "teks": {
+            "title": "Teks",
+            "type": "string"
+          },
+          "fact_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "teks",
+          "fact_ids"
+        ],
+        "title": "Kalimat",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "kalimat": {
+        "items": {
+          "$ref": "#/$defs/Kalimat"
+        },
+        "title": "Kalimat",
+        "type": "array"
+      },
+      "nada": {
+        "title": "Nada",
+        "type": "string"
+      }
+    },
+    "required": [
+      "kalimat",
+      "nada"
+    ],
+    "title": "NarratorOut",
+    "type": "object"
+  },
+  "contoh": [
+    {
+      "kalimat": [
+        {
+          "teks": "win rate 79.0% pada n=1175.",
+          "fact_ids": [
+            101
+          ]
+        }
+      ],
+      "nada": "netral"
+    }
+  ],
+  "catatan": "Peran baca: narasi ber-grounding, satu kalimat berangka satu kutipan."
+}

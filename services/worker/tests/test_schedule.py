@@ -28,6 +28,27 @@ def _bersihkan(db):
     yield
 
 
+_JOB_BERAT = (
+    "refresh-snapshot",  # memanggil CLI domain (jaringan)
+    "collect",
+    "backup",
+    "poly-sync",         # membaca /var/lib lewat sudo
+    "parity-drift",
+    "gmgn-sync",
+    "reconcile",
+    "learner",  # membaca log agen lewat sudo
+)
+
+
+def _matikan_job_berat() -> None:
+    """Tes TIDAK boleh menyentuh jaringan, CLI domain, atau berkas milik user lain."""
+    with session_scope() as s:
+        for nama in _JOB_BERAT:
+            j = s.scalar(select(Job).where(Job.name == nama))
+            if j is not None:
+                j.enabled = False
+
+
 # --- pendaftaran job -------------------------------------------------------------------
 
 
@@ -37,30 +58,75 @@ def test_daftar_job_idempoten(db) -> None:
     with session_scope() as s:
         kedua = schedule.ensure_jobs(s)
         total = len(s.scalars(select(Job)).all())
-    assert set(pertama) == {"publish-facts", "freshness", "notify", "snapshot", "collect", "backup"}
+    assert set(pertama) == {
+        "publish-facts", "freshness", "notify", "refresh-snapshot", "collect", "backup",
+        "poly-sync", "parity-drift", "gmgn-sync", "reconcile", "learner",
+    }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 6
+    assert total == 11
 
 
-def test_job_nonaktif_punya_alasan_dan_tidak_dijalankan(db) -> None:
+def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
+    """Ubah kode (interval/payload/catatan) harus sampai ke DB; `enabled` tidak disentuh."""
+    from warroom_worker.schedule import JobSpec
+
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+        j = s.scalar(select(Job).where(Job.name == "publish-facts"))
+        j.interval_s = 1
+        j.payload_json = {"basi": True}
+        j.note = "usang"
+        j.enabled = False
     with session_scope() as s:
         schedule.ensure_jobs(s)
     with session_scope() as s:
+        j = s.scalar(select(Job).where(Job.name == "publish-facts"))
+        assert j.interval_s == 300
+        assert j.payload_json.get("ttl_s") == 1800
+        assert "usang" not in j.note
+        assert j.enabled is False, "enabled adalah keputusan manusia — kode tidak boleh membatalkannya"
+    # dan set_enabled mengubahnya secara eksplisit
+    with session_scope() as s:
+        assert schedule.set_enabled(s, "publish-facts", True) is True
+    with session_scope() as s:
+        assert s.scalar(select(Job).where(Job.name == "publish-facts")).enabled is True
+    _matikan_job_berat()
+    assert JobSpec is not None
+
+
+def test_semua_job_punya_handler_dan_catatan(db) -> None:
+    """Job aktif tanpa handler = jadwal yang diam-diam tidak melakukan apa pun."""
+    register_handlers()
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+        jobs = s.scalars(select(Job)).all()
+        for j in jobs:
+            assert j.note, f"job {j.name} wajib punya catatan"
+            if j.enabled:
+                assert j.name in schedule.HANDLERS, f"job aktif {j.name} tidak punya handler"
+
+
+def test_job_nonaktif_tidak_dijalankan_dan_punya_alasan(db) -> None:
+    """Job yang dimatikan manusia tidak boleh jalan; catatannya tetap ada."""
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+    _matikan_job_berat()
+    with session_scope() as s:
         nonaktif = {j.name: j for j in s.scalars(select(Job).where(Job.enabled.is_(False))).all()}
-    assert {"snapshot", "collect", "backup"} == set(nonaktif)
-    for nama in ("snapshot", "collect", "backup"):
-        assert nonaktif[nama].note, f"job nonaktif {nama} wajib punya alasan eksplisit"
-        assert "NONAKTIF" in nonaktif[nama].note
+    assert nonaktif, "prasyarat tes: ada job yang dimatikan"
+    for nama, j in nonaktif.items():
+        assert j.note, f"job nonaktif {nama} wajib punya alasan eksplisit"
 
     with session_scope() as s:
         hasil = schedule.run_due(s)
-    nama_jalan = {h["job"] for h in hasil}
-    assert "collect" not in nama_jalan and "snapshot" not in nama_jalan
+    assert not ({h["job"] for h in hasil} & set(nonaktif))
 
 
 def test_hanya_job_jatuh_tempo_yang_jalan(db) -> None:
     with session_scope() as s:
         schedule.ensure_jobs(s)
+    _matikan_job_berat()
+    with session_scope() as s:
         # dorong semua jauh ke depan
         for j in s.scalars(select(Job)).all():
             j.next_run_at = datetime.now(UTC) + timedelta(hours=5)
@@ -195,6 +261,7 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
 
     with session_scope() as s:
         schedule.ensure_jobs(s)
+    _matikan_job_berat()
     hasil = run_once()
     assert {h["job"] for h in hasil} == {"publish-facts", "freshness", "notify"}
     with session_scope() as s:

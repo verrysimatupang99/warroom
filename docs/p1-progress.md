@@ -10,7 +10,7 @@ Rujukan: `docs/blueprint/03-backend.md`, `05-roadmap-hermes.md` §2 (P1)
 | P1-T1 Postgres 16 + Alembic + skema | **selesai** | PostgreSQL 16.15 aktif; 2 migrasi bersih; **18 tabel** (17 + `alembic_version`) |
 | P1-T2 `packages/core/gate.py` + `/api/v1/gate/evaluate` | **selesai** | 15 tes gate; endpoint == modul; `ci_low > be` satu-satunya jalur `lolos` |
 | P1-T3 API + auth cookie/TOTP + RBAC + skema error | **selesai** | 401 tanpa login, 403 peran kurang, TOTP wajib bila terdaftar |
-| P1-T4 Worker + jadwal deklaratif | **selesai** | tabel `jobs` (6 job, 3 aktif + alasan eksplisit untuk yang nonaktif); unit `warroom-worker.service` aktif, restart=0; job jalan & tercatat |
+| P1-T4 Worker + jadwal deklaratif | **selesai + cutover** | tabel `jobs` (11 job); unit `warroom-worker.service` aktif; **cutover 3 Okt**: timer domain `snapshot`/`collect`/`backup` dimatikan, worker jadi penulis tunggal (`lt snapshot`, `lt scan`, backup — semua `ok`) |
 | P1-T5 Penulis fakta snapshot → `facts` + `events` | **selesai** | idempoten (ON CONFLICT DO NOTHING); `observed_at` dari berkas |
 | P1-T6 Endpoint baca per-area + `facts[]` | **selesai** | 5 area + `/areas` + `/facts/{kind}/{key}`; tiap angka bawa `fact_id/source/observed_at/ttl_s/status` |
 | P1-T7 SSE `/api/v1/stream` + `Last-Event-ID` | **selesai** | 5 kejadian mengalir nyata saat stream terbuka; resume dari id bekerja |
@@ -63,12 +63,14 @@ Cutover `snapshot`/`collect`/`backup` = **keputusan owner** (butuh jendela + ver
    **1.219** pada angka nyata (n=1.175, win=928, BE 77%, CI 90%), ≈1.187 pada p=79%.
    Jarak ke lolos lebih dekat daripada yang tertulis. Gate tetap `ci_low > BE`.
 
-2. **TTL 600 s di domain bertabrakan dengan irama tulis 900 s → alert palsu.** Job pertama saya
-   memakai `snapshot_ttl_s=600` dari `config.py`; karena timer snapshot menulis tiap 15 menit,
-   fakta jadi "basi" di antara dua tulisan dan worker membuat **15 alert palsu**. Tindakan:
-   alert dihapus, TTL fakta disetel **1800 s** (= 2× irama tulis, sama dengan ambang watchdog
-   domain `SNAPSHOT_MAX_AGE=1800`), dan alasan ditulis di kode. **Nilai 600 di `config.py` perlu
-   ditinjau owner** — ia membuat badge dashboard berkedip basi tiap 15 menit.
+2. **KOREKSI (3 Okt): temuan TTL saya kemarin salah separuh.** `snapshot_ttl_s=600` di
+   `config.py` **bukan** ambang badge "basi" — ia hanya penjaga cache di `load_snapshot()`
+   (`dashboard.py:593`: bangun ulang bila berkas lebih tua dari 600 s). Ambang badge radar
+   adalah `_RADAR_SEGAR_MNT = 45` menit. Jadi **tidak ada masalah** di domain, dan tidak ada
+   perubahan yang perlu dilakukan di `live-trading`.
+   Yang tetap benar: pilihan TTL **saya** untuk fakta snapshot (600 s) bertabrakan dengan irama
+   tulis 15 menit (900 s) dan menghasilkan 15 alert palsu. TTL fakta kini **1800 s**
+   (= 2× irama tulis, sama dengan `SNAPSHOT_MAX_AGE` di skrip backup domain).
 
 3. **`Path.exists()` melempar `PermissionError`, bukan `False`, untuk berkas di direktori 700
    milik root.** Job `notify` sempat berstatus gagal karena ini. Semua akses berkas kredensial

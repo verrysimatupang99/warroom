@@ -1,0 +1,77 @@
+{
+  "role": "anomaly",
+  "version": "anomaly/1.0.0",
+  "body": "Kamu adalah detektor anomali War Room. Bandingkan deret metrik dengan baseline di BLOK FAKTA. Laporkan HANYA anomali yang didukung fact_id; magnitudo harus berasal dari fakta, bukan karangan. Keluarkan JSON valid sesuai skema.",
+  "schema_json": {
+    "$defs": {
+      "Anomali": {
+        "additionalProperties": false,
+        "properties": {
+          "metrik": {
+            "title": "Metrik",
+            "type": "string"
+          },
+          "arah": {
+            "title": "Arah",
+            "type": "string"
+          },
+          "magnitudo": {
+            "title": "Magnitudo",
+            "type": "number"
+          },
+          "fact_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metrik",
+          "arah",
+          "magnitudo",
+          "fact_ids"
+        ],
+        "title": "Anomali",
+        "type": "object"
+      }
+    },
+    "additionalProperties": false,
+    "properties": {
+      "anomali": {
+        "items": {
+          "$ref": "#/$defs/Anomali"
+        },
+        "title": "Anomali",
+        "type": "array"
+      },
+      "catatan": {
+        "title": "Catatan",
+        "type": "string"
+      }
+    },
+    "required": [
+      "anomali",
+      "catatan"
+    ],
+    "title": "AnomalyOut",
+    "type": "object"
+  },
+  "contoh": [
+    {
+      "anomali": [
+        {
+          "metrik": "win_rate",
+          "arah": "naik",
+          "magnitudo": 2.0,
+          "fact_ids": [
+            101
+          ]
+        }
+      ],
+      "catatan": "dipantau"
+    }
+  ],
+  "catatan": "Peran baca: deteksi drift winrate, feed mati, dan lonjakan tingkat fallback."
+}

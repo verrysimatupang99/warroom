@@ -11,7 +11,12 @@ import pytest
 from sqlalchemy import select
 from warroom_core.db import Alert, Event, session_scope
 from warroom_notifier.dispatch import MAX_PERCOBAAN, kirim_tertunda, tandai_terkirim
-from warroom_notifier.transport import HttpTransport, NullTransport, transport_from_env
+from warroom_notifier.transport import (
+    HttpTransport,
+    NullTransport,
+    TelegramTransport,
+    transport_from_env,
+)
 
 
 class _Penerima(BaseHTTPRequestHandler):
@@ -180,6 +185,48 @@ def test_alert_terkirim_tidak_diulang_tiap_siklus(db, server_uji: str) -> None:
     with session_scope() as s:
         hasil = kirim_tertunda(s, HttpTransport(server_uji))
     assert hasil == [], "alert yang sudah di-ack tidak boleh dikirim lagi"
+
+
+def test_telegram_transport_mengirim_ke_bot_api(server_uji: str, monkeypatch) -> None:
+    """Transport Telegram: badan pesan benar, token hanya di URL (bukan di badan)."""
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    tr = TelegramTransport("123:RAHASIA", "-1001234567890", thread_id="12")
+    res = tr.send("snapshot/mode", "data basi 30 mnt", "warning", {"suggested_action": "periksa sumber"})
+    assert res.ok is True
+    assert len(_Penerima.bodies) == 1
+    body = _Penerima.bodies[0]
+    assert body["chat_id"] == "-1001234567890"
+    assert body["message_thread_id"] == "12"
+    assert "data basi 30 mnt" in body["text"]
+    assert "periksa sumber" in body["text"]
+    assert "RAHASIA" not in json.dumps(body), "token tidak boleh ada di badan pesan"
+
+
+def test_transport_memilih_telegram_bila_dikonfigurasi(monkeypatch, tmp_path) -> None:
+    berkas = tmp_path / "notifier.env"
+    berkas.write_text(
+        "WARROOM_TELEGRAM_BOT_TOKEN=tok123\nWARROOM_TELEGRAM_CHAT_ID=-100999\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("WARROOM_TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("WARROOM_TELEGRAM_CHAT_ID", raising=False)
+    monkeypatch.setenv("WARROOM_NOTIFIER_ENV_FILE", str(berkas))
+    tr = transport_from_env()
+    assert tr.name == "telegram"
+    assert isinstance(tr, TelegramTransport)
+
+
+def test_dispatch_lewat_telegram_tercatat_di_event(db, server_uji: str, monkeypatch) -> None:
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    with session_scope() as s:
+        s.add(_alert("snapshot/gmgn"))
+    with session_scope() as s:
+        hasil = kirim_tertunda(s, TelegramTransport("1:x", "-1001"))
+    assert hasil[0]["ok"] is True
+    with session_scope() as s:
+        ev = s.scalar(select(Event).where(Event.type == "alert.sent"))
+    assert ev.payload_json["transport"] == "telegram"
+    assert ev.payload_json["ok"] is True
 
 
 def test_timestamp_ack_dipakai_untuk_dedupe(db) -> None:
