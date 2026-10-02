@@ -356,3 +356,31 @@ class Dataset(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class Job(Base):
+    """Jadwal deklaratif (P1-T4).
+
+    Satu tempat untuk melihat "apa yang akan jalan, kapan terakhir jalan, hasilnya apa".
+    Timer systemd lama tetap hidup sampai cutover diputuskan owner; menjalankan dua
+    penulis untuk job yang sama akan menggandakan kuota (mis. Arjum) — itu sebabnya
+    job `collect` sengaja didaftarkan **nonaktif** di P1, bukan dihapus.
+    """
+
+    __tablename__ = "jobs"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    interval_s: Mapped[int] = mapped_column(Integer, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    payload_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_status: Mapped[str] = mapped_column(String(24), nullable=False, default="")
+    last_detail: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (Index("ix_jobs_enabled_next", "enabled", "next_run_at"),)

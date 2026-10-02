@@ -1,0 +1,26 @@
+[Unit]
+Description=War Room API (FastAPI: REST /api/v1/* + SSE)
+Documentation=file:///home/admin/warroom/docs/p1-progress.md
+After=network-online.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom
+Environment=HOME=/home/admin
+Environment=WARROOM_DOMAIN_HOME=/home/admin/live-trading
+# Scraper lokal (Prometheus di host yang sama) boleh membaca /metrics tanpa cookie.
+Environment=WARROOM_METRICS_PUBLIC=1
+EnvironmentFile=/etc/warroom/db.env
+ExecStart=/home/admin/warroom/.venv/bin/uvicorn warroom_api.app:app --host 127.0.0.1 --port 8800 --log-level warning
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

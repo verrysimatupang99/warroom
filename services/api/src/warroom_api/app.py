@@ -9,17 +9,22 @@ Aturan yang dikodekan: setiap angka berasal dari tabel `facts` (punya `fact_id`,
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from warroom_core.db import Fact, User, session_scope
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 
 from warroom_api import auth
+from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area
 from warroom_api.errors import install_error_handlers
+from warroom_api.metrics import collect_metrics, render_prometheus
+from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
 
@@ -203,6 +208,85 @@ def create_app() -> FastAPI:
                 )
                 saved += 1
         return {"saved": saved, "by": user.username}
+
+    # --- baca per-area (P1-T6) ----------------------------------------------------------
+
+    @app.get("/api/v1/areas")
+    def areas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        with session_scope() as s:
+            return {"areas": areas_summary(s)}
+
+    @app.get("/api/v1/facts/{kind}/{key}")
+    def fact_satu(
+        kind: str,
+        key: str,
+        user: Annotated[User, Depends(auth.current_user)],
+        riwayat: int = Query(1, ge=1, le=50, description="jumlah nilai terbaru"),
+    ) -> dict[str, Any]:
+        with session_scope() as s:
+            rows = s.scalars(
+                select(Fact)
+                .where(Fact.kind == kind, Fact.key == key)
+                .order_by(Fact.observed_at.desc())
+                .limit(riwayat)
+            ).all()
+        if not rows:
+            raise HTTPException(status_code=404, detail=f"fakta {kind}/{key} belum ada")
+        now = datetime.now(UTC)
+        return {
+            "kind": kind,
+            "key": key,
+            "facts": [
+                {
+                    "fact_id": f.id,
+                    "value": f.value_json,
+                    "source": f.source,
+                    "observed_at": f.observed_at.isoformat(),
+                    "ttl_s": f.ttl_s,
+                    "status": "segar" if (now - f.observed_at).total_seconds() <= f.ttl_s else "basi",
+                }
+                for f in rows
+            ],
+        }
+
+    def _area_endpoint(area: str):
+        def _baca(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+            with session_scope() as s:
+                return facts_for_area(s, area)
+
+        return _baca
+
+    for _area in AREA_KEYS:
+        app.get(f"/api/v1/{_area}", name=f"area_{_area}")(_area_endpoint(_area))
+
+    # --- SSE (P1-T7) --------------------------------------------------------------------
+
+    @app.get("/api/v1/stream")
+    async def stream(
+        request: Request,
+        user: Annotated[User, Depends(auth.current_user)],
+        topics: str | None = Query(None, description="mis. verdicts,trades,alerts"),
+    ) -> StreamingResponse:
+        daftar = [t.strip() for t in topics.split(",") if t.strip()] if topics else None
+        last = request.headers.get("Last-Event-ID") or request.query_params.get("last_event_id")
+        return StreamingResponse(
+            event_stream(daftar, last),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
+        )
+
+    # --- observability (P1-T8) ----------------------------------------------------------
+
+    @app.get("/metrics")
+    def metrics(
+        user: Annotated[User | None, Depends(auth.optional_user)],
+    ) -> PlainTextResponse:
+        publik = os.environ.get("WARROOM_METRICS_PUBLIC", "0").strip().lower() in {"1", "true", "yes"}
+        if user is None and not publik:
+            raise HTTPException(status_code=401, detail="belum login")
+        with session_scope() as s:
+            teks = render_prometheus(collect_metrics(s))
+        return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
 
     return app
 

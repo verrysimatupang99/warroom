@@ -43,9 +43,9 @@ extend-exclude = [".venv", "apps/web", "node_modules"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
-# Migrasi Alembic di-generate mesin (baris panjang tak terhindarkan) — bukan kode tangan.
+# Migrasi Alembic di-generate mesin: baris panjang & urutan impor tak terhindarkan.
 [tool.ruff.lint.per-file-ignores]
-"packages/core/alembic/versions/*.py" = ["E501"]
+"packages/core/alembic/versions/*.py" = ["E501", "I001", "UP007", "UP035"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

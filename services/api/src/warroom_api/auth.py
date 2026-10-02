@@ -146,6 +146,16 @@ def current_user(
     return found[1]
 
 
+def optional_user(
+    wr_session: Annotated[str | None, Cookie(alias=COOKIE_NAME)] = None,
+) -> User | None:
+    """Seperti `current_user`, tetapi mengembalikan None (bukan 401) — untuk /metrics publik."""
+    if not wr_session:
+        return None
+    found = _lookup(wr_session)
+    return found[1] if found else None
+
+
 def require_role(minimum: Role):
     """Dependensi pabrik: menolak 403 bila peran pengguna di bawah ``minimum``."""
 

@@ -52,6 +52,20 @@ def db() -> str:
 
 
 @pytest.fixture
+def bersihkan_db(db):
+    """Isolasi tes lintas berkas: kosongkan tabel yang dipakai bersama."""
+    from warroom_core.db import Alert, Event, Fact, Job, Strategy, session_scope
+
+    with session_scope() as s:
+        s.query(Fact).delete()
+        s.query(Event).delete()
+        s.query(Alert).delete()
+        s.query(Strategy).delete()
+        s.query(Job).delete()
+    yield
+
+
+@pytest.fixture
 def client(db: str):
     from fastapi.testclient import TestClient
     from warroom_api.app import app

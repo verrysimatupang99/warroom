@@ -3,7 +3,11 @@ name = "warroom-worker"
 version = "0.1.0"
 description = "War Room worker — job runner (snapshot, collect, replay, learner, parity-drift, reconcile, freshness, backup)"
 requires-python = ">=3.12"
-dependencies = ["warroom-core"]
+dependencies = ["warroom-core", "warroom-notifier"]
+
+[tool.uv.sources]
+warroom-core = { workspace = true }
+warroom-notifier = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

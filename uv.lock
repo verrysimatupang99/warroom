@@ -1551,10 +1551,14 @@ version = "0.1.0"
 source = { editable = "services/worker" }
 dependencies = [
     { name = "warroom-core" },
+    { name = "warroom-notifier" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "warroom-core", editable = "packages/core" }]
+requires-dist = [
+    { name = "warroom-core", editable = "packages/core" },
+    { name = "warroom-notifier", editable = "services/notifier" },
+]
 
 [[package]]
 name = "warroom-workspace"
