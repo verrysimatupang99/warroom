@@ -8,7 +8,9 @@ import pytest
 from warroom_llm.config import LLMConfig, default_config
 
 
-def test_default_config_rantai_primary_dulu() -> None:
+def test_default_config_bentuk_baku_saat_berkas_tak_ada(tmp_path: Path, monkeypatch) -> None:
+    """Berkas root tidak ada → bentuk baku (nutaraline → qonek) tetap dipakai."""
+    monkeypatch.setenv("WARROOM_LLM_CONFIG", str(tmp_path / "tidak-ada.json"))
     cfg = default_config()
     nama = [p.name for p in cfg.chain()]
     assert nama == ["nutaraline", "qonek"]
@@ -20,7 +22,31 @@ def test_default_config_rantai_primary_dulu() -> None:
     assert cfg.budget_daily_usd == 3.0
 
 
-def test_provider_model_dan_key_env() -> None:
+def test_default_config_memakai_berkas_root_bila_ada(tmp_path: Path, monkeypatch) -> None:
+    """Berkas root ADALAH sumber kebenaran — rantai harus mengikuti isinya.
+
+    Regresi produksi: `default_config()` dulu mengabaikan berkas dan selalu mengembalikan
+    bentuk baku, sehingga mengubah `/etc/warroom/llm.json` tidak berpengaruh apa pun pada
+    gateway yang benar-benar berjalan (urutan provider yang diminta owner tak pernah aktif).
+    """
+    p = tmp_path / "llm.json"
+    p.write_text(
+        '{"primary":"kiyara","providers":['
+        '{"name":"kiyara","baseUrl":"https://kiyararouter.web.id/v1","keyEnv":"K_KEY",'
+        '"models":{"fast":"m"}},'
+        '{"name":"qonek","baseUrl":"https://qonek.web.id/v1","keyEnv":"Q_KEY","models":{"fast":"q"}},'
+        '{"name":"nutaraline","baseUrl":"https://nutaraline.co.uk/v1","keyEnv":"N_KEY",'
+        '"models":{"fast":"n"}}]}',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("WARROOM_LLM_CONFIG", str(p))
+    cfg = default_config()
+    assert [x.name for x in cfg.chain()] == ["kiyara", "qonek", "nutaraline"]
+    assert cfg.primary == "kiyara"
+
+
+def test_provider_model_dan_key_env(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("WARROOM_LLM_CONFIG", str(tmp_path / "tidak-ada.json"))
     cfg = default_config()
     assert cfg.provider("nutaraline").base_url == "https://nutaraline.co.uk/v1"
     assert cfg.provider("nutaraline").key_env == "HERMES_CUSTOM_NUTARALINE_CO_UK_API_KEY"

@@ -135,7 +135,16 @@ class Gateway:
 
     # --- akses DB ----------------------------------------------------------------------
 
+    # Lebar kolom `llm_calls.error_code` di DB (varchar(60)). Kode galat validasi skema
+    # (mis. "schema_invalid:kalimat.0.fact_ids.0:Input should be a valid integer") bisa lebih
+    # panjang; dulu insert-nya meledak (DataError) sehingga kegagalan justru TIDAK tercatat
+    # dan job ikut gagal. Kode dipotong, bukan dibiarkan menggagalkan pencatatan.
+    _LEBAR_KODE_GALAT = 60
+
     def _log(self, **fields: Any) -> None:
+        kode = fields.get("error_code")
+        if isinstance(kode, str) and len(kode) > self._LEBAR_KODE_GALAT:
+            fields["error_code"] = kode[: self._LEBAR_KODE_GALAT]
         with self._session() as s:
             s.add(LLMCall(**fields))
 

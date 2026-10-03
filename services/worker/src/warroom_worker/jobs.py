@@ -313,14 +313,22 @@ def handler_parity_drift(s: SASession, job: Job) -> str:
 
 
 def handler_reconcile(s: SASession, job: Job) -> str:
-    """Verifikasi klaim uang ke sumber on-chain; tak terverifikasi → alert (P4-T5)."""
+    """Verifikasi klaim uang ke sumber on-chain; tak terverifikasi → alert (P4-T5).
+
+    Mode penarikan ``manual`` (default; env ``WARROOM_POLY_WITHDRAW`` atau
+    ``payload.withdraw_mode``) berarti dana ditarik sendiri lewat dashboard Polymarket —
+    tidak ada auto-claim on-chain untuk diverifikasi, sehingga status "belum terverifikasi"
+    itu **wajar** dan tidak memunculkan alert. Fakta tetap jujur (``terverifikasi=False``);
+    yang berubah hanya alarmnya, bukan angkanya.
+    """
     from warroom_worker.adapters import poly
 
     alamat = job.payload_json.get("alamat")
-    r = poly.reconcile_klaim(alamat=alamat)
+    mode = str(job.payload_json.get("withdraw_mode") or "") or None
+    r = poly.reconcile_klaim(alamat=alamat, withdraw_mode=mode)
     _tulis_fakta(s, kind="poly.money", key="klaim-pilot", value=r,
                  source=str(r.get("sumber", poly.PILOT_DIR)), ttl_s=3600)
-    if r.get("status") == "ok" and not r.get("terverifikasi"):
+    if r.get("status") == "ok" and not r.get("terverifikasi") and r.get("mode") != "manual":
         _alert(
             s,
             subject="poly/klaim-uang",
@@ -331,7 +339,10 @@ def handler_reconcile(s: SASession, job: Job) -> str:
             ),
             severity="warning",
         )
-    return f"status={r.get('status')} klaim={r.get('klaim')!r} terverifikasi={r.get('terverifikasi')}"
+    return (
+        f"status={r.get('status')} klaim={r.get('klaim')!r} "
+        f"terverifikasi={r.get('terverifikasi')} mode={r.get('mode')}"
+    )
 
 
 def handler_gmgn_sync(s: SASession, job: Job) -> str:

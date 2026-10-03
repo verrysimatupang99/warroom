@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import urllib.error
 import urllib.request
@@ -305,15 +306,22 @@ def cek_saldo_onchain(alamat: str, *, timeout_s: float = 8.0) -> dict[str, Any]:
     }
 
 
-def reconcile_klaim(pilot_dir: str | None = None, *, alamat: str | None = None) -> dict[str, Any]:
+def reconcile_klaim(
+    pilot_dir: str | None = None, *, alamat: str | None = None, withdraw_mode: str | None = None
+) -> dict[str, Any]:
     """Baca klaim uang dari state pilot dan tandai apakah bisa diverifikasi.
 
     Aturan: klaim **tidak** pernah ditampilkan sebagai "nyata" tanpa verifikasi on-chain.
+
+    ``withdraw_mode`` (env ``WARROOM_POLY_WITHDRAW``, default ``manual``): cara dana ditarik.
+    ``manual`` = ditarik sendiri lewat dashboard Polymarket — tidak ada auto-claim on-chain
+    untuk diverifikasi, sehingga status "belum terverifikasi" itu **wajar**, bukan insiden.
     """
+    mode = (withdraw_mode or os.environ.get("WARROOM_POLY_WITHDRAW") or "manual").strip().lower()
     state = baca_json(Path(pilot_dir or PILOT_DIR) / "snipe-live-v1-state.json")
     if not state.ok or not isinstance(state.data, dict):
         return {"status": state.status, "detail": "state pilot tidak terbaca",
-                "klaim": None, "terverifikasi": False}
+                "klaim": None, "terverifikasi": False, "mode": mode}
     d = state.data
     klaim = None
     for kunci in ("claimablePayout", "claimable", "payout"):
@@ -332,6 +340,10 @@ def reconcile_klaim(pilot_dir: str | None = None, *, alamat: str | None = None) 
         "klaim": klaim,
         "saldo_onchain": saldo,
         "terverifikasi": terverifikasi,
+        "mode": mode,
+        "penarikan": (
+            "manual lewat dashboard Polymarket" if mode == "manual" else "otomatis on-chain"
+        ),
         "keterangan": (
             "klaim nol → cocok dengan pemeriksaan on-chain"
             if terverifikasi

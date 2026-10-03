@@ -70,3 +70,22 @@ def test_narrator_tetap_jalan_saat_anggaran_habis(
     gw = gateway_factory(handler, config=cfg)
     hasil = gw.call(CallRequest(role="narrator", facts=fakta_ref))
     assert hasil.status == "ok", "peran baca esensial tidak boleh dijeda oleh anggaran"
+
+
+def test_kode_galat_panjang_dipotong_sebelum_dicatat(gateway_factory, bersih_llm) -> None:
+    """Regresi produksi: kode galat validasi skema bisa > 60 karakter, sedangkan kolom
+    `llm_calls.error_code` varchar(60). Insert-nya dulu meledak (DataError) sehingga
+    kegagalan justru TIDAK tercatat dan job ikut gagal — kode harus dipotong, bukan
+    dibiarkan menggagalkan pencatatan itu sendiri."""
+    gw = gateway_factory(lambda request: httpx.Response(200, json={}))
+    panjang = "schema_invalid:kalimat.0.fact_ids.0:Input should be a valid integer"
+    assert len(panjang) > 60  # kondisi yang dulu memicu galat
+
+    gw._log(role="narrator", provider="kiyara", model="m", ok=False, error_code=panjang)
+
+    with session_scope() as s:
+        row = s.scalars(select(LLMCall).order_by(LLMCall.id.desc())).first()
+    assert row is not None and row.ok is False
+    assert row.error_code is not None
+    assert len(row.error_code) == 60
+    assert row.error_code.startswith("schema_invalid:")

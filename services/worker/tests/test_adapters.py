@@ -293,7 +293,10 @@ def test_job_poly_sync_menulis_fakta_dan_mencatat_ketidakpastian(pohon: Path, mo
     assert {"poly.arm", "poly.agent", "poly.dataset"} <= kinds
 
 
-def test_job_reconcile_membuat_alert_klaim_belum_terverifikasi(pohon: Path, monkeypatch) -> None:
+def test_job_reconcile_tanpa_alert_saat_penarikan_manual(pohon: Path, monkeypatch) -> None:
+    """Mode `manual` (default): dana ditarik sendiri lewat dashboard Polymarket, jadi status
+    "belum terverifikasi" itu WAJAR — tidak memunculkan alert. Faktanya tetap jujur
+    (`terverifikasi=False`); yang hilang hanya alarmnya, bukan angkanya."""
     from sqlalchemy import select
     from warroom_worker import schedule
     from warroom_worker.jobs import register_handlers
@@ -302,6 +305,33 @@ def test_job_reconcile_membuat_alert_klaim_belum_terverifikasi(pohon: Path, monk
     import warroom_worker.adapters.poly as p
 
     monkeypatch.setattr(p, "PILOT_DIR", str(pohon / "poly-pilot"))
+    monkeypatch.setenv("WARROOM_POLY_WITHDRAW", "manual")
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+        job = s.scalar(select(Job).where(Job.name == "reconcile"))
+        status, detail = schedule.run_one(s, job)
+    assert status == "ok"
+    assert "terverifikasi=False" in detail and "mode=manual" in detail
+    with session_scope() as s:
+        assert s.query(Alert).filter_by(subject="poly/klaim-uang").count() == 0
+        fakta = s.query(Fact).filter_by(kind="poly.money").order_by(Fact.id.desc()).first()
+    assert fakta is not None
+    assert fakta.value_json["terverifikasi"] is False
+    assert fakta.value_json["mode"] == "manual"
+    assert "manual" in fakta.value_json["penarikan"]
+
+
+def test_job_reconcile_membuat_alert_klaim_belum_terverifikasi(pohon: Path, monkeypatch) -> None:
+    """Mode `onchain`: belum terverifikasi = insiden → alert dengan aksi verifikasi on-chain."""
+    from sqlalchemy import select
+    from warroom_worker import schedule
+    from warroom_worker.jobs import register_handlers
+
+    register_handlers()
+    import warroom_worker.adapters.poly as p
+
+    monkeypatch.setattr(p, "PILOT_DIR", str(pohon / "poly-pilot"))
+    monkeypatch.setenv("WARROOM_POLY_WITHDRAW", "onchain")
     with session_scope() as s:
         schedule.ensure_jobs(s)
         job = s.scalar(select(Job).where(Job.name == "reconcile"))

@@ -129,7 +129,17 @@ class LLMConfig:
 
 
 def default_config() -> LLMConfig:
-    """Bentuk baku yang diminta blueprint (nutaraline → qonek) — dipakai bila berkas root tak ada."""
+    """Konfigurasi EFEKTIF gateway: berkas root bila ada, jika tidak bentuk baku.
+
+    Berkas root (``/etc/warroom/llm.json`` atau ``WARROOM_LLM_CONFIG``) adalah sumber
+    kebenaran. Tanpa jalur ini, suntingan pada berkas itu tidak berpengaruh apa pun —
+    pernah terjadi di produksi: rantai live tetap ``nutaraline → qonek`` meski berkas
+    diubah, sehingga urutan provider yang diminta owner tidak pernah benar-benar aktif.
+    """
+    try:
+        return LLMConfig.load()
+    except (FileNotFoundError, PermissionError):
+        pass
     return LLMConfig.from_dict(
         {
             "primary": "nutaraline",
