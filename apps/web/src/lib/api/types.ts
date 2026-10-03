@@ -84,6 +84,9 @@ export interface HasilGate {
 	required_n: number | null;
 	policy_version: string;
 	notes: string[];
+	/** Kebijakan yang dipakai — UI wajib melabeli hasil dengan ini (90% vs 95%+deff). */
+	ci?: number;
+	deff?: number;
 }
 
 export interface MasukanGate {
@@ -92,6 +95,8 @@ export interface MasukanGate {
 	be: number;
 	ci?: number;
 	min_n?: number;
+	/** Koreksi klaster (>= 1). Meneruskan nilai dari fakta supaya kebijakan sama dengan sumber. */
+	deff?: number;
 	split?: string | null;
 	label?: string;
 	subject?: string;
@@ -119,4 +124,26 @@ export interface Kejadian {
 	payload: unknown;
 	fact_ids: unknown;
 	created_at: string | null;
+}
+export interface ProviderSehat {
+	provider: string;
+	n: number;
+	ok: number;
+	gagal: number;
+	ok_rate: number | null;
+	fallback: number;
+	p50_ms: number | null;
+	p95_ms: number | null;
+	token_in: number;
+	token_out: number;
+	error_terakhir: string | null;
+}
+
+export interface AiConsole {
+	total_panggilan: number;
+	fallback_rate: number | null;
+	biaya_usd: number;
+	per_provider: ProviderSehat[];
+	per_peran: { role: string; n: number; gagal: number }[];
+	catatan: string;
 }

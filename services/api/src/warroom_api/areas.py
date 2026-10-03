@@ -31,6 +31,13 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     "polymarket": ("bagian", "poly_paper", "lp_paper", "equity", "ledger"),
 }
 
+# Fakta dari kind NON-snapshot yang ikut tampil di area. Dipakai gate: GateBlok membaca
+# fakta ber-key `verdict`/`gate`, dan fakta itu diterbitkan job `verdict-sync` dengan
+# kind `poly.verdict` (bukan bagian dari snapshot domain).
+AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
+    "polymarket": (("poly.verdict", "verdict"),),
+}
+
 
 def _row(f: Fact, now: datetime) -> dict[str, Any]:
     umur = (now - f.observed_at).total_seconds()
@@ -78,13 +85,20 @@ def facts_for_area(s: SASession, area: str, now: datetime | None = None) -> dict
             "data": {},
         }
     dipakai = [terbaru[k] for k in kunci_area if k in terbaru]
+    # Fakta tambahan dari kind lain (mis. verdict untuk gate). Tidak terbaca → tidak muncul;
+    # `kunci_hilang` tetap melaporkan kunci snapshot yang absen.
+    extra: list[Fact] = []
+    for kind, key in AREA_EXTRA.get(area, ()):
+        f = latest_facts(s, kind).get(key)
+        if f is not None:
+            extra.append(f)
     return {
         "area": area,
         "dikenal": True,
         "kunci_diminta": list(kunci_area),
         "kunci_hilang": [k for k in kunci_area if k not in terbaru],
-        "facts": [_row(f, t) for f in dipakai],
-        "data": {f.key: f.value_json for f in dipakai},
+        "facts": [_row(f, t) for f in [*dipakai, *extra]],
+        "data": {f.key: f.value_json for f in [*dipakai, *extra]},
     }
 
 

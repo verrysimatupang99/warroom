@@ -238,3 +238,29 @@ def test_dry_run_tidak_mengirim_order(client, make_user, monkeypatch) -> None:
     # tidak ada perintah yang mengeksekusi order
     assert all("order" not in " ".join(c) for c in dipanggil)
     assert json.dumps(r.json())[:1] == "{"
+
+# --- W6: kesehatan provider di ai/status & llm-console ------------------------------------
+
+
+def test_ai_status_melaporkan_kesehatan_provider(client, make_user) -> None:
+    """Provider yang gagal harus terlihat beserta kode dan rasio ok-nya — dari llm_calls."""
+    from warroom_core.db import LLMCall
+
+    _, sid = make_user("ai-health", role="viewer")
+    with session_scope() as s:
+        s.add(LLMCall(role="narrator", provider="nutaraline", model="m", ok=False,
+                      error_code="http_401", latency_ms=203))
+        s.add(LLMCall(role="narrator", provider="nutaraline", model="m", ok=True,
+                      latency_ms=5300))
+        s.add(LLMCall(role="verifier", provider="qonek", model="m", ok=True,
+                      fallback_from="nutaraline", latency_ms=3400))
+    body = client.get("/api/v1/ai/status", headers=_cookie(sid)).json()
+    per = {p["provider"]: p for p in body["provider"]}
+    assert per["nutaraline"]["gagal"] == 1
+    assert per["nutaraline"]["error_terakhir"] == "http_401"
+    assert per["nutaraline"]["ok_rate"] == 0.5
+    assert per["qonek"]["fallback"] == 1 and per["qonek"]["ok"] == 1
+
+    konsol = client.get("/api/v1/ai/llm-console", headers=_cookie(sid)).json()
+    assert konsol["per_provider"] and "ok_rate" in konsol["per_provider"][0]
+    assert konsol["per_provider"][0]["error_terakhir"] in ("http_401", None)

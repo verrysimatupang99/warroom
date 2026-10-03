@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -32,6 +33,7 @@ __all__ = [
     "datasets_ringkas",
     "parity_drift",
     "reconcile_klaim",
+    "verdict_favorit",
 ]
 
 # Nama arm → direktori state (dari studi `01-studi-polymarket.md` §2.2).
@@ -347,3 +349,43 @@ def sidik_jari(data: Any) -> str:
 
 def sekarang() -> datetime:
     return datetime.now(UTC)
+
+
+# --- verdict aturan favorit (W2) --------------------------------------------------------
+
+VERDICT_SCRIPT = "/opt/polymarket/current/qa/favorite-live-verdict.py"
+
+
+def verdict_favorit(*, timeout_s: int = 60) -> dict[str, Any]:
+    """Jalankan alat verdict Poly **baca-saja** dan kembalikan JSON-nya apa adanya.
+
+    Perintah resmi: ``sudo -n python3 qa/favorite-live-verdict.py --json``. Skrip hanya
+    membaca ``favorite-replay-entries.jsonl``; tidak menulis apa pun ke ``/opt/polymarket``
+    maupun ``/var/lib``.
+
+    Gagal → status jujur (``tidak-izin`` / ``gagal`` + alasan), bukan angka nol: aturan
+    proyek ini adalah "yang tidak terbaca bukan nol".
+    """
+    perintah = ["sudo", "-n", "python3", VERDICT_SCRIPT, "--json"]
+    try:
+        p = subprocess.run(perintah, capture_output=True, text=True, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        return {"status": "gagal", "detail": f"timeout {timeout_s} dtk", "sumber": VERDICT_SCRIPT}
+    except OSError as exc:
+        return {"status": "gagal", "detail": type(exc).__name__, "sumber": VERDICT_SCRIPT}
+    if p.returncode != 0:
+        detail = ((p.stderr or "") + (p.stdout or "")).strip()[:200]
+        izin = "sudo" in detail.lower() or "password" in detail.lower()
+        return {
+            "status": "tidak-izin" if izin else "gagal",
+            "detail": detail or f"kode {p.returncode}",
+            "sumber": VERDICT_SCRIPT,
+        }
+    baris = [b for b in (p.stdout or "").strip().splitlines() if b.strip()]
+    try:
+        nilai = json.loads(baris[-1])
+    except (ValueError, IndexError):
+        return {"status": "gagal", "detail": "keluaran bukan JSON", "sumber": VERDICT_SCRIPT}
+    if not isinstance(nilai, dict) or "n" not in nilai:
+        return {"status": "gagal", "detail": "JSON tanpa field n", "sumber": VERDICT_SCRIPT}
+    return {"status": "ok", "value": nilai, "sumber": VERDICT_SCRIPT}

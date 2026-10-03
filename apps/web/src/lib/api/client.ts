@@ -5,6 +5,7 @@
  */
 import { env as envPublik } from '$env/dynamic/public';
 import type {
+	AiConsole,
 	AreaPayload,
 	AreasPayload,
 	Aku,
@@ -100,6 +101,9 @@ export const getFakta = (kind: string, key: string, riwayat = 20) =>
 	);
 export const nilaiGate = (masukan: MasukanGate) =>
 	minta<HasilGate>('/api/v1/gate/evaluate', { method: 'POST', body: JSON.stringify(masukan) });
+
+/** Kesehatan provider LLM (W6): dari tabel `llm_calls`, tanpa penghitung di memori. */
+export const getAiConsole = () => minta<AiConsole>('/api/v1/ai/llm-console');
 
 /** `/metrics` Prometheus: teks, bukan JSON. */
 export async function getMetrikTeks(): Promise<string> {

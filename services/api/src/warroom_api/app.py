@@ -88,6 +88,52 @@ def _riwayat_kunci(s: SASession, kind: str, key: str, n: int) -> list[dict[str, 
     ]
 
 
+def _provider_ringkas(s: SASession) -> list[dict[str, Any]]:
+    """Kesehatan per provider dari `llm_calls` — satu tempat (dipakai ai/status & llm-console).
+
+    Tanpa penghitung di memori: `ok_rate` dihitung dari jumlah baris, `error_terakhir`
+    diambil dari baris gagal terbaru per provider (kode HTTP/kelas error, bukan tebakan).
+    """
+    from warroom_core.db import LLMCall
+
+    per = s.execute(
+        select(
+            LLMCall.provider,
+            func.count(),
+            func.count().filter(LLMCall.ok.is_(True)),
+            func.count().filter(LLMCall.ok.is_(False)),
+            func.count().filter(LLMCall.fallback_from.is_not(None)),
+            func.percentile_cont(0.5).within_group(LLMCall.latency_ms.asc().nulls_last()),
+            func.percentile_cont(0.95).within_group(LLMCall.latency_ms.asc().nulls_last()),
+            func.coalesce(func.sum(LLMCall.tokens_in), 0),
+            func.coalesce(func.sum(LLMCall.tokens_out), 0),
+        ).group_by(LLMCall.provider)
+    ).all()
+    error_terakhir: dict[str, str] = {}
+    for (p, code) in s.execute(
+        select(LLMCall.provider, LLMCall.error_code)
+        .where(LLMCall.error_code.is_not(None))
+        .order_by(LLMCall.created_at.desc(), LLMCall.id.desc())
+    ).all():
+        error_terakhir.setdefault(str(p), str(code))
+    return [
+        {
+            "provider": p,
+            "n": n,
+            "ok": ok_n,
+            "gagal": g,
+            "ok_rate": round(ok_n / n, 4) if n else None,
+            "fallback": f,
+            "p50_ms": p50,
+            "p95_ms": p95,
+            "token_in": ti,
+            "token_out": to,
+            "error_terakhir": error_terakhir.get(str(p)),
+        }
+        for (p, n, ok_n, g, f, p50, p95, ti, to) in per
+    ]
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="War Room API",
@@ -439,6 +485,8 @@ def create_app() -> FastAPI:
                 )
                 or 0,
                 "panggilan_llm": s.scalar(select(func.count()).select_from(LLMCall)) or 0,
+                # Kesehatan provider (W6): mana yang gagal dan dengan kode apa.
+                "provider": _provider_ringkas(s),
             }
 
     @app.post("/api/v1/ai/kill-switch")
@@ -537,22 +585,7 @@ def create_app() -> FastAPI:
 
         with session_scope() as s:
             total = s.scalar(select(func.count()).select_from(LLMCall)) or 0
-            per_provider = [
-                {"provider": p, "n": n, "gagal": g, "fallback": f, "p50_ms": p50, "p95_ms": p95,
-                 "token_in": ti, "token_out": to}
-                for (p, n, g, f, p50, p95, ti, to) in s.execute(
-                    select(
-                        LLMCall.provider,
-                        func.count(),
-                        func.count().filter(LLMCall.ok.is_(False)),
-                        func.count().filter(LLMCall.fallback_from.is_not(None)),
-                        func.percentile_cont(0.5).within_group(LLMCall.latency_ms.asc().nulls_last()),
-                        func.percentile_cont(0.95).within_group(LLMCall.latency_ms.asc().nulls_last()),
-                        func.coalesce(func.sum(LLMCall.tokens_in), 0),
-                        func.coalesce(func.sum(LLMCall.tokens_out), 0),
-                    ).group_by(LLMCall.provider)
-                ).all()
-            ]
+            per_provider = _provider_ringkas(s)
             per_peran = [
                 {"role": r, "n": n, "gagal": g}
                 for (r, n, g) in s.execute(

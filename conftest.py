@@ -54,7 +54,7 @@ def db() -> str:
 @pytest.fixture
 def bersihkan_db(db):
     """Isolasi tes lintas berkas: kosongkan tabel yang dipakai bersama."""
-    from warroom_core.db import Alert, Event, Fact, Job, Strategy, session_scope
+    from warroom_core.db import Alert, Event, Fact, Job, LLMCall, Strategy, session_scope
 
     with session_scope() as s:
         s.query(Fact).delete()
@@ -62,6 +62,7 @@ def bersihkan_db(db):
         s.query(Alert).delete()
         s.query(Strategy).delete()
         s.query(Job).delete()
+        s.query(LLMCall).delete()
     yield
 
 

@@ -331,3 +331,101 @@ def test_job_parity_tidak_alert_saat_tidak_bisa_dibandingkan(pohon: Path, monkey
     assert "tidak-bisa-dibandingkan" in detail
     with session_scope() as s:
         assert s.query(Alert).filter_by(subject="poly/parity-drift").count() == 0
+
+# --- W2: verdict favorit dari alat Poly (baca-saja) ------------------------------------
+
+
+def _proc(returncode: int, stdout: str = "", stderr: str = ""):
+    import types
+
+    return types.SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
+
+
+def test_verdict_favorit_parse_json(monkeypatch) -> None:
+    """Keluaran JSON alat → status ok, nilai apa adanya (tanpa hitung ulang)."""
+    import subprocess
+
+    isi = json.dumps(
+        {
+            "coins": ["btc", "eth"], "windows": 4938, "n": 3977, "wins": 3107,
+            "winRate": 78.12, "ask": 0.7662, "breakEven": 76.62, "evPerStake": 1.96,
+            "ci95": [76.59, 79.57], "deff": 1.345, "rho": 0.412, "nEff": 2957,
+            "verdict": "NOT_PROVEN", "nNeeded": 8266,
+        }
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: _proc(0, stdout=isi + "\n"))
+    v = poly.verdict_favorit()
+    assert v["status"] == "ok"
+    assert v["value"]["n"] == 3977 and v["value"]["deff"] == 1.345
+    assert v["sumber"].endswith("favorite-live-verdict.py")
+
+
+def test_verdict_favorit_tidak_izin_bukan_nol(monkeypatch) -> None:
+    """Gagal sudo → status `tidak-izin` + alasan; tidak pernah mengarang angka."""
+    import subprocess
+
+    monkeypatch.setattr(
+        subprocess, "run", lambda *a, **k: _proc(1, stderr="sudo: a password is required")
+    )
+    v = poly.verdict_favorit()
+    assert v["status"] == "tidak-izin"
+    assert "value" not in v
+
+
+def test_job_verdict_sync_menerbitkan_fakta(db, monkeypatch) -> None:
+    """Job menerbitkan fakta `verdict` dengan kontrak GateBlok: be pecahan + ci 95% + deff."""
+    from sqlalchemy import select
+    from warroom_worker import schedule
+    from warroom_worker.jobs import register_handlers
+
+    register_handlers()
+    import warroom_worker.adapters.poly as p
+
+    contoh = {
+        "coins": ["btc", "eth"], "windows": 4938, "n": 3977, "wins": 3107,
+        "winRate": 78.12, "ask": 0.7662, "breakEven": 76.62, "evPerStake": 1.96,
+        "ci95": [76.59, 79.57], "deff": 1.345, "rho": 0.412, "nEff": 2957,
+        "verdict": "NOT_PROVEN", "nNeeded": 8266,
+    }
+    monkeypatch.setattr(
+        p, "verdict_favorit", lambda **k: {"status": "ok", "value": contoh, "sumber": p.VERDICT_SCRIPT}
+    )
+
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+        job = s.scalar(select(Job).where(Job.name == "verdict-sync"))
+        status, detail = schedule.run_one(s, job)
+    assert status == "ok", detail
+    with session_scope() as s:
+        f = s.scalar(select(Fact).where(Fact.kind == "poly.verdict"))
+    assert f is not None and f.key == "verdict"
+    v = f.value_json
+    assert v["n"] == 3977 and v["win"] == 3107
+    assert v["be"] == pytest.approx(0.7662, abs=1e-9), "BE harus pecahan 0..1 (kontrak gate)"
+    assert v["ci"] == 0.95 and v["deff"] == pytest.approx(1.345)
+    assert v["split"] is None, "split hanya boleh dibekukan manusia, bukan agen"
+    assert v["verdict_alat"] == "NOT_PROVEN"
+
+
+def test_job_verdict_sync_gagal_baca_status_jujur(db, monkeypatch) -> None:
+    from sqlalchemy import select
+    from warroom_worker import schedule
+    from warroom_worker.jobs import register_handlers
+
+    register_handlers()
+    import warroom_worker.adapters.poly as p
+
+    monkeypatch.setattr(
+        p,
+        "verdict_favorit",
+        lambda **k: {"status": "tidak-izin", "detail": "sudo", "sumber": p.VERDICT_SCRIPT},
+    )
+    with session_scope() as s:
+        schedule.ensure_jobs(s)
+        job = s.scalar(select(Job).where(Job.name == "verdict-sync"))
+        status, _ = schedule.run_one(s, job)
+    assert status == "ok"
+    with session_scope() as s:
+        f = s.scalar(select(Fact).where(Fact.kind == "poly.verdict"))
+    assert f.value_json["status"] == "tidak-izin"
+    assert "be" not in f.value_json, "tidak boleh ada angka saat sumber tidak terbaca"

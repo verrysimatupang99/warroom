@@ -216,6 +216,25 @@ def test_metrik_basi_menghitung_per_kind_dan_key(db) -> None:
     assert m["facts_terbaru"] == 3
 
 
+def test_area_polymarket_menyertakan_fakta_verdict(client, make_user) -> None:
+    """Fakta `poly.verdict` (kind non-snapshot) ikut payload area — GateMeter membacanya."""
+    _, sid = make_user("verdict-uji", role="viewer")
+    with session_scope() as s:
+        s.add(
+            _fakta(
+                "poly.verdict",
+                "verdict",
+                {"n": 3977, "win": 3107, "be": 0.7662, "ci": 0.95, "deff": 1.345, "split": None},
+            )
+        )
+    body = client.get("/api/v1/areas/polymarket", headers=_cookie(sid)).json()
+    verdict = [f for f in body["facts"] if f["key"] == "verdict"]
+    assert len(verdict) == 1, "fakta verdict harus muncul di area polymarket"
+    assert verdict[0]["kind"] == "poly.verdict"
+    assert verdict[0]["value"]["deff"] == 1.345
+    assert body["data"]["verdict"]["n"] == 3977
+
+
 def test_json_log_satu_baris(capsys) -> None:
     import logging
 

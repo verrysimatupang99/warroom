@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Sistem & AI: sub-nav 7 bagian. Bagian yang belum punya endpoint menampilkan EmptyState
 	// jujur (bukan angka/teks karangan).
-	import { getAreas, getKesegaran, getKesehatan, getMetrikTeks } from '$lib/api/client';
-	import type { AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import { getAiConsole, getAreas, getKesegaran, getKesehatan, getMetrikTeks } from '$lib/api/client';
+	import type { AiConsole, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
@@ -19,13 +19,20 @@
 	let sehat = $state<Kesehatan | null>(null);
 	let metrik = $state<string | null>(null);
 	let galatMetrik = $state<string | null>(null);
+	let aiKonsol = $state<AiConsole | null>(null);
 	let memuat = $state(true);
 
 	async function muat() {
-		const [a, k, h] = await Promise.allSettled([getAreas(), getKesegaran(), getKesehatan()]);
+		const [a, k, h, c] = await Promise.allSettled([
+			getAreas(),
+			getKesegaran(),
+			getKesehatan(),
+			getAiConsole()
+		]);
 		if (a.status === 'fulfilled') areas = a.value;
 		if (k.status === 'fulfilled') kesegaran = k.value;
 		if (h.status === 'fulfilled') sehat = h.value;
+		if (c.status === 'fulfilled') aiKonsol = c.value;
 		try {
 			metrik = await getMetrikTeks();
 			galatMetrik = null;
@@ -157,6 +164,50 @@
 			<EventFeed kejadian={live.kejadian} memuat={live.status === 'menyambung'} galat={live.pesan} />
 		</Block>
 	{:else if sub === 'ai'}
+		<Block
+			judul="Kesehatan provider"
+			deskripsi="Dari llm_calls — provider mana yang gagal, kode apa, seberapa lambat"
+			memuat={memuat && !aiKonsol}
+			kosong={!aiKonsol || aiKonsol.per_provider.length === 0}
+			kosongPesan="Belum ada panggilan LLM tercatat di llm_calls."
+		>
+			{#if aiKonsol}
+				<p class="mb-2 text-12 text-text-3">
+					<span class="angka">{aiKonsol.total_panggilan}</span> panggilan · fallback
+					<span class="angka"
+						>{aiKonsol.fallback_rate != null
+							? `${(aiKonsol.fallback_rate * 100).toFixed(1)}%`
+							: 'n/a'}</span
+					> · biaya <span class="angka">${aiKonsol.biaya_usd.toFixed(2)}</span> —
+					{aiKonsol.catatan}
+				</p>
+				<DataTable
+					kolom={[
+						{ kunci: 'provider', label: 'provider' },
+						{ kunci: 'n', label: 'n' },
+						{ kunci: 'ok', label: 'ok' },
+						{ kunci: 'ok_rate', label: 'ok rate' },
+						{ kunci: 'gagal', label: 'gagal' },
+						{ kunci: 'fallback', label: 'fallback' },
+						{ kunci: 'p95_ms', label: 'p95 ms' },
+						{ kunci: 'error_terakhir', label: 'error terakhir' }
+					]}
+					baris={aiKonsol.per_provider.map((p) => ({
+						provider: p.provider,
+						n: p.n,
+						ok: p.ok,
+						ok_rate: p.ok_rate != null ? `${(p.ok_rate * 100).toFixed(1)}%` : 'n/a',
+						gagal: p.gagal,
+						fallback: p.fallback,
+						p95_ms: p.p95_ms != null ? Math.round(p.p95_ms) : 'n/a',
+						error_terakhir: p.error_terakhir ?? '—'
+					}))}
+					cari="cari provider…"
+					ekspor="sistem-provider.csv"
+					padat
+				/>
+			{/if}
+		</Block>
 		<Block
 			judul="LLMConsole"
 			deskripsi="Kesehatan provider, latensi, biaya, fallback"

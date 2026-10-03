@@ -33,6 +33,17 @@
 				? 'text-neg border-neg/40 bg-neg/10'
 				: 'text-warn border-warn/40 bg-warn/10'
 	);
+	// Label kebijakan eksplisit: hasil 90% vs 95%+koreksi klaster bisa berbeda (lihat
+	// docs/blueprint/07-perintah-kerja-hermes.md §B). Jangan pernah tampilkan angka tanpa label.
+	const kebijakan = $derived.by(() => {
+		if (!hasil) return '';
+		const ci = hasil.ci != null ? `CI ${Math.round(hasil.ci * 100)}%` : 'CI n/a';
+		const deff =
+			hasil.deff != null && hasil.deff > 1
+				? ` + deff ${hasil.deff.toFixed(3)}`
+				: ' · tanpa koreksi klaster';
+		return `${ci}${deff}`;
+	});
 </script>
 
 <div data-testid="gate-meter">
@@ -56,7 +67,9 @@
 			{#if sisa != null && sisa > 0}
 				<span class="angka text-12 text-text-3">butuh {bulat(sisa)} lagi</span>
 			{/if}
-			<span class="angka ml-auto text-11 text-text-3">kebijakan {hasil.policy_version}</span>
+			<span class="angka ml-auto text-11 text-text-3">
+				kebijakan {kebijakan} · {hasil.policy_version}
+			</span>
 		</div>
 
 		<div class="mt-3">

@@ -228,6 +228,62 @@ def handler_poly_sync(s: SASession, job: Job) -> str:
     )
 
 
+def handler_verdict_sync(s: SASession, job: Job) -> str:
+    """Terbitkan fakta `verdict` dari alat Poly — baca-saja, untuk GateMeter (W2).
+
+    Nilai = keluaran apa adanya ``qa/favorite-live-verdict.py --json`` + kontrak yang
+    dibaca UI (``n``, ``win``, ``be`` pecahan, ``ci``, ``deff``) supaya `/gate/evaluate`
+    menilai dengan kebijakan yang SAMA seperti alat Poly (95% + koreksi klaster).
+    ``split`` sengaja tidak diisi: tanpa split beku, gate jujur menjawab `insufficient`.
+    """
+    from warroom_worker.adapters import poly
+
+    v = poly.verdict_favorit()
+    ttl = int(job.payload_json.get("ttl_s", 1800))
+    if v.get("status") != "ok":
+        _tulis_fakta(
+            s, kind="poly.verdict", key="verdict",
+            value={"status": v.get("status"), "detail": v.get("detail")},
+            source=str(v.get("sumber")), ttl_s=ttl,
+        )
+        return f"verdict={v.get('status')} detail={str(v.get('detail'))[:80]}"
+
+    d = v["value"]
+    nilai: dict[str, Any] = {
+        # Kontrak GateBlok (apps/web …/GateBlok.svelte): n, win, be (pecahan 0..1) + opsional.
+        "n": d.get("n"),
+        "win": d.get("wins"),
+        "be": (float(d.get("breakEven") or 0.0)) / 100.0,
+        "ci": 0.95,
+        "deff": d.get("deff") or 1.0,
+        "min_n": 30,
+        "split": None,
+        "rule": "favorit btc/eth (band 0,70–0,95)",
+        # Untuk tampilan + audit — nilai mentah alat, bukan hitungan ulang.
+        "winRate": d.get("winRate"),
+        "ask": d.get("ask"),
+        "breakEven_pct": d.get("breakEven"),
+        "evPerStake": d.get("evPerStake"),
+        "ci95": d.get("ci95"),
+        "nEff": d.get("nEff"),
+        "rho": d.get("rho"),
+        "nNeeded": d.get("nNeeded"),
+        "verdict_alat": d.get("verdict"),
+        "coins": d.get("coins"),
+        "windows": d.get("windows"),
+        "kebijakan_alat": "Wilson 95% dua sisi + koreksi klaster (deff)",
+        "status": "ok",
+    }
+    _tulis_fakta(
+        s, kind="poly.verdict", key="verdict", value=nilai,
+        source=f"{v['sumber']} --json (baca-saja)", ttl_s=ttl,
+    )
+    return (
+        f"n={nilai['n']} win={nilai['win']} be={nilai['be']:.4f} "
+        f"deff={nilai['deff']} alat={nilai['verdict_alat']}"
+    )
+
+
 def handler_parity_drift(s: SASession, job: Job) -> str:
     """Bandingkan mirror vs eksekutor; drift > 0 → alert (P4-T2)."""
     from warroom_worker.adapters import poly
@@ -492,6 +548,7 @@ def register_handlers() -> dict[str, Any]:
             "refresh-snapshot": handler_refresh_snapshot,
             "backup": handler_backup,
             "poly-sync": handler_poly_sync,
+            "verdict-sync": handler_verdict_sync,
             "parity-drift": handler_parity_drift,
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,

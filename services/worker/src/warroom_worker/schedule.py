@@ -65,6 +65,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="baca-saja arm/agen/dataset Polymarket → fakta (P4-T1). Tidak menulis ke sumber.",
     ),
     JobSpec(
+        name="verdict-sync",
+        interval_s=900,
+        enabled=True,
+        payload={"ttl_s": 1800},
+        note=(
+            "jalankan alat verdict Poly (`qa/favorite-live-verdict.py --json`, baca-saja) → "
+            "fakta `verdict` untuk GateMeter. Kebijakan alat = 95% + koreksi klaster; split "
+            "tidak diisi agen, jadi gate tetap `insufficient` sampai manusia membekukannya."
+        ),
+    ),
+    JobSpec(
         name="parity-drift",
         interval_s=900,
         enabled=True,
