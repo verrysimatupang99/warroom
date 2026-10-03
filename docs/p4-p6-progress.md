@@ -33,6 +33,26 @@ collect      ok  lt scan ok; 20 pair dipindai · 1 punya arah jelas · 1 duplika
 backup       ok  kode=0 arsip 3.7M -> state-20261002-2136.tar.gz
 ```
 
+## Temuan keamanan: artefak Playwright memuat kredensial (3 Okt, lanjutan)
+
+**Gejala:** `ops/ci-local.sh` merah di `gitleaks warroom` — 1 temuan `generic-api-key` di
+`apps/web/test-results/.playwright-artifacts-*/traces/resources/*.json` (body request login
+memuat sandi e2e). Artefak ikut ter-commit di 3 commit (`fb06a9c`, `01a95da`, `3774c7d`).
+
+**Perbaikan (bukti dijalankan):**
+
+1. `test-results/` + `playwright-report/` masuk `.gitignore` — trace Playwright memuat cookie
+   dan body request, jadi tidak boleh pernah masuk repo.
+2. Riwayat ditulis ulang (`git filter-branch --index-filter 'git rm -r --cached --ignore-unmatch
+   apps/web/test-results'`, 103 berkas dibuang), refs lama dibersihkan + `git gc --prune=now`.
+   `gitleaks git .` → **no leaks found** (18 commit dipindai). Repo tanpa remote → aman.
+3. **Sandi `uji-web` dirotasi** + **260 sesi dicabut** (cookie lama di trace ikut mati);
+   `~/.config/warroom/e2e.env` ditulis ulang mode 600. e2e dijalankan ulang dengan sandi baru:
+   **lulus**.
+
+**Catatan:** karena repo tidak punya remote, rewrite tidak butuh koordinasi; bila nanti ada
+remote, hash commit sebelum `a169f00` berubah.
+
 ## Temuan yang membantah/menyimpang (ditulis apa adanya)
 
 1. **Batas izin berkas nyata.** `/etc/sudoers.d/poly-shadow-read` hanya mengizinkan `sudo cat`
