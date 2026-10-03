@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Ringkas — "apa yang berubah & apa yang perlu keputusan". Tiap blok menangani
 	// memuat/galat/kosong; angka hanya dari API.
-	import { getAreas, getKesegaran, getKesehatan } from '$lib/api/client';
-	import type { AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import { getAlerts, getAreas, getKesegaran, getKesehatan } from '$lib/api/client';
+	import type { AlertsPayload, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
 	import Block from '$lib/components/Block.svelte';
@@ -15,10 +15,16 @@
 	let galatAreas = $state<string | null>(null);
 	let galatKesegaran = $state<string | null>(null);
 	let galatSehat = $state<string | null>(null);
+	let alerts = $state<AlertsPayload | null>(null);
 	let memuat = $state(true);
 
 	async function muat() {
-		const [a, k, h] = await Promise.allSettled([getAreas(), getKesegaran(), getKesehatan()]);
+		const [a, k, h, al] = await Promise.allSettled([
+			getAreas(),
+			getKesegaran(),
+			getKesehatan(),
+			getAlerts()
+		]);
 		if (a.status === 'fulfilled') {
 			areas = a.value;
 			galatAreas = null;
@@ -31,6 +37,7 @@
 			sehat = h.value;
 			galatSehat = null;
 		} else galatSehat = (h.reason as Error)?.message ?? String(h.reason);
+		if (al.status === 'fulfilled') alerts = al.value;
 		memuat = false;
 	}
 
@@ -66,6 +73,22 @@
 		<h1 class="text-19 text-text">Ringkas</h1>
 		<p class="text-12 text-text-3">Apa yang berubah &amp; apa yang perlu keputusan.</p>
 	</div>
+
+	{#if alerts && alerts.terbuka > 0}
+		<div
+			class="rounded-card border border-warn/40 bg-warn/10 px-3 py-2 text-12 text-text-2"
+			data-testid="alert-banner"
+		>
+			<span class="angka text-warn">{alerts.terbuka}</span> alert belum ditangani ·
+			{#if alerts.transport.terkonfigurasi}
+				transport <span class="angka">{alerts.transport.nama}</span>
+			{:else}
+				transport <span class="angka">belum diatur</span> — alert hanya tersimpan di DB,
+				belum terkirim ke mana pun (lihat <span class="angka">ops/notifier.env.example</span>)
+			{/if}
+			· <a class="text-accent-2 underline" href="/sistem">buka Sistem</a>
+		</div>
+	{/if}
 
 	<Block judul="Status layanan" deskripsi="Dari /api/v1/health" memuat={memuat && !sehat} galat={galatSehat}>
 		<div class="angka grid gap-2 text-13 sm:grid-cols-2 lg:grid-cols-4">

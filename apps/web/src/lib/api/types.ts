@@ -147,3 +147,21 @@ export interface AiConsole {
 	per_peran: { role: string; n: number; gagal: number }[];
 	catatan: string;
 }
+
+export interface AlertItem {
+	id: number;
+	severity: string;
+	subject: string;
+	message: string;
+	suggested_action: string;
+	ack_at: string | null;
+	snooze_until: string | null;
+	created_at: string;
+}
+
+export interface AlertsPayload {
+	transport: { nama: string; terkonfigurasi: boolean; detail?: string };
+	terbuka: number;
+	alerts: AlertItem[];
+	percobaan_terakhir: Record<string, unknown> | null;
+}

@@ -6,6 +6,7 @@
 import { env as envPublik } from '$env/dynamic/public';
 import type {
 	AiConsole,
+	AlertsPayload,
 	AreaPayload,
 	AreasPayload,
 	Aku,
@@ -104,6 +105,16 @@ export const nilaiGate = (masukan: MasukanGate) =>
 
 /** Kesehatan provider LLM (W6): dari tabel `llm_calls`, tanpa penghitung di memori. */
 export const getAiConsole = () => minta<AiConsole>('/api/v1/ai/llm-console');
+
+/** Alert terbuka + status transport (W5). Transport kosong tidak pernah diklaim terkirim. */
+export const getAlerts = () => minta<AlertsPayload>('/api/v1/alerts');
+
+/** Ack alert; `snoozeS > 0` menunda alih-alih meng-ack. Butuh peran operator. */
+export const ackAlert = (id: number, snoozeS = 0) =>
+	minta<{ ok: boolean; id: number; snooze_s: number }>(`/api/v1/alerts/${id}/ack`, {
+		method: 'POST',
+		body: JSON.stringify({ snooze_s: snoozeS })
+	});
 
 /** `/metrics` Prometheus: teks, bukan JSON. */
 export async function getMetrikTeks(): Promise<string> {

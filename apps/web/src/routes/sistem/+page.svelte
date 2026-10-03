@@ -1,8 +1,17 @@
 <script lang="ts">
 	// Sistem & AI: sub-nav 7 bagian. Bagian yang belum punya endpoint menampilkan EmptyState
 	// jujur (bukan angka/teks karangan).
-	import { getAiConsole, getAreas, getKesegaran, getKesehatan, getMetrikTeks } from '$lib/api/client';
-	import type { AiConsole, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import {
+		ackAlert,
+		getAiConsole,
+		getAlerts,
+		getAku,
+		getAreas,
+		getKesegaran,
+		getKesehatan,
+		getMetrikTeks
+	} from '$lib/api/client';
+	import type { AiConsole, AlertsPayload, Aku, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
@@ -20,19 +29,26 @@
 	let metrik = $state<string | null>(null);
 	let galatMetrik = $state<string | null>(null);
 	let aiKonsol = $state<AiConsole | null>(null);
+	let alerts = $state<AlertsPayload | null>(null);
+	let aku = $state<Aku | null>(null);
+	let aksiGalat = $state<string | null>(null);
 	let memuat = $state(true);
 
 	async function muat() {
-		const [a, k, h, c] = await Promise.allSettled([
+		const [a, k, h, c, al, ak] = await Promise.allSettled([
 			getAreas(),
 			getKesegaran(),
 			getKesehatan(),
-			getAiConsole()
+			getAiConsole(),
+			getAlerts(),
+			getAku()
 		]);
 		if (a.status === 'fulfilled') areas = a.value;
 		if (k.status === 'fulfilled') kesegaran = k.value;
 		if (h.status === 'fulfilled') sehat = h.value;
 		if (c.status === 'fulfilled') aiKonsol = c.value;
+		if (al.status === 'fulfilled') alerts = al.value;
+		if (ak.status === 'fulfilled') aku = ak.value;
 		try {
 			metrik = await getMetrikTeks();
 			galatMetrik = null;
@@ -160,6 +176,74 @@
 			/>
 		</Block>
 	{:else if sub === 'event'}
+		<Block
+			judul="Alert"
+			deskripsi="Terbuka sampai di-ack; transport kosong tidak pernah diklaim terkirim"
+			memuat={memuat && !alerts}
+			kosong={!alerts || alerts.alerts.length === 0}
+			kosongPesan="Tidak ada alert tercatat."
+		>
+			{#if alerts}
+				<p class="mb-2 text-12 text-text-3">
+					transport
+					<span class="angka">{alerts.transport.terkonfigurasi ? alerts.transport.nama : 'belum diatur'}</span>
+					· terbuka <span class="angka">{alerts.terbuka}</span>
+					{#if aksiGalat}<span class="text-neg"> · {aksiGalat}</span>{/if}
+				</p>
+				<DataTable
+					kolom={[
+						{ kunci: 'id', label: '#' },
+						{ kunci: 'severity', label: 'tingkat' },
+						{ kunci: 'subject', label: 'subjek' },
+						{ kunci: 'aksi', label: 'aksi disarankan' },
+						{ kunci: 'umur', label: 'umur' },
+						{ kunci: 'status', label: 'status' }
+					]}
+					baris={alerts.alerts.map((a) => ({
+						id: a.id,
+						severity: a.severity,
+						subject: a.subject,
+						aksi: a.suggested_action || '—',
+						umur: umurDetik((Date.now() - Date.parse(a.created_at)) / 1000),
+						status: a.ack_at ? 'ack' : a.snooze_until ? `tunda s/d ${waktuWIB(a.snooze_until)}` : 'terbuka'
+					}))}
+					cari="cari alert…"
+					ekspor="sistem-alert.csv"
+					padat
+				/>
+				{#if aku && (aku.role === 'operator' || aku.role === 'owner')}
+					<div class="mt-2 flex flex-wrap gap-2">
+						{#each alerts.alerts.filter((a) => !a.ack_at).slice(0, 5) as a (a.id)}
+							<span class="label-mikro">#{a.id}</span>
+							<button
+								class="rounded-control border border-line px-2 py-0.5 text-11 text-text-2"
+								onclick={async () => {
+									try {
+										await ackAlert(a.id, 0);
+										aksiGalat = null;
+									} catch (e) {
+										aksiGalat = e instanceof Error ? e.message : String(e);
+									}
+									await muat();
+								}}>ack</button
+							>
+							<button
+								class="rounded-control border border-line px-2 py-0.5 text-11 text-text-2"
+								onclick={async () => {
+									try {
+										await ackAlert(a.id, 3600);
+										aksiGalat = null;
+									} catch (e) {
+										aksiGalat = e instanceof Error ? e.message : String(e);
+									}
+									await muat();
+								}}>tunda 1j</button
+							>
+						{/each}
+					</div>
+				{/if}
+			{/if}
+		</Block>
 		<Block judul="Event log" deskripsi="SSE; gagal → polling 15 dtk">
 			<EventFeed kejadian={live.kejadian} memuat={live.status === 'menyambung'} galat={live.pesan} />
 		</Block>
