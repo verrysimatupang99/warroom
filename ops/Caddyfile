@@ -1,3 +1,7 @@
+CATATAN PRODUKSI: di host ini, 80/443 dipegang nginx (situs lain sudah dilayani nginx),
+jadi produksi memakai `ops/nginx-warroom.conf`. Berkas ini disimpan sebagai alternatif
+untuk host bersih (tanpa nginx).
+
 # War Room — konfigurasi Caddy (W7).
 #
 # Pakai:
