@@ -12,6 +12,7 @@
 	import DataTable from './DataTable.svelte';
 	import EventFeed from './EventFeed.svelte';
 	import GateBlok from './GateBlok.svelte';
+	import DatasetExplorer from './DatasetExplorer.svelte';
 
 	interface Props {
 		kunci: string;
@@ -57,6 +58,10 @@
 			{@const faktaTerpilih = anak && anak.kunci.length
 				? data.facts.filter((f) => anak.kunci.includes(f.key))
 				: data.facts}
+			{@const datasetRecorder =
+				data.facts.find((f) => f.kind === 'poly.dataset' && f.key === 'recorder') ?? null}
+			{@const datasetCakupan =
+				data.facts.find((f) => f.kind === 'poly.akses' && f.key === 'cakupan') ?? null}
 			{@const barisFakta = data.facts.map((f) => ({
 				kunci: f.key,
 				nilai: teksNilai(f.value).slice(0, 100),
@@ -77,6 +82,18 @@
 					<p class="angka text-13 text-text-2">
 						{kunci} → kunci_hilang: {data.kunci_hilang.join(', ')}
 					</p>
+				</Block>
+			{/if}
+
+			{#if kunci === 'polymarket' && sub === 'dataset'}
+				<Block
+					judul="Katalog dataset"
+					deskripsi="poly.dataset/recorder + poly.akses/cakupan — angka apa adanya dari job poly-sync"
+					sumber={datasetRecorder?.source ?? null}
+					age_s={datasetRecorder?.age_s ?? null}
+					status={datasetRecorder?.status ?? null}
+				>
+					<DatasetExplorer recorder={datasetRecorder} cakupan={datasetCakupan} />
 				</Block>
 			{/if}
 

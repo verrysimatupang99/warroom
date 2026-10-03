@@ -235,6 +235,27 @@ def test_area_polymarket_menyertakan_fakta_verdict(client, make_user) -> None:
     assert body["data"]["verdict"]["n"] == 3977
 
 
+def test_area_polymarket_menyertakan_katalog_dataset(client, make_user) -> None:
+    """Fakta `poly.dataset/recorder` + `poly.akses/cakupan` ikut area — DatasetExplorer (P4-T3)."""
+    _, sid = make_user("dataset-uji", role="viewer")
+    with session_scope() as s:
+        s.add(
+            _fakta(
+                "poly.dataset",
+                "recorder",
+                {"paired": {"path": "/var/lib/poly-research/paired", "files": 2571, "status": "ok"}},
+            )
+        )
+        s.add(_fakta("poly.akses", "cakupan", {"arm_jsonl": "ok", "dataset_paired": "ok"}))
+    body = client.get("/api/v1/areas/polymarket", headers=_cookie(sid)).json()
+    recorder = [f for f in body["facts"] if f["key"] == "recorder"]
+    cakupan = [f for f in body["facts"] if f["key"] == "cakupan"]
+    assert len(recorder) == 1 and recorder[0]["kind"] == "poly.dataset"
+    assert len(cakupan) == 1 and cakupan[0]["kind"] == "poly.akses"
+    assert body["data"]["recorder"]["paired"]["files"] == 2571
+    assert body["data"]["cakupan"]["dataset_paired"] == "ok"
+
+
 def test_json_log_satu_baris(capsys) -> None:
     import logging
 

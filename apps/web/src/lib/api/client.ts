@@ -109,6 +109,15 @@ export const getAiConsole = () => minta<AiConsole>('/api/v1/ai/llm-console');
 /** Alert terbuka + status transport (W5). Transport kosong tidak pernah diklaim terkirim. */
 export const getAlerts = () => minta<AlertsPayload>('/api/v1/alerts');
 
+/** Usulan parameter learner (P5-T4): baca untuk semua peran; terapkan/rollback khusus owner. */
+export const getProposals = () => minta<ProposalsPayload>('/api/v1/proposals');
+
+export const applyProposal = (id: number) =>
+	minta<{ ok: boolean; oleh: string }>(`/api/v1/proposals/${id}/apply`, { method: 'POST' });
+
+export const rollbackProposal = (id: number) =>
+	minta<{ ok: boolean; oleh: string }>(`/api/v1/proposals/${id}/rollback`, { method: 'POST' });
+
 /** Ack alert; `snoozeS > 0` menunda alih-alih meng-ack. Butuh peran operator. */
 export const ackAlert = (id: number, snoozeS = 0) =>
 	minta<{ ok: boolean; id: number; snooze_s: number }>(`/api/v1/alerts/${id}/ack`, {

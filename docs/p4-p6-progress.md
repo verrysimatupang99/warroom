@@ -8,13 +8,13 @@ Diperbarui: **2026-10-02 21:45 UTC** (04:45 WIB, 3 Okt) · Pelaksana: Hermes
 |---|---|---|
 | P4-T1 Adapter Polymarket (baca-saja) | **selesai** | job `poly-sync`: `fakta=7 arm=4 arm_summary=ok`; angka arm dibaca dari berkas summary yang sama |
 | P4-T2 Parity monitor + alarm | **selesai** | job `parity-drift`; status `tidak-bisa-dibandingkan` bila eksekutor tidak memutuskan (bukan drift 0 palsu) |
-| P4-T3 Dataset explorer + ReplayLab UI | **sebagian** | katalog dataset diterbitkan sebagai fakta (`poly.dataset`); UI-nya bagian P2 (frontend) |
+| P4-T3 Dataset explorer + ReplayLab UI | **sebagian** | `DatasetExplorer` (sub Dataset di `/polymarket`) **selesai 3 Okt** — katalog `poly.dataset/recorder` + cakupan `poly.akses/cakupan` tampil dari fakta (3 direktori, 2.599 berkas, 6 GB); ReplayLab masih menunggu |
 | P4-T4 Adapter GMGN + radar Azure | **selesai** | job `gmgn-sync`: `gmgn=ok berkas=23 radar=ok sumber=cache` |
 | P4-T5 Rekonsiliasi on-chain | **selesai** | job `reconcile`: `klaim=0.0 terverifikasi=False` + alert (tanpa RPC → tidak pernah diklaim terverifikasi) |
 | P5-T1 Registry parameter + bounds + locked | **selesai** | 10 parameter terdaftar; `gate.min_n`/`gate.ci`/`mode` **terkunci** |
 | P5-T2 Learner harian | **selesai** | job `learner`: `diusulkan=4 keputusan={'ditolak': 4}` — semua ditolak karena bukti bukan split beku |
 | P5-T3 Gate keputusan usulan | **selesai** | `prohibited` (gate/locked), `ditolak` (di luar batas / bukti kurang), `butuh_manusia` (scope live), `diterapkan` (paper & non-gate) |
-| P5-T4 UI ProposalCard + rollback | **sebagian** | API `GET /api/v1/proposals`, `POST /proposals/{id}/apply|rollback` ada + tes; kartu UI bagian P2 |
+| P5-T4 UI ProposalCard + rollback | **selesai** | `ProposalCard` di Sistem→Kebijakan **selesai 3 Okt** — 12 usulan tampil dari `/api/v1/proposals` (dari→ke, bukti, alasan penolakan); tombol terapkan/rollback hanya owner; 4 tes Vitest + e2e sub baru |
 | P5-T5 Kill switch + anggaran | **selesai** (anggaran P3) | `POST /api/v1/ai/kill-switch` (owner); learner berhenti saat aktif |
 | P6-T1 ArmingPanel + grant flow | **selesai** | `GET /api/v1/live/arming` (4 sumber), `POST /api/v1/live/grant`, aksi tanpa grant → **409 + daftar kurang** |
 | P6-T2 Kill switch operasional + runbook | **sebagian** | kill switch AI ada; runbook insiden menyusul |

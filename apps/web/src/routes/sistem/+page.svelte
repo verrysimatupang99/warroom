@@ -3,15 +3,26 @@
 	// jujur (bukan angka/teks karangan).
 	import {
 		ackAlert,
+		applyProposal,
 		getAiConsole,
 		getAlerts,
 		getAku,
 		getAreas,
 		getKesegaran,
 		getKesehatan,
-		getMetrikTeks
+		getMetrikTeks,
+		getProposals,
+		rollbackProposal
 	} from '$lib/api/client';
-	import type { AiConsole, AlertsPayload, Aku, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import type {
+		AiConsole,
+		AlertsPayload,
+		Aku,
+		AreasPayload,
+		Kesehatan,
+		KesegaranPayload,
+		Proposal
+	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
@@ -19,6 +30,7 @@
 	import SubNav from '$lib/components/SubNav.svelte';
 	import DataTable from '$lib/components/DataTable.svelte';
 	import EventFeed from '$lib/components/EventFeed.svelte';
+	import ProposalCard from '$lib/components/ProposalCard.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
 	let sub = $state('layanan');
@@ -31,17 +43,19 @@
 	let aiKonsol = $state<AiConsole | null>(null);
 	let alerts = $state<AlertsPayload | null>(null);
 	let aku = $state<Aku | null>(null);
+	let proposals = $state<Proposal[] | null>(null);
 	let aksiGalat = $state<string | null>(null);
 	let memuat = $state(true);
 
 	async function muat() {
-		const [a, k, h, c, al, ak] = await Promise.allSettled([
+		const [a, k, h, c, al, ak, pr] = await Promise.allSettled([
 			getAreas(),
 			getKesegaran(),
 			getKesehatan(),
 			getAiConsole(),
 			getAlerts(),
-			getAku()
+			getAku(),
+			getProposals()
 		]);
 		if (a.status === 'fulfilled') areas = a.value;
 		if (k.status === 'fulfilled') kesegaran = k.value;
@@ -49,6 +63,7 @@
 		if (c.status === 'fulfilled') aiKonsol = c.value;
 		if (al.status === 'fulfilled') alerts = al.value;
 		if (ak.status === 'fulfilled') aku = ak.value;
+		if (pr.status === 'fulfilled') proposals = pr.value.proposals;
 		try {
 			metrik = await getMetrikTeks();
 			galatMetrik = null;
@@ -325,6 +340,30 @@
 			/>
 		</Block>
 	{:else if sub === 'kebijakan'}
+		<Block
+			judul="Usulan parameter (otonomi berbatas)"
+			deskripsi="Dari tabel proposals — learner mengusul, gate/owner memutuskan; rollback mengembalikan nilai sebelumnya"
+			memuat={memuat && !proposals}
+			galat={aksiGalat}
+			kosong={!!proposals && proposals.length === 0}
+			kosongPesan="Belum ada usulan parameter tercatat."
+		>
+			<ProposalCard
+				{proposals}
+				memuat={memuat}
+				peran={aku?.role ?? null}
+				onexec={async (id, aksi) => {
+					try {
+						if (aksi === 'apply') await applyProposal(id);
+						else await rollbackProposal(id);
+						aksiGalat = null;
+					} catch (e) {
+						aksiGalat = e instanceof Error ? e.message : String(e);
+					}
+					await muat();
+				}}
+			/>
+		</Block>
 		<Block judul="Kebijakan" deskripsi="agent-policy.json — tier, red lines, gate">
 			<p class="text-13 text-text-2">
 				— belum ada endpoint API untuk membaca <span class="angka">agent-policy.json</span> pada

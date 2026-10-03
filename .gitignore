@@ -24,3 +24,7 @@ secrets/
 # Arsip lokal
 backups/
 *.tar.gz
+
+# Artefak Playwright (trace bisa memuat cookie/kredensial e2e — jangan pernah masuk repo)
+test-results/
+playwright-report/

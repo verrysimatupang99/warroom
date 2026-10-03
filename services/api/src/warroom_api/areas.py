@@ -33,9 +33,14 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
 
 # Fakta dari kind NON-snapshot yang ikut tampil di area. Dipakai gate: GateBlok membaca
 # fakta ber-key `verdict`/`gate`, dan fakta itu diterbitkan job `verdict-sync` dengan
-# kind `poly.verdict` (bukan bagian dari snapshot domain).
+# kind `poly.verdict` (bukan bagian dari snapshot domain). `recorder`/`cakupan` dipakai
+# DatasetExplorer (P4-T3) — katalog dataset + cakupan baca, dari job `poly-sync`.
 AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
-    "polymarket": (("poly.verdict", "verdict"),),
+    "polymarket": (
+        ("poly.verdict", "verdict"),
+        ("poly.dataset", "recorder"),
+        ("poly.akses", "cakupan"),
+    ),
 }
 
 

@@ -170,3 +170,33 @@ export interface AlertsPayload {
 	alerts: AlertItem[];
 	percobaan_terakhir: Record<string, unknown> | null;
 }
+
+/** Usulan parameter dari learner (P5). `status`: menunggu | diterapkan | ditolak | dibatalkan | butuh_manusia. */
+export interface Proposal {
+	id: number;
+	parameter: string;
+	dari: unknown;
+	ke: unknown;
+	alasan: string;
+	bukti: unknown;
+	gate: string | null;
+	status: string;
+	ditolak_karena: string | null;
+	diputuskan_oleh: string | null;
+	diterapkan_pada: string | null;
+	config_hash: string | null;
+	dibuat: string | null;
+}
+
+export interface ProposalsPayload {
+	proposals: Proposal[];
+	count: number;
+}
+
+/** Fakta `poly.dataset/recorder` — katalog dataset Polymarket (P4-T3). Bentuk longgar: hanya
+ * field yang benar-benar dikirim sumber yang ditampilkan. */
+export interface FaktaDataset {
+	paired?: { path?: string; bytes?: number; files?: number; [k: string]: unknown };
+	labels?: { [k: string]: unknown };
+	[k: string]: unknown;
+}
