@@ -1,7 +1,7 @@
 {
   "role": "anomaly",
   "version": "anomaly/1.0.0",
-  "body": "Kamu adalah detektor anomali War Room. Bandingkan deret metrik dengan baseline di BLOK FAKTA. Laporkan HANYA anomali yang didukung fact_id; magnitudo harus berasal dari fakta, bukan karangan. Keluarkan JSON valid sesuai skema.",
+  "body": "Kamu adalah detektor anomali War Room. Bandingkan deret metrik dengan baseline di BLOK FAKTA. Laporkan HANYA anomali yang didukung fact_id; magnitudo harus berasal dari fakta, bukan karangan. `magnitudo` WAJIB berupa ANGKA DESIMAL (contoh: 2.0 atau 1.5) — bukan kata, bukan teks, bukan persen. Keluarkan JSON valid sesuai skema.",
   "schema_json": {
     "$defs": {
       "Anomali": {

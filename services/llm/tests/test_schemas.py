@@ -55,6 +55,26 @@ def test_magnitudo_int_diterima_boolean_ditolak() -> None:
     assert out2 is None and issues2
 
 
+def test_magnitudo_string_angka_diterima_kata_ditolak() -> None:
+    """Regresi: model sering mengirim magnitudo sebagai string ("2.0"). Itu angka yang sama,
+    jadi diterima; tetapi kata seperti "tinggi" TETAP ditolak — menerimanya berarti mengarang
+    besaran yang tidak ada di fakta."""
+    out, issues = validate_output(
+        "anomaly",
+        {"anomali": [{"metrik": "m", "arah": "naik", "magnitudo": "2.0", "fact_ids": [1]}],
+         "catatan": "x"},
+    )
+    assert issues == []
+    assert out["anomali"][0]["magnitudo"] == 2.0
+
+    out2, issues2 = validate_output(
+        "anomaly",
+        {"anomali": [{"metrik": "m", "arah": "naik", "magnitudo": "tinggi", "fact_ids": [1]}],
+         "catatan": "x"},
+    )
+    assert out2 is None and issues2
+
+
 def test_peran_tidak_dikenal() -> None:
     out, issues = validate_output("entah", {})
     assert out is None

@@ -55,6 +55,14 @@ class Anomali(_Strict):
             raise ValueError("magnitudo tidak boleh boolean")
         if isinstance(v, int):
             return float(v)
+        if isinstance(v, str):
+            # LLM juga kadang mengirim angkanya sebagai string ("2.0"). Itu tetap angka yang
+            # sama, bukan karangan — jadi diterima. Yang BUKAN angka (mis. "tinggi") ditolak,
+            # karena menerimanya berarti mengarang besaran yang tidak ada di fakta.
+            try:
+                return float(v.strip())
+            except ValueError as exc:
+                raise ValueError("magnitudo harus berupa angka (mis. 2.0), bukan kata/teks") from exc
         return v
 
 
