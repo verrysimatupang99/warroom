@@ -73,6 +73,8 @@ label kebijakan**. Angka hanya dari tabel `facts`; tidak ada perhitungan di UI.
 - **Caddy**: terpasang tetapi **disabled** (dulu untuk uji lokal :8081); `ops/Caddyfile*`
   disimpan sebagai alternatif untuk host bersih.
 - **Kredensial**: `~/.config/warroom/{e2e.env,spaceship.env}` (600). Jangan pernah masuk repo.
+- **Notifier Telegram**: topik War Room `t.me/c/4383844873/237` (thread 237) — `ops/notifier.env.example` + `/etc/warroom/notifier.env` (600). Terbukti kirim: `telegram 200`.
+- **Deploy web**: pakai `ops/deploy-web.sh` (build **lalu restart**). Membangun tanpa restart → proses lama pegang manifest lama → 500 (`Cannot find module …/nodes/0.js-*.js`). Insiden nyata 3 Okt.
 
 ## Sedang menunggu (owner)
 
