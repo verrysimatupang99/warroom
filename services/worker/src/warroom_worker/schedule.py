@@ -112,7 +112,9 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         enabled=True,
         # 6 jam sekali: cukup untuk kartu agen, jauh di bawah batas biaya harian; cache gateway
         # 900 s membuat panggilan berulang tidak menambah biaya.
-        payload={"area": "crypto", "max_facts": 8, "ttl_s": 21600},
+        # TTL fakta (8 jam) WAJIB lebih panjang dari interval (6 jam): kalau sama, fakta selalu
+        # "basi" tepat sebelum run berikutnya dan alert freshness berbunyi tiap siklus.
+        payload={"area": "crypto", "max_facts": 8, "ttl_s": 28800},
         note="narasi narrator dari fakta nyata; gagal → `status` dicatat di fakta ai.brief.",
     ),
     JobSpec(

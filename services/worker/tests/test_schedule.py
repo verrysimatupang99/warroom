@@ -254,6 +254,24 @@ def test_freshness_diam_saat_semua_segar(db) -> None:
         assert s.query(Alert).count() == 0
 
 
+def test_ttl_fakta_lebih_panjang_dari_interval_job(db) -> None:
+    """Regresi: job yang menulis fakta dengan `ttl_s` <= interval-nya membuat fakta selalu
+    "basi" tepat sebelum run berikutnya (jeda nyata selalu sedikit lebih lama dari interval),
+    sehingga alert freshness berbunyi tiap siklus. Terbukti di produksi pada `poly.money`
+    (ttl 3600 = interval reconcile 3600) dan `ai.brief` (ttl 21600 = interval llm-brief 21600).
+    """
+    dicek = 0
+    for spec in schedule.DEFAULT_JOBS:
+        ttl = (spec.payload or {}).get("ttl_s")
+        if ttl is None:
+            continue
+        dicek += 1
+        assert ttl > spec.interval_s, (
+            f"job {spec.name}: ttl_s={ttl} harus LEBIH PANJANG dari interval_s={spec.interval_s}"
+        )
+    assert dicek >= 3, "prasyarat tes: harus ada job ber-payload ttl_s"
+
+
 def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> None:
     (tmp_path / "state").mkdir()
     (tmp_path / "state" / "snapshot.json").write_text(
