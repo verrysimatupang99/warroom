@@ -1,0 +1,28 @@
+[Unit]
+Description=War Room web (SvelteKit adapter-node)
+Documentation=file:///home/admin/warroom/docs/p2-p3-progress.md
+After=network-online.target warroom-api.service
+Wants=warroom-api.service
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom/apps/web
+Environment=HOME=/home/admin
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3100
+# Kosong = same-origin: web memanggil /api/v1/* relatif dan Caddy mem-proxy ke API.
+# Jangan diisi kecuali web dan API memang beda origin (dan CORS dinyalakan sengaja).
+Environment=PUBLIC_API_BASE=
+ExecStart=/usr/bin/node build/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+# Tanpa NoNewPrivileges: unit ini tidak butuh sudo, tapi tetap dijaga sederhana.
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -8,8 +8,8 @@ live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 
 | # | Syarat | Ambang | Nilai sekarang | Bukti | Status |
 |---|---|---|---|---|---|
-| A1 | Gate lolos: `ci_low > BE` | ci_low > 77,0 % | `ci_low 0.7696` (n=1.175, win=928) | `POST /api/v1/gate/evaluate` | ❌ gagal |
-| A2 | Sampel cukup | n ≥ required_n | 1.175 vs **1.219** | idem (`required_n`) | ❌ kurang 44 |
+| A1 | Gate lolos: `ci_low > BE` | ci_low > 76,62 % | `ci_low 0.7659` @ **95% + deff 1.345** (n=3.977, win=3.107) — di 90% tanpa deff: `0.7703` (lolos) | `POST /api/v1/gate/evaluate` | ❌ belum (beda 0,03 pp) |
+| A2 | Sampel cukup | n ≥ required_n | 3.977 vs **4.071** (95%+deff) — 90%: 3.977 vs 2.131 (cukup) | idem (`required_n`) | ❌ kurang 94 |
 | A3 | Split beku sebelum melihat hasil | `split=frozen:<id>` | belum ada mekanisme split di jalur produksi | ADR-003 | ❌ |
 | A4 | Fee & slippage terukur pada saat order | ≥ 5 share, kedalaman nyata | belum diukur saat order (hanya kutipan) | `POST /api/v1/live/dry-run` | ❌ |
 | A5 | Dana nyata terverifikasi | saldo on-chain == klaim | klaim `0.0`, `terverifikasi=false` | job `reconcile` | ❌ |
@@ -18,6 +18,22 @@ live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 | A8 | Tidak ada kredensial di repo/log | gitleaks bersih | bersih (git mode, 2 repo) | `ops/ci-local.sh` | ✅ |
 | A9 | Backup + uji restore | sha256 cocok | 35 berkas cocok, ledger identik | `ops/runbook-restore.md` | ✅ |
 | A10 | Grant flow menolak aksi tanpa izin | 409 + daftar kurang | teruji | `POST /api/v1/live/action` | ✅ |
+
+## A-bis. **Keputusan owner yang memblokir A1/A2**: kebijakan gate mana yang otoritatif?
+
+| Kebijakan | ci_low (n=3.977) | vs BE 76,62% | required_n | Putusan |
+|---|---|---|---|---|
+| 90% tanpa koreksi klaster (baku platform) | 0.7703 | di atas | 2.131 | **lolos** |
+| 95% tanpa koreksi | 0.7681 | di atas | 3.027 | lolos |
+| 90% + koreksi klaster (deff 1.345) | 0.7685 | di atas | 2.882 | lolos |
+| **95% + koreksi klaster (alat Poly — rekomendasi)** | **0.7659** | **di bawah** | **4.071** | **belum** |
+
+Alat Poly (`qa/favorite-live-verdict.py --json`) memakai baris terakhir; angkanya kini mengalir
+ke UI sebagai fakta `verdict` (job `verdict-sync`, kebijakan 95% + deff). Sampai owner memilih,
+checklist ini memakai **yang paling konservatif** — tidak ada pendanaan yang dibuka oleh kenaikan sampel.
+
+Data di atas diperbarui 2026-10-03 06:5x UTC. Jalankan `POST /api/v1/gate/evaluate` dengan
+`{"n":…,"win":…,"be":…,"ci":0.95,"deff":…}` untuk angka terbaru.
 
 ## B. Konfigurasi pilot yang diusulkan (bila A terpenuhi)
 

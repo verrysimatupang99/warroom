@@ -1,0 +1,42 @@
+# War Room — konfigurasi Caddy (W7).
+#
+# Pakai:
+#   1. Ganti `warroom.example.com` dengan domain milik owner.
+#   2. Pastikan DNS A/AAAA domain mengarah ke host ini (Caddy butuh 80/443 untuk
+#      menerbitkan sertifikat Let's Encrypt).
+#   3. sudo cp ops/Caddyfile /etc/caddy/Caddyfile
+#      sudo systemctl enable --now caddy   (atau: sudo systemctl reload caddy)
+#
+# Jangan aktifkan sebelum DNS siap: Caddy akan mencoba menerbitkan sertifikat dan gagal
+# berulang. Untuk uji lokal tanpa domain, pakai blok `:8081` di bawah (http, tanpa TLS).
+#
+# Catatan keamanan: autentikasi ada di aplikasi (cookie sesi HttpOnly + peran
+# viewer/operator/owner). Caddy hanya menangani TLS, kompresi, dan proxy same-origin.
+
+warroom.example.com {
+	encode zstd gzip
+
+	# API + SSE. flush_interval -1 mematikan buffering supaya /api/v1/stream mengalir
+	# real-time (tanpa ini SSE tampak "menyambung" tetapi tidak pernah mengirim data).
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8800 {
+			flush_interval -1
+		}
+	}
+
+	# Scraper Prometheus lokal; hapus bila /metrics tidak perlu diakses dari luar.
+	handle /metrics {
+		reverse_proxy 127.0.0.1:8800
+	}
+
+	# Sisa permintaan → SvelteKit (adapter-node).
+	handle {
+		reverse_proxy 127.0.0.1:3100
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

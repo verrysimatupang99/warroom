@@ -19,7 +19,7 @@ services/llm/    LLM gateway (nutaraline → qonek, circuit breaker, cache, audi
 services/notifier/ alert → Telegram/email/push
 packages/core/   façade ke domain `live-trading` (dependensi path, tanpa salinan kode)
 ops/             systemd units, Caddyfile, skrip deploy, runbook
-contracts/       OpenAPI + tipe TypeScript hasil generate
+contracts/       OpenAPI hasil generate (`curl :8800/api/openapi.json`); tipe TS menyusul
 docs/adr/        Architecture Decision Records
 ```
 
@@ -37,7 +37,28 @@ Domain tetap diuji di tempatnya (jaring pengaman 219 tes):
 cd ~/live-trading && uv run ruff check . && uv run pytest -q
 ```
 
+## Menjalankan (produksi lokal)
+
+```bash
+sudo systemctl status warroom-api warroom-worker warroom-web caddy
+# Web: http://127.0.0.1:8081 (Caddy, proxy same-origin) — login lewat halaman /masuk
+```
+
+Kredensial notifier (opsional, agar alert terkirim): `ops/notifier.env.example` → `/etc/warroom/notifier.env`.
+
+E2E + a11y + screenshot (butuh sesi):
+
+```bash
+cd apps/web
+printf 'WARROOM_E2E_USER=uji-web\nWARROOM_E2E_PASS=…\n' > ~/.config/warroom/e2e.env  # mode 600
+npx playwright test                     # 27 tes: 7 rute, login, SSE, a11y, screenshot
+```
+
 ## Status
 
-Fase P0 (fondasi) selesai: struktur, workspace, CI, ADR-001..005, baseline, runbook restore.
-Fase berikutnya per `docs/blueprint/05-roadmap-hermes.md`.
+- **P0–P6 selesai** (fondasi → integrasi → otonomi berbatas → kesiapan live).
+- **W1–W10 (perbaikan pasca-periksa, 3 Okt)** — lihat `docs/w10-perbaikan-2026-10-03.md`:
+  CI gitleaks, fakta `verdict` (GateMeter hidup), gate `deff`, metrik basi, alert + ack/snooze,
+  kesehatan provider, deploy web+Caddy+login, e2e/a11y/screenshot, kebersihan dokumen.
+- **Live tetap NO-GO**: split beku belum ada; keputusan kebijakan gate (90% vs 95%+deff) di owner.
+- Rujukan rancangan: `../live-trading/docs/blueprint/` (00–07).

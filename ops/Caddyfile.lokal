@@ -1,0 +1,14 @@
+# Uji lokal TANPA domain (W7): http://127.0.0.1:8081 → web :3100 + API :8800.
+# Pakai: sudo cp ops/Caddyfile.lokal /etc/caddy/Caddyfile && sudo systemctl reload caddy
+# Untuk produksi, pakai ops/Caddyfile (butuh domain + DNS).
+
+:8081 {
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8800 {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3100
+	}
+}

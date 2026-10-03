@@ -11,5 +11,12 @@ export default defineConfig({
 			'/api': 'http://127.0.0.1:8800',
 			'/metrics': 'http://127.0.0.1:8800'
 		}
+	},
+	preview: {
+		// E2E memakai `vite preview` (tanpa Caddy): proxy yang sama supaya cookie same-origin.
+		proxy: {
+			'/api': 'http://127.0.0.1:8800',
+			'/metrics': 'http://127.0.0.1:8800'
+		}
 	}
 });

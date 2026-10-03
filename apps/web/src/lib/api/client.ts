@@ -116,6 +116,13 @@ export const ackAlert = (id: number, snoozeS = 0) =>
 		body: JSON.stringify({ snooze_s: snoozeS })
 	});
 
+/** Login: menaruh cookie sesi HttpOnly. TLS & same-origin ditangani reverse proxy (Caddy). */
+export const masuk = (username: string, password: string, totp?: string) =>
+	minta<{ ok: boolean }>('/api/v1/auth/login', {
+		method: 'POST',
+		body: JSON.stringify({ username, password, totp: totp ?? null })
+	});
+
 /** `/metrics` Prometheus: teks, bukan JSON. */
 export async function getMetrikTeks(): Promise<string> {
 	const res = await fetch(`${BASE}/metrics`, { credentials: 'include' });
