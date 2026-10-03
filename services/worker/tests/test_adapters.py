@@ -314,6 +314,32 @@ def test_job_reconcile_membuat_alert_klaim_belum_terverifikasi(pohon: Path, monk
         assert "on-chain" in al[0].suggested_action
 
 
+def test_alert_dedupe_lebih_besar_dari_interval_job(pohon: Path) -> None:
+    """Regresi produksi: interval `reconcile` = 3600 s, tetapi jeda NYATA antar-run selalu
+    sedikit lebih lama (waktu proses) → jendela dedupe yang setara interval meleset setiap
+    kali, sehingga alert untuk satu kondisi yang sama dibuat ulang tiap jam (terbukti:
+    23 alert `poly/klaim-uang` terbuka dari kondisi yang tidak berubah)."""
+    from datetime import UTC, datetime, timedelta
+
+    from warroom_worker.jobs import ALERT_DEDUPE, ALERT_DEDUPE_MIN_INTERVAL, _alert
+
+    assert ALERT_DEDUPE > ALERT_DEDUPE_MIN_INTERVAL, (
+        "jendela dedupe harus lebih besar dari interval job terbesar yang memunculkan alert"
+    )
+    subjek = "poly/klaim-uang"
+    kwargs = {"subject": subjek, "message": "klaim belum terverifikasi", "aksi": "verifikasi"}
+    with session_scope() as s:
+        _alert(s, **kwargs)
+    # Tiru jeda run nyata: 3620 s (> interval 3600 s, tetapi < jendela dedupe).
+    with session_scope() as s:
+        a = s.query(Alert).filter_by(subject=subjek).one()
+        a.created_at = datetime.now(UTC) - timedelta(seconds=3620)
+    with session_scope() as s:
+        _alert(s, **kwargs)
+    with session_scope() as s:
+        assert s.query(Alert).filter_by(subject=subjek).count() == 1
+
+
 def test_job_parity_tidak_alert_saat_tidak_bisa_dibandingkan(pohon: Path, monkeypatch) -> None:
     from sqlalchemy import select
     from warroom_worker import schedule

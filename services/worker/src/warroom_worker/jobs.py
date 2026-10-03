@@ -32,8 +32,15 @@ __all__ = [
     "root_dir",
 ]
 
-# Berapa lama alert basi yang sama tidak diulang.
-ALERT_DEDUPE = timedelta(hours=1)
+# Berapa lama alert dengan subjek yang sama (belum di-ack) tidak diulang.
+#
+# WAJIB lebih besar dari interval job terbesar yang memunculkan alert (`reconcile` = 3600 s),
+# karena jeda nyata antar-run selalu sedikit lebih lama dari interval (waktu proses), sehingga
+# jendela yang setara interval membuat dedupe meleset setiap kali → alert duplikat tiap jam.
+# Terbukti di produksi: 23 alert `poly/klaim-uang` terbuka dari satu kondisi yang sama.
+ALERT_DEDUPE = timedelta(hours=2)
+# Interval job terbesar yang memunculkan alert — dijaga oleh tes regresi.
+ALERT_DEDUPE_MIN_INTERVAL = timedelta(seconds=3600)
 
 
 def root_dir() -> Path:
