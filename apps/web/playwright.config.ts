@@ -38,7 +38,8 @@ export default defineConfig({
 	reporter: [['list']],
 	use: {
 		// Jalur PRODUKSI: https://0xgunsl1ng3r.xyz (nginx + Let's Encrypt → web :3100 + API :8800).
-		// Alternatif lokal (tanpa domain): WARROOM_E2E_BASE=http://127.0.0.1:8081 (Caddy uji).
+		// Alternatif lokal: WARROOM_E2E_BASE=http://127.0.0.1:8081 (perlu `sudo systemctl start caddy`;
+		// Caddy terpasang tapi dinonaktifkan agar nginx menjadi satu-satunya proxy).
 		// Prasyarat: warroom-api + warroom-worker + warroom-web aktif; kredensial di
 		// ~/.config/warroom/e2e.env.
 		baseURL: process.env.WARROOM_E2E_BASE ?? 'https://0xgunsl1ng3r.xyz',
