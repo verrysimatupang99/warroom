@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -32,15 +32,10 @@ __all__ = [
     "root_dir",
 ]
 
-# Berapa lama alert dengan subjek yang sama (belum di-ack) tidak diulang.
-#
-# WAJIB lebih besar dari interval job terbesar yang memunculkan alert (`reconcile` = 3600 s),
-# karena jeda nyata antar-run selalu sedikit lebih lama dari interval (waktu proses), sehingga
-# jendela yang setara interval membuat dedupe meleset setiap kali → alert duplikat tiap jam.
-# Terbukti di produksi: 23 alert `poly/klaim-uang` terbuka dari satu kondisi yang sama.
-ALERT_DEDUPE = timedelta(hours=2)
-# Interval job terbesar yang memunculkan alert — dijaga oleh tes regresi.
-ALERT_DEDUPE_MIN_INTERVAL = timedelta(seconds=3600)
+# Alert dengan subjek yang sama tidak dibuat ulang SELAMA masih ada alert belum di-ack.
+# (Dulu berbasis jendela waktu tetap: karena jeda nyata antar-run selalu sedikit lebih lama
+# dari interval job, jendela yang setara interval selalu meleset → alert menumpuk tanpa batas
+# untuk kondisi yang tidak berubah. Terbukti: 9 alert `learner/ringkas` + 13 `poly/klaim-uang`.)
 
 
 def root_dir() -> Path:
@@ -84,28 +79,17 @@ def handler_freshness(s: SASession, job: Job) -> str:
     if job.payload_json.get("alert_on_basi", True):
         for f in basi:
             subjek = f"{f.kind}/{f.key}"
-            sudah = s.scalar(
-                select(Alert.id)
-                .where(Alert.subject == subjek)
-                .where(Alert.ack_at.is_(None))
-                .where(Alert.created_at >= now - ALERT_DEDUPE)
-                .limit(1)
-            )
-            if sudah is not None:
-                continue
             umur_mnt = round((now - f.observed_at).total_seconds() / 60, 1)
-            s.add(
-                Alert(
-                    severity="warning",
-                    subject=subjek,
-                    message=f"data basi: {subjek} umur {umur_mnt} mnt > ttl {f.ttl_s} s",
-                    suggested_action=(
-                        f"periksa sumber '{f.source}' (job yang menulisnya), lalu jalankan ulang job terkait"
-                    ),
-                    fact_ids=[f.id],
-                )
-            )
-            dibuat += 1
+            if _alert(
+                s,
+                subject=subjek,
+                message=f"data basi: {subjek} umur {umur_mnt} mnt > ttl {f.ttl_s} s",
+                aksi=(
+                    f"periksa sumber '{f.source}' (job yang menulisnya), lalu jalankan ulang job terkait"
+                ),
+                fact_ids=[f.id],
+            ):
+                dibuat += 1
 
     s.add(
         Event(
@@ -327,7 +311,10 @@ def handler_reconcile(s: SASession, job: Job) -> str:
     mode = str(job.payload_json.get("withdraw_mode") or "") or None
     r = poly.reconcile_klaim(alamat=alamat, withdraw_mode=mode)
     _tulis_fakta(s, kind="poly.money", key="klaim-pilot", value=r,
-                 source=str(r.get("sumber", poly.PILOT_DIR)), ttl_s=3600)
+                 # Job ini berjalan tiap 3600 dtk: TTL harus LEBIH PANJANG dari interval,
+                 # kalau tidak fakta selalu "basi" tepat sebelum run berikutnya dan alert
+                 # freshness berbunyi tiap jam (pelajaran yang sama dengan fakta learner).
+                 source=str(r.get("sumber", poly.PILOT_DIR)), ttl_s=7200)
     if r.get("status") == "ok" and not r.get("terverifikasi") and r.get("mode") != "manual":
         _alert(
             s,
@@ -374,18 +361,40 @@ def _tulis_fakta(s: SASession, *, kind: str, key: str, value: Any, source: str, 
     s.flush()
 
 
-def _alert(s: SASession, *, subject: str, message: str, aksi: str, severity: str = "warning") -> None:
+def _alert(
+    s: SASession,
+    *,
+    subject: str,
+    message: str,
+    aksi: str,
+    severity: str = "warning",
+    fact_ids: list[int] | None = None,
+) -> bool:
+    """Buat alert KECUALI sudah ada alert BELUM DI-ACK dengan subjek yang sama.
+
+    Menahan diri selama alert lama masih terbuka (bukan hanya selama jendela waktu tetap)
+    itu penting: jendela tetap yang lebih pendek dari interval job membuat alert menumpuk
+    tanpa batas untuk kondisi yang tidak berubah — terbukti 9 alert `learner/ringkas` dan
+    13 alert `poly/klaim-uang` terbuka hanya dari DUA kondisi. Selama satu alert masih
+    terbuka, pengingat ditangani notifier; setelah di-ack, kondisi yang masih berjalan boleh
+    memunculkan alert baru. Kembalikan True bila alert baru benar-benar dibuat.
+    """
     sudah = s.scalar(
-        select(Alert.id)
-        .where(Alert.subject == subject)
-        .where(Alert.ack_at.is_(None))
-        .where(Alert.created_at >= datetime.now(UTC) - ALERT_DEDUPE)
-        .limit(1)
+        select(Alert.id).where(Alert.subject == subject).where(Alert.ack_at.is_(None)).limit(1)
     )
     if sudah is not None:
-        return
-    s.add(Alert(severity=severity, subject=subject, message=message, suggested_action=aksi))
+        return False
+    s.add(
+        Alert(
+            severity=severity,
+            subject=subject,
+            message=message,
+            suggested_action=aksi,
+            fact_ids=list(fact_ids or []),
+        )
+    )
     s.flush()
+    return True
 
 
 def handler_learner(s: SASession, job: Job) -> str:
