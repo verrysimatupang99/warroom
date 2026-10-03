@@ -1,6 +1,8 @@
 # Checklist go/no-go live (P6-T4) — **untuk ditandatangani owner**
 
-Disusun: 2026-10-02 · Status saat ini: **NO-GO** (belum ada satu pun syarat keras yang terpenuhi)
+Disusun: 2026-10-02 · Diperbarui: **2026-10-03** · Status saat ini: **NO-GO** — keputusan owner
+3 Okt 2026. Angka gate sudah **lolos** (A1/A2 ✅ sejak sampel naik ke n=4.133), tetapi A3/A4/A5
+dan pendanaan belum terpenuhi. Tidak ada izin yang terbuka karena keputusan ini.
 Aturan: setiap baris wajib punya bukti yang bisa dijalankan ulang. Tanpa tanda tangan owner,
 live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 
@@ -8,8 +10,8 @@ live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 
 | # | Syarat | Ambang | Nilai sekarang | Bukti | Status |
 |---|---|---|---|---|---|
-| A1 | Gate lolos: `ci_low > BE` | ci_low > 76,62 % | `ci_low 0.7659` @ **95% + deff 1.345** (n=3.977, win=3.107) — di 90% tanpa deff: `0.7703` (lolos) | `POST /api/v1/gate/evaluate` | ❌ belum (beda 0,03 pp) |
-| A2 | Sampel cukup | n ≥ required_n | 3.977 vs **4.071** (95%+deff) — 90%: 3.977 vs 2.131 (cukup) | idem (`required_n`) | ❌ kurang 94 |
+| A1 | Gate lolos: `ci_low > BE` | ci_low > 76,66 % | **`ci_low 0.7675` > BE 0.7666** @ **95% + deff 1.342** (n=4.133, win=3.234) — **lolos** | `POST /api/v1/gate/evaluate` | ✅ 3 Okt |
+| A2 | Sampel cukup | n ≥ required_n | **4.133 ≥ 3.713** (95% + deff) — cukup | idem (`required_n`) | ✅ 3 Okt |
 | A3 | Split beku sebelum melihat hasil | `split=frozen:<id>` | belum ada mekanisme split di jalur produksi | ADR-003 | ❌ |
 | A4 | Fee & slippage terukur pada saat order | ≥ 5 share, kedalaman nyata | belum diukur saat order (hanya kutipan) | `POST /api/v1/live/dry-run` | ❌ |
 | A5 | Dana nyata terverifikasi | saldo on-chain == klaim | klaim `0.0`, `terverifikasi=false` | job `reconcile` | ❌ |
@@ -21,12 +23,16 @@ live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 
 ## A-bis. **Keputusan owner yang memblokir A1/A2**: kebijakan gate mana yang otoritatif?
 
-| Kebijakan | ci_low (n=3.977) | vs BE 76,62% | required_n | Putusan |
+| Kebijakan | ci_low (n=4.133) | vs BE 76,66% | required_n | Putusan |
 |---|---|---|---|---|
-| 90% tanpa koreksi klaster (baku platform) | 0.7703 | di atas | 2.131 | **lolos** |
-| 95% tanpa koreksi | 0.7681 | di atas | 3.027 | lolos |
-| 90% + koreksi klaster (deff 1.345) | 0.7685 | di atas | 2.882 | lolos |
-| **95% + koreksi klaster (alat Poly — rekomendasi)** | **0.7659** | **di bawah** | **4.071** | **belum** |
+| **95% + koreksi klaster (alat Poly — rekomendasi)** | **0.7675** | **di atas** | **3.713** | **lolos** (diverifikasi 3 Okt) |
+| 90% tanpa koreksi klaster (baku platform) | 0.7703 * | di atas | 2.131 * | lolos (angka n=3.977) |
+| 95% tanpa koreksi | 0.7681 * | di atas | 3.027 * | lolos (angka n=3.977) |
+| 90% + koreksi klaster (deff 1.345) | 0.7685 * | di atas | 2.882 * | lolos (angka n=3.977) |
+
+\* Baris ini masih dari sampel n=3.977 (2 Okt) dan belum dihitung ulang; hanya baris
+rekomendasi yang diverifikasi ulang pada 3 Okt. Selisihnya tipis (0,1–0,4 pp di atas BE),
+jadi keputusan owner tetap NO-GO sampai A3/A4/A5 selesai — bukan karena angkanya.
 
 Alat Poly (`qa/favorite-live-verdict.py --json`) memakai baris terakhir; angkanya kini mengalir
 ke UI sebagai fakta `verdict` (job `verdict-sync`, kebijakan 95% + deff). Sampai owner memilih,
@@ -68,7 +74,11 @@ Data di atas diperbarui 2026-10-03 06:5x UTC. Jalankan `POST /api/v1/gate/evalua
 
 | Peran | Nama | Tanggal | Keputusan |
 |---|---|---|---|
-| Owner | ________________ | __________ | ☐ GO  ☐ NO-GO |
+| Owner | (owner) | 2026-10-03 | ☐ GO  ☒ **NO-GO** |
+
+Catatan keputusan 3 Okt 2026: gate lolos, tetapi **A3 (split beku), A4 (fee/slippage saat
+order), A5 (dana terverifikasi)** belum selesai, dan saldo funder ($0,87 pUSD) belum cukup
+untuk pilot $5/entry. Keputusan ditinjau ulang setelah syarat itu beres.
 
 Catatan: dokumen ini **tidak** memberi izin apa pun. Izin live selalu lewat grant eksplisit
 (`grantedBy`/`messageId`/`scope`/`at`) dan gate fisik yang dibuat owner.
