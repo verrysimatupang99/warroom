@@ -49,9 +49,20 @@ def collect_metrics(s: SASession, now: datetime | None = None) -> dict[str, Any]
     t = now or datetime.now(UTC)
 
     total = s.scalar(select(func.count()).select_from(Fact)) or 0
-    sub = select(Fact.key, func.max(Fact.observed_at).label("obs")).group_by(Fact.key).subquery()
+    # Fakta terbaru per (kind, key) — kunci yang sama bisa dipakai lebih dari satu kind
+    # (`radar`, `ringkas`), jadi grouping harus menyertakan kind atau hitungan basi salah.
+    sub = (
+        select(Fact.kind, Fact.key, func.max(Fact.observed_at).label("obs"))
+        .group_by(Fact.kind, Fact.key)
+        .subquery()
+    )
     terbaru = s.scalars(
-        select(Fact).join(sub, (Fact.key == sub.c.key) & (Fact.observed_at == sub.c.obs))
+        select(Fact).join(
+            sub,
+            (Fact.kind == sub.c.kind)
+            & (Fact.key == sub.c.key)
+            & (Fact.observed_at == sub.c.obs),
+        )
     ).all()
     basi = sum(1 for f in terbaru if (t - f.observed_at).total_seconds() > f.ttl_s)
 

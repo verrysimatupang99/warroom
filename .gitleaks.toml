@@ -1,0 +1,20 @@
+# Konfigurasi gitleaks untuk repo warroom.
+#
+# Konteks: 5 temuan `generic-api-key` datang dari fixture SINTETIS di uji scrub &
+# golden set (`secret=abcdef123456`, `sk-live-RAHASIA123456`) — bukan kredensial nyata
+# (sudah dicek silang dengan env, tanpa mencetak nilainya). Pola `secret=`/`token=`
+# memang sengaja ada karena itu BAHAN UJI: scrub harus membuang yang tampak seperti kunci.
+#
+# Dikecualikan lewat jalur berkas (bukan nilai), supaya rahasia sungguhan di berkas lain
+# tetap tertangkap. Jangan menambahkan jalur lain tanpa alasan yang sama kuatnya.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "fixture sintetis uji scrub & golden set (bukan kredensial)"
+paths = [
+  '''services/llm/golden/.*''',
+  '''services/llm/tools/generate_fixtures\.py''',
+  '''services/llm/tests/test_pipeline\.py'''
+]

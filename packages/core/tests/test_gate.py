@@ -126,3 +126,37 @@ def test_win_rate_di_bawah_be_memberi_catatan_jujur() -> None:
     assert r.verdict == "gagal"
     assert r.required_n is None
     assert any("tidak akan meloloskan" in c for c in r.notes)
+
+
+# --- koreksi klaster (deff) — W3, kasus nyata 3 Okt 2026 ------------------------------
+
+
+def test_deff_bawah_satu_ditolak() -> None:
+    """Koreksi tidak boleh mempersempit CI (arah melonggarkan) — ditolak, bukan dibiarkan."""
+    with pytest.raises(ValueError):
+        evaluate(GateInput(n=100, win=80, be=0.7, deff=0.9, split="frozen:x"))
+    with pytest.raises(ValueError):
+        required_n(0.77, 0.79, deff=0.9)
+
+
+def test_deff_hanya_mempersulit() -> None:
+    """deff > 1: ci_low turun dan required_n naik — tidak pernah sebaliknya."""
+    tanpa = evaluate(GateInput(n=3977, win=3107, be=0.7662, ci=0.95, split="frozen:x"))
+    deff = evaluate(GateInput(n=3977, win=3107, be=0.7662, ci=0.95, deff=1.345, split="frozen:x"))
+    assert deff.ci_low < tanpa.ci_low
+    assert (deff.required_n or 0) > (tanpa.required_n or 0)
+    assert deff.notes and "koreksi klaster" in deff.notes[0]
+
+
+def test_kasus_favorit_polymarket_dua_kebijakan() -> None:
+    """Kasus nyata 3 Okt: 90% tanpa deff lolos; 95% + deff (alat Poly) belum.
+
+    Angka dari `qa/favorite-live-verdict.py --json`: n=3977, win=3107, be=0.7662,
+    deff=1.345. Keputusan kebijakan (mana yang otoritatif) ada di manusia —
+    `docs/blueprint/07-perintah-kerja-hermes.md` §B.
+    """
+    longgar = evaluate(GateInput(n=3977, win=3107, be=0.7662, ci=0.90, split="frozen:x"))
+    ketat = evaluate(GateInput(n=3977, win=3107, be=0.7662, ci=0.95, deff=1.345, split="frozen:x"))
+    assert longgar.verdict == "lolos"
+    assert ketat.verdict == "gagal"
+    assert ketat.ci_low == pytest.approx(0.7659, abs=0.001)

@@ -200,6 +200,22 @@ def test_collect_metrics_tanpa_data_tidak_mengarang(db) -> None:
     assert "warroom_facts_total 0" in render_prometheus(m)
 
 
+def test_metrik_basi_menghitung_per_kind_dan_key(db) -> None:
+    """Kunci yang sama dipakai dua kind (`ringkas`) — yang basi tetap harus terhitung.
+
+    Regresi: grouping lama hanya `key`, sehingga fakta segar dari kind lain menutupi
+    fakta basi (metrik bilang 0 padahal UI benar menampilkan "BASI").
+    """
+    with session_scope() as s:
+        # key "ringkas": poly.agent segar, learner basi (TTL harian, fakta kemarin).
+        s.add(_fakta("poly.agent", "ringkas", {"ok": True}, umur_s=5, ttl_s=1800))
+        s.add(_fakta("learner", "ringkas", {"n": 1}, umur_s=7200, ttl_s=3600))
+        s.add(_fakta("snapshot", "mode", "paper", umur_s=5, ttl_s=1800))
+        m = collect_metrics(s)
+    assert m["facts_basi"] == 1, m
+    assert m["facts_terbaru"] == 3
+
+
 def test_json_log_satu_baris(capsys) -> None:
     import logging
 

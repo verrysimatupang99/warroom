@@ -48,6 +48,8 @@ class GateBody(BaseModel):
     ci: float = DEFAULT_CI
     min_n: int = DEFAULT_MIN_N
     split: str | None = None
+    # Koreksi klaster (design effect); >= 1. Lihat gate.evaluate.
+    deff: float = 1.0
     label: str = "konfirmasi"
     subject: str = ""
     rule: str = ""
@@ -206,6 +208,7 @@ def create_app() -> FastAPI:
                 ci=body.ci,
                 min_n=body.min_n,
                 split=body.split,
+                deff=body.deff,
                 label=body.label,  # type: ignore[arg-type]
                 subject=body.subject,
                 rule=body.rule,
@@ -221,6 +224,9 @@ def create_app() -> FastAPI:
             "n": r.n,
             "required_n": r.required_n,
             "policy_version": r.policy_version,
+            # Kebijakan yang dipakai — UI wajib melabeli hasil dengan ini (90% vs 95%+deff).
+            "ci": r.ci,
+            "deff": r.deff,
             "notes": r.notes,
         }
 

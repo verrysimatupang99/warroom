@@ -108,34 +108,46 @@ def _win_at(p: float, n: int) -> int:
     return int(p * n + 0.5)
 
 
-def _lolos_at(n: int, p: float, be: float, ci: float) -> bool:
-    """True bila pada ``n`` sampel dengan win rate ``p`` batas bawah CI sudah melewati ``be``."""
+def _lolos_at(n: int, p: float, be: float, ci: float, deff: float = 1.0) -> bool:
+    """True bila pada ``n`` sampel baku (n efektif ``n/deff``) batas bawah CI melewati ``be``."""
+    if deff > 1.0:
+        n_eff = max(1, round(n / deff))
+        return wilson_interval(_win_at(p, n_eff), n_eff, ci)[0] > be
     return wilson_interval(_win_at(p, n), n, ci)[0] > be
 
 
-def required_n(be: float, win_rate: float, ci: float = DEFAULT_CI, n_max: int = 200_000) -> int | None:
+def required_n(
+    be: float,
+    win_rate: float,
+    ci: float = DEFAULT_CI,
+    n_max: int = 200_000,
+    deff: float = 1.0,
+) -> int | None:
     """Jumlah sampel terkecil agar ``ci_low > be`` pada win rate yang diamati.
 
     Dihitung eksak: cari-n dua arah (dobel → bagi dua) memakai :func:`wilson_interval`
     yang sama dengan yang dipakai gate. Bukan aproksimasi bentuk-tertutup, supaya angka
     "butuh N lagi" di UI benar-benar konsisten dengan keputusan gate.
 
-    ``None`` bila ``win_rate <= be`` (menambah sampel tidak akan meloloskan — aturan atau
-    asumsinya yang harus diubah manusia, bukan ambangnya) atau bila kebutuhan melebihi
-    ``n_max``.
+    ``deff`` = koreksi klaster; jumlah sampel baku yang dibutuhkan ikut terskala
+    (``n/deff`` efektif). ``None`` bila ``win_rate <= be`` (menambah sampel tidak akan
+    meloloskan — aturan atau asumsinya yang harus diubah manusia, bukan ambangnya) atau
+    bila kebutuhan melebihi ``n_max``.
     """
+    if deff < 1.0:
+        raise ValueError(f"deff harus >= 1 (diberi {deff!r})")
     if win_rate <= be:
         return None
     if n_max < 1:
         raise ValueError("n_max harus >= 1")
     lo, hi = 1, 1024
-    while hi < n_max and not _lolos_at(hi, win_rate, be, ci):
+    while hi < n_max and not _lolos_at(hi, win_rate, be, ci, deff):
         lo, hi = hi, min(hi * 2, n_max)
-    if not _lolos_at(hi, win_rate, be, ci):
+    if not _lolos_at(hi, win_rate, be, ci, deff):
         return None
     while lo < hi:  # cari batas bawah terkecil
         mid = (lo + hi) // 2
-        if _lolos_at(mid, win_rate, be, ci):
+        if _lolos_at(mid, win_rate, be, ci, deff):
             hi = mid
         else:
             lo = mid + 1
@@ -152,6 +164,9 @@ class GateInput:
     ci: float = DEFAULT_CI
     min_n: int = DEFAULT_MIN_N
     split: str | None = None
+    # Koreksi klaster (design effect). Harus >= 1: nilai di bawah 1 akan mempersempit CI
+    # (arah melonggarkan) dan ditolak. Nilai > 1 memperlebar CI — arah konservatif.
+    deff: float = 1.0
     # Label sumber hasil. "eksplorasi" tidak boleh dipromosikan lewat gate ini.
     label: Literal["konfirmasi", "eksplorasi"] = "konfirmasi"
     subject: str = ""
@@ -168,8 +183,11 @@ class GateResult:
     be: float
     n: int
     required_n: int | None
-    policy_version: str = "gate/0.1.0"
+    policy_version: str = "gate/0.2.0"
     notes: list[str] = field(default_factory=list)
+    # Kebijakan yang dipakai saat menilai — dikembalikan supaya UI bisa melabelinya.
+    ci: float = DEFAULT_CI
+    deff: float = 1.0
 
     @property
     def lolos(self) -> bool:
@@ -177,47 +195,64 @@ class GateResult:
 
 
 def evaluate(g: GateInput) -> GateResult:
-    """Putuskan lolos/gagal/insufficient. ``lolos`` hanya bila ``ci_low > be``."""
+    """Putuskan lolos/gagal/insufficient. ``lolos`` hanya bila ``ci_low > be``.
+
+    ``deff`` = koreksi klaster. Nilai < 1 ditolak (mempersempit CI = arah melonggarkan);
+    nilai > 1 menilai CI pada n efektif ``n/deff`` dan menskalakan ``required_n`` — sama
+    seperti alat Poly (``qa/favorite-live-verdict.py``).
+    """
     notes: list[str] = []
+    if g.deff < 1.0:
+        raise ValueError(f"deff harus >= 1 (diberi {g.deff!r}); koreksi klaster tidak boleh melonggarkan")
     if g.n <= 0:
         return GateResult("insufficient", "tidak ada sampel (n=0)", 0.0, 1.0, 0.0, g.be, g.n, None,
+                          ci=g.ci, deff=g.deff,
                           notes=["butuh data sebelum gate bisa diputuskan"])
     if g.win < 0 or g.win > g.n:
         raise ValueError(f"win harus 0..n (win={g.win}, n={g.n})")
 
-    ci_low, ci_high = wilson_interval(g.win, g.n, g.ci)
     win_rate = g.win / g.n
-    need = required_n(g.be, win_rate, g.ci)
+    if g.deff > 1.0:
+        n_eff = max(1, round(g.n / g.deff))
+        ci_low, ci_high = wilson_interval(_win_at(win_rate, n_eff), n_eff, g.ci)
+        notes.append(f"koreksi klaster deff={g.deff:.3f}: n efektif {n_eff} (dari {g.n})")
+    else:
+        ci_low, ci_high = wilson_interval(g.win, g.n, g.ci)
+    need = required_n(g.be, win_rate, g.ci, deff=g.deff)
 
     if g.label == "eksplorasi":
         return GateResult(
             "insufficient",
             "hasil eksplorasi tidak bisa dipromosikan; butuh sampel baru + split beku",
-            ci_low, ci_high, win_rate, g.be, g.n, need, notes=["label=eksplorasi"],
+            ci_low, ci_high, win_rate, g.be, g.n, need, ci=g.ci, deff=g.deff,
+            notes=[*notes, "label=eksplorasi"],
         )
 
     if not g.split or not g.split.startswith("frozen:"):
         return GateResult(
             "insufficient",
             "split data belum dibekukan (wajib split=frozen:<id>)",
-            ci_low, ci_high, win_rate, g.be, g.n, need, notes=["split beku wajib (ADR-003)"],
+            ci_low, ci_high, win_rate, g.be, g.n, need, ci=g.ci, deff=g.deff,
+            notes=[*notes, "split beku wajib (ADR-003)"],
         )
 
     if g.n < g.min_n:
         return GateResult(
             "insufficient",
             f"n={g.n} < min_n={g.min_n}",
-            ci_low, ci_high, win_rate, g.be, g.n, need,
-            notes=[f"butuh {g.min_n - g.n} sampel lagi untuk memenuhi min_n"],
+            ci_low, ci_high, win_rate, g.be, g.n, need, ci=g.ci, deff=g.deff,
+            notes=[*notes, f"butuh {g.min_n - g.n} sampel lagi untuk memenuhi min_n"],
         )
 
     if ci_low > g.be:
         return GateResult("lolos", f"ci_low {ci_low:.4f} > be {g.be:.4f}",
-                          ci_low, ci_high, win_rate, g.be, g.n, need)
+                          ci_low, ci_high, win_rate, g.be, g.n, need, ci=g.ci, deff=g.deff,
+                          notes=notes)
 
     reason = f"ci_low {ci_low:.4f} <= be {g.be:.4f}"
     if need is not None:
-        notes.append(f"perkiraan butuh n≈{need} pada win rate {win_rate:.3%}")
+        notes.append(f"perkiraan butuh n≈{need} pada win rate {win_rate:.3%} (deff={g.deff:.3f})")
     else:
         notes.append("win rate <= BE: menambah sampel tidak akan meloloskan; aturan harus diubah manusia")
-    return GateResult("gagal", reason, ci_low, ci_high, win_rate, g.be, g.n, need, notes=notes)
+    return GateResult("gagal", reason, ci_low, ci_high, win_rate, g.be, g.n, need,
+                      ci=g.ci, deff=g.deff, notes=notes)

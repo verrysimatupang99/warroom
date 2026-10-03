@@ -374,7 +374,9 @@ def handler_learner(s: SASession, job: Job) -> str:
         s, kind="learner", key="ringkas",
         value={"diusulkan": dipakai, "keputusan": ringkas_keputusan, "seed_baru": dibuat,
                "kill_switch": False},
-        source="agent-lessons.jsonl + registry parameter", ttl_s=3600,
+        # Job harian: TTL harus lebih panjang dari interval (86400 dtk) supaya fakta tidak
+        # tampil "basi" permanen di antara dua jalan. Telat > 25 jam tetap terlihat.
+        source="agent-lessons.jsonl + registry parameter", ttl_s=90_000,
     )
     return f"diusulkan={dipakai} keputusan={ringkas_keputusan} seed_baru={len(dibuat)}"
 
