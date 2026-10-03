@@ -31,6 +31,10 @@ export default defineConfig({
 	timeout: 45_000,
 	expect: { timeout: 10_000 },
 	fullyParallel: false,
+	// Satu retry: host ini juga menjalankan worker yang menulis DB tiap 30 dtk, jadi sesekali
+	// ada navigasi yang bertabrakan. Retry TIDAK menyembunyikan flake — laporan Playwright
+	// menandainya "flaky", jadi tetap terlihat saat meninjau hasil.
+	retries: 1,
 	reporter: [['list']],
 	use: {
 		// Jalur produksi lokal: Caddy :8081 → web :3100 + API :8800 (same-origin, SSE lewat
