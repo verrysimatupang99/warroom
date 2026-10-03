@@ -37,12 +37,19 @@ Domain tetap diuji di tempatnya (jaring pengaman 219 tes):
 cd ~/live-trading && uv run ruff check . && uv run pytest -q
 ```
 
-## Menjalankan (produksi lokal)
+## Alamat produksi
+
+**https://0xgunsl1ng3r.xyz** — nginx (TLS Let's Encrypt) → web `:3100` + API `:8800`, same-origin.
+Login di `/masuk`; `/api/*` butuh sesi (401 tanpa cookie). `/metrics` sengaja tidak diekspos publik.
 
 ```bash
-sudo systemctl status warroom-api warroom-worker warroom-web caddy
-# Web: http://127.0.0.1:8081 (Caddy, proxy same-origin) — login lewat halaman /masuk
+sudo systemctl status warroom-api warroom-worker warroom-web nginx
+sudo nginx -t && sudo systemctl reload nginx     # setelah ubah vhost
+sudo certbot renew --dry-run                     # perpanjangan otomatis (timer certbot)
 ```
+
+DNS dikelola di Spaceship (record `A @ → 217.78.237.133`); backup record ada di
+`~/.config/warroom/dns-backup-*.json`. Vhost sumber: `ops/nginx-warroom.conf`.
 
 Kredensial notifier (opsional, agar alert terkirim): `ops/notifier.env.example` → `/etc/warroom/notifier.env`.
 

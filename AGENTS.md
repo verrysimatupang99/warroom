@@ -63,6 +63,17 @@ label kebijakan**. Angka hanya dari tabel `facts`; tidak ada perhitungan di UI.
   `sudo -l` tetapi **tidak** berlaku di konteks systemd (terbukti via auth.log +
   systemd-run). Jangan mengandalkannya; tambahkan perintah ke allowlist eksplisit.
 
+## Deploy (3 Okt 2026)
+
+- **URL**: `https://0xgunsl1ng3r.xyz` (apex; DNS Spaceship `A @ → 217.78.237.133`).
+- **Proxy**: **nginx** (bukan Caddy) karena nginx sudah memegang 80/443 untuk situs lain.
+  Vhost: `/etc/nginx/sites-available/warroom` (salinan repo: `ops/nginx-warroom.conf`).
+  SSE wajib `proxy_buffering off` di lokasi `/api/`.
+- **TLS**: certbot (plugin nginx), perpanjangan otomatis via timer; `certbot renew --dry-run` untuk uji.
+- **Caddy**: terpasang tetapi **disabled** (dulu untuk uji lokal :8081); `ops/Caddyfile*`
+  disimpan sebagai alternatif untuk host bersih.
+- **Kredensial**: `~/.config/warroom/{e2e.env,spaceship.env}` (600). Jangan pernah masuk repo.
+
 ## Sedang menunggu (owner)
 
 1. URL webhook/Telegram → alert terkirim (sekarang hanya tersimpan di DB + banner UI).

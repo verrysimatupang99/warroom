@@ -37,11 +37,11 @@ export default defineConfig({
 	retries: 1,
 	reporter: [['list']],
 	use: {
-		// Jalur produksi lokal: Caddy :8081 → web :3100 + API :8800 (same-origin, SSE lewat
-		// proxy yang sama dengan produksi). Prasyarat: `warroom-web` + `caddy` aktif.
-		// Untuk lingkungan lain, set WARROOM_E2E_BASE (mis. http://127.0.0.1:4173 dengan
-		// `npm run preview` dan proxy di vite.config.ts).
-		baseURL: process.env.WARROOM_E2E_BASE ?? 'http://127.0.0.1:8081',
+		// Jalur PRODUKSI: https://0xgunsl1ng3r.xyz (nginx + Let's Encrypt → web :3100 + API :8800).
+		// Alternatif lokal (tanpa domain): WARROOM_E2E_BASE=http://127.0.0.1:8081 (Caddy uji).
+		// Prasyarat: warroom-api + warroom-worker + warroom-web aktif; kredensial di
+		// ~/.config/warroom/e2e.env.
+		baseURL: process.env.WARROOM_E2E_BASE ?? 'https://0xgunsl1ng3r.xyz',
 		trace: 'retain-on-failure'
 	},
 	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
