@@ -397,6 +397,19 @@ def create_app() -> FastAPI:
             teks = render_prometheus(collect_metrics(s))
         return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
 
+    @app.get("/api/v1/metrics")
+    def metrics_ui(
+        user: Annotated[User, Depends(auth.current_user)],
+    ) -> PlainTextResponse:
+        """Teks metrik yang sama, **wajib sesi** — nginx tidak mengekspos /metrics ke publik.
+
+        UI (Biaya & LLMConsole) memakai jalur ini supaya tidak pernah mengenai 404 dari
+        reverse proxy, sementara /metrics tetap hanya untuk scraper lokal.
+        """
+        with session_scope() as s:
+            teks = render_prometheus(collect_metrics(s))
+        return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
+
     # --- P5: parameter, usulan, kill switch AI -------------------------------------------
 
     @app.get("/api/v1/params")

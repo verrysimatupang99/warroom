@@ -132,10 +132,11 @@ export const masuk = (username: string, password: string, totp?: string) =>
 		body: JSON.stringify({ username, password, totp: totp ?? null })
 	});
 
-/** `/metrics` Prometheus: teks, bukan JSON. */
+/** Metrik Prometheus (teks) lewat jalur ber-sesi `/api/v1/metrics` — `/metrics` sengaja
+ * tidak diekspos reverse proxy ke publik (berisi nama job & hitungan). */
 export async function getMetrikTeks(): Promise<string> {
-	const res = await fetch(`${BASE}/metrics`, { credentials: 'include' });
-	if (!res.ok) throw new ApiError(res.status, `gagal memuat /metrics (HTTP ${res.status})`);
+	const res = await fetch(`${BASE}/api/v1/metrics`, { credentials: 'include' });
+	if (!res.ok) throw new ApiError(res.status, `gagal memuat /api/v1/metrics (HTTP ${res.status})`);
 	return res.text();
 }
 

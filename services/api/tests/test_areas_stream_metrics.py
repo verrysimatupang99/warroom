@@ -191,6 +191,21 @@ def test_metrics_isi_dari_db(client, make_user) -> None:
     assert 'warroom_job_enabled{job="uji-job"} 1' in teks
 
 
+def test_metrics_ui_butuh_sesi_walau_scraper_publik(client, make_user, monkeypatch) -> None:
+    """`/api/v1/metrics` (jalur UI) selalu butuh sesi — tidak ikut WARROOM_METRICS_PUBLIC."""
+    monkeypatch.setenv("WARROOM_METRICS_PUBLIC", "1")
+    assert client.get("/api/v1/metrics").status_code == 401
+
+
+def test_metrics_ui_berisi_teks_yang_sama(client, make_user) -> None:
+    _, sid = make_user("metrik-ui", role="viewer")
+    with session_scope() as s:
+        s.add(_fakta("snapshot", "mode", "paper", umur_s=5, ttl_s=1800))
+    r = client.get("/api/v1/metrics", headers=_cookie(sid))
+    assert r.status_code == 200
+    assert "warroom_up 1" in r.text
+
+
 def test_collect_metrics_tanpa_data_tidak_mengarang(db) -> None:
     with session_scope() as s:
         m = collect_metrics(s)

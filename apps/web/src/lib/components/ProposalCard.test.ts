@@ -31,15 +31,21 @@ describe('ProposalCard', () => {
 		expect(t).toContain('#12');
 	});
 
-	it('viewer tidak melihat tombol aksi; owner melihat tombol terapkan', () => {
+	it('viewer tidak melihat tombol aksi; owner melihat tombol terapkan hanya untuk butuh_manusia', () => {
+		const butuh = { ...usulan, status: 'butuh_manusia', ditolak_karena: null };
 		const { unmount } = render(ProposalCard, {
-			props: { proposals: [usulan], peran: 'viewer', onexec: () => {} }
+			props: { proposals: [butuh], peran: 'viewer', onexec: () => {} }
 		});
 		expect(screen.queryByText('terapkan')).toBeNull();
 		unmount();
 
-		render(ProposalCard, { props: { proposals: [usulan], peran: 'owner', onexec: () => {} } });
+		render(ProposalCard, { props: { proposals: [butuh], peran: 'owner', onexec: () => {} } });
 		expect(screen.queryByText('terapkan')).not.toBeNull();
+	});
+
+	it('usulan ditolak → owner TIDAK melihat tombol terapkan (tidak bisa dipaksa)', () => {
+		render(ProposalCard, { props: { proposals: [usulan], peran: 'owner', onexec: () => {} } });
+		expect(screen.queryByText('terapkan')).toBeNull();
 	});
 
 	it('proposal diterapkan → tombol rollback (bukan terapkan)', () => {

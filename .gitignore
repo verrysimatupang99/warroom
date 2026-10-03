@@ -28,3 +28,6 @@ backups/
 # Artefak Playwright (trace bisa memuat cookie/kredensial e2e — jangan pernah masuk repo)
 test-results/
 playwright-report/
+
+# Hasil QA manual (qa-lengkap.spec.ts) — laporan temuan, bukan sumber
+qa-hasil/

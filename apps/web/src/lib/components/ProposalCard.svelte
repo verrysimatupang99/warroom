@@ -81,7 +81,7 @@
 
 				{#if bolehAksi && onexec}
 					<div class="mt-2 flex flex-wrap gap-2">
-						{#if p.status !== 'diterapkan'}
+						{#if p.status === 'butuh_manusia'}
 							<button
 								class="rounded-control border border-line px-2 py-0.5 text-11 text-text-2"
 								onclick={() => onexec(p.id, 'apply')}>terapkan</button
