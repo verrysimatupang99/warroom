@@ -76,7 +76,7 @@ label kebijakan**. Angka hanya dari tabel `facts`; tidak ada perhitungan di UI.
 
 ## Sedang menunggu (owner)
 
-1. URL webhook/Telegram → alert terkirim (sekarang hanya tersimpan di DB + banner UI).
+1. ~~URL webhook/Telegram~~ **selesai 3 Okt** — transport Telegram aktif (bot Hermes, topic War Room); alert macet tetap terlihat di UI dengan label & kesalahan terakhir.
 2. Domain + DNS → `ops/Caddyfile` (TLS) menggantikan `Caddyfile.lokal`.
 3. Keputusan kebijakan gate (90% vs 95%+deff) + `split=frozen:<id>` untuk data uji.
 4. Kunci/urutan provider nutaraline (401 + lambat; qonek menyelamatkan).
