@@ -24,11 +24,6 @@ MAX_PERCOBAAN = 3
 _JEDA = timedelta(minutes=5)
 
 
-def _jumlah_percobaan(s: SASession, alert_id: int) -> int:
-    baris = s.execute(
-        select(Event.payload_json).where(Event.type == "alert.sent")
-    ).all()
-    return sum(1 for (p,) in baris if isinstance(p, dict) and p.get("alert_id") == alert_id)
 
 
 def kirim_tertunda(
@@ -38,17 +33,29 @@ def kirim_tertunda(
     limit: int = 10,
     now: datetime | None = None,
 ) -> list[dict[str, object]]:
-    """Kirim alert terbuka yang belum pernah sukses dikirim. Kembalikan ringkasan percobaan."""
+    """Kirim alert terbuka yang belum lewat batas percobaan. Kembalikan ringkasan.
+
+    Alert yang sudah mencapai ``MAX_PERCOBAAN`` **dilewati** dan **tidak** menghabiskan jatah
+    ``limit``: dulu ia ikut dihitung, sehingga ketika cukup banyak alert lama macet, alert
+    BARU tidak pernah terkirim sama sekali (bug nyata yang ditemukan 3 Okt).
+    """
     tr = transport or transport_from_env()
-    terbuka = s.scalars(
-        select(Alert).where(Alert.ack_at.is_(None)).order_by(Alert.created_at.asc()).limit(limit)
+    kandidat = s.scalars(
+        select(Alert)
+        .where(Alert.ack_at.is_(None))
+        .order_by(Alert.created_at.asc())
+        .limit(max(limit * 20, 50))
     ).all()
 
     hasil: list[dict[str, object]] = []
-    for a in terbuka:
-        if _jumlah_percobaan(s, a.id) >= MAX_PERCOBAAN:
-            hasil.append({"alert_id": a.id, "ok": False, "detail": "batas percobaan tercapai"})
+    dicoba = 0
+    dilewati = 0
+    for a in kandidat:
+        if (a.attempts or 0) >= MAX_PERCOBAAN:
+            dilewati += 1
             continue
+        if dicoba >= limit:
+            break
         res = tr.send(
             a.subject,
             a.message,
@@ -70,7 +77,22 @@ def kirim_tertunda(
                 severity="info" if res.ok else "warning",
             )
         )
+        # Catat percobaan di baris alert (bukan hanya di event) supaya batas terlihat di UI.
+        a.attempts = (a.attempts or 0) + 1
+        a.last_error = None if res.ok else str(res.detail)[:200]
         hasil.append({"alert_id": a.id, "ok": res.ok, "detail": res.detail})
+        dicoba += 1
+    if dilewati:
+        hasil.append(
+            {
+                "alert_id": None,
+                "ok": False,
+                "detail": (
+                    f"{dilewati} alert dilewati: sudah {MAX_PERCOBAAN} percobaan "
+                    "(tetap terbuka di DB; ack manual atau perbaiki transport)"
+                ),
+            }
+        )
     s.flush()
     return hasil
 

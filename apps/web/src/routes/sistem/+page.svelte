@@ -197,6 +197,7 @@
 						{ kunci: 'subject', label: 'subjek' },
 						{ kunci: 'aksi', label: 'aksi disarankan' },
 						{ kunci: 'umur', label: 'umur' },
+						{ kunci: 'percobaan', label: 'percobaan' },
 						{ kunci: 'status', label: 'status' }
 					]}
 					baris={alerts.alerts.map((a) => ({
@@ -205,7 +206,18 @@
 						subject: a.subject,
 						aksi: a.suggested_action || '—',
 						umur: umurDetik((Date.now() - Date.parse(a.created_at)) / 1000),
-						status: a.ack_at ? 'ack' : a.snooze_until ? `tunda s/d ${waktuWIB(a.snooze_until)}` : 'terbuka'
+						percobaan: a.percobaan,
+						status: a.ack_at
+							? 'ack'
+							: a.snooze_until
+								? `tunda s/d ${waktuWIB(a.snooze_until)}`
+								: a.percobaan === 0
+									? 'terbuka'
+									: a.terakhir_ok
+										? 'terkirim — belum di-ack'
+										: a.percobaan >= 3
+											? `macet — ${a.kesalahan_terakhir ?? 'kirim dihentikan'}`
+											: `gagal terakhir: ${a.kesalahan_terakhir ?? '—'}`
 					}))}
 					cari="cari alert…"
 					ekspor="sistem-alert.csv"

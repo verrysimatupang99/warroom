@@ -530,6 +530,10 @@ def create_app() -> FastAPI:
                     "ack_at": a.ack_at.isoformat() if a.ack_at else None,
                     "snooze_until": a.snooze_until.isoformat() if a.snooze_until else None,
                     "created_at": a.created_at.isoformat(),
+                    "percobaan": a.attempts or 0,
+                    "kesalahan_terakhir": a.last_error,
+                    # None = belum pernah dicoba; True = percobaan terakhir sukses.
+                    "terakhir_ok": None if not (a.attempts or 0) else a.last_error is None,
                 }
                 for a in rows
             ]

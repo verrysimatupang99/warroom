@@ -157,6 +157,11 @@ export interface AlertItem {
 	ack_at: string | null;
 	snooze_until: string | null;
 	created_at: string;
+	/** Jumlah percobaan kirim; >= 3 berarti notifier berhenti mencoba (tetap terbuka). */
+	percobaan: number;
+	kesalahan_terakhir: string | null;
+	/** null = belum pernah dicoba; true = percobaan terakhir sukses. */
+	terakhir_ok: boolean | null;
 }
 
 export interface AlertsPayload {

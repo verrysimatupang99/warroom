@@ -122,8 +122,11 @@ def handler_notify(s: SASession, job: Job) -> str:
     hasil = kirim_tertunda(s, limit=limit)
     if not hasil:
         return "tidak ada alert terbuka"
-    ok = sum(1 for h in hasil if h["ok"])
-    return f"dicoba={len(hasil)} terkirim={ok} gagal={len(hasil) - ok}"
+    dilewati = sum(1 for h in hasil if h.get("alert_id") is None)
+    dicoba = [h for h in hasil if h.get("alert_id") is not None]
+    ok = sum(1 for h in dicoba if h["ok"])
+    ekor = f" dilewati={dilewati}" if dilewati else ""
+    return f"dicoba={len(dicoba)} terkirim={ok} gagal={len(dicoba) - ok}{ekor}"
 
 
 def handler_collect(s: SASession, job: Job) -> str:

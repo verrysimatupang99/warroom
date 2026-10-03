@@ -237,3 +237,28 @@ def test_timestamp_ack_dipakai_untuk_dedupe(db) -> None:
         tandai_terkirim(s, a.id, kapan=datetime(2026, 10, 2, 12, 0, tzinfo=UTC))
     with session_scope() as s:
         assert s.query(Alert).one().ack_at == datetime(2026, 10, 2, 12, 0, tzinfo=UTC)
+
+def test_alert_macet_tidak_menghalangi_alert_baru(db) -> None:
+    """Regresi 3 Okt: alert lama yang sudah lewat batas percobaan dulu menghabiskan jatah
+    `limit`, sehingga alert BARU tidak pernah dicoba sama sekali."""
+    with session_scope() as s:
+        lama = _alert(subject="lama/macet")
+        s.add(lama)
+        s.flush()
+    for _ in range(MAX_PERCOBAAN):
+        with session_scope() as s:
+            kirim_tertunda(s, NullTransport(), limit=1)
+    with session_scope() as s:
+        s.add(_alert(subject="baru/penting"))
+
+    with session_scope() as s:
+        hasil = kirim_tertunda(s, NullTransport(), limit=1)
+    dicoba = [h for h in hasil if h.get("alert_id") is not None]
+    assert len(dicoba) == 1, f"alert baru harus dicoba, hasil={hasil}"
+    assert any(h.get("alert_id") is None and "dilewati" in str(h.get("detail")) for h in hasil)
+
+    with session_scope() as s:
+        ev = s.scalars(select(Event).where(Event.type == "alert.sent")).all()
+    subjek = [e.payload_json.get("subject") for e in ev]
+    assert "baru/penting" in subjek, "alert baru wajib tercatat percobaannya"
+    assert subjek.count("lama/macet") == MAX_PERCOBAAN, "alert macet tidak boleh diulang melebihi batas"
