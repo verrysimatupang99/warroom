@@ -1,6 +1,6 @@
 /**
- * IA (information architecture) dari blueprint §4. Satu sumber untuk rail, bottom tab, dan sub-nav
- * supaya rute dan chip tidak pernah berbeda definisi.
+ * IA (information architecture) War Room.
+ * Satu sumber untuk rail, bottom tab, dan sub-nav supaya rute dan chip tidak pernah berbeda definisi.
  */
 
 export interface Anak {
@@ -16,6 +16,7 @@ export interface Area {
 	label: string;
 	rute: string;
 	ikon: string;
+	kategori: 'pasar' | 'riset' | 'sistem';
 	anak: Anak[];
 }
 
@@ -25,6 +26,7 @@ export const AREAS: Area[] = [
 		label: 'Ringkas',
 		rute: '/',
 		ikon: '⌂',
+		kategori: 'pasar',
 		anak: []
 	},
 	{
@@ -32,6 +34,7 @@ export const AREAS: Area[] = [
 		label: 'Crypto',
 		rute: '/crypto',
 		ikon: '₿',
+		kategori: 'pasar',
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi'], catatan: 'Pair utama, risiko, posisi' },
 			{ slug: 'setup', label: 'Setup', kunci: ['kandidat'], catatan: 'Kandidat SMC + verdict per aturan' },
@@ -42,34 +45,11 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
-		kunci: 'idx',
-		label: 'IDX',
-		rute: '/idx',
-		ikon: '▦',
-		anak: [
-			{ slug: 'screener', label: 'Screener', kunci: ['kandidat'], catatan: 'Arjum × TradingView' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['pengukuran'], catatan: 'Broker summary, konsentrasi' },
-			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Asing vs lokal' },
-			{ slug: 'watchlist', label: 'Watchlist', kunci: ['kandidat'], catatan: 'Alert-only, tanpa order retail' }
-		]
-	},
-	{
-		kunci: 'forex',
-		label: 'Forex',
-		rute: '/forex',
-		ikon: '⇄',
-		anak: [
-			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian'], catatan: 'Bias, EMA, ATR, level kunci' },
-			{ slug: 'sesi', label: 'Sesi', kunci: ['bagian'], catatan: 'Asia/London/NY (WIB)' },
-			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda + dampak' },
-			{ slug: 'demo', label: 'Demo', kunci: ['bagian'], catatan: 'OANDA demo (label DEMO)' }
-		]
-	},
-	{
 		kunci: 'polymarket',
 		label: 'Polymarket',
 		rute: '/polymarket',
 		ikon: '◎',
+		kategori: 'pasar',
 		anak: [
 			{ slug: 'verdict', label: 'Verdict', kunci: ['poly_paper', 'bagian'], catatan: 'n vs n dibutuhkan, CI vs BE' },
 			{ slug: 'arm', label: 'Arm', kunci: ['poly_paper'], catatan: 'A/B/C/D + agen' },
@@ -82,10 +62,37 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'idx',
+		label: 'IDX',
+		rute: '/idx',
+		ikon: '▦',
+		kategori: 'pasar',
+		anak: [
+			{ slug: 'screener', label: 'Screener', kunci: ['kandidat'], catatan: 'Arjum × TradingView' },
+			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['pengukuran'], catatan: 'Broker summary, konsentrasi' },
+			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Asing vs lokal' },
+			{ slug: 'watchlist', label: 'Watchlist', kunci: ['kandidat'], catatan: 'Alert-only, tanpa order retail' }
+		]
+	},
+	{
+		kunci: 'forex',
+		label: 'Forex',
+		rute: '/forex',
+		ikon: '⇄',
+		kategori: 'pasar',
+		anak: [
+			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian'], catatan: 'Bias, EMA, ATR, level kunci' },
+			{ slug: 'sesi', label: 'Sesi', kunci: ['bagian'], catatan: 'Asia/London/NY (WIB)' },
+			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda + dampak' },
+			{ slug: 'demo', label: 'Demo', kunci: ['bagian'], catatan: 'OANDA demo (label DEMO)' }
+		]
+	},
+	{
 		kunci: 'gmgn',
 		label: 'GMGN',
 		rute: '/gmgn',
 		ikon: '⚡',
+		kategori: 'pasar',
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (Azure, baca-saja)' },
 			{ slug: 'lp', label: 'LP', kunci: ['lp_paper'], catatan: 'Posisi paper LP, V/L' },
@@ -94,23 +101,33 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
-		kunci: 'lp',
-		label: 'LP',
-		rute: '/lp',
-		ikon: '≋',
-		anak: [
-			{ slug: 'posisi', label: 'Posisi', kunci: ['bagian'], catatan: 'Uang nyata + IL vs hold' },
-			{ slug: 'kandidat', label: 'Kandidat', kunci: ['bagian'], catatan: 'Pencarian pool, urut volume' }
-		]
+		kunci: 'bukti',
+		label: 'Bukti',
+		rute: '/bukti',
+		ikon: '✓',
+		kategori: 'riset',
+		anak: []
 	},
 	{
 		kunci: 'bandar',
 		label: 'Bandarmologi',
 		rute: '/bandar',
 		ikon: '🜲',
+		kategori: 'riset',
 		anak: [
 			{ slug: 'broker', label: 'Broker', kunci: ['bagian'], catatan: 'ATS, no-sell, akumulator' },
 			{ slug: 'batas', label: 'Batas', kunci: ['bagian'], catatan: 'Yang bisa & tidak bisa diukur' }
+		]
+	},
+	{
+		kunci: 'lp',
+		label: 'LP Pool',
+		rute: '/lp',
+		ikon: '≋',
+		kategori: 'riset',
+		anak: [
+			{ slug: 'posisi', label: 'Posisi', kunci: ['bagian'], catatan: 'Uang nyata + IL vs hold' },
+			{ slug: 'kandidat', label: 'Kandidat', kunci: ['bagian'], catatan: 'Pencarian pool, urut volume' }
 		]
 	},
 	{
@@ -118,23 +135,18 @@ export const AREAS: Area[] = [
 		label: 'Overextended',
 		rute: '/overextended',
 		ikon: '⟰',
+		kategori: 'riset',
 		anak: [
 			{ slug: 'ukur', label: 'Ukur', kunci: ['bagian'], catatan: 'Pump %, OI vs puncak, FR' },
 			{ slug: 'uji', label: 'Uji', kunci: ['bagian'], catatan: 'Apakah short pola ini pernah bayar' }
 		]
 	},
 	{
-		kunci: 'bukti',
-		label: 'Bukti',
-		rute: '/bukti',
-		ikon: '✓',
-		anak: []
-	},
-	{
 		kunci: 'sistem',
 		label: 'Sistem',
 		rute: '/sistem',
 		ikon: '⚙',
+		kategori: 'sistem',
 		anak: [
 			{ slug: 'layanan', label: 'Layanan', kunci: [], catatan: 'Unit lintas host, uptime, restart' },
 			{ slug: 'kesegaran', label: 'Kesegaran', kunci: [], catatan: 'Matriks umur vs ambang' },
@@ -147,8 +159,8 @@ export const AREAS: Area[] = [
 	}
 ];
 
-/** Bottom tab mobile: 5 utama; IDX/Forex lewat "Lainnya". */
-export const TAB_MOBILE = ['/', '/polymarket', '/crypto', '/gmgn', '/sistem'];
+/** Bottom tab mobile: 5 utama */
+export const TAB_MOBILE = ['/', '/crypto', '/polymarket', '/idx', '/sistem'];
 
 export function areaDariJalur(jalur: string): Area | null {
 	const bersih = jalur.length > 1 ? jalur.replace(/\/$/, '') : jalur;
