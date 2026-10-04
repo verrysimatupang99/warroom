@@ -161,17 +161,18 @@ def test_fakta_basi_terdeteksi_lewat_ttl(db, snapshot_uji: Path) -> None:
 # (kind, key, observed_at) terus menabrak baris lama, jadi fakta baru TIDAK PERNAH masuk.
 
 def test_dibuat_wib_tidak_mundur_tujuh_jam(tmp_path):
-    """`dibuat` berformat "<tgl> <jam> WIB" tidak boleh menghasilkan observed_at 7 jam ke belakang."""
+    """`dibuat` berformat "<tgl> <jam> WIB" (UTC+7) dikonversi ke UTC dan sesuai mtime."""
     import datetime as dt
 
     from warroom_worker.facts_publish import _observed_at
 
     berkas = tmp_path / "snapshot.json"
     berkas.write_text("{}", encoding="utf-8")
-    hasil = _observed_at({"dibuat": "2026-10-04 18:43:19 WIB"}, berkas)
     mtime = dt.datetime.fromtimestamp(berkas.stat().st_mtime, tz=dt.UTC)
-    # Tidak boleh lebih tua daripada mtime berkas (dulu selisih ~7 jam).
-    assert hasil >= mtime - dt.timedelta(seconds=5)
+    wib_str = (mtime + dt.timedelta(hours=7)).strftime("%Y-%m-%d %H:%M:%S WIB")
+    hasil = _observed_at({"dibuat": wib_str}, berkas)
+    # Harus sesuai mtime (selisih <= 2 detik), bukan melompat 7 jam ke depan atau ke belakang.
+    assert abs((hasil.astimezone(dt.UTC) - mtime).total_seconds()) <= 2
 
 
 def test_dibuat_iso_berzona_dipakai_apa_adanya(tmp_path):

@@ -58,9 +58,13 @@
 	const jt = (n?: number | null) =>
 		n == null ? '—' : `${n > 0 ? '+' : ''}${n.toLocaleString('id-ID', { maximumFractionDigits: 1 })} Jt`;
 
-	function getWIBHour(): number {
+	function getWIBDate(): Date {
 		const now = new Date();
-		return (now.getUTCHours() + 7) % 24;
+		return new Date(now.getTime() + 7 * 3600 * 1000);
+	}
+
+	function getWIBHour(): number {
+		return getWIBDate().getUTCHours();
 	}
 
 	function statusSesi(jamMulai: number, jamSelesai: number, sekarangJam: number): boolean {
@@ -71,6 +75,10 @@
 	}
 
 	const wibHour = $derived(getWIBHour());
+	const isWeekendWIB = $derived.by(() => {
+		const day = getWIBDate().getUTCDay();
+		return day === 0 || day === 6;
+	});
 </script>
 
 <div class="space-y-4">
@@ -166,8 +174,9 @@
 								</div>
 
 								{#if kandidatArray.length === 0}
-									<div class="p-6 text-center text-text-3">
-										<p class="text-12">Tidak ada kandidat setup crypto yang aktif saat ini.</p>
+									<div class="p-6 text-center text-text-3 space-y-1">
+										<p class="text-12 font-medium text-text-2">Tidak ada kandidat setup crypto aktif saat ini.</p>
+										<p class="text-11 text-text-3">Screening SMC 24/7 sedang berjalan. Setup baru akan muncul saat terbentuk struktur POI valid dengan ATR1H ≥ 1.0%.</p>
 									</div>
 								{:else}
 									<div class="space-y-2.5">
@@ -195,8 +204,11 @@
 									</span>
 								</div>
 								{#if Number(risikoObj?.posisi_terbuka ?? 0) === 0}
-									<div class="py-4 text-center text-text-3 text-12">
-										Tidak ada posisi terbuka saat ini.
+									<div class="py-4 px-2 text-center space-y-1.5">
+										<div class="text-12 font-medium text-text-2">Tidak ada posisi terbuka saat ini (0/3).</div>
+										<p class="text-11 text-text-3">
+											Mode Paper Bounded Autonomy: Menunggu sinyal yang lolos 5 gerbang quant ketat. Di fase konsolidasi atau akhir pekan dengan volatilitas rendah, engine menahan diri untuk melindungi modal.
+										</p>
 									</div>
 								{/if}
 							</div>
@@ -468,9 +480,19 @@
 			{/if}
 
 			<!-- ========================================== -->
-			<!-- VIEW KHUSUS: IDX (Pasar Saham Indonesia) -->
-			<!-- ========================================== -->
 			{#if kunci === 'idx'}
+				{#if isWeekendWIB}
+					<div class="rounded-card border border-amber-500/30 bg-amber-500/10 p-3 text-12 text-amber-200/90 flex items-start gap-2.5">
+						<span class="text-16 leading-none">ℹ️</span>
+						<div>
+							<div class="font-bold text-amber-300">Bursa Efek Indonesia (IDX) Tutup — Akhir Pekan</div>
+							<p class="text-11 text-text-2 mt-0.5">
+								Pasar saham domestik beroperasi Senin – Jumat (09:00 – 15:55 WIB). Data Arjum, TradingView Screener, dan Bandarmologi di bawah mencerminkan penutupan sesi reguler terakhir.
+							</p>
+						</div>
+					</div>
+				{/if}
+
 				{#if sub === 'screener' || !sub}
 					<div class="space-y-4">
 						<!-- Arjum Screener -->
@@ -779,6 +801,18 @@
 			<!-- VIEW KHUSUS: FOREX & KOMODITAS             -->
 			<!-- ========================================== -->
 			{#if kunci === 'forex'}
+				{#if isWeekendWIB}
+					<div class="rounded-card border border-amber-500/30 bg-amber-500/10 p-3 text-12 text-amber-200/90 flex items-start gap-2.5">
+						<span class="text-16 leading-none">ℹ️</span>
+						<div>
+							<div class="font-bold text-amber-300">Pasar Forex & Spot Komoditas (XAU/USD) Tutup — Akhir Pekan</div>
+							<p class="text-11 text-text-2 mt-0.5">
+								Perdagangan valuta dan spot emas global beristirahat setiap akhir pekan. Sesi Sydney & Tokyo akan membuka likuiditas baru mulai Senin pagi (~04:00 WIB).
+							</p>
+						</div>
+					</div>
+				{/if}
+
 				{#if sub === 'struktur' || !sub}
 					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
 						<!-- Cockpit Emas (7 cols) -->

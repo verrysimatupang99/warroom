@@ -19,7 +19,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -45,17 +45,16 @@ def canonical_hash(value: Any) -> str:
 def _observed_at(payload: dict[str, Any], path: Path) -> datetime:
     """Waktu observasi sebenarnya.
 
-    Perangkap yang sudah diperbaiki di sini: `dibuat` dari domain berformat
-    `"2026-10-04 18:43:19 WIB"` — **waktu lokal (UTC+7), tanpa penanda zona**. Kalau diumpankan
-    apa adanya ke `fromisoformat`, jamnya dianggap UTC sehingga fakta **selalu terlihat 7 jam
-    lebih tua** daripada kenyataan. Itu membuat kesegaran salah dan `on_conflict_do_nothing`
-    pada (kind, key, observed_at) terus menabrak baris lama → fakta baru tak pernah masuk.
+    Field `dibuat` dari domain berformat `"2026-10-05 01:15:52 WIB"` (UTC+7).
+    Bila ada penanda 'WIB', waktu harus ditandai timezone(timedelta(hours=7))
+    agar konversi ke UTC tepat dan tidak melompat 7 jam ke masa depan.
 
-    Urutan kepercayaan: stempel waktu berzona (ISO, mis. `...+07:00`/`Z`) → `dibuat` lokal
-    apa adanya (ditandai UTC supaya perilaku lama tetap terjaga) → mtime berkas.
+    Urutan kepercayaan: stempel waktu berzona (ISO, mis. `...+07:00`/`Z`) →
+    `dibuat` berformat WIB (UTC+7) → `dibuat` lokal/UTC → mtime berkas.
     """
     raw = payload.get("dibuat")
     if isinstance(raw, str) and raw:
+        is_wib = "WIB" in raw
         teks = raw.strip().replace(" WIB", "").replace("WIB", "").strip()
         # ISO dengan penanda zona eksplisit (Z atau ±HH:MM) = paling tepercaya.
         if re.search(r"(Z|[+-]\d{2}:?\d{2})$", teks):
@@ -63,18 +62,24 @@ def _observed_at(payload: dict[str, Any], path: Path) -> datetime:
                 return datetime.fromisoformat(teks.replace("Z", "+00:00"))
             except ValueError:
                 pass
-        # `dibuat` lokal tanpa penanda zona: perlakukan seperti dulu (UTC-asli) — dicek
-        # dengan mtime supaya tidak pernah lebih akurat daripada kenyataan.
+        wib_tz = timezone(timedelta(hours=7))
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
             try:
-                dt_lokal = datetime.strptime(teks, fmt).replace(tzinfo=UTC)
+                if is_wib:
+                    dt = datetime.strptime(teks, fmt).replace(tzinfo=wib_tz)
+                else:
+                    dt = datetime.strptime(teks, fmt).replace(tzinfo=UTC)
             except ValueError:
                 continue
-            try:
-                mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
-            except OSError:
-                return dt_lokal
-            return max(dt_lokal, mtime)
+            # Penjaga masa depan: bila jam lokal keliru diset melompat ke depan
+            now_utc = datetime.now(tz=UTC)
+            if dt > now_utc + timedelta(minutes=5):
+                try:
+                    mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+                    return min(mtime, now_utc)
+                except OSError:
+                    return now_utc
+            return dt
     try:
         return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
     except OSError:

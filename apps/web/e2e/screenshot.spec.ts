@@ -1,10 +1,20 @@
 import { test } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { KREDENSIAL, PESAN_SKIP, RUTE, loginLewat } from './util';
 
 /**
  * Screenshot bukti (W8): 7 rute + /masuk, desktop 1440 dan mobile 390, full-page.
  * Disimpan ke `docs/bukti-p2/` supaya bisa ditinjau tanpa menjalankan app.
  */
+const BUKTI_DIR = process.cwd().endsWith('apps/web')
+	? path.resolve(process.cwd(), '../../docs/bukti-p2')
+	: path.resolve(process.cwd(), 'docs/bukti-p2');
+
+if (!fs.existsSync(BUKTI_DIR)) {
+	fs.mkdirSync(BUKTI_DIR, { recursive: true });
+}
+
 const NAMA: Record<string, string> = {
 	'/': 'ringkas',
 	'/crypto': 'crypto',
@@ -28,11 +38,11 @@ test.describe('screenshot bukti', () => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.goto(rute);
 			await page.waitForTimeout(1500); // biar fakta & SSE tampil
-			await page.screenshot({ path: `../../docs/bukti-p2/desktop-${nama}.png`, fullPage: true });
+			await page.screenshot({ path: `${BUKTI_DIR}/desktop-${nama}.png`, fullPage: true });
 
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.waitForTimeout(500);
-			await page.screenshot({ path: `../../docs/bukti-p2/mobile-${nama}.png`, fullPage: true });
+			await page.screenshot({ path: `${BUKTI_DIR}/mobile-${nama}.png`, fullPage: true });
 		});
 	}
 
@@ -47,11 +57,11 @@ test.describe('screenshot bukti', () => {
 			await page.goto(s.rute);
 			await page.getByRole('button', { name: s.tombol, exact: true }).click();
 			await page.waitForTimeout(1200);
-			await page.screenshot({ path: `../../docs/bukti-p2/desktop-${s.nama}.png`, fullPage: true });
+			await page.screenshot({ path: `${BUKTI_DIR}/desktop-${s.nama}.png`, fullPage: true });
 
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.waitForTimeout(500);
-			await page.screenshot({ path: `../../docs/bukti-p2/mobile-${s.nama}.png`, fullPage: true });
+			await page.screenshot({ path: `${BUKTI_DIR}/mobile-${s.nama}.png`, fullPage: true });
 		});
 	}
 });
@@ -60,7 +70,7 @@ test('screenshot /masuk', async ({ page }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto('/masuk');
 	await page.waitForTimeout(500);
-	await page.screenshot({ path: '../../docs/bukti-p2/desktop-masuk.png', fullPage: true });
+	await page.screenshot({ path: `${BUKTI_DIR}/desktop-masuk.png`, fullPage: true });
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.screenshot({ path: '../../docs/bukti-p2/mobile-masuk.png', fullPage: true });
+	await page.screenshot({ path: `${BUKTI_DIR}/mobile-masuk.png`, fullPage: true });
 });

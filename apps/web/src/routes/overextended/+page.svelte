@@ -79,7 +79,7 @@
 			if (f.key !== 'bagian' && f.key !== 'overextended') continue;
 			const v = nilaiObj(f.value);
 			const b = (v?.['overextended'] ?? (v?.['bagian'] as Record<string, unknown> | undefined)?.['overextended'] ?? v) as Record<string, unknown> | undefined;
-			if (b && typeof b === 'object' && ('simbol' in b || 'jumlah' in b)) return { data: b as Bagian, fakta: f };
+			if (b && typeof b === 'object' && ('simbol' in b || 'jumlah' in b)) return { data: b as unknown as Bagian, fakta: f };
 		}
 		return null;
 	});
