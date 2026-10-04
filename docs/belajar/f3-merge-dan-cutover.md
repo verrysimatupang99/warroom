@@ -73,8 +73,14 @@ Perlu persetujuan owner. Estimasi: <2 menit, downtime ~5 detik per servis.
 # 0. pastikan branch sudah di-merge ke main
 cd /home/admin/warroom && git log --oneline -1
 
-# 1. tandai titik balik (rollback)
-git rev-parse HEAD > /tmp/warroom-sebelum-cutover.txt
+# 1. TITIK BALIK — pakai commit SEBELUM merge, bukan HEAD sesudahnya.
+#    (Koreksi 4 Okt: `git rev-parse HEAD` dicatat setelah merge, jadi hash itu tidak
+#     mengembalikan venv ke lokasi lama. Yang benar: 8fb10f3.)
+#    Cek: jalankan `git show 8fb10f3:packages/core/pyproject.toml | grep live-trading`
+#    → harus masih `path = "../../../live-trading"`, dan `git ls-tree 8fb10f3 packages/`
+#      harus TIDAK punya packages/live-trading.
+TITIK_BALIK=8fb10f3
+echo "$TITIK_BALIK" > /tmp/warroom-sebelum-cutover.txt
 
 # 2. sync venv PRODUKSI ke struktur baru
 uv sync
@@ -97,7 +103,7 @@ uv run pytest -q    # 431 lulus
 
 ```bash
 cd /home/admin/warroom
-git checkout main && git reset --hard "$(cat /tmp/warroom-sebelum-cutover.txt)"
+git checkout main && git reset --hard 8fb10f3      # commit SEBELUM merge (bukan HEAD pasca-merge)
 uv sync && sudo systemctl restart warroom-api warroom-worker warroom-web
 ```
 
