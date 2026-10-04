@@ -48,20 +48,38 @@ sumber mati tanpa cache → error jujur (bukan nol, bukan `n/a` tanpa jejak).
 
 ---
 
-## ⏳ Aksi 2 — Bot Telegram untuk sinyal · BELUM, dan ini alasannya
+## ✅ Aksi 2 — Distribusi sinyal ke Telegram · SELESAI (4 Okt, lanjutan)
 
-Infrastrukturnya **sudah lengkap**: `TelegramTransport` + `transport_from_env()` +
-`/etc/warroom/notifier.env` (sudah terisi), dedupe di `dispatch.kirim_tertunda()`, dan setiap
-percobaan tercatat sebagai `Event` di DB (sumber kebenaran = DB, bukan transport).
+| Item | Bukti |
+|---|---|
+| Adapter | `services/worker/src/warroom_worker/adapters/signals.py` — baca-saja ledger `verdicts.jsonl`, **tanpa jaringan/kuota** |
+| Handler + job | `handler_signal_sync` + `JobSpec signal-sync` (900 s, ttl 6 jam > interval) |
+| Alur | ledger → fakta `signal.<pair>` → alert ber-dedupe subjek → Telegram |
+| Label jujur | setiap pesan membawa: *kandidat belum-terbukti — gate statistik belum lolos* |
+| Uji | 8 tes adapter (**447 lulus**), ruff bersih |
+| Uji integrasi DB | fakta + alert + tautan `fact_ids=[10216]` terbentuk, pesan berformat benar → lalu dibersihkan agar tidak spam |
+| Transport terbukti | event `alert.sent` → `ok=true transport=telegram` |
+| Commit | `7f58f21` |
 
-**Yang belum ada: produsen sinyalnya.** Mesin sinyal sudah ada sebagai pustaka
+**Perilaku saat ini:** jendela 6 jam → **0 sinyal** — dan itu **benar**: sinyal lolos terakhir
+3 Okt 22:19. Ini justru demonstrasi "signal or silence": kalau tidak ada setup yang lulus, sistem
+diam, bukan memaksa sinyal.
+
+Infrastruktur lama yang dipakai ulang (sudah ada sejak awal): `TelegramTransport` +
+`/etc/warroom/notifier.env` + dedupe semantik `_alert()` + audit setiap percobaan sebagai `Event`
+di DB (sumber kebenaran tetap DB, bukan transport).
+
+**Temuan saat itu (pemicu pekerjaan ini):** mesin sinyal sudah ada sebagai pustaka
 (`signals/{agents,engine,gates,smc}.py` — orderflow, whale, sentiment, risk, macro, `collect()`),
-tetapi **tidak ada satu job pun yang menulis fakta `signal.*`**. Bukti: daftar kind fakta di DB
-hanya `snapshot, poly.*, gmgn, ai.*, learner` — tidak ada `signal.*`, padahal IA UI sudah
-menyiapkan `topikArea.crypto = ['signal.', 'verdict.', 'trade.', 'gate.', 'llm.']`.
+tetapi **tidak ada satu job pun yang menulis fakta `signal.*`** — daftar kind di DB hanya
+`snapshot, poly.*, gmgn, ai.*, learner`, padahal IA UI sudah menyiapkan
+`topikArea.crypto = ['signal.', 'verdict.', 'trade.', 'gate.', 'llm.']` sejak awal.
 
-**Rencana yang benar (belum dijalankan):** job `signal-sync` → jalankan `collect()` atas kandidat →
-tulis fakta `signal.<venue>.<pair>` → notifier mengirimkannya sebagai alert ber-dedupe.
+**Yang dibangun:** job `signal-sync` **membaca** ledger `verdicts.jsonl` yang sudah ditulis job
+`collect` (`lt scan`) — jadi tidak ada panggilan jaringan baru dan tidak ada kuota tambahan —
+lalu menerbitkan fakta `signal.<pair>` dan mengabarkan yang lolos lewat alert ber-dedupe subjek.
+Catatan desain: mesin sinyal sendiri sudah menandai bahwa *confluence tidak dipakai sebagai gate*
+(pelajaran studi 6-agen) — jadi kita **tidak** menambah agen demi keyakinan.
 
 ⚠️ **Batas yang mengikat:** sesuai temuan teardown dan gate yang masih `NOT_PROVEN`, sinyal
 dikirim sebagai **kandidat + alasan**, dilabeli belum terbukti — **bukan** ajakan beli. Kita tidak
