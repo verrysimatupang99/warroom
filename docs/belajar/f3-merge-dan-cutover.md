@@ -113,8 +113,11 @@ uv sync && sudo systemctl restart warroom-api warroom-worker warroom-web
 
 - **State runtime tetap** di `/home/admin/live-trading` lewat `WARROOM_DOMAIN_HOME` — 48 berkas state
   (snapshot, radar_cache, arjum_quota, idx616_mirror, …) tidak dipindah.
-- **Unit `live-trading-*` tidak tersentuh** — dashboard `:8799`, collect, snapshot, backup, watchdog
-  tetap jalan dari `/home/admin/live-trading/.venv` dengan `LT_HOME=/home/admin/live-trading`.
+- **Unit `live-trading-*`** — awalnya TIDAK tersentuh cutover (masih jalan dari
+  `/home/admin/live-trading/.venv`). **Diperbaiki 4 Okt** (lihat §7): 4 unit yang meng-import kode
+  (snapshot, collect, dashboard, watchdog) kini diarahkan ke `/home/admin/warroom/.venv` dengan
+  `WorkingDirectory=/home/admin/warroom`; `LT_HOME=/home/admin/live-trading` tetap, jadi **state
+  tidak pindah**. Unit `live-trading-backup` dibiarkan (skrip shell, tidak meng-import kode).
 - **Tencent read-only** — cuma dibaca.
 
 ## 6. Langkah lanjutan setelah cutover (kalau owner mau benar-benar "satu")
