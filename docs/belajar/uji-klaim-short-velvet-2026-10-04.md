@@ -111,21 +111,112 @@ Aturan yang dipegang:
 
 ---
 
-## 6. Kesimpulan
+## 6. Sinyal ketiga (CVD) diuji sungguhan — dan hasilnya lebih buruk
+
+Awalnya dicatat "CVD tidak tersedia". Ternyata bisa dihitung dari klines: kolom 9
+(`takerBuyBaseAssetVolume`) dan kolom 5 (`volume`) memberi delta agresi beli/jual per bar —
+`delta = 2·takerBuyBase − volume`. Itu CVD sungguhan, bukan proksi, dan riwayatnya panjang
+(berbeda dari `aggTrades` yang cuma beberapa menit terakhir).
+
+`uji_kehabisan_pembeli()` mencari divergensi bearish: **harga membuat puncak lebih tinggi,
+tapi CVD pada puncak itu lebih rendah** — persis "buyer exhaustion" yang dia klaim.
+
+| Aturan yang diuji | 6 jam | 12 jam | 24 jam | Verdict |
+|---|---|---|---|---|
+| OI + FR | −1,05% (43%) | −0,19% (49%) | −5,00% (26%) | **tidak terbukti** |
+| **Divergensi CVD** | **−1,57% (41%)** | **−2,90% (36%)** | **−7,42% (26%)** | **tidak terbukti** |
+
+Divergensi CVD menyala di **81 dari 168 jam** — dan di ketiga horizon hasilnya **lebih buruk
+daripada sinyal OI/FR**, juga lebih buruk daripada short asal-asalan. Kontrol BTCUSDT: 13 sinyal,
+winrate 8–23%, juga lebih buruk di ketiga horizon.
+
+**Jadi sinyal yang paling dia banggakan ("buyer exhaustion") justru yang paling buruk.**
+
+### Kelemahan alat sendiri yang ketemu di sini
+
+Putusan pertama terlalu longgar: **4 dari 6 koin besar terbaca "ada-keunggulan"** — padahal
+seluruh pasar sedang turun, jadi short menang *apa pun* sinyalnya. Itu beta pasar, bukan edge.
+Diperketat:
+
+- perlu **≥2 horizon** lebih baik (bukan 1),
+- verdict baru **`perlu-uji-tambahan`** saat dasar pembanding positif di **semua** horizon
+  ("pasar sedang turun, jadi short menang apa pun sinyalnya"),
+- setiap hasil membawa catatan **"diuji pada N jam — satu rezim pasar; bukti lemah"**.
+
+## 7. 🔴 Akar sebenarnya kenapa `bagian` terus kehilangan isi
+
+Ini ditemukan saat menyambungkan panel ke UI. Gejala: `state/snapshot.json` hanya punya **7
+bagian** (macro, lp, overextended hilang) **tanpa error apa pun**, padahal job melaporkan `ok`.
+
+Dua perbaikan sebelumnya (timeout 300→900 s, `observed_at` WIB) **hanya menutupi gejala**. Akarnya:
+
+> `_jalankan_lt()` mengambil biner `lt` dari **`WARROOM_DOMAIN_HOME/.venv/bin/lt`** —
+> dan `/home/admin/live-trading/.venv` adalah **venv LAMA** yang meng-import dari
+> `/home/admin/live-trading/src` (source sebelum merge).
+
+Jadi **semua job worker yang memanggil `lt` menjalankan kode sebelum merge** — termasuk
+`refresh-snapshot` dan `collect`. Venv yang benar (`/home/admin/warroom/.venv`) meng-import dari
+`packages/live-trading/src`, dan jalan manual memakai venv itu — itu sebabnya uji manual selalu
+"berhasil" sementara job produksi diam-diam memakai kode lama.
+
+**Perbaikan:** `_lt_bin()` memakai venv tempat worker berjalan (`sys.executable`), bukan venv di
+domain home. Dikunci 3 tes.
+
+Bukti sesudah perbaikan — snapshot **dari job**, bukan manual:
+
+```
+bagian: 10 ['crypto','dex','forex','hyperliquid','idx','idx616','idx_tv','lp','macro','overextended']
+  macro: ADA   lp: ADA   overextended: ADA
+```
+
+Pelajaran yang layak diingat:
+
+1. **Venv yang salah = kode yang salah, tanpa error.** "Job ok" dan "kode benar" adalah dua
+   pernyataan berbeda.
+2. **Uji manual harus memakai jalur yang SAMA dengan produksi.** Uji manual di sini memakai venv
+   berbeda dari job — itu yang menyembunyikan bug selama beberapa siklus.
+3. **Kalau bagian hilang tanpa error, curigai biner/lingkungan, bukan logika.**
+
+---
+
+## 8. Yang dibangun: panel `/overextended`
+
+`apps/web/src/routes/overextended/+page.svelte` + nav `⟰ Overextended`.
+
+Aturan halaman: **label "overextended" tidak pernah tampil sendirian.** Setiap baris wajib
+membawa hasil uji edge + tabel dasar pembanding per horizon.
+
+Contoh isi nyata (4 Okt):
+
+```
+LINKUSDT  pump +20,2%  cvd-div False  OI/FR perlu-uji-tambahan  CVD tidak-terbukti
+SUIUSDT   pump +18,3%  cvd-div True   OI/FR perlu-uji-tambahan  CVD tidak-terbukti
+SOLUSDT   pump  +6,5%  cvd-div True   OI/FR ada-keunggulan      CVD ada-keunggulan
+BNBUSDT   pump  +6,0%  cvd-div False  OI/FR tidak-terbukti      CVD tidak-terbukti
+BTCUSDT   pump  +5,8%  cvd-div False  OI/FR tidak-terbukti      CVD tidak-terbukti
+ETHUSDT   pump  +5,5%  cvd-div True   OI/FR ada-keunggulan      CVD ada-keunggulan
+```
+
+Perhatikan LINKUSDT: pump terbesar (+20,2%) tapi veredictnya **`perlu-uji-tambahan`** — karena
+pasar sedang turun, keunggulannya belum bisa dinilai. Justru itu gunanya halaman ini.
+
+---
+
+## 9. Kesimpulan
 
 1. **Tradenya untung — itu fakta.** Yang tidak benar adalah **alasan yang dia tulis**.
 2. **Tiga sinyal yang dia sebut: dua bertentangan dengan data** pada jam yang dia klaim
    (OI di puncak dan naik; FR tidak pernah ramai).
 3. **Sebagai aturan, polanya tidak punya keunggulan** — 26–49% winrate, rata-rata negatif, dan
-   tidak lebih baik daripada short asal-asalan.
-4. **Yang bisa dipakai dari post itu:** daftar **apa yang harus diukur** (OI, FR, taker) — bukan
-   arah tradingnya. War Room sudah mengumpulkan ketiganya.
+   tidak lebih baik daripada short asal-asalan. **Sinyal CVD-nya yang paling buruk.**
+4. **Yang bisa dipakai dari post itu:** daftar **apa yang harus diukur** (OI, FR, CVD) — bukan
+   arah tradingnya. War Room kini mengukur ketiganya, plus menguji apakah pengukurannya berguna.
 5. **Pelajaran yang sejalan dengan klaim LP BAGSPAY:** angka di media sosial biasanya nyata,
    tapi **alasannya** yang tidak bisa diaudit. Alat ukur kita menutup celah itu.
 
 ## Langkah berikutnya
 
-- Sambungkan `ukur_kelebihan` + `uji_edge_short` ke `bagian` snapshot supaya kelihatan di UI
-  (perlu cache 1 jam; 3 panggilan API per simbol).
-- Tambah **CVD sungguhan** dari data aggTrade — sinyal ketiga yang dia sebut tapi tidak kita punya
-  dalam bentuk itu; saat ini hanya `taker` (taker buy/sell) sebagai proksi.
+- Uji edge pada **beberapa rezim pasar** (bukan 168 jam tunggal) supaya `ada-keunggulan` punya
+  bobot lebih dari "bukti lemah".
+- **MEXC API key** (menunggu pemilik) untuk eksekusi crypto nyata.
+
