@@ -1,13 +1,21 @@
 <script lang="ts">
 	// Ringkas — "apa yang berubah & apa yang perlu keputusan". Tiap blok menangani
 	// memuat/galat/kosong; angka hanya dari API.
-	import { getAlerts, getAreas, getKesegaran, getKesehatan } from '$lib/api/client';
-	import type { AlertsPayload, AreasPayload, Kesehatan, KesegaranPayload } from '$lib/api/types';
+	import { getAlerts, getArea, getAreas, getKesegaran, getKesehatan } from '$lib/api/client';
+	import type {
+		AlertsPayload,
+		AreaPayload,
+		Fakta,
+		AreasPayload,
+		Kesehatan,
+		KesegaranPayload
+	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
 	import Block from '$lib/components/Block.svelte';
 	import DataTable from '$lib/components/DataTable.svelte';
 	import EventFeed from '$lib/components/EventFeed.svelte';
+	import FreshnessBadge from '$lib/components/FreshnessBadge.svelte';
 
 	let areas = $state<AreasPayload | null>(null);
 	let kesegaran = $state<KesegaranPayload | null>(null);
@@ -16,14 +24,17 @@
 	let galatKesegaran = $state<string | null>(null);
 	let galatSehat = $state<string | null>(null);
 	let alerts = $state<AlertsPayload | null>(null);
+	let kripto = $state<AreaPayload | null>(null);
+	let galatKripto = $state<string | null>(null);
 	let memuat = $state(true);
 
 	async function muat() {
-		const [a, k, h, al] = await Promise.allSettled([
+		const [a, k, h, al, kr] = await Promise.allSettled([
 			getAreas(),
 			getKesegaran(),
 			getKesehatan(),
-			getAlerts()
+			getAlerts(),
+			getArea('crypto')
 		]);
 		if (a.status === 'fulfilled') {
 			areas = a.value;
@@ -38,8 +49,36 @@
 			galatSehat = null;
 		} else galatSehat = (h.reason as Error)?.message ?? String(h.reason);
 		if (al.status === 'fulfilled') alerts = al.value;
+		if (kr.status === 'fulfilled') {
+			kripto = kr.value;
+			galatKripto = null;
+		} else galatKripto = (kr.reason as Error)?.message ?? String(kr.reason);
 		memuat = false;
 	}
+
+	/** Sinyal = fakta ber-kind `signal`. Nilai bisa datang sebagai objek atau teks JSON. */
+	function nilaiObj(v: unknown): Record<string, unknown> | null {
+		if (v && typeof v === 'object') return v as Record<string, unknown>;
+		if (typeof v === 'string') {
+			try {
+				const d = JSON.parse(v);
+				return d && typeof d === 'object' ? d : null;
+			} catch {
+				return null;
+			}
+		}
+		return null;
+	}
+
+	const sinyal = $derived(
+		(kripto?.facts ?? [])
+			.filter((f: Fakta) => f.kind === 'signal')
+			.map((f: Fakta) => ({ f, v: nilaiObj(f.value) ?? {} }))
+	);
+	const labelSinyal = $derived(
+		(sinyal[0]?.v?.label as string | undefined) ??
+			'kandidat belum-terbukti — gate statistik belum lolos'
+	);
 
 	$effect(() => {
 		void muat();
@@ -89,6 +128,60 @@
 			· <a class="text-accent-2 underline" href="/sistem">buka Sistem</a>
 		</div>
 	{/if}
+
+	<Block
+		judul="Sinyal atau diam"
+		deskripsi="Hanya setup yang lulus SEMUA gate yang terbit — sisanya diam, dan itu disengaja"
+		memuat={memuat && !kripto}
+		galat={galatKripto}
+	>
+		{#if sinyal.length === 0}
+			<p class="text-13 text-text-2">
+				<span class="angka text-accent-2">diam</span> — tidak ada setup yang lulus semua gate dalam
+				jendela terakhir.
+			</p>
+			<p class="mt-1 text-12 text-text-3">
+				Diam bukan kegagalan: memaksa sinyal saat tidak ada setup adalah cara kehilangan uang.
+				Setiap sinyal yang terbit membawa entry, SL struktural, TP, dan alasan.
+			</p>
+		{:else}
+			<ul class="space-y-2">
+				{#each sinyal as s (s.f.key + String(s.v.diambil ?? s.f.fact_id))}
+					<li class="rounded border border-line p-2">
+						<div class="flex flex-wrap items-baseline gap-2">
+							<span class="angka text-13 text-text">{s.f.key}</span>
+							<span class="angka {s.v.arah === 'LONG' ? 'text-pos' : 'text-neg'}"
+								>{s.v.arah}</span
+							>
+							<span class="text-11 text-text-3">tier {s.v.tier ?? '—'}</span>
+						</div>
+						<p class="angka text-12 text-text-2">
+							entry {s.v.entry ?? '—'} · SL {s.v.sl ?? '—'} · TP1 {s.v.tp1 ?? '—'}{#if s.v.risk_pct != null}
+								· risiko {s.v.risk_pct}%{/if}
+						</p>
+						{#if s.v.aturan_gagal && (s.v.aturan_gagal as string[]).length}
+							<p class="text-11 text-text-3">
+								aturan belum lulus: {(s.v.aturan_gagal as string[]).join(', ')}
+							</p>
+						{/if}
+						<p class="mt-1 flex flex-wrap items-center gap-2 text-11 text-text-3">
+							<span>sumber <span class="angka">{s.f.source}</span></span>
+							<FreshnessBadge
+								status={s.f.status}
+								age_s={s.f.age_s}
+								ttl_s={s.f.ttl_s}
+								source={s.f.source}
+							/>
+						</p>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<p class="mt-2 text-11 text-text-3">
+			<span class="angka">{labelSinyal}</span> ·
+			<a class="text-accent-2 underline" href="/bukti">bukti &amp; batas kami</a>
+		</p>
+	</Block>
 
 	<Block judul="Status layanan" deskripsi="Dari /api/v1/health" memuat={memuat && !sehat} galat={galatSehat}>
 		<div class="angka grid gap-2 text-13 sm:grid-cols-2 lg:grid-cols-4">

@@ -24,6 +24,9 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     "crypto": (
         "bagian", "kandidat", "pengukuran", "backtest",
         "equity", "ledger", "risiko", "posisi", "pod_llm",
+        # kind `signal` diterbitkan job `signal-sync` (bukan bagian snapshot).
+        # UI sudah mendeklarasikan topik `signal.` untuk area ini sejak awal.
+        "signal",
     ),
     "idx": ("bagian", "kandidat", "pengukuran"),
     "forex": ("bagian",),
