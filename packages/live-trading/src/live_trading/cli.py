@@ -234,28 +234,29 @@ def cmd_paper(args: argparse.Namespace) -> int:
     from .execution.paper import PaperBroker
 
     s = get_settings()
-    b = PaperBroker(s)
+    venue = (getattr(args, "venue", None) or "crypto").lower()
+    b = PaperBroker(s, venue=venue)
 
     if args.aksi == "list":
         pos = b.positions()
         if not pos:
-            print("  tidak ada posisi paper")
+            print(f"  tidak ada posisi paper ({venue})")
             return 0
         for p in pos:
             print(
                 f"  {p.signal_id}  {p.pair:<10} {p.direction:<5} entry {p.entry} stop {p.stop} "
-                f"tp1 {p.tp1} tp2 {p.tp2} size ${p.size_usd} [{p.status}]"
+                f"tp1 {p.tp1} tp2 {p.tp2} size ${p.size_usd} [{p.status}] ({venue})"
             )
         return 0
 
     if args.aksi == "open":
         from .risk import RiskGate
 
-        gate = RiskGate(s)
-        equity = args.equity or s.equity_usd
-        atr_val = args.atr if args.atr else (args.entry - args.stop) / 1.5
+        gate = RiskGate(s, venue=venue)
+        equity = args.equity or (s.venue_equity_usd if venue != "crypto" else s.equity_usd)
+        atr_val = args.atr if args.atr else abs(args.entry - args.stop) / 1.5
         decision = gate.check(pair=args.pair, price=args.entry, atr=atr_val, equity_usd=equity)
-        print(f"  risk gate: {'IZIN' if decision.allowed else 'TOLAK'} — {decision.reason}")
+        print(f"  risk gate [{venue}]: {'IZIN' if decision.allowed else 'TOLAK'} — {decision.reason}")
         if not decision.allowed:
             return 1
         pos = b.open_position(
@@ -266,30 +267,60 @@ def cmd_paper(args: argparse.Namespace) -> int:
             tp1=args.tp1,
             tp2=args.tp2,
             size_usd=decision.size_usd or 0.0,
-            note=f"size dari risk gate ({decision.risk_usd} USD risiko)",
+            note=f"size dari risk gate ({decision.risk_usd} USD risiko, venue {venue})",
         )
-        print(f"  dibuka: {pos.signal_id} {pos.pair} {pos.direction} size ${pos.size_usd}")
+        print(f"  dibuka: {pos.signal_id} {pos.pair} {pos.direction} size ${pos.size_usd} [{venue}]")
         return 0
 
     if args.aksi == "close":
         rec = b.close_position(args.signal_id, args.price, args.status, args.note)
-        print(f"  ditutup: {rec['signal_id']} {rec['status']} R={rec['r']:+.3f}")
+        print(f"  ditutup: {rec['signal_id']} {rec['status']} R={rec['r']:+.3f} [{venue}]")
         return 0
 
     if args.aksi == "eval":
-        from .collectors.crypto import CryptoCollector
-
-        pairs = {p.pair for p in b.positions()}
         prices: dict[str, float] = {}
+        pairs = {p.pair for p in b.positions()}
         if pairs:
-            c = CryptoCollector(s)
-            for pair in pairs:
-                try:
-                    prices[pair] = c.pair_snapshot(pair, klines=2)["price"]
-                except Exception:  # noqa: BLE001
-                    continue
+            if venue == "crypto":
+                from .collectors.crypto import CryptoCollector
+
+                c = CryptoCollector(s)
+                for pair in pairs:
+                    try:
+                        prices[pair] = c.pair_snapshot(pair, klines=2)["price"]
+                    except Exception:
+                        continue
+            elif venue == "forex":
+                from .collectors.forex import ForexCollector
+
+                fc = ForexCollector(s)
+                st = fc.structure("60", 120)
+                for p_info in (st.get("pairs") or []):
+                    code = p_info.get("pair")
+                    pr = p_info.get("price")
+                    if code and pr:
+                        prices[code] = float(pr)
+            elif venue == "idx":
+                from .collectors.idx_check import tv_snapshot
+
+                snap = tv_snapshot(list(pairs))
+                for item in snap:
+                    pr = item.get("close")
+                    ticker = item.get("ticker")
+                    if ticker and pr:
+                        prices[ticker] = float(pr)
+            elif venue == "gmgn":
+                from .collectors import dexscreen
+
+                for pair in pairs:
+                    try:
+                        res = dexscreen.cari_pool(pair)
+                        if res and res[0].get("priceUsd"):
+                            prices[pair] = float(res[0]["priceUsd"])
+                    except Exception:
+                        continue
         closed = b.evaluate(prices)
-        print(f"  harga diperiksa: {len(prices)} pair | ditutup: {len(closed)}")
+        print(f"  [{venue}] harga diperiksa: {len(prices)} pair | ditutup: {len(closed)}")
         for rec in closed:
             print(f"    {rec['signal_id']} {rec['pair']} {rec['status']} R={rec['r']:+.3f}")
         return 0
@@ -971,6 +1002,7 @@ def main(argv: list[str] | None = None) -> int:
 
     paper = sub.add_parser("paper", help="executor paper")
     paper.add_argument("aksi", choices=["list", "open", "close", "eval"])
+    paper.add_argument("--venue", default="crypto", choices=["crypto", "polymarket", "gmgn", "idx", "forex"], help="venue pasar")
     paper.add_argument("--pair")
     paper.add_argument("--direction", default="LONG")
     paper.add_argument("--entry", type=float)

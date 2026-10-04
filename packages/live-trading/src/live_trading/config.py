@@ -110,6 +110,21 @@ class Settings(BaseSettings):
         """Kunci 'satu executor per akun' — mencegah dua mesin mengeksekusi bersamaan."""
         return self.state_dir / "executor.lock"
 
+    # --- Partisi Multi-Venue (5 Pasar) -----------------------------------
+    venue_equity_usd: float = 200.0
+
+    def venue_ledger_path(self, venue: str = "crypto") -> Path:
+        v = (venue or "crypto").lower()
+        if v == "crypto":
+            return self.ledger_path
+        return self.state_dir / f"{v}_equity.jsonl"
+
+    def venue_positions_path(self, venue: str = "crypto") -> Path:
+        v = (venue or "crypto").lower()
+        if v == "crypto":
+            return self.state_dir / "paper_positions.json"
+        return self.state_dir / f"paper_positions_{v}.json"
+
     # --- Operasi ---------------------------------------------------------
     def ensure_dirs(self) -> None:
         for d in (self.secrets_dir, self.state_dir, self.journal_dir, self.logs_dir):

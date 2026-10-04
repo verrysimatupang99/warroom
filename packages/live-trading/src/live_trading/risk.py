@@ -89,12 +89,21 @@ def r_closed_on(rows: list[dict[str, Any]], day: str) -> float:
 
 
 class RiskGate:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, venue: str = "crypto") -> None:
         self.s = settings
+        self.venue = (venue or "crypto").lower()
 
     # ------------------------------------------------------------ keadaan
+    @property
+    def ledger_path(self) -> Path:
+        return self.s.venue_ledger_path(self.venue)
+
+    @property
+    def positions_path(self) -> Path:
+        return self.s.venue_positions_path(self.venue)
+
     def ledger_state(self) -> LedgerRead:
-        return read_ledger_strict(self.s.ledger_path)
+        return read_ledger_strict(self.ledger_path)
 
     def ledger(self) -> list[dict[str, Any]]:
         return self.ledger_state().rows
@@ -103,7 +112,7 @@ class RiskGate:
         return r_closed_on(self.ledger(), _today_wib())
 
     def open_positions(self) -> list[dict[str, Any]]:
-        p = self.s.state_dir / "paper_positions.json"
+        p = self.positions_path
         if not p.is_file():
             return []
         try:
@@ -223,6 +232,8 @@ class RiskGate:
             "ledger_baris_rusak": led.unreadable,
             "ledger_angka_bisa_dipercaya": led.unreadable == 0,
             "mode": "paper" if self.s.paper else "live",
+            "venue": self.venue,
+            "equity_usd": self.s.venue_equity_usd if self.venue != "crypto" else self.s.equity_usd,
             "hari_ini_r": day_r,
             "batas_rugi_r": self.s.daily_loss_limit_r,
             "sisa_ruang_r": round(self.s.daily_loss_limit_r + day_r, 3),

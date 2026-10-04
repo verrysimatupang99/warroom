@@ -173,6 +173,20 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
             "(6 jam). Cutover 3 Okt: timer domain dimatikan."
         ),
     ),
+    JobSpec(
+        name="paper-eval",
+        interval_s=60,
+        enabled=True,
+        payload={"timeout_s": 30},
+        note="evaluasi harga live bursa untuk posisi paper aktif; eksekusi TP/SL + alert Telegram instan.",
+    ),
+    JobSpec(
+        name="paper-scan",
+        interval_s=180,
+        enabled=True,
+        payload={"timeout_s": 60},
+        note="pemindaian kuantitatif SMC & auto-open posisi paper saat lolos 5 risk gates + alert Telegram.",
+    ),
 )
 
 # Nama job → fungsi. Diisi oleh `warroom_worker.jobs` saat impor untuk menghindari impor melingkar.

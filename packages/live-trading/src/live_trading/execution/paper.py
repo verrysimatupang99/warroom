@@ -58,17 +58,22 @@ class PaperPosition:
 
 
 class PaperBroker:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, venue: str = "crypto") -> None:
         from live_trading.guards import SpendLimitGuard, TradingCircuitBreaker
 
         self.belanja = SpendLimitGuard()
         self.pemutus = TradingCircuitBreaker()
         self.s = settings
+        self.venue = (venue or "crypto").lower()
 
     # ------------------------------------------------------------------ berkas
     @property
     def positions_path(self) -> Path:
-        return self.s.state_dir / "paper_positions.json"
+        return self.s.venue_positions_path(self.venue)
+
+    @property
+    def ledger_path(self) -> Path:
+        return self.s.venue_ledger_path(self.venue)
 
     def positions(self) -> list[PaperPosition]:
         if not self.positions_path.is_file():
@@ -86,7 +91,7 @@ class PaperBroker:
 
     def _append_ledger(self, record: dict[str, Any]) -> None:
         self.s.state_dir.mkdir(parents=True, exist_ok=True)
-        with self.s.ledger_path.open("a", encoding="utf-8") as fh:
+        with self.ledger_path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     # ------------------------------------------------------------------ aksi
@@ -112,7 +117,7 @@ class PaperBroker:
             tp1=tp1,
             tp2=tp2,
             size_usd=size_usd,
-            source=source,
+            source=f"paper-{self.venue}" if source == "paper" else source,
             note=note,
         )
         compute_r(pos.direction, entry, stop, entry)  # validasi sisi stop

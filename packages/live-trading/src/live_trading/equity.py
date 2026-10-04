@@ -20,9 +20,9 @@ from typing import Any
 from .config import Settings
 
 
-def read_ledger(settings: Settings) -> list[dict[str, Any]]:
+def read_ledger(settings: Settings, venue: str = "crypto") -> list[dict[str, Any]]:
     """Baca semua baris ledger; baris rusak dilewati, bukan menggagalkan."""
-    path = settings.ledger_path
+    path = settings.venue_ledger_path(venue)
     if not path.is_file():
         return []
     rows: list[dict[str, Any]] = []
@@ -51,13 +51,15 @@ def add_trade(
     note: str = "",
     closed_at: str | None = None,
     source: str = "manual",
+    venue: str = "crypto",
 ) -> bool:
     """Catat satu trade manual. False kalau signal_id sudah ada (idempoten)."""
     if not signal_id:
         raise ValueError("signal_id wajib diisi")
     settings.state_dir.mkdir(parents=True, exist_ok=True)
-    if settings.ledger_path.is_file():
-        for line in settings.ledger_path.read_text(encoding="utf-8").splitlines():
+    target_path = settings.venue_ledger_path(venue)
+    if target_path.is_file():
+        for line in target_path.read_text(encoding="utf-8").splitlines():
             try:
                 if json.loads(line).get("signal_id") == signal_id:
                     return False
@@ -73,7 +75,7 @@ def add_trade(
         "note": note,
         "source": source,
     }
-    with settings.ledger_path.open("a", encoding="utf-8") as fh:
+    with target_path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record, ensure_ascii=False) + "\n")
     return True
 
@@ -82,9 +84,9 @@ def _now_wib() -> str:
     return (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).isoformat(timespec="seconds")
 
 
-def curve(settings: Settings) -> dict[str, Any]:
+def curve(settings: Settings, venue: str = "crypto") -> dict[str, Any]:
     """Titik kurva kumulatif (dalam R) + statistik ledger."""
-    rows = read_ledger(settings)
+    rows = read_ledger(settings, venue=venue)
     pts: list[dict[str, Any]] = [{"i": 0, "r": 0.0, "cum": 0.0, "label": "start"}]
     cum = 0.0
     peak = 0.0

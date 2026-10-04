@@ -28,10 +28,10 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
         # UI sudah mendeklarasikan topik `signal.` untuk area ini sejak awal.
         "signal",
     ),
-    "idx": ("bagian",),
-    "forex": ("bagian",),
-    "gmgn": ("bagian", "gmgn", "radar", "lp_paper"),
-    "polymarket": ("bagian", "poly_paper", "lp_paper", "equity", "ledger"),
+    "idx": ("bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko"),
+    "forex": ("bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko"),
+    "gmgn": ("bagian", "gmgn", "radar", "lp_paper", "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko"),
+    "polymarket": ("bagian", "poly_paper", "lp_paper", "equity", "ledger", "poly_posisi", "poly_ledger", "poly_equity", "poly_risiko"),
 }
 
 # Fakta dari kind NON-snapshot yang ikut tampil di area. Dipakai gate: GateBlok membaca

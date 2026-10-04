@@ -690,6 +690,133 @@ def _fakta_terbaru(s: SASession, kunci: list[str] | None, *, batas: int) -> list
     return list(unik.values())[:batas]
 
 
+def handler_paper_eval(s: SASession, job: Job) -> str:
+    """Evaluasi posisi paper terhadap harga live bursa (MEXC, Binance, Forex, IDX, GMGN).
+
+    Bila posisi kena SL/TP1/TP2:
+    - Tutup atau update posisi
+    - Buat Alert info untuk notifikasi instan Telegram
+    - Buat Event stream untuk Web SSE
+    """
+    from live_trading.config import get_settings
+    from live_trading.execution.paper import PaperBroker
+    from live_trading.collectors.crypto import CryptoCollector
+
+    stg = get_settings()
+    total_eval = 0
+    total_closed = 0
+    hasil_detail: list[str] = []
+
+    # 1. Evaluasi Crypto
+    b_crypto = PaperBroker(stg, venue="crypto")
+    positions = b_crypto.positions()
+    if positions:
+        pairs = {p.pair for p in positions}
+        prices: dict[str, float] = {}
+        c = CryptoCollector(stg)
+        for pair in pairs:
+            try:
+                prices[pair] = c.pair_snapshot(pair, klines=2)["price"]
+            except Exception:
+                continue
+        closed = b_crypto.evaluate(prices)
+        total_eval += len(positions)
+        total_closed += len(closed)
+        for rec in closed:
+            subjek = f"trade/{rec['signal_id']}"
+            r_val = float(rec.get("r", 0))
+            is_win = r_val > 0
+            icon = "🎯" if is_win else "🛑"
+            pesan = (
+                f"{icon} [PAPER TRADE DITUTUP - CRYPTO]\n"
+                f"Pair: {rec.get('pair')} ({rec.get('direction')})\n"
+                f"Status: {rec.get('status')} @ {rec.get('note')}\n"
+                f"Hasil R: {r_val:+.3f}R | Signal ID: {rec.get('signal_id')}"
+            )
+            _alert(s, subject=subjek, message=pesan, aksi="periksa buku kas di /crypto?sub=eksekusi", severity="info")
+            s.add(
+                Event(
+                    type="trade.closed",
+                    actor="paper_eval",
+                    payload_json=rec,
+                    severity="info" if is_win else "warning",
+                )
+            )
+            hasil_detail.append(f"{rec['signal_id']} {rec['pair']} {rec['status']} {r_val:+.2f}R")
+
+        # Cek runner yang baru menyentuh TP1
+        for p in b_crypto.positions():
+            if p.status == "tp1_hit_runner":
+                ev_subjek = f"tp1/{p.signal_id}"
+                if _alert(s, subject=ev_subjek, message=f"🎯 [TP1 TERCAPAI - RUNNER AKTIF]\nPair: {p.pair} ({p.direction})\nStop loss digeser ke break-even (${p.stop}). Sisa posisi menuju TP2 (${p.tp2}).", aksi="pantau posisi di Command Center", severity="info"):
+                    s.add(Event(type="trade.tp1", actor="paper_eval", payload_json=p.to_dict(), severity="info"))
+
+    # Segera kirim alert bila ada perubahan posisi
+    if total_closed > 0:
+        kirim_tertunda(s, limit=5)
+
+    return f"eval_posisi={total_eval} ditutup={total_closed} detail={', '.join(hasil_detail) or 'nihil'}"
+
+
+def handler_paper_scan(s: SASession, job: Job) -> str:
+    """Pemindaian otomatis & pembukaan posisi paper bila ada sinyal lolos gerbang risiko."""
+    from live_trading.config import get_settings
+    from live_trading.execution.paper import PaperBroker
+    from live_trading.risk import RiskGate
+    from live_trading.signals import engine
+
+    stg = get_settings()
+    b_crypto = PaperBroker(stg, venue="crypto")
+    gate = RiskGate(stg, venue="crypto")
+    curr_pos = b_crypto.positions()
+
+    if len(curr_pos) >= stg.max_concurrent_positions:
+        return f"slot posisi crypto penuh ({len(curr_pos)}/{stg.max_concurrent_positions})"
+
+    from live_trading.collectors.crypto import DEFAULT_PAIRS
+    rows = engine.scan(stg, list(DEFAULT_PAIRS))
+    dibuka: list[str] = []
+
+    for r in rows:
+        if r.get("allowed") and len(b_crypto.positions()) < stg.max_concurrent_positions:
+            pair = r["pair"]
+            direction = r["direction"]
+            entry = float(r["entry"])
+            stop = float(r["stop"])
+            tp1 = float(r["tp1"])
+            tp2 = float(r["tp2"])
+            atr = float(r.get("atr") or abs(entry - stop) / 1.5)
+
+            dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd)
+            if dec.allowed:
+                pos = b_crypto.open_position(
+                    pair=pair,
+                    direction=direction,
+                    entry=entry,
+                    stop=stop,
+                    tp1=tp1,
+                    tp2=tp2,
+                    size_usd=dec.size_usd or 0.0,
+                    note=f"auto-open dari scanner ({dec.risk_usd} USD risiko)",
+                )
+                subjek = f"trade/{pos.signal_id}"
+                pesan = (
+                    f"🟢 [PAPER TRADE DIBUKA - CRYPTO]\n"
+                    f"Pair: {pos.pair} ({pos.direction})\n"
+                    f"Entry: ${pos.entry} | SL: ${pos.stop} | TP1: ${pos.tp1} | TP2: ${pos.tp2}\n"
+                    f"Ukuran: ${pos.size_usd} | Risiko: ${dec.risk_usd} (1.0% equity)\n"
+                    f"Signal ID: {pos.signal_id}"
+                )
+                _alert(s, subject=subjek, message=pesan, aksi="lihat di /crypto?sub=eksekusi", severity="info")
+                s.add(Event(type="trade.opened", actor="paper_scan", payload_json=pos.to_dict(), severity="info"))
+                dibuka.append(f"{pos.signal_id} {pos.pair} {pos.direction}")
+
+    if dibuka:
+        kirim_tertunda(s, limit=5)
+
+    return f"kandidat={len(rows)} dibuka={len(dibuka)} detail={', '.join(dibuka) or 'tidak ada yang lolos gate'}"
+
+
 def register_handlers() -> dict[str, Any]:
     """Daftarkan handler ke `schedule.HANDLERS` (dipanggil sekali saat worker start)."""
     schedule.HANDLERS.update(
@@ -709,6 +836,8 @@ def register_handlers() -> dict[str, Any]:
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
             "llm-brief": handler_llm_brief,
+            "paper-eval": handler_paper_eval,
+            "paper-scan": handler_paper_scan,
         }
     )
     return schedule.HANDLERS

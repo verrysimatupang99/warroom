@@ -604,6 +604,31 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         snap["equity"] = {"stats": c["stats"], "points": c["points"][-12:]}
     except Exception:  # noqa: BLE001 — kartu ekuitas opsional
         snap["equity"] = {"stats": {}, "points": []}
+
+    # Data paper & risiko per-venue (5 pasar independen: $200 x 5 = $1,000)
+    for v in ("idx", "forex", "gmgn", "polymarket"):
+        try:
+            v_gate = RiskGate(s, venue=v)
+            v_pos = v_gate.open_positions()
+            v_rows = v_gate.ledger()
+            v_tot_r = round(sum(float(r.get("r") or 0) for r in v_rows), 3)
+            v_wins = sum(1 for r in v_rows if float(r.get("r") or 0) > 0)
+            v_c = _equity.curve(s, venue=v)
+
+            prefix = "poly" if v == "polymarket" else v
+            snap[f"{prefix}_posisi"] = v_pos
+            snap[f"{prefix}_risiko"] = v_gate.status()
+            snap[f"{prefix}_ledger"] = {
+                "trade": len(v_rows),
+                "total_r": v_tot_r,
+                "winrate_pct": round(v_wins / len(v_rows) * 100, 1) if v_rows else None,
+                "expectancy_r": round(v_tot_r / len(v_rows), 3) if v_rows else None,
+                "terakhir": v_rows[-3:],
+            }
+            snap[f"{prefix}_equity"] = {"stats": v_c["stats"], "points": v_c["points"][-12:]}
+        except Exception:
+            pass
+
     snap["gmgn"] = _gmgn_panel()
     snap["lp_paper"] = _lp_panel()
     snap["poly_paper"] = _poly_panel()
