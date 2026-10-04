@@ -11,7 +11,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-live-trading = { path = "../../../live-trading", editable = true }
+# F3: kode domain sudah di dalam repo (packages/live-trading) — bukan path ke luar lagi.
+live-trading = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

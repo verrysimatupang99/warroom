@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Auto-exec MEXC untuk signal pipeline (aktif 10 Sep, mandate Dumbledore).
+
+Flow: baca watchlist → cari item still_open yang BELUM auto_executed →
+pasang limit order di mid entry zone → daemon fill-monitor pasang SL/TP saat fill.
+
+Guardrails:
+- Max 2 posisi open
+- Notional mini: 1-2 lot tergantung harga (target ~$1-2)
+- Skip kalau balance < $10
+- Satu signal dieksekusi sekali (flag auto_executed di watchlist)
+
+Run: python3 crypto_auto_exec.py [--dry]  (silent jika tidak ada yang dieksekusi)
+"""
+import json
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, "/home/ubuntu/.hermes/scripts")
+
+WATCHLIST = "/home/ubuntu/.hermes/crypto-watchlist.json"
+# --- Sizing risk-based (fix 27 Sep) -------------------------------------
+# Sebelumnya: target $1.5 NOTIONAL lalu clamp [minVol, 2*minVol]. Ukuran jadi
+# ikut granularitas lot kontrak, bukan risiko -> risiko antar koin beda 64x
+# (OP $0.014 = 0.07% balance vs DOGE $0.90 = 4.4%).
+# Sekarang: notional = risk_budget / SL%, jadi risiko per trade SERAGAM.
+RISK_PCT_MAX = 2.0          # % balance per trade (plafon)
+RISK_PER_TRADE_USDT = 1.5   # plafon absolut (USDT)
+RISK_PCT_HARD = 5.0         # tolak trade kalau lot TERKECIL pun risikonya > ini
+                            # (mis. ETH 1 lot = $26.90 = 6.3% balance -> skip)
+STATE = "/home/ubuntu/.hermes/crypto-auto-exec-state.json"
+MAX_OPEN = 2
+MIN_BALANCE = 10.0
+
+
+def log(msg):
+    print(msg, flush=True)
+
+
+def binance_price(sym):
+    out = subprocess.run(
+        ["curl", "-s", "--max-time", "10",
+         f"https://fapi.binance.com/fapi/v1/ticker/price?symbol={sym}"],
+        capture_output=True, text=True).stdout
+    return float(json.loads(out)["price"])
+
+
+# Nama kontrak MEXC berbeda dari Binance untuk beberapa koin. Tanpa map ini
+# contract_spec() gagal dan signal-nya di-skip senyap (Mandate: entry wajib).
+# PUMPUSDT (Binance) = PUMPFUN_USDT (MEXC) — dicek 26 Sep 2026 lewat
+# /contract/detail PK; satu-satunya dari 21 pair scan yang namanya beda.
+MEXC_ALIAS = {"PUMP_USDT": "PUMPFUN_USDT", "PUMPUSDT": "PUMPFUN_USDT"}
+
+
+def mexc_symbol(pair):
+    return MEXC_ALIAS.get(str(pair).upper().strip(), pair)
+
+
+def contract_spec(symbol):
+    """Spesifikasi kontrak via PUBLIC endpoint (private deprecated 404 sejak 22 Sep).
+
+    PENTING: `contractSize` = ukuran 1 lot dalam koin (LINK 0.1, DOGE 100).
+    `volUnit` balikin 1.0 untuk SEMUA kontrak — memakainya membuat sizing
+    meleset jauh (DOGE 2 lot = $19.5 di balance $20).
+    `volScale` 0 = volume harus bilangan bulat; kalau diabaikan MEXC menolak
+    order dengan lot pecahan (mis. 1.92).
+    """
+    out = subprocess.run(
+        ["curl", "-s", "--max-time", "15",
+         f"https://contract.mexc.com/api/v1/contract/detail?symbol={symbol}"],
+        capture_output=True, text=True).stdout
+    d = json.loads(out)
+    if not d.get("success"):
+        raise RuntimeError(f"contract {symbol} not found: {str(d)[:80]}")
+    c = d["data"]
+    return {"minvol": float(c.get("minVol", 1)),
+            "contract_size": float(c.get("contractSize", 1) or 1),
+            "vol_scale": int(c.get("volScale", 0) or 0)}
+
+
+def main():
+    dry = "--dry" in sys.argv
+    wl = json.load(open(WATCHLIST))
+    items = wl.get("items", [])
+    state = json.load(open(STATE)) if __import__("os").path.exists(STATE) else {}
+
+    from mexc_client import positions, balance_usdt, limit_order, req
+
+    pos = positions()
+    open_count = len([p for p in pos if float(p["holdVol"]) > 0])
+    bal = balance_usdt()
+    executed = []
+
+    for it in items:
+        sid = it.get("signal_id", "")
+        if it.get("status") != "still_open":
+            continue
+        # exec_skip = keputusan USER untuk tidak mengeksekusi (mis. akun MEXC
+        # kena restriksi 6002). Sinyalnya tetap dilacak watchdog + dihitung di
+        # jurnal sebagai PAPER trade, tapi jangan pernah dicoba lagi.
+        if it.get("exec_skip"):
+            log(f"SKIP {it['pair']}: exec_skip (keputusan user — paper trade)")
+            continue
+        # Cuma SUKSES yang boleh ngeblokir. Dulu state apa pun (termasuk
+        # ok=False) ikut ngeblokir -> satu kegagalan 6002 bikin sinyal itu
+        # nggak pernah dicoba lagi sampai state-nya dihapus manual.
+        st_prev = state.get(sid) or {}
+        if it.get("auto_executed") or st_prev.get("ok"):
+            continue
+        if open_count >= MAX_OPEN:
+            log(f"SKIP {it['pair']}: max {MAX_OPEN} posisi open")
+            continue
+        if bal < MIN_BALANCE:
+            log(f"SKIP {it['pair']}: balance ${bal:.2f} < ${MIN_BALANCE}")
+            break
+
+        pair = mexc_symbol(it["pair"])   # Binance -> nama kontrak MEXC
+        try:
+            entry_lo, entry_hi = [float(x) for x in str(it["entry_zone"]).split("-")]
+            sl, tp1, tp2 = float(it["sl"]), float(it["tp1"]), float(it["tp2"])
+        except Exception as e:
+            log(f"SKIP {pair}: level parse error {e}")
+            continue
+
+        direction = it.get("direction", "LONG")
+        mid = (entry_lo + entry_hi) / 2
+        spec = contract_spec(pair)
+        minvol, csize = spec["minvol"], spec["contract_size"]
+        # sizing: notional target ~$1.5, lot dikunci ke minVol..2*minVol
+        sl_pct = abs(mid - sl) / mid if mid else 0
+        risk_budget = min(RISK_PER_TRADE_USDT, bal * RISK_PCT_MAX / 100.0)
+        target_notional = (risk_budget / sl_pct) if sl_pct > 0 else 0.0
+        raw = target_notional / (mid * csize) if (mid and csize) else minvol
+        if spec["vol_scale"] == 0:          # volume wajib bulat -> ROUND DOWN
+            lots = float(int(raw))
+        else:
+            lots = raw
+        lots = max(minvol, lots)            # nggak bisa di bawah 1 lot
+        notional = mid * csize * lots
+        risk_real = notional * sl_pct
+        # Granularitas lot bisa maksa risiko jauh di atas budget. Daripada
+        # diam-diam ambil risiko 6%, lebih baik SKIP dan bilang alasannya.
+        if risk_real > bal * RISK_PCT_HARD / 100.0:
+            log(f"SKIP {pair}: lot terkecil ({lots:g}) = ${notional:.2f} notional, "
+                f"risiko ${risk_real:.3f} = {100*risk_real/bal:.2f}% balance "
+                f"> plafon {RISK_PCT_HARD}% — koin ini nggak bisa di-trade sekecil budget kita")
+            continue
+        price_str = f"{mid:.{6}g}"
+
+        if pair != it["pair"]:
+            log(f"ALIAS {it['pair']} -> {pair} (nama kontrak MEXC berbeda)")
+        log(f"EXEC {pair} {direction} {lots:g} lot @ {price_str} "
+            f"(notional ${notional:.2f}, risk ${risk_real:.3f} "
+            f"= {100*risk_real/bal:.2f}% balance, SL {sl_pct*100:.2f}%, csize {csize:g})")
+        if dry:
+            log(f"DRY {pair} {direction} {lots} lot @ {price_str} (tidak dieksekusi)")
+            continue
+
+        r = limit_order(pair, lots, direction, price_str)
+        ok = r.get("success")
+        state[sid] = {"ts": time.time(), "ok": ok, "resp": str(r)[:120], "lots": lots}
+        if ok:
+            it["auto_executed"] = True
+            it["auto_order_note"] = f"MEXC limit {lots} lot @ {price_str}"
+            executed.append(f"{pair} {direction} {lots} lot @ {price_str} — order pending fill")
+            # spawn fill-monitor utk arm SL/TP
+            subprocess.Popen(
+                ["python3", "/home/ubuntu/.hermes/scripts/mexc_fill_monitor.py",
+                 pair, price_str, str(sl), str(tp2)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            executed.append(f"FAILED {pair}: {str(r)[:100]}")
+        time.sleep(1)
+
+    json.dump(state, open(STATE, "w"), indent=1)
+    if executed:
+        json.dump(wl, open(WATCHLIST, "w"), indent=2)
+        log("=== AUTO-EXEC RESULTS ===")
+        for e in executed:
+            log(e)
+
+
+if __name__ == "__main__":
+    main()

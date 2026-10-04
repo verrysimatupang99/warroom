@@ -1,0 +1,176 @@
+/* War Room — meja trading. 2 Okt 2026: slate gelap, aksen amber + cyan, kartu bertepi.
+   Angka dulu, hiasan belakangan. Radius 0 (bahasa Stitch) dipertahankan. */
+:root{
+  --bg:#06080d; --bg2:#080b12;
+  --panel:#0c1017; --panel2:#111823; --panel3:#16202f;
+  --line:#202a3a; --line2:#151c29;
+  --text:#e8eef7; --sec:#a6b1c2; --cap:#7c8aa0;
+  --aksen:#f4a63a; --aksen2:#55c7df;
+  --ok:#3ed68f; --warn:#f4a63a; --fail:#ff6b7d;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark}
+body{
+  margin:0;color:var(--text);font:12px/1.45 var(--mono);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1100px 380px at 50% -180px,rgba(85,199,223,.07),transparent 70%),
+    linear-gradient(180deg,var(--bg),var(--bg2) 60%,var(--bg));
+  background-attachment:fixed;
+}
+::selection{background:rgba(244,166,58,.3)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 14px 64px}
+/* ---- bilah ---- */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(6,8,13,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-dalam{max-width:1180px;margin:0 auto;padding:0 14px;min-height:46px;display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}
+.topbar-dalam::-webkit-scrollbar{display:none}
+.nav{color:var(--cap);text-decoration:none;padding:7px 10px;white-space:nowrap;font-size:12.5px;border-bottom:2px solid transparent}
+.nav:hover{color:var(--text);background:var(--panel2)}
+.nav[aria-current="page"]{color:var(--aksen);border-bottom-color:var(--aksen)}
+.nav.nama{color:var(--text);font-weight:700}
+.nav.nama::before{content:"> ";color:var(--aksen)}
+.kanan{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--cap);font-size:12px;white-space:nowrap;padding-left:10px}
+/* ---- lencana ---- */
+.badge{display:inline-block;padding:0 2px;font-size:11px;color:var(--sec);white-space:nowrap}
+.badge::before{content:"[";color:var(--cap)}
+.badge::after{content:"]";color:var(--cap)}
+.badge.ok{color:var(--ok)}
+.badge.warn{color:var(--warn)}
+.badge.fail{color:var(--fail)}
+.badge.tua,.badge.mati{color:var(--cap)}
+.ok{color:var(--ok)} .down{color:var(--fail)}
+.up{color:var(--ok)}
+/* ---- pahlawan ---- */
+.hero{padding:18px 0 10px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.hero h1{margin:0 0 4px;font-size:26px;font-weight:700;letter-spacing:-.02em}
+.hero.slim{padding:16px 0 8px}
+.hero.slim h1{font-size:19px}
+.hero .sub,.hero .kicker{color:var(--cap);font-size:11.5px}
+.hero .rincian{color:var(--cap);font-size:11.5px;margin-top:10px}
+.statusline{margin:8px 0 0}
+.statusline .badge{font-size:12px}
+/* ---- pita angka: baris terminal ---- */
+.ubin{display:flex;margin:12px 0;border:1px solid var(--line);background:var(--panel)}
+.ubin>.tile,.ubin>div{flex:1;min-width:0;padding:8px 12px;border-left:1px solid var(--line2)}
+.ubin>.tile:first-child,.ubin>div:first-child{border-left:0}
+.ubin .k{font-size:10.5px;color:var(--cap);margin:0;text-transform:uppercase;letter-spacing:.08em}
+.ubin .v{font-size:19px;font-weight:700;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.tile[data-tone="pass"]{box-shadow:inset 2px 0 0 var(--ok)}
+.tile[data-tone="fail"]{box-shadow:inset 2px 0 0 var(--fail)}
+.tile[data-tone="warn"]{box-shadow:inset 2px 0 0 var(--warn)}
+.tile[data-tone="pass"] .v{color:var(--ok)}
+.tile[data-tone="fail"] .v{color:var(--fail)}
+.tile[data-tone="warn"] .v{color:var(--warn)}
+.tile{display:inline-block}
+/* ---- sparkline ---- */
+.spark{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  border:1px solid var(--line2);background:var(--panel);padding:8px 12px;margin:12px 0 2px}
+.spark .spark-k{color:var(--cap);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em}
+.spark svg{width:100%;height:38px;display:block}
+.spark .spark-v{font-weight:700;font-variant-numeric:tabular-nums}
+/* ---- seksi: kartu bertepi ---- */
+.grup{margin:22px 0 6px;padding-top:10px;border-top:1px solid var(--line)}
+.grup h2,.grup h3{margin:0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--aksen2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grup h2::before,.grup h3::before{content:"// ";color:var(--cap)}
+.grup p{margin:3px 0 0;color:var(--cap);font-size:11.5px}
+section{padding:11px 13px;margin:10px 0;border:1px solid var(--line2);background:var(--panel);position:relative}
+section:hover{border-color:var(--line)}
+section h2{margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line2);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+section h2::before{content:"» ";color:var(--aksen)}
+section h2 .badge{margin-left:auto}
+section ul{margin:6px 0;padding-left:16px;color:var(--sec)}
+section ul li{margin:3px 0}
+section ul li::marker{color:var(--aksen2)}
+section>details,section details{margin:8px 0 0}
+section details summary{cursor:pointer;padding:7px 0;color:var(--sec);font-size:12px}
+section details summary:hover{color:var(--text)}
+section details summary::marker{color:var(--aksen2)}
+/* ---- teks ---- */
+.sub{color:var(--cap);font-size:11.5px;margin:5px 0}
+.dim{color:var(--cap);font-size:11px;margin:6px 0}
+.src{color:var(--cap);font-size:10.5px;margin:9px 0 0;opacity:.75}
+.src::before{content:"src: "}
+.arti{margin:9px 0 0;padding:7px 11px;border-left:2px solid var(--aksen2);background:rgba(85,199,223,.05);font-size:12px;color:var(--sec)}
+.arti b{color:var(--text)}
+.big{font-size:24px;font-weight:700;letter-spacing:-.02em;margin:2px 0;font-variant-numeric:tabular-nums}
+.err{color:var(--fail)}
+.n,.v,.vl,.spark-v{font-variant-numeric:tabular-nums}
+/* ---- pengarahan ---- */
+.tldr{list-style:none;margin:6px 0;padding:0}
+.tldr li{padding:6px 0 6px 20px;border-bottom:1px dotted var(--line);position:relative;font-size:12.5px}
+.tldr li:last-child{border-bottom:0}
+.tldr li::before{content:">";position:absolute;left:2px;color:var(--aksen)}
+/* ---- tabel ---- */
+details{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:12px;display:block;overflow-x:auto}
+th{text-align:left;color:var(--aksen2);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:6px 10px 6px 0;border-bottom:1px solid var(--line2);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td,table tr:hover td{background:rgba(85,199,223,.045)}
+td:first-child{color:var(--sec)}
+td.n,th.n{text-align:right}
+td:first-child,th:first-child{position:sticky;left:0;background:var(--panel)}
+/* ---- tab / rincian ---- */
+details.rincian{border:1px solid var(--line2);margin:8px 0 0;background:var(--panel2)}
+details.rincian summary{cursor:pointer;padding:9px 12px;font-size:12px;color:var(--sec);list-style:none}
+details.rincian summary::-webkit-details-marker{display:none}
+details.rincian summary::before{content:"+ ";color:var(--aksen2)}
+details.rincian[open] summary::before{content:"- ";color:var(--aksen2)}
+details.rincian summary:hover{color:var(--text)}
+details.rincian[open] summary{border-bottom:1px solid var(--line2);color:var(--text)}
+details.rincian .isi{padding:4px 12px 10px}
+/* ---- terminal ---- */
+.tape{overflow:hidden;border-bottom:1px solid var(--line2);margin:-4px -13px 10px}
+.tape-dalam{display:inline-block;white-space:nowrap;padding:7px 0;animation:jalan 60s linear infinite;font-size:12px;color:var(--sec)}
+@keyframes jalan{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tbar{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0}
+.tbar button{background:var(--panel2);color:var(--sec);border:1px solid var(--line);padding:5px 11px;font:700 12px var(--mono);cursor:pointer}
+.tbar button:hover{color:var(--text);border-color:var(--aksen2)}
+.tbar button.aktif,.tbar button.on{color:#1a1206;background:var(--aksen);border-color:var(--aksen)}
+#chart{width:100%;display:block;border:1px solid var(--line);background:var(--bg2)}
+/* ---- bar laba ---- */
+.bar{display:grid;grid-template-columns:110px 1fr 76px;gap:8px;align-items:center;margin:4px 0;font-size:11.5px}
+.bar .nm{color:var(--sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .rel{position:relative;height:10px;background:var(--panel2)}
+.bar .rel::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+.bar .isi{position:absolute;top:0;bottom:0;background:var(--ok)}
+.bar.nol .rel{border:1px dashed var(--line)}
+.bar .vl{text-align:right}
+/* ---- minibar (aturan/arm) ---- */
+.minibar{position:relative;height:8px;min-width:90px;background:var(--panel2);display:inline-block;width:100%}
+.minibar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--line)}
+.minibar i{position:absolute;top:0;bottom:0;display:block}
+/* ---- kerangka ---- */
+[data-frag]:empty{min-height:64px;background:var(--panel2);animation:kerangka 1.2s linear infinite}
+@keyframes kerangka{50%{opacity:.5}}
+[data-frag]{animation:muncul .3s ease-out}
+@keyframes muncul{from{opacity:0}to{opacity:1}}
+footer{color:var(--cap);font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid var(--line)}
+footer.penutup{color:var(--cap);font-size:11px;margin-top:24px;padding-top:12px;border-top:1px solid var(--line)}
+footer summary{cursor:pointer;color:var(--sec)}
+.kicker{color:var(--cap);font-size:11px}
+.legenda{font-size:11px;color:var(--cap);margin:8px 0 0}
+.legenda span+span{margin-left:12px}
+.alloc{display:flex;height:6px;overflow:hidden;background:var(--panel2);margin:8px 0 4px}
+.alloc span{display:block;height:100%}
+:focus-visible{outline:1px solid var(--aksen2);outline-offset:2px}
+@media (max-width:640px){
+  body{font-size:12.5px}
+  .wrap{padding:0 10px 48px}
+  .topbar-dalam{padding:0 10px}
+  .hero h1{font-size:21px}
+  .hero.slim h1{font-size:17px}
+  .ubin{flex-direction:column}
+  .ubin>.tile,.ubin>div{border-left:0;border-top:1px solid var(--line2)}
+  .ubin>.tile:first-child,.ubin>div:first-child{border-top:0}
+  .spark{grid-template-columns:1fr auto;gap:6px 10px}
+  .spark .spark-k{grid-column:1/-1}
+  .big{font-size:21px}
+  .bar{grid-template-columns:88px 1fr 62px}
+  section{padding:10px}
+}
+.badge.fail{animation:kedip 1.6s steps(2) infinite}
+@keyframes kedip{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){
+  .tape-dalam,[data-frag]:empty,[data-frag],.badge.fail{animation:none}
+}

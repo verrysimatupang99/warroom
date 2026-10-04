@@ -1,0 +1,22 @@
+[Unit]
+Description=War Room dashboard (crypto / IDX / forex)
+Documentation=file:///home/admin/live-trading/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/live-trading
+Environment=LT_HOME=/home/admin/live-trading
+# Sengaja dipaku ke paper: unit ini tidak boleh jadi jalur menuju live tanpa sengaja.
+Environment=LT_PAPER=true
+ExecStart=/home/admin/live-trading/.venv/bin/lt dashboard
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

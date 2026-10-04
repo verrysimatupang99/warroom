@@ -1,0 +1,13 @@
+[Unit]
+Description=War Room: pindai kandidat tiap 30 menit (kumpulkan sampel pengukuran)
+Requires=live-trading-collect.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+AccuracySec=1min
+Persistent=true
+Unit=live-trading-collect.service
+
+[Install]
+WantedBy=timers.target

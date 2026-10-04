@@ -1,0 +1,12 @@
+[Unit]
+Description=War Room snapshot tiap 15 menit
+Requires=live-trading-snapshot.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+AccuracySec=30s
+Unit=live-trading-snapshot.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=War Room snapshot builder (crypto / IDX / forex)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/live-trading
+Environment=LT_HOME=/home/admin/live-trading
+Environment=LT_PAPER=true
+ExecStart=/home/admin/live-trading/.venv/bin/lt snapshot
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal

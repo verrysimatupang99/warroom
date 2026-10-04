@@ -1,0 +1,16 @@
+[Unit]
+Description=War Room: pindai kandidat crypto + rekam verdict (untuk pengukuran)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/live-trading
+Environment=LT_HOME=/home/admin/live-trading
+Environment=LT_PAPER=true
+ExecStart=/home/admin/live-trading/.venv/bin/lt scan --top 40
+TimeoutStartSec=900
+StandardOutput=journal
+StandardError=journal

@@ -10,6 +10,7 @@ dependencies = [
     "warroom-worker",
     "warroom-llm",
     "warroom-notifier",
+    "live-trading",
 ]
 
 # Root adalah virtual workspace (tidak dipaketkan); anggota di packages/* dan services/*.
@@ -25,8 +26,10 @@ warroom-api = { workspace = true }
 warroom-worker = { workspace = true }
 warroom-llm = { workspace = true }
 warroom-notifier = { workspace = true }
-# live-trading tetap repo & paketnya sendiri (219 tes di tempatnya). Dikonsumsi sebagai
-# dependensi path dari packages/core — tidak ada satu baris domain yang disalin ke sini.
+# F3 (4 Okt 2026): live-trading kini ANGGOTA WORKSPACE — kode domain ada di dalam repo ini
+# (packages/live-trading/), bukan lagi path ke ../live-trading. State runtime tetap di
+# /home/admin/live-trading lewat WARROOM_DOMAIN_HOME sampai cutover diputuskan owner.
+live-trading = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -38,7 +41,16 @@ dev = [
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-extend-exclude = [".venv", "apps/web", "node_modules"]
+# vendor/ + crypto/ di packages/live-trading = kode warisan Tencent (masih jalan apa adanya;
+# paket asalnya juga mengecualikannya). .venv-merge = env uji F3.
+extend-exclude = [
+    ".venv",
+    ".venv-merge",
+    "apps/web",
+    "node_modules",
+    "packages/live-trading/vendor",
+    "packages/live-trading/crypto",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -48,5 +60,7 @@ select = ["E", "F", "I", "UP", "B"]
 "packages/core/alembic/versions/*.py" = ["E501", "I001", "UP007", "UP035"]
 
 [tool.pytest.ini_options]
-addopts = "-q"
+# F3: repo gabungan punya dua tests/ bernama sama (test_config.py). Mode importlib
+# membuat pytest memakai path modul, bukan basename — tidak ada tabrakan lagi.
+addopts = "-q --import-mode=importlib"
 testpaths = ["packages", "services"]

@@ -1,0 +1,13 @@
+[Unit]
+Description=War Room infra watchdog gabungan (read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/live-trading
+ExecStart=/home/admin/live-trading/.venv/bin/python /home/admin/live-trading/scripts/ops/infra-watchdog.py
+StandardOutput=journal
+StandardError=journal
