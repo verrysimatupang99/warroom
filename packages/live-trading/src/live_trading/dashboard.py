@@ -478,6 +478,14 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["bagian"]["forex"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         try:
+            from .collectors import macro
+
+            # Gerbang stand-down: event berdampak tinggi dalam 60 menit ke depan.
+            snap["bagian"]["macro"] = macro.MacroCollector(s).snapshot(s.state_dir)
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["macro"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+        try:
             from .collectors import hyperliquid
 
             snap["bagian"]["hyperliquid"] = hyperliquid.snapshot(s, top=5)
