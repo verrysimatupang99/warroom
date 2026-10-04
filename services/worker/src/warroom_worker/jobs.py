@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -160,13 +161,31 @@ def handler_backup(s: SASession, job: Job) -> str:
     return f"kode={hasil.returncode} {detail[:180]}"
 
 
+def _lt_bin() -> Path:
+    """Lokasi CLI `lt` yang benar — dari venv tempat worker ini berjalan.
+
+    Kenapa tidak dari `root_dir()/.venv`: `root_dir()` adalah `WARROOM_DOMAIN_HOME`
+    (`/home/admin/live-trading`), dan folder itu masih menyimpan **venv lama** yang meng-import
+    dari source lama (`/home/admin/live-trading/src`). Akibatnya setiap job yang memanggil `lt`
+    menjalankan kode sebelum merge: `lt snapshot` menghasilkan `bagian` yang lebih sedikit
+    (macro/lp/overextended hilang) tanpa error apa pun — dan penjaga anti-snapshot-separuh pun
+    tidak menangkapnya, karena kode lama itu melaporkan bagian yang sama dengan yang ia tulis.
+
+    Venv worker sendiri (`sys.executable`) selalu menunjuk paket repo, jadi itu yang dipakai.
+    """
+    kandidat = Path(sys.executable).parent / "lt"
+    if kandidat.exists():
+        return kandidat
+    return root_dir() / ".venv" / "bin" / "lt"
+
+
 def _jalankan_lt(subperintah: str, job: Job, *, timeout_s: int) -> str:
     """Jalankan CLI domain (`lt <subperintah>`) sebagai subproses.
 
-    Memakai entry point venv domain langsung (bukan `uv run`) supaya tidak membangun ulang
+    Memakai entry point venv langsung (bukan `uv run`) supaya tidak membangun ulang
     lingkungan pada setiap job. Keluaran disimpan ringkas; yang penting jejaknya.
     """
-    lt = root_dir() / ".venv" / "bin" / "lt"
+    lt = _lt_bin()
     if not lt.exists():
         raise FileNotFoundError(f"CLI domain tidak ada: {lt}")
     hasil = subprocess.run(  # noqa: S603 — path tetap, dari repo domain yang tepercaya

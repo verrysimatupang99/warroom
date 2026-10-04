@@ -104,6 +104,16 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'overextended',
+		label: 'Overextended',
+		rute: '/overextended',
+		ikon: '⟰',
+		anak: [
+			{ slug: 'ukur', label: 'Ukur', kunci: ['bagian'], catatan: 'Pump %, OI vs puncak, FR' },
+			{ slug: 'uji', label: 'Uji', kunci: ['bagian'], catatan: 'Apakah short pola ini pernah bayar' }
+		]
+	},
+	{
 		kunci: 'bukti',
 		label: 'Bukti',
 		rute: '/bukti',

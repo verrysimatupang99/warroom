@@ -542,6 +542,17 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         except Exception as exc:  # noqa: BLE001
             snap["bagian"]["idx616"] = {"error": f"{type(exc).__name__}: {exc}"}
 
+        try:
+            from .collectors import crypto as _crypto
+            from .collectors import overextended
+
+            # Selalu disertai hasil uji edge-nya — label "overextended" saja tidak pernah cukup.
+            snap["bagian"]["overextended"] = overextended.snapshot(
+                _crypto.DEFAULT_PAIRS, s.state_dir
+            )
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["overextended"] = {"error": f"{type(exc).__name__}: {exc}"}
+
     # posisi & ledger dari berkas (tanpa jaringan)
     p = s.state_dir / "paper_positions.json"
     try:
