@@ -125,6 +125,8 @@
 			{@const faktaRadar = temukanFakta(data.facts, 'radar')}
 			{@const faktaLpPaper = temukanFakta(data.facts, 'lp_paper')}
 			{@const faktaGmgn = temukanFakta(data.facts, 'gmgn')}
+			{@const faktaPosisi = temukanFakta(data.facts, 'posisi')}
+			{@const posisiArray = Array.isArray(faktaPosisi?.value) ? (faktaPosisi.value as any[]) : []}
 
 			{@const bagianObj = (faktaBagian?.value as Record<string, any>) ?? {}}
 			{@const idxArjum = (bagianObj?.idx?.rows as any[]) ?? []}
@@ -209,6 +211,48 @@
 										<p class="text-11 text-text-3">
 											Mode Paper Bounded Autonomy: Menunggu sinyal yang lolos 5 gerbang quant ketat. Di fase konsolidasi atau akhir pekan dengan volatilitas rendah, engine menahan diri untuk melindungi modal.
 										</p>
+									</div>
+								{:else}
+									<div class="space-y-2.5">
+										{#each posisiArray as p (p.signal_id ?? p.pair)}
+											<div class="rounded-card border border-line bg-surface p-3 space-y-2 font-mono text-12">
+												<div class="flex items-center justify-between border-b border-line-soft pb-1.5">
+													<div class="flex items-center gap-2">
+														<span class="font-bold text-text text-14">{p.pair}</span>
+														<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
+															{p.direction}
+														</span>
+														<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-9 font-bold">
+															{p.status ?? 'OPEN'}
+														</span>
+													</div>
+													<span class="text-10 text-text-3">{p.signal_id ?? ''}</span>
+												</div>
+												<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-11">
+													<div class="rounded bg-canvas/60 p-1.5 border border-line">
+														<div class="text-9 text-text-3 uppercase">Entry</div>
+														<div class="font-bold text-text">${angka(p.entry)}</div>
+													</div>
+													<div class="rounded bg-canvas/60 p-1.5 border border-line">
+														<div class="text-9 text-text-3 uppercase">Stop Loss</div>
+														<div class="font-bold text-neg">${angka(p.stop)}</div>
+													</div>
+													<div class="rounded bg-canvas/60 p-1.5 border border-line">
+														<div class="text-9 text-text-3 uppercase">Target 1</div>
+														<div class="font-bold text-pos">${angka(p.tp1)}</div>
+													</div>
+													<div class="rounded bg-canvas/60 p-1.5 border border-line">
+														<div class="text-9 text-text-3 uppercase">Ukuran (USD)</div>
+														<div class="font-bold text-accent">${angka(p.size_usd)}</div>
+													</div>
+												</div>
+												{#if p.note}
+													<div class="text-10 text-text-3 truncate font-sans">
+														Catatan: {p.note}
+													</div>
+												{/if}
+											</div>
+										{/each}
 									</div>
 								{/if}
 							</div>

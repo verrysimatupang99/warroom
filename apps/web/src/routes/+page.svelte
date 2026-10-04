@@ -93,6 +93,12 @@
 		return [];
 	});
 
+	const dataPosisi = $derived.by(() => {
+		const p = cariFakta(faktaKripto, 'posisi');
+		if (Array.isArray(p)) return p;
+		return [];
+	});
+
 	// Ekstrak Fakta Polymarket
 	const faktaPoly = $derived(polymarket?.facts ?? []);
 	const dataVerdict = $derived(
@@ -278,6 +284,71 @@
 		<div class="space-y-4 lg:col-span-5">
 			<!-- Pengawas Risiko -->
 			<RiskMeter risiko={dataRisiko} />
+
+			<!-- Status Posisi Terbuka Aktif -->
+			<div class="permukaan-2 rounded-card border border-line p-3">
+				<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+					<div class="flex items-center gap-1.5">
+						{#if dataPosisi.length > 0}
+							<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
+						{/if}
+						<h3 class="text-13 font-medium text-text">Posisi Terbuka Aktif</h3>
+					</div>
+					<a href="/crypto" class="text-11 text-accent hover:underline font-mono">
+						{dataPosisi.length} posisi →
+					</a>
+				</div>
+				{#if dataPosisi.length === 0}
+					<div class="py-4 px-2 text-center space-y-1">
+						<div class="text-12 font-medium text-text-2">Tidak ada posisi terbuka saat ini (0/3).</div>
+						<p class="text-11 text-text-3">
+							Engine disiplin menahan diri saat tidak ada setup valid demi melindungi modal.
+						</p>
+					</div>
+				{:else}
+					<div class="space-y-2">
+						{#each dataPosisi as p (p.signal_id ?? p.pair)}
+							<div class="rounded border border-line bg-surface p-2.5 space-y-2 font-mono text-11">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-1.5">
+										<span class="font-bold text-text text-13">{p.pair}</span>
+										<span class="rounded px-1.5 py-0.5 text-9 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
+											{p.direction}
+										</span>
+										<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-9 font-bold">
+											{p.status ?? 'OPEN'}
+										</span>
+									</div>
+									<span class="text-10 text-text-3">{p.signal_id ?? ''}</span>
+								</div>
+								<div class="grid grid-cols-4 gap-1.5 text-10">
+									<div class="rounded bg-canvas/60 p-1 border border-line">
+										<div class="text-9 text-text-3 uppercase">Entry</div>
+										<div class="font-bold text-text">${angka(p.entry)}</div>
+									</div>
+									<div class="rounded bg-canvas/60 p-1 border border-line">
+										<div class="text-9 text-text-3 uppercase">Stop</div>
+										<div class="font-bold text-neg">${angka(p.stop)}</div>
+									</div>
+									<div class="rounded bg-canvas/60 p-1 border border-line">
+										<div class="text-9 text-text-3 uppercase">TP1</div>
+										<div class="font-bold text-pos">${angka(p.tp1)}</div>
+									</div>
+									<div class="rounded bg-canvas/60 p-1 border border-line">
+										<div class="text-9 text-text-3 uppercase">Size</div>
+										<div class="font-bold text-accent">${angka(p.size_usd)}</div>
+									</div>
+								</div>
+								{#if p.note}
+									<div class="text-10 text-text-3 truncate font-sans">
+										{p.note}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 
 			<!-- Kartu Bukti Statistik Polymarket -->
 			<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
