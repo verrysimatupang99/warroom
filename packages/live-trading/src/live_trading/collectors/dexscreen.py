@@ -81,6 +81,124 @@ def boosts_top(limit: int = 10) -> list[dict[str, Any]]:
     return out
 
 
+def _angka(v: Any) -> float | None:
+    """float atau None — tidak pernah menebak nol dari data yang tidak ada."""
+    try:
+        f = float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    return f if f == f else None  # buang NaN
+
+
+def ukur_lp(p: dict[str, Any]) -> dict[str, Any]:
+    """Ukur peluang LP dari SATU pool DexScreener — dan jujur soal yang belum diketahui.
+
+    Yang **bisa** dihitung dari data pool: turnover (volume24j ÷ likuiditas) sebagai proksi
+    potensi fee, tekanan IL (perubahan harga), dan umur pool.
+
+    Yang **tidak bisa**: fee APR nyata dan selisih LP vs hold — keduanya butuh **harga masuk dan
+    keluar posisi**, bukan cuma kuantitas token. Karena itu selalu ditulis "belum diketahui",
+    tidak ditebak. Inilah kesalahan yang membuat klaim LP dari media sosial tidak bisa diaudit:
+    mereka menyebut % tanpa pernah menyebut jendela waktu, fee tier, atau pembanding hold.
+    """
+    liq = _angka((p.get("liquidity") or {}).get("usd"))
+    v24 = _angka((p.get("volume") or {}).get("h24"))
+    v6 = _angka((p.get("volume") or {}).get("h6"))
+    pc = p.get("priceChange") or {}
+    chg24, chg6 = _angka(pc.get("h24")), _angka(pc.get("h6"))
+    umur_jam: float | None = None
+    if p.get("pairCreatedAt"):
+        try:
+            umur_jam = round((time.time() - float(p["pairCreatedAt"]) / 1000) / 3600, 1)
+        except (TypeError, ValueError):
+            umur_jam = None
+    turnover = round(v24 / liq, 3) if (liq and v24 and liq > 0) else None
+
+    catatan: list[str] = []
+    if liq is None or v24 is None:
+        kualitas = "belum-cukup-data"
+        catatan.append("likuiditas atau volume tidak tersedia")
+    elif liq < 20_000:
+        kualitas = "tipis"
+        catatan.append(f"likuiditas ${liq:,.0f} < $20.000 — slippage keluar besar")
+    elif turnover is not None and turnover < 0.02:
+        # Likuiditas besar tapi hampir tak ada transaksi = pool terbengkalai.
+        # LP di sini memarkir modal tanpa menghasilkan fee sama sekali.
+        kualitas = "pool-mati"
+        catatan.append(
+            f"turnover {turnover}x — likuiditas ${liq:,.0f} tapi hampir tak ada transaksi; "
+            "modal diparkir tanpa menghasilkan fee"
+        )
+    elif turnover is not None and turnover < 0.5:
+        kualitas = "tipis"
+        catatan.append(f"turnover {turnover}x — fee kecil dibanding modal yang diparkir")
+    elif umur_jam is not None and umur_jam < 48:
+        kualitas = "terlalu-baru"
+        catatan.append(f"pool baru {umur_jam:.0f} jam — belum ada riwayat")
+    else:
+        kualitas = "layak-ditinjau"
+    if chg24 is not None and abs(chg24) >= 30:
+        catatan.append(f"harga {chg24:+.0f}% dalam 24 jam — gerak searah sebesar ini = IL besar vs hold")
+    catatan.append("fee APR nyata: belum diketahui (butuh fee tier + porsi posisi di dalam range)")
+    catatan.append("LP vs hold: belum diketahui (butuh harga masuk & keluar posisi, bukan kuantitas)")
+
+    return {
+        "label_pool": (p.get("labels") or [None])[0],
+        "liq_usd": liq,
+        "vol_24h": v24,
+        "vol_6h": v6,
+        "turnover_24h": turnover,
+        "chg_h24": chg24,
+        "chg_h6": chg6,
+        "umur_jam": umur_jam,
+        "kualitas": kualitas,
+        "catatan": catatan,
+    }
+
+
+def _nilai_vol(p: dict[str, Any]) -> float:
+    return _angka((p.get("volume") or {}).get("h24")) or 0.0
+
+
+def pilih_pool(pairs: list[dict[str, Any]], limit: int = 6) -> list[dict[str, Any]]:
+    """Buang pool tanpa volume, lalu urutkan menurun **berdasarkan volume 24 jam**.
+
+    Kenapa volume dan bukan likuiditas: pada data nyata ada pool BONK/USDC dengan likuiditas
+    $50,4 juta tetapi volume hanya $0,31/hari. Kalau diurutkan pakai likuiditas, pool terbengkalai
+    itulah yang terpilih — padahal LP di sana tidak menghasilkan fee sama sekali. Fee datang dari
+    transaksi, jadi volume yang jadi urutan.
+    """
+    sah = [p for p in pairs if p.get("pairAddress") and _nilai_vol(p) > 0]
+    sah.sort(key=_nilai_vol, reverse=True)
+    return sah[:limit]
+
+
+def lp_cari(kata: str, limit: int = 6) -> list[dict[str, Any]]:
+    """Cari pool LP lewat DEX Screener dan ukur masing-masing dengan `ukur_lp`.
+
+    Mengembalikan daftar siap-tampil (rantai, dex, pasangan, alamat, url + hasil ukur).
+    Murni baca-saja, tanpa key.
+    """
+    from urllib.parse import quote as _quote
+
+    d = _get(f"/latest/dex/search?q={_quote(kata)}")
+    out: list[dict[str, Any]] = []
+    for p in pilih_pool(d.get("pairs") or [], limit):
+        bt = (p.get("baseToken") or {}).get("symbol") or "?"
+        qt = (p.get("quoteToken") or {}).get("symbol") or "?"
+        out.append(
+            {
+                "rantai": p.get("chainId"),
+                "dex": p.get("dexId"),
+                "pair": f"{bt}/{qt}",
+                "alamat": p.get("pairAddress"),
+                "url": p.get("url"),
+                **ukur_lp(p),
+            }
+        )
+    return out
+
+
 def enrich(pairs: list[tuple[str, str]]) -> dict[str, dict[str, Any]]:
     """Statistik per token {(chain, address): {...}}. Batch per chain (maks 30 alamat)."""
     by_chain: dict[str, list[str]] = {}
@@ -121,6 +239,8 @@ def enrich(pairs: list[tuple[str, str]]) -> dict[str, dict[str, Any]]:
                 "sells_h1": s1,
                 "bs_h1": round(b1 / s1, 2) if s1 else (float(b1) if b1 else None),
                 "url": p.get("url"),
+                "dex": p.get("dexId"),
+                "lp": ukur_lp(p),
             }
     return out
 
