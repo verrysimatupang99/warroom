@@ -204,3 +204,170 @@ def test_skrining_wajib_fungsi_ambil(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError):
         skrining(["AAAA"], tmp_path)
+
+
+# --- #1: uji apakah broker-flow berguna, ke riwayat -------------------------------------
+
+def _acc(tanggal: list[str], nval_per_broker: dict[str, list[float]]) -> dict:
+    """Bentuk payload broker_accumulation seperti Arjum."""
+    return {
+        "code": "TEST",
+        "start_date": tanggal[0],
+        "end_date": tanggal[-1],
+        "series": [
+            {
+                "broker_code": bk,
+                "broker_name": f"BROKER {bk}",
+                "points": [{"date": t, "nval": v} for t, v in zip(tanggal, nval, strict=True)],
+            }
+            for bk, nval in nval_per_broker.items()
+        ],
+    }
+
+
+def _hist(tanggal: list[str], tutup: list[float]) -> dict:
+    return {"stock_code": "TEST", "frame": "daily",
+            "rows": [{"date": t, "close": c} for t, c in zip(tanggal, tutup, strict=True)]}
+
+
+def _hari(n: int) -> list[str]:
+    return [f"2026-01-{i+1:02d}" for i in range(n)]
+
+
+def test_seri_broker_menjumlahkan_lintas_broker() -> None:
+    from live_trading.collectors.bandarmologi import seri_broker
+
+    t = _hari(5)
+    s = seri_broker(_acc(t, {"AA": [10, -5, 20, 0, 7], "BB": [5, 3, -2, 0, -1]}))
+    assert len(s) == 5
+    assert s[0]["net_total"] == 15.0      # 10 + 5
+    assert s[0]["akum_positif"] == 2
+    assert s[1]["net_total"] == -2.0      # -5 + 3
+    assert s[1]["akum_negatif"] == 1
+    assert s[3]["net_total"] == 0.0       # nol tidak dihitung positif/negatif
+
+
+def test_seri_broker_menangani_payload_kosong() -> None:
+    from live_trading.collectors.bandarmologi import seri_broker
+
+    assert seri_broker({}) == []
+    assert seri_broker({"series": [{"points": []}]}) == []
+
+
+def test_uji_riwayat_butuh_data_cukup() -> None:
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    assert uji_riwayat({}, {})["status"] == "belum-cukup-data"
+
+
+def test_uji_riwayat_sinyal_bagus_dibanding_dasar() -> None:
+    """Hari net-broker-positif diikuti kenaikan sementara pasar justru net turun -> unggul.
+
+    Pasar sengaja dibuat NET TURUN (naik 3% di hari sinyal, turun 3,2% di hari lain) supaya
+    keunggulan sinyal tidak bisa disalahartikan sebagai efek pasar naik.
+    """
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    tutup, v = [], 100.0
+    for i in range(60):
+        tutup.append(v)
+        v *= 1.03 if i % 2 == 0 else 0.968
+    acc = _acc(t, {"AA": [1000.0 if i % 2 == 0 else -1000.0 for i in range(60)]})
+    r = uji_riwayat(acc, _hist(t, tutup), horizon_hari=(3, 5))
+    assert r["status"] == "ok"
+    assert r["hari_sinyal"] > 0
+    assert r["dasar_positif_semua"] is False
+    assert r["verdict"] == "ada-keunggulan"
+    assert r["jumlah_lebih_baik"] == 2
+    for u in r["uji"]:
+        assert u["rata_sinyal_pct"] > 0
+        assert u["rata_sinyal_pct"] > u["rata_dasar_pct"]
+
+
+def test_uji_riwayat_menolak_menyebut_unggul_saat_pasar_naik_terus() -> None:
+    """Kalau dasar positif di SEMUA horizon, keunggulan belum bisa dipercaya — ditandai jujur.
+
+    Versi pasar-naik dari tes di atas: sinyalnya tetap lebih baik di kedua horizon, tapi
+    karena seluruh pasar naik, modul menolak menyebutnya `ada-keunggulan`.
+    """
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    tutup, v = [], 100.0
+    for i in range(60):
+        tutup.append(v)
+        if i % 2 == 0:
+            v *= 1.03
+    acc = _acc(t, {"AA": [1000.0 if i % 2 == 0 else -1000.0 for i in range(60)]})
+    r = uji_riwayat(acc, _hist(t, tutup), horizon_hari=(3, 5))
+    assert r["jumlah_lebih_baik"] == 2          # sinyal memang menang di kedua horizon
+    assert r["dasar_positif_semua"] is True     # tapi pasar naik terus
+    assert r["verdict"] == "perlu-uji-tambahan"  # jadi TIDAK disebut unggul
+
+
+def test_horizon_genap_bisa_menghapus_selisih() -> None:
+    """Kontrol untuk tes di atas: pada horizon genap efeknya memang nol, dan modul jujur."""
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    tutup, v = [], 100.0
+    for i in range(60):
+        tutup.append(v)
+        if i % 2 == 0:
+            v *= 1.03
+    acc = _acc(t, {"AA": [1000.0 if i % 2 == 0 else -1000.0 for i in range(60)]})
+    r = uji_riwayat(acc, _hist(t, tutup), horizon_hari=(10,))
+    assert r["uji"][0]["selisih_poin"] == 0.0
+    assert r["verdict"] == "tidak-terbukti"
+
+
+def test_uji_riwayat_sinyal_tidak_berguna() -> None:
+    """Harga naik terus tanpa peduli broker -> sinyal tidak lebih baik dari dasar."""
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    nval = [100.0 * (1.01 ** i) for i in range(60)]
+    acc = _acc(t, {"AA": [500.0] * 60, "BB": [-400.0] * 60})  # net selalu +100
+    r = uji_riwayat(acc, _hist(t, nval), horizon_hari=(5, 10, 20))
+    assert r["status"] == "ok"
+    # SEMUA hari jadi sinyal -> sinyal == dasar -> tidak ada selisih
+    for u in r["uji"]:
+        if "selisih_poin" in u:
+            assert abs(u["selisih_poin"]) < 0.01
+
+
+def test_uji_riwayat_menandai_efek_pasar() -> None:
+    """Kalau dasar positif di semua horizon, keunggulan belum bisa dipercaya."""
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    tutup = [100.0 * (1.02 ** i) for i in range(60)]  # pasar naik kuat
+    acc = _acc(t, {"AA": [1000.0 if i % 3 == 0 else -100.0 for i in range(60)]})
+    r = uji_riwayat(acc, _hist(t, tutup), horizon_hari=(5, 10, 20))
+    assert r["dasar_positif_semua"] is True
+    assert r["verdict"] in ("perlu-uji-tambahan", "tidak-terbukti")
+
+
+def test_uji_riwayat_selalu_menyebut_batasnya() -> None:
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    tutup = [100.0 + i for i in range(60)]
+    acc = _acc(t, {"AA": [100.0] * 60})
+    r = uji_riwayat(acc, _hist(t, tutup))
+    gab = " ".join(r["catatan"])
+    assert "dasar pembanding = SEMUA hari" in gab
+    assert "tidak punya endpoint historis" in gab
+    assert "bukti lemah" in gab
+
+
+def test_uji_riwayat_harga_rusak_dilewati() -> None:
+    from live_trading.collectors.bandarmologi import uji_riwayat
+
+    t = _hari(60)
+    h = _hist(t, [100.0] * 60)
+    h["rows"][10]["close"] = None
+    acc = _acc(t, {"AA": [100.0] * 60})
+    r = uji_riwayat(acc, h)
+    assert r["status"] == "ok"

@@ -569,6 +569,17 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         except Exception as exc:  # noqa: BLE001
             snap["bagian"]["bandarmologi"] = {"error": f"{type(exc).__name__}: {exc}"}
 
+        try:
+            from .collectors import dexscreen, memecoin
+
+            # Sumber memecoin (Pumpfun / DEX Solana / Robinhood). Label aslinya dipertahankan:
+            # data mentah, bukan rekomendasi — tidak ada track record yang bisa diverifikasi.
+            snap["bagian"]["memecoin"] = memecoin.skrining(
+                s.state_dir, per_venue=5, ambil=dexscreen.cari_pool
+            )
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["memecoin"] = {"error": f"{type(exc).__name__}: {exc}"}
+
     # posisi & ledger dari berkas (tanpa jaringan)
     p = s.state_dir / "paper_positions.json"
     try:

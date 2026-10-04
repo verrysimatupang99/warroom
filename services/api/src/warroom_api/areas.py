@@ -30,7 +30,7 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     ),
     "idx": ("bagian", "kandidat", "pengukuran", "bandarmologi"),
     "forex": ("bagian",),
-    "gmgn": ("bagian", "gmgn", "radar", "lp_paper"),
+    "gmgn": ("bagian", "gmgn", "radar", "lp_paper", "memecoin"),
     "polymarket": ("bagian", "poly_paper", "lp_paper", "equity", "ledger"),
 }
 

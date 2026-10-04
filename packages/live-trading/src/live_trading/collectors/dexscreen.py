@@ -180,6 +180,18 @@ def pilih_pool(
     return sah[:limit]
 
 
+def cari_pool(kata: str) -> dict[str, Any]:
+    """Pencarian mentah DexScreener — mengembalikan `{"pairs": [...]}` apa adanya.
+
+    Dipisahkan dari `lp_cari` (yang menyaring & mengurutkan) supaya pemanggil yang butuh
+    penyaringan sendiri — mis. `collectors.memecoin` yang memetakan venue dari `chainId`+`dexId` —
+    tidak perlu menyentuh `_get` yang privat.
+    """
+    from urllib.parse import quote as _quote
+
+    return _get(f"/latest/dex/search?q={_quote(kata)}")
+
+
 def lp_cari(kata: str, limit: int = 6, rantai: str | None = None) -> list[dict[str, Any]]:
     """Cari pool LP lewat DEX Screener dan ukur masing-masing dengan `ukur_lp`.
 

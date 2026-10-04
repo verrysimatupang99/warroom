@@ -25,6 +25,7 @@ import datetime as dt
 import json
 import time
 from pathlib import Path
+from statistics import mean
 from typing import Any
 
 LABEL_JUJUR = (
@@ -172,6 +173,121 @@ def skor_heuristik(r: dict[str, Any]) -> float:
     if r.get("no_sell"):
         skor += 10
     return round(skor, 1)
+
+
+def seri_broker(acc: dict[str, Any]) -> list[dict[str, Any]]:
+    """Gabungkan deret per-broker (`broker_accumulation`) jadi satu deret harian.
+
+    Untuk setiap tanggal: total nilai net lintas broker, berapa broker yang net beli,
+    dan apakah totalnya positif. Ini ukuran broker-flow yang BISA direkonstruksi ke belakang —
+    berbeda dari skor harian `broker_summary` yang tidak punya endpoint historis.
+    """
+    per_tanggal: dict[str, dict[str, Any]] = {}
+    for b in acc.get("series") or []:
+        for p in b.get("points") or []:
+            tgl = p.get("date")
+            nval = _f(p.get("nval"))
+            if not tgl or nval is None:
+                continue
+            baris = per_tanggal.setdefault(
+                tgl, {"tanggal": tgl, "net_total": 0.0, "akum_positif": 0, "akum_negatif": 0, "broker": 0}
+            )
+            baris["net_total"] += nval
+            baris["broker"] += 1
+            if nval > 0:
+                baris["akum_positif"] += 1
+            elif nval < 0:
+                baris["akum_negatif"] += 1
+    return [per_tanggal[t] for t in sorted(per_tanggal)]
+
+
+def uji_riwayat(
+    acc: dict[str, Any],
+    hist: dict[str, Any],
+    horizon_hari: tuple[int, ...] = (5, 10, 20),
+) -> dict[str, Any]:
+    """Uji apakah broker-flow historis berguna — dengan standar bukti yang sama seperti biasa.
+
+    Aturan yang diuji: hari ketika **total broker net beli positif** dibanding **hari biasa**
+    (dasar pembanding). Kalau sinyal tidak lebih baik daripada dasar, tulis `tidak-terbukti`.
+
+    Kejujuran yang dijaga sama seperti `overextended`: perlu **≥2 horizon** menang, dan kalau
+    seluruh periode pasarnya naik (dasar positif di semua horizon) hasilnya ditandai
+    `perlu-uji-tambahan` — keunggulan semacam itu bisa cuma efek pasar, bukan sinyalnya.
+    """
+    seri = {b["tanggal"]: b for b in seri_broker(acc)}
+    rows = [r for r in (hist.get("rows") or []) if r.get("date") and _f(r.get("close"))]
+    rows.sort(key=lambda r: r["date"])
+    if not seri or len(rows) < 30:
+        return {"status": "belum-cukup-data", "hari_seri": len(seri), "hari_harga": len(rows)}
+
+    tanggal = [r["date"] for r in rows]
+    tutup = [_f(r["close"]) for r in rows]
+    idx_sinyal: set[int] = set()
+    for i, t in enumerate(tanggal):
+        b = seri.get(t)
+        if b and b["net_total"] > 0:
+            idx_sinyal.add(i)
+
+    hasil: dict[str, Any] = {
+        "status": "ok",
+        "hari_total": len(rows),
+        "hari_sinyal": len(idx_sinyal),
+        "rentang": f"{tanggal[0]} .. {tanggal[-1]}",
+        "uji": [],
+    }
+    for h in horizon_hari:
+        sig, dasar = [], []
+        for i in range(len(rows) - h):
+            masuk, keluar = tutup[i], tutup[i + h]
+            if not masuk or not keluar:
+                continue
+            r = (keluar / masuk - 1) * 100
+            dasar.append(r)
+            if i in idx_sinyal:
+                sig.append(r)
+        if not dasar:
+            continue
+        baris_uji: dict[str, Any] = {
+            "horizon_hari": h,
+            "n_sinyal": len(sig),
+            "n_dasar": len(dasar),
+            "rata_dasar_pct": round(mean(dasar), 2),
+        }
+        if sig:
+            menang = sum(1 for r in sig if r > 0)
+            baris_uji.update(
+                {
+                    "rata_sinyal_pct": round(mean(sig), 2),
+                    "menang_sinyal": menang,
+                    "winrate_sinyal_pct": round(menang / len(sig) * 100, 1),
+                    "selisih_poin": round(mean(sig) - mean(dasar), 2),
+                }
+            )
+        hasil["uji"].append(baris_uji)
+
+    lengkap = [u for u in hasil["uji"] if "rata_sinyal_pct" in u]
+    n_lebih_baik = sum(1 for u in lengkap if u.get("selisih_poin", 0) > 0)
+    ada = [u for u in lengkap if u["rata_sinyal_pct"] > 0 and u.get("selisih_poin", 0) > 0]
+    dasar_positif_semua = bool(lengkap) and all(u.get("rata_dasar_pct", 0) > 0 for u in lengkap)
+    if not lengkap:
+        verdict = "tidak-ada-sinyal"
+    elif len(ada) >= 1 and n_lebih_baik >= 2 and dasar_positif_semua:
+        verdict = "perlu-uji-tambahan"
+    elif len(ada) >= 1 and n_lebih_baik >= 2:
+        verdict = "ada-keunggulan"
+    else:
+        verdict = "tidak-terbukti"
+    hasil["verdict"] = verdict
+    hasil["jumlah_lebih_baik"] = n_lebih_baik
+    hasil["dasar_positif_semua"] = dasar_positif_semua
+    hasil["catatan"] = [
+        "dasar pembanding = SEMUA hari pada periode yang sama, bukan nol",
+        "broker_summary tidak punya endpoint historis, jadi skor harian tidak bisa direkonstruksi; "
+        "yang diuji di sini adalah arah net broker (dari broker_accumulation)",
+        "uji ini pada satu periode & beberapa emiten — bukti lemah, bukan kepastian",
+    ]
+    return hasil
 
 
 def skrining(
