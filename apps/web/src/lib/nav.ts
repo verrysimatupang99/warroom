@@ -104,6 +104,16 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'bandar',
+		label: 'Bandarmologi',
+		rute: '/bandar',
+		ikon: '🜲',
+		anak: [
+			{ slug: 'broker', label: 'Broker', kunci: ['bagian'], catatan: 'ATS, no-sell, akumulator' },
+			{ slug: 'batas', label: 'Batas', kunci: ['bagian'], catatan: 'Yang bisa & tidak bisa diukur' }
+		]
+	},
+	{
 		kunci: 'overextended',
 		label: 'Overextended',
 		rute: '/overextended',

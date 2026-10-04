@@ -553,6 +553,22 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         except Exception as exc:  # noqa: BLE001
             snap["bagian"]["overextended"] = {"error": f"{type(exc).__name__}: {exc}"}
 
+        try:
+            from .collectors import bandarmologi
+            from .collectors.idx import ArjumCollector
+
+            # Broker-flow IDX. Kuota Arjum 6000/hari untuk SELURUH pemakaian, jadi kandidat
+            # diambil dari screener (1 panggilan) lalu dibatasi 4 ticker — dan hasilnya
+            # di-cache 6 jam. Cache-nya bukan optimasi, itu bagian dari disiplin kuota.
+            _ac = ArjumCollector(s)
+            _rows = (_ac.screener(limit=8).get("rows") or [])
+            _kode = [r["stock_code"] for r in _rows if r.get("stock_code")][:4]
+            snap["bagian"]["bandarmologi"] = bandarmologi.skrining(
+                _kode, s.state_dir, maks_ticker=4, ambil=_ac.broker_summary
+            )
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["bandarmologi"] = {"error": f"{type(exc).__name__}: {exc}"}
+
     # posisi & ledger dari berkas (tanpa jaringan)
     p = s.state_dir / "paper_positions.json"
     try:
