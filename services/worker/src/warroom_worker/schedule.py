@@ -144,10 +144,13 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         name="refresh-snapshot",
         interval_s=900,
         enabled=True,
-        payload={"timeout_s": 300},
+        payload={"timeout_s": 900},
         note=(
             "`lt snapshot` — pindahan dari `live-trading-snapshot.timer` (irama 15 mnt). "
-            "Cutover 3 Okt: timer domain dimatikan supaya hanya ada SATU penulis snapshot."
+            "Cutover 3 Okt: timer domain dimatikan supaya hanya ada SATU penulis snapshot. "
+            "Anggaran 900s (bukan 300s): sejak `bagian` bertambah (macro, lp, …) satu siklus bisa "
+            "menembus 5 menit saat jaringan lambat, dan proses yang dibunuh di tengah tulis "
+            "meninggalkan snapshot separuh."
         ),
     ),
     JobSpec(

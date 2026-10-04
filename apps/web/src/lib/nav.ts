@@ -94,6 +94,16 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'lp',
+		label: 'LP',
+		rute: '/lp',
+		ikon: '≋',
+		anak: [
+			{ slug: 'posisi', label: 'Posisi', kunci: ['bagian'], catatan: 'Uang nyata + IL vs hold' },
+			{ slug: 'kandidat', label: 'Kandidat', kunci: ['bagian'], catatan: 'Pencarian pool, urut volume' }
+		]
+	},
+	{
 		kunci: 'bukti',
 		label: 'Bukti',
 		rute: '/bukti',

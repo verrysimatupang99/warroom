@@ -6,6 +6,7 @@ Handler **tidak boleh** menelan kegagalan diam-diam: `schedule.run_one` yang men
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from datetime import UTC, datetime
@@ -127,8 +128,15 @@ def handler_collect(s: SASession, job: Job) -> str:
 
 
 def handler_refresh_snapshot(s: SASession, job: Job) -> str:
-    """`lt snapshot` — dipindahkan dari timer domain (irama 15 menit)."""
-    return _jalankan_lt("snapshot", job, timeout_s=int(job.payload_json.get("timeout_s", 300)))
+    """`lt snapshot` — dipindahkan dari timer domain (irama 15 menit).
+
+    `timeout_s` bawaan 300 detik terlalu ketat: begitu `bagian` bertambah (macro, lp, dst.)
+    satu siklus bisa menembus 5 menit saat jaringan lambat — dan prosesnya dibunuh **di tengah
+    tulis**, sehingga `state/snapshot.json` tinggal separuh (gejala: `bagian` kehilangan `lp`
+    dan `macro` tanpa error apa pun). 900 detik = sama dengan anggaran job `collect`.
+    """
+    bawaan = int(job.payload_json.get("timeout_s", 900) or 900)
+    return _jalankan_lt("snapshot", job, timeout_s=max(bawaan, 900))
 
 
 def handler_backup(s: SASession, job: Job) -> str:
@@ -174,7 +182,27 @@ def _jalankan_lt(subperintah: str, job: Job, *, timeout_s: int) -> str:
         raise RuntimeError(
             f"lt {subperintah} gagal (kode {hasil.returncode}): {hasil.stderr.strip()[:200]}"
         )
+    # Penjaga anti-snapshot-separuh. Snapshot ditulis dengan `write_text` (bukan atomik), jadi
+    # satu-satunya cara sebuah bagian ("bagian") bisa HILANG sementara prosesnya keluar kode 0
+    # adalah snapshot ditulis oleh **kode lama** — mis. satu layanan lain yang masih menjalankan
+    # salinan lama dan menimpa berkas state yang sama. Menyimpan bagian-bagian yang sudah
+    # dilaporkan ringkasan stdout lalu membandingkannya membuat keadaan itu **kelihatan**,
+    # bukan lewat begitu saja dengan status "ok".
     ringkas = [b.strip() for b in hasil.stdout.splitlines() if b.strip()]
+    dilaporkan = {b.split()[0] for b in ringkas if b.split() and b.split()[-1] == "ok"}
+    ditulis = set()
+    if subperintah == "snapshot":
+        try:
+            snap = json.loads((Path(root_dir()) / "state" / "snapshot.json").read_text("utf-8"))
+            ditulis = set((snap.get("bagian") or {}).keys())
+        except (OSError, json.JSONDecodeError):
+            ditulis = set()
+        hilang = sorted(dilaporkan - ditulis)
+        if hilang:
+            raise RuntimeError(
+                f"snapshot tidak lengkap: {hilang} dilaporkan ok tetapi tidak ada di berkas — "
+                "berkas kemungkinan ditimpa oleh kode lama (unit lain yang belum ikut diperbarui)"
+            )
     return f"lt {subperintah} ok; " + " | ".join(ringkas[-3:])[:240]
 
 

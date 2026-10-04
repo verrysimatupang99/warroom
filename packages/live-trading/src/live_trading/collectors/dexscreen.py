@@ -160,30 +160,37 @@ def _nilai_vol(p: dict[str, Any]) -> float:
     return _angka((p.get("volume") or {}).get("h24")) or 0.0
 
 
-def pilih_pool(pairs: list[dict[str, Any]], limit: int = 6) -> list[dict[str, Any]]:
-    """Buang pool tanpa volume, lalu urutkan menurun **berdasarkan volume 24 jam**.
+def pilih_pool(
+    pairs: list[dict[str, Any]], limit: int = 6, rantai: str | None = None
+) -> list[dict[str, Any]]:
+    """Buang pool tanpa volume, saring per rantai, lalu urutkan menurun **berdasarkan volume**.
 
     Kenapa volume dan bukan likuiditas: pada data nyata ada pool BONK/USDC dengan likuiditas
     $50,4 juta tetapi volume hanya $0,31/hari. Kalau diurutkan pakai likuiditas, pool terbengkalai
     itulah yang terpilih — padahal LP di sana tidak menghasilkan fee sama sekali. Fee datang dari
     transaksi, jadi volume yang jadi urutan.
+
+    `rantai` (mis. "solana") menyaring dulu supaya pencarian kata umum seperti "SOL" tidak
+    dijawab pool SOL/USDC yang kebetulan ada di Base.
     """
     sah = [p for p in pairs if p.get("pairAddress") and _nilai_vol(p) > 0]
+    if rantai:
+        sah = [p for p in sah if (p.get("chainId") or "").lower() == rantai.lower()]
     sah.sort(key=_nilai_vol, reverse=True)
     return sah[:limit]
 
 
-def lp_cari(kata: str, limit: int = 6) -> list[dict[str, Any]]:
+def lp_cari(kata: str, limit: int = 6, rantai: str | None = None) -> list[dict[str, Any]]:
     """Cari pool LP lewat DEX Screener dan ukur masing-masing dengan `ukur_lp`.
 
     Mengembalikan daftar siap-tampil (rantai, dex, pasangan, alamat, url + hasil ukur).
-    Murni baca-saja, tanpa key.
+    Murni baca-saja, tanpa key. `rantai` = chainId DEX Screener, mis. "solana".
     """
     from urllib.parse import quote as _quote
 
     d = _get(f"/latest/dex/search?q={_quote(kata)}")
     out: list[dict[str, Any]] = []
-    for p in pilih_pool(d.get("pairs") or [], limit):
+    for p in pilih_pool(d.get("pairs") or [], limit, rantai):
         bt = (p.get("baseToken") or {}).get("symbol") or "?"
         qt = (p.get("quoteToken") or {}).get("symbol") or "?"
         out.append(

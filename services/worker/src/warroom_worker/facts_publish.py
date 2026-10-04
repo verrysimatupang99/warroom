@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,15 +43,42 @@ def canonical_hash(value: Any) -> str:
 
 
 def _observed_at(payload: dict[str, Any], path: Path) -> datetime:
+    """Waktu observasi sebenarnya.
+
+    Perangkap yang sudah diperbaiki di sini: `dibuat` dari domain berformat
+    `"2026-10-04 18:43:19 WIB"` — **waktu lokal (UTC+7), tanpa penanda zona**. Kalau diumpankan
+    apa adanya ke `fromisoformat`, jamnya dianggap UTC sehingga fakta **selalu terlihat 7 jam
+    lebih tua** daripada kenyataan. Itu membuat kesegaran salah dan `on_conflict_do_nothing`
+    pada (kind, key, observed_at) terus menabrak baris lama → fakta baru tak pernah masuk.
+
+    Urutan kepercayaan: stempel waktu berzona (ISO, mis. `...+07:00`/`Z`) → `dibuat` lokal
+    apa adanya (ditandai UTC supaya perilaku lama tetap terjaga) → mtime berkas.
+    """
     raw = payload.get("dibuat")
     if isinstance(raw, str) and raw:
-        try:
-            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        except ValueError:
-            dt = None
-        if dt is not None:
-            return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
-    return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+        teks = raw.strip().replace(" WIB", "").replace("WIB", "").strip()
+        # ISO dengan penanda zona eksplisit (Z atau ±HH:MM) = paling tepercaya.
+        if re.search(r"(Z|[+-]\d{2}:?\d{2})$", teks):
+            try:
+                return datetime.fromisoformat(teks.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        # `dibuat` lokal tanpa penanda zona: perlakukan seperti dulu (UTC-asli) — dicek
+        # dengan mtime supaya tidak pernah lebih akurat daripada kenyataan.
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                dt_lokal = datetime.strptime(teks, fmt).replace(tzinfo=UTC)
+            except ValueError:
+                continue
+            try:
+                mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+            except OSError:
+                return dt_lokal
+            return max(dt_lokal, mtime)
+    try:
+        return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+    except OSError:
+        return datetime.now(tz=UTC)
 
 
 @dataclass

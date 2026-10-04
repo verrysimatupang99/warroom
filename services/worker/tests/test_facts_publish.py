@@ -152,3 +152,59 @@ def test_fakta_basi_terdeteksi_lewat_ttl(db, snapshot_uji: Path) -> None:
         f = s.query(Fact).filter_by(key="mode").one()
         umur = datetime.now(UTC) - f.observed_at
     assert umur > timedelta(seconds=f.ttl_s)
+
+# --- Regresi: perangkap `dibuat` berformat WIB tanpa penanda zona ---------------------------
+#
+# Gejala yang pernah terjadi di produksi: snapshot dibangun 18:43 WIB, tetapi `dibuat` diumpankan
+# apa adanya ke `fromisoformat` sehingga jamnya dianggap UTC → fakta terlihat 7 jam lebih tua.
+# Akibatnya (a) badge kesegaran selalu salah, dan (b) `on_conflict_do_nothing` pada
+# (kind, key, observed_at) terus menabrak baris lama, jadi fakta baru TIDAK PERNAH masuk.
+
+def test_dibuat_wib_tidak_mundur_tujuh_jam(tmp_path):
+    """`dibuat` berformat "<tgl> <jam> WIB" tidak boleh menghasilkan observed_at 7 jam ke belakang."""
+    import datetime as dt
+
+    from warroom_worker.facts_publish import _observed_at
+
+    berkas = tmp_path / "snapshot.json"
+    berkas.write_text("{}", encoding="utf-8")
+    hasil = _observed_at({"dibuat": "2026-10-04 18:43:19 WIB"}, berkas)
+    mtime = dt.datetime.fromtimestamp(berkas.stat().st_mtime, tz=dt.UTC)
+    # Tidak boleh lebih tua daripada mtime berkas (dulu selisih ~7 jam).
+    assert hasil >= mtime - dt.timedelta(seconds=5)
+
+
+def test_dibuat_iso_berzona_dipakai_apa_adanya(tmp_path):
+    import datetime as dt
+
+    from warroom_worker.facts_publish import _observed_at
+
+    berkas = tmp_path / "snapshot.json"
+    berkas.write_text("{}", encoding="utf-8")
+    hasil = _observed_at({"dibuat": "2026-10-04T18:43:19+07:00"}, berkas)
+    assert hasil.utcoffset() == dt.timedelta(hours=7)
+    assert (hasil.year, hasil.month, hasil.day, hasil.hour) == (2026, 10, 4, 18)
+
+
+def test_tanpa_dibuat_pakai_mtime(tmp_path):
+    import datetime as dt
+
+    from warroom_worker.facts_publish import _observed_at
+
+    berkas = tmp_path / "snapshot.json"
+    berkas.write_text("{}", encoding="utf-8")
+    hasil = _observed_at({}, berkas)
+    mtime = dt.datetime.fromtimestamp(berkas.stat().st_mtime, tz=dt.UTC)
+    assert abs((hasil - mtime).total_seconds()) < 2
+
+
+def test_dibuat_rusak_jatuh_ke_mtime(tmp_path):
+    import datetime as dt
+
+    from warroom_worker.facts_publish import _observed_at
+
+    berkas = tmp_path / "snapshot.json"
+    berkas.write_text("{}", encoding="utf-8")
+    hasil = _observed_at({"dibuat": "bukan waktu sama sekali"}, berkas)
+    mtime = dt.datetime.fromtimestamp(berkas.stat().st_mtime, tz=dt.UTC)
+    assert abs((hasil - mtime).total_seconds()) < 2

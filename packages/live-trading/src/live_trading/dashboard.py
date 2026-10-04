@@ -512,6 +512,30 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["bagian"]["dex"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         try:
+            from . import lp_positions
+
+            # Posisi LP nyata yang dicatat + kolam kandidat Solana (discovery).
+            # Dua hal yang sengaja dipisah: `posisi` = uang betul-betul diparkir,
+            # `kandidat` = layar pencarian. Mencampur keduanya = cara medsos mengelabui.
+            from .collectors import dexscreen
+
+            laporan_lp = lp_positions.laporan(s.state_dir)
+            try:
+                kandidat = dexscreen.lp_cari("SOL", 5, rantai="solana")
+            except Exception:  # noqa: BLE001 — discovery opsional, posisi tetap tampil
+                kandidat = []
+            snap["bagian"]["lp"] = {
+                **laporan_lp,
+                "kandidat": kandidat,
+                "catatan": [
+                    "posisi = uang nyata yang dicatat; kandidat = hasil pencarian, belum diparkir",
+                    "fee APR nyata & LP-vs-hold-USD butuh harga masuk+keluar posisi (lihat halaman Bukti)",
+                ],
+            }
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["lp"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+        try:
             from .collectors import idx616
 
             snap["bagian"]["idx616"] = idx616.snapshot(s.state_dir)
