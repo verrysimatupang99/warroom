@@ -25,6 +25,8 @@
 	import RiskMeter from '$lib/components/RiskMeter.svelte';
 	import SignalCard from '$lib/components/SignalCard.svelte';
 	import StatisticalEdgeCard from '$lib/components/StatisticalEdgeCard.svelte';
+	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
+	import DecisionFeed from '$lib/components/DecisionFeed.svelte';
 
 	let areas = $state<AreasPayload | null>(null);
 	let kesegaran = $state<KesegaranPayload | null>(null);
@@ -229,9 +231,12 @@
 		</div>
 	</div>
 
+	<!-- Papan Peringkat Strategi (Inspirasi Fomo Family Leaderboard) -->
+	<StrategyLeaderboard />
+
 	<!-- Layout Dua Kolom Utama (Grid) -->
 	<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-		<!-- Kolom Kiri: Kurva Ekuitas, Setup Trading, Ledger (7 Kolom) -->
+		<!-- Kolom Kiri: Kurva Ekuitas, Setup Trading, Aliran Keputusan (7 Kolom) -->
 		<div class="space-y-4 lg:col-span-7">
 			<!-- Kurva Ekuitas Interaktif -->
 			<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
@@ -265,29 +270,8 @@
 				{/if}
 			</div>
 
-			<!-- Riwayat Trade Terakhir (Recent Ledger) -->
-			{#if dataLedger?.terakhir && dataLedger.terakhir.length}
-				<div class="permukaan-2 rounded-card border border-line p-3">
-					<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-						<h3 class="text-13 font-medium text-text">Riwayat Trade Terakhir</h3>
-						<span class="text-11 text-text-3 font-mono">{dataLedger.trade} total trade</span>
-					</div>
-					<div class="space-y-2">
-						{#each dataLedger.terakhir.slice(0, 4) as tr}
-							<div class="flex items-start justify-between gap-2 rounded border border-line-soft bg-surface p-2 text-11">
-								<div class="flex-1">
-									<p class="text-text-2">{tr.note}</p>
-								</div>
-								<div class="text-right">
-									<span class="angka font-bold {tr.r >= 0 ? 'text-pos' : 'text-neg'} text-12">
-										{tr.r >= 0 ? '+' : ''}{angka(tr.r)} R
-									</span>
-								</div>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/if}
+			<!-- Aliran Keputusan & Eksekusi (Inspirasi Fomo Family Feed) -->
+			<DecisionFeed />
 		</div>
 
 		<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian (5 Kolom) -->

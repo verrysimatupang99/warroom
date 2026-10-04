@@ -105,6 +105,19 @@
 		</div>
 	</div>
 
+	<!-- Friksi & Biaya Eksekusi (Inspirasi Fomo Family) -->
+	<div class="mb-2 flex items-center justify-between rounded bg-surface/60 px-2 py-1 text-10 font-mono text-text-3 border border-line-soft">
+		<div class="flex items-center gap-1.5">
+			<span class="text-accent font-bold">Friksi:</span>
+			<span>Maker 0.00% (MEXC) · Taker 0.05%</span>
+		</div>
+		<div class="flex items-center gap-1">
+			<span>BE Move: <b class="text-text-2">~0.04%</b></span>
+			<span>·</span>
+			<span class="text-pos font-bold">Paper Safe</span>
+		</div>
+	</div>
+
 	<!-- Rules Summary & Toggle -->
 	{#if setup.rules && setup.rules.length}
 		{@const gagalCount = setup.rules.filter((r) => !r.ok).length}

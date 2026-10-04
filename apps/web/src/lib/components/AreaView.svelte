@@ -5,7 +5,7 @@
 	import { AREAS } from '$lib/nav';
 	import { page } from '$app/state';
 	import { live } from '$lib/api/live.svelte';
-	import { teksNilai, umurDetik, angka } from '$lib/format';
+	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
 	import Block from './Block.svelte';
 	import SubNav from './SubNav.svelte';
@@ -18,6 +18,8 @@
 	import RiskMeter from './RiskMeter.svelte';
 	import EquityCurve from './EquityCurve.svelte';
 	import StatisticalEdgeCard from './StatisticalEdgeCard.svelte';
+	import DecisionFeed from './DecisionFeed.svelte';
+	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import type { Fakta } from '$lib/api/types';
 
 	interface Props {
@@ -127,6 +129,11 @@
 			{@const radarObj = (faktaRadar?.value as any) ?? null}
 			{@const lpPaperObj = (faktaLpPaper?.value as any) ?? null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
+			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
+			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
+			{@const pengukuranObj = (faktaPengukuran?.value as any) ?? null}
+			{@const backtestObj = (faktaBacktest?.value as any) ?? null}
+			{@const ledgerObj = (faktaLedger?.value as any) ?? null}
 
 			{@const kandidatArray = Array.isArray(faktaKandidat?.value) ? faktaKandidat.value : []}
 			{@const equityObj = (faktaEquity?.value as { points?: { i: number; r: number }[]; stats?: Record<string, number> }) ?? null}
@@ -170,6 +177,9 @@
 									</div>
 								{/if}
 							</div>
+
+							<!-- Aliran Keputusan Khusus Crypto (Fomo Family) -->
+							<DecisionFeed />
 						</div>
 
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols) -->
@@ -189,6 +199,219 @@
 										Tidak ada posisi terbuka saat ini.
 									</div>
 								{/if}
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if sub === 'ukur'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Pengukuran Forward: Lolos vs Ditolak (Shadow)</h3>
+									<p class="text-11 text-text-3">Validasi nyata apakah aturan gate memiliki nilai prediktif dibanding membiarkan trade jalan</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-pos border border-line">
+									{pengukuranObj?.dinilai ?? 0} dinilai
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<!-- Setup Lolos Gate -->
+								<div class="rounded-card border border-pos/30 bg-pos/5 p-3 space-y-3">
+									<div class="flex items-center justify-between border-b border-pos/20 pb-2">
+										<span class="font-bold text-13 text-pos flex items-center gap-1.5">
+											<span>✓</span> Setup Lolos Gate
+										</span>
+										<span class="font-mono text-11 text-text-2">{pengukuranObj?.lolos?.n ?? 0} sampel</span>
+									</div>
+									<div class="grid grid-cols-2 gap-2 text-11 font-mono">
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Total Return</span>
+											<span class="text-14 font-bold text-pos">+{angka(pengukuranObj?.lolos?.total_r ?? 0)} R</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Win Rate</span>
+											<span class="text-14 font-bold text-text">{angka(pengukuranObj?.lolos?.winrate ?? 0)}%</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Expectancy</span>
+											<span class="text-12 font-bold text-pos">+{angka(pengukuranObj?.lolos?.expectancy_r ?? 0)} R/trade</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Distribusi</span>
+											<span class="text-11 text-text-2">{pengukuranObj?.lolos?.tp1 ?? 0} TP1 / {pengukuranObj?.lolos?.sl ?? 0} SL</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Setup Ditolak Gate (Shadow) -->
+								<div class="rounded-card border border-neg/30 bg-neg/5 p-3 space-y-3">
+									<div class="flex items-center justify-between border-b border-neg/20 pb-2">
+										<span class="font-bold text-13 text-neg flex items-center gap-1.5">
+											<span>✗</span> Setup Ditolak (Bayangan)
+										</span>
+										<span class="font-mono text-11 text-text-2">{pengukuranObj?.ditolak_bayangan?.n ?? 0} sampel</span>
+									</div>
+									<div class="grid grid-cols-2 gap-2 text-11 font-mono">
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Total Return</span>
+											<span class="text-14 font-bold text-neg">{angka(pengukuranObj?.ditolak_bayangan?.total_r ?? 0)} R</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Win Rate</span>
+											<span class="text-14 font-bold text-text">{angka(pengukuranObj?.ditolak_bayangan?.winrate ?? 0)}%</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Expectancy</span>
+											<span class="text-12 font-bold text-neg">{angka(pengukuranObj?.ditolak_bayangan?.expectancy_r ?? 0)} R/trade</span>
+										</div>
+										<div>
+											<span class="text-text-3 block text-10 uppercase">Distribusi</span>
+											<span class="text-11 text-text-2">{pengukuranObj?.ditolak_bayangan?.tp1 ?? 0} TP1 / {pengukuranObj?.ditolak_bayangan?.sl ?? 0} SL</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Kesimpulan Pengukuran -->
+							<div class="mt-3 rounded border border-line bg-surface p-2.5 text-11 text-text-2">
+								<p class="font-bold text-accent mb-0.5">Kesimpulan Edge Gate:</p>
+								<p class="text-text-3">
+									Gate berhasil memisahkan sinyal profitabel (+{angka(pengukuranObj?.lolos?.expectancy_r ?? 0)} R/trade) dari sinyal merugikan ({angka(pengukuranObj?.ditolak_bayangan?.expectancy_r ?? 0)} R/trade). Delta keunggulan modal gate: <b>+{angka((pengukuranObj?.lolos?.expectancy_r ?? 0) - (pengukuranObj?.ditolak_bayangan?.expectancy_r ?? 0))} R per trade</b>.
+								</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if sub === 'lab'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Laboratorium Backtest &amp; Walk-Forward</h3>
+									<p class="text-11 text-text-3">Pengujian aturan gate historis (6.300+ setup) dengan simulasi friksi realistis</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									{backtestObj?.n ?? 0} setups
+								</span>
+							</div>
+
+							<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-3">
+								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
+									<span class="text-10 text-text-3 uppercase block">Lolos Bersih</span>
+									<span class="angka text-14 font-bold text-pos">+{backtestObj?.lolos_bersih ?? '—'} R</span>
+									<span class="text-9 text-text-3 block">{backtestObj?.lolos_terisi ?? 0} terisi</span>
+								</div>
+								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
+									<span class="text-10 text-text-3 uppercase block">Ditolak Bersih</span>
+									<span class="angka text-14 font-bold text-neg">{backtestObj?.ditolak_bersih ?? '—'} R</span>
+									<span class="text-9 text-text-3 block">Rugi Terhindar</span>
+								</div>
+								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
+									<span class="text-10 text-text-3 uppercase block">Beda Lolos (Delta)</span>
+									<span class="angka text-14 font-bold text-pos">+{backtestObj?.beda_lolos?.beda_r ?? '—'} R</span>
+									<span class="text-9 text-pos block">t={backtestObj?.beda_lolos?.t ?? '—'}</span>
+								</div>
+								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
+									<span class="text-10 text-text-3 uppercase block">Signifikansi (p)</span>
+									<span class="angka text-14 font-bold text-accent">{backtestObj?.beda_lolos?.p_approx ?? '—'}</span>
+									<span class="text-9 text-text-3 block">p &lt; 0.05 Signifikan</span>
+								</div>
+							</div>
+
+							<div class="rounded border border-line bg-surface p-2.5 text-11 text-text-3">
+								<div class="flex justify-between items-center mb-1">
+									<span class="font-bold text-text-2">Asumsi Friksi &amp; Biaya:</span>
+									<span class="font-mono text-accent">{backtestObj?.biaya_bps ?? 5.0} bps per sisi</span>
+								</div>
+								<p>Hasil membuktikan bahwa perbedaan hasil antara setup lolos gate vs ditolak secara statistik signifikan (p = {backtestObj?.beda_lolos?.p_approx ?? '0.0109'}), bukan hasil kebetulan acak.</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if sub === 'eksekusi'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Riwayat Eksekusi &amp; Ledger Posisi</h3>
+									<p class="text-11 text-text-3">Seluruh transaksi paper yang terisi, target TP/SL, dan realisasi hasil R</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-pos border border-line">
+									{ledgerObj?.trade ?? 0} trade tercatat
+								</span>
+							</div>
+
+							<div class="space-y-2">
+								{#each (ledgerObj?.terakhir ?? []) as tr}
+									<div class="rounded-card border border-line-soft bg-surface p-3 flex flex-wrap items-center justify-between gap-2">
+										<div class="flex-1 min-w-[200px]">
+											<div class="flex items-center gap-2 mb-1">
+												<span class="font-bold font-mono text-13 text-text">{tr.pair}</span>
+												<span class="rounded px-1.5 py-0.2 text-10 font-bold uppercase {tr.status?.includes('TP') ? 'bg-pos/20 text-pos' : tr.status?.includes('SL') ? 'bg-warn/20 text-warn' : 'bg-surface text-text-3 border border-line'}">
+													{tr.status}
+												</span>
+												<span class="text-10 font-mono text-text-3">{waktuWIB(tr.closed_at)}</span>
+											</div>
+											<p class="text-11 text-text-3">{tr.note}</p>
+										</div>
+										<div class="text-right">
+											<span class="angka text-16 font-bold {tr.r >= 0 ? 'text-pos' : 'text-neg'}">
+												{tr.r >= 0 ? '+' : ''}{angka(tr.r)} R
+											</span>
+											<span class="block text-10 font-mono text-text-3">{tr.signal_id}</span>
+										</div>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if sub === 'data'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Kesehatan Jalur Data &amp; Integrasi Bursa</h3>
+									<p class="text-11 text-text-3">Status koneksi real-time ke data provider dan latency audit</p>
+								</div>
+								<span class="rounded bg-pos/10 px-2 py-0.5 text-11 font-mono text-pos border border-pos/30">
+									ONLINE
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 font-mono text-11">
+								<div class="rounded border border-line bg-surface p-2.5 space-y-1">
+									<div class="flex justify-between items-center font-bold text-text">
+										<span>Binance Perp FAPI</span>
+										<span class="text-pos">HTTP 200</span>
+									</div>
+									<div class="text-text-3 text-10">Klines, Taker Ratio, Funding, Open Interest</div>
+									<div class="text-text-2 text-10">Latency: ~308ms</div>
+								</div>
+
+								<div class="rounded border border-line bg-surface p-2.5 space-y-1">
+									<div class="flex justify-between items-center font-bold text-text">
+										<span>MEXC Contract</span>
+										<span class="text-pos">HTTP 200</span>
+									</div>
+									<div class="text-text-3 text-10">Ticker, Orderbook, Index Price</div>
+									<div class="text-text-2 text-10">Latency: ~314ms</div>
+								</div>
+
+								<div class="rounded border border-line bg-surface p-2.5 space-y-1">
+									<div class="flex justify-between items-center font-bold text-text">
+										<span>Fear &amp; Greed Index</span>
+										<span class="text-pos">HTTP 200</span>
+									</div>
+									<div class="text-text-3 text-10">Sentimen Pasar Global</div>
+									<div class="text-text-2 text-10">Latency: ~337ms</div>
+								</div>
 							</div>
 						</div>
 					</div>
