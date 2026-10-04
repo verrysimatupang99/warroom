@@ -14,7 +14,8 @@ import type {
 	HasilGate,
 	Kesehatan,
 	KesegaranPayload,
-	MasukanGate
+	MasukanGate,
+	ProposalsPayload
 } from './types';
 
 export class ApiError extends Error {

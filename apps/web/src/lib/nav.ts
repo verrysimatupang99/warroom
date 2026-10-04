@@ -94,6 +94,13 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'bukti',
+		label: 'Bukti',
+		rute: '/bukti',
+		ikon: '✓',
+		anak: []
+	},
+	{
 		kunci: 'sistem',
 		label: 'Sistem',
 		rute: '/sistem',

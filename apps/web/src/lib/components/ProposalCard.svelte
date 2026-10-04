@@ -11,7 +11,7 @@
 		memuat?: boolean;
 		galat?: string | null;
 		peran?: string | null;
-		onexec?: (id: number, aksi: 'apply' | 'rollback') => Promise<void> | void;
+		onexec?: ((id: number, aksi: 'apply' | 'rollback') => Promise<void> | void) | null;
 	}
 	let { proposals, memuat = false, galat = null, peran = null, onexec = null }: Props = $props();
 

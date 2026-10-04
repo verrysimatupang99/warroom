@@ -41,7 +41,7 @@
 <div class="kartu transisi p-3" data-testid="metric-tile">
 	<div class="flex items-start justify-between gap-2">
 		<p class="label-mikro">{label}</p>
-		<FreshnessBadge {status} {age_s} {sumber} ringkas />
+		<FreshnessBadge {status} {age_s} source={sumber} ringkas />
 	</div>
 	<div class="mt-1 flex items-end gap-2">
 		<span class="angka text-26 text-text" aria-live="polite">

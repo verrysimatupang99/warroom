@@ -43,7 +43,7 @@
 			<h2 class="label-mikro">{judul}</h2>
 			{#if deskripsi}<p class="mt-0.5 text-12 text-text-3">{deskripsi}</p>{/if}
 		</div>
-		<FreshnessBadge {status} {age_s} {sumber} {cache} />
+		<FreshnessBadge {status} {age_s} source={sumber} {cache} />
 	</header>
 	{#if memuat}
 		<Skeleton baris={4} />
