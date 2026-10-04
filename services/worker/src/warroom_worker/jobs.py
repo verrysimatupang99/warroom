@@ -28,6 +28,7 @@ __all__ = [
     "handler_notify",
     "handler_publish_facts",
     "handler_refresh_snapshot",
+    "handler_signal_sync",
     "register_handlers",
     "root_dir",
 ]
@@ -345,6 +346,81 @@ def handler_gmgn_sync(s: SASession, job: Job) -> str:
     return f"gmgn={g.get('status')} berkas={g.get('files')} radar={r.get('status')} sumber={r.get('sumber')}"
 
 
+def _pesan_sinyal(sg: dict[str, Any], label: str) -> str:
+    """Format pesan sinyal untuk Telegram — angka apa adanya + label jujur wajib."""
+    baris = [f"{sg['pair']} · {sg['arah']} · tier {sg.get('tier')}"]
+    harga = f"entry {sg.get('entry')} · SL {sg.get('sl')} · TP1 {sg.get('tp1')}"
+    if sg.get("risk_pct") is not None:
+        harga += f" · risiko {sg['risk_pct']}%"
+    baris.append(harga)
+    baris.append(label)
+    if sg.get("aturan_gagal"):
+        baris.append("aturan belum lulus: " + ", ".join(str(x) for x in sg["aturan_gagal"]))
+    return "\n".join(baris)
+
+
+def handler_signal_sync(s: SASession, job: Job) -> str:
+    """Terbitkan fakta sinyal dari ledger verdict domain + kabarkan yang lolos (Aksi 2).
+
+    Baca-saja dan tanpa jaringan: ledger ``verdicts.jsonl`` sudah ditulis job ``collect``
+    (``lt scan``), jadi handler ini tidak menambah beban ke exchange mana pun.
+
+    Setiap pesan WAJIB membawa label jujur — kandidat, bukan ajakan beli. Gate statistik
+    proyek belum membuktikan edge (verdict ``NOT_PROVEN``); mengabarkan seolah terbukti
+    adalah kesalahan yang justru jadi kelemahan kompetitor.
+    """
+    from warroom_worker.adapters import signals as sig
+
+    jam = float(job.payload_json.get("jam_terakhir", 6))
+    ttl = int(job.payload_json.get("ttl_s", 21600))
+    kabari = bool(job.payload_json.get("kabari", True))
+    d = sig.sinyal_terakhir(root_dir() / "state", jam_terakhir=jam)
+    if d.get("status") != "ok":
+        return f"ledger sinyal {d.get('status')}: {str(d.get('detail') or '')[:80]}"
+
+    n_fakta = 0
+    dikabarkan = 0
+    for sg in d.get("sinyal") or []:
+        nilai: dict[str, Any] = {
+            "pair": sg["pair"],
+            "arah": sg["arah"],
+            "tier": sg.get("tier"),
+            "entry": sg.get("entry"),
+            "sl": sg.get("sl"),
+            "tp1": sg.get("tp1"),
+            "risk_pct": sg.get("risk_pct"),
+            "r_r": sg.get("r_r"),
+            "aturan_gagal": sg.get("aturan_gagal") or [],
+            "diambil": sg.get("ts"),
+            "label": sig.LABEL_JUJUR,
+        }
+        fakta = Fact(
+            kind="signal",
+            key=str(sg["pair"]),
+            value_json=nilai,
+            source=f"{d.get('path')}#{sg.get('ts')}",
+            observed_at=datetime.now(UTC),
+            ttl_s=ttl,
+            hash=canonical_hash(nilai),
+        )
+        s.add(fakta)
+        s.flush()
+        n_fakta += 1
+        if kabari and _alert(
+            s,
+            subject=f"sinyal/{sg['pair']}/{sg['arah']}",
+            message=_pesan_sinyal(sg, sig.LABEL_JUJUR),
+            aksi="Tinjau manual — ini kandidat, bukan ajakan beli. Eksekusi tetap keputusan Anda.",
+            severity="info",
+            fact_ids=[fakta.id],
+        ):
+            dikabarkan += 1
+    return (
+        f"ledger={d.get('path')} jendela={jam:g}j sinyal={d.get('jumlah')} "
+        f"fakta={n_fakta} dikabarkan={dikabarkan}"
+    )
+
+
 def _tulis_fakta(s: SASession, *, kind: str, key: str, value: Any, source: str, ttl_s: int) -> None:
     """Satu fakta berversi. `observed_at` = sekarang (kita yang baru membacanya)."""
     s.add(
@@ -582,6 +658,7 @@ def register_handlers() -> dict[str, Any]:
             "parity-drift": handler_parity_drift,
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,
+            "signal-sync": handler_signal_sync,
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
             "llm-brief": handler_llm_brief,

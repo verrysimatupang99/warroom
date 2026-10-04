@@ -90,6 +90,19 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="baca-saja state GMGN + radar (dari cache) → fakta (P4-T4).",
     ),
     JobSpec(
+        name="signal-sync",
+        interval_s=900,
+        enabled=True,
+        # TTL 6 jam > interval 15 mnt (aturan rumah: fakta tidak boleh basi di antara dua tulis).
+        # Ledger `verdicts.jsonl` tumbuh ~20 baris/hari, jadi jendela 6 jam cukup untuk
+        # menangkap sinyal baru tanpa mengabarkan ulang yang lama.
+        payload={"jam_terakhir": 6, "ttl_s": 21600, "kabari": True},
+        note=(
+            "baca-saja ledger verdict domain (`lt scan`) → fakta `signal.<pair>` + kabar Telegram "
+            "lewat alert ber-dedupe subjek. Setiap pesan membawa label jujur: kandidat, bukan ajakan beli."
+        ),
+    ),
+    JobSpec(
         name="reconcile",
         interval_s=3600,
         enabled=True,

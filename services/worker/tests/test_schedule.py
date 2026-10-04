@@ -39,6 +39,7 @@ _JOB_BERAT = (
     "gmgn-sync",
     "reconcile",
     "learner",  # membaca log agen lewat sudo
+    "signal-sync",  # membaca ledger domain + MEMBUAT alert (bisa memicu kirim Telegram)
 )
 
 
@@ -62,11 +63,11 @@ def test_daftar_job_idempoten(db) -> None:
         total = len(s.scalars(select(Job)).all())
     assert set(pertama) == {
         "publish-facts", "freshness", "notify", "refresh-snapshot", "collect", "backup",
-        "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync", "reconcile", "learner",
-        "prompts-sync", "llm-brief",
+        "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync", "signal-sync", "reconcile",
+        "learner", "prompts-sync", "llm-brief",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 14
+    assert total == 15
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
