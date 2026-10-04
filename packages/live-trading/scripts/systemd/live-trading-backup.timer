@@ -1,0 +1,13 @@
+[Unit]
+Description=War Room backup state tiap 6 jam
+Requires=live-trading-backup.service
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+AccuracySec=1min
+Persistent=true
+Unit=live-trading-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=War Room backup state (ledger, posisi, snapshot)
+Documentation=file:///home/admin/live-trading/scripts/ops/backup-state.sh
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/live-trading
+Environment=LT_HOME=/home/admin/live-trading
+ExecStart=/bin/bash /home/admin/live-trading/scripts/ops/backup-state.sh
+TimeoutStartSec=600
+StandardOutput=journal
+StandardError=journal
+# exit 2 = snapshot basi; itu peringatan, bukan kegagalan unit
+SuccessExitStatus=0 2

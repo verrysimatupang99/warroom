@@ -1,0 +1,177 @@
+=== CRYPTO 5-AGENT PIPELINE DIGEST (BINANCE PERP) ===
+Collected: 27 Sep 2026, 21:59 WIB
+Harga semua dari Binance USDT perp (fapi). Agent 1/4/5 = data di bawah; Agent 2 (setups) + Agent 3 (news) = tugas LLM.
+
+=== AGENT 1 — MARKET SCAN: ORDER FLOW ===
+  BTCUSDT      | bp  +3.5% | volΔ6h  -23.9% | fund +0.0026% | L= 56.5% | ⚪ Neutral
+  ETHUSDT      | bp  -9.5% | volΔ6h  -50.6% | fund +0.0077% | L= 59.8% | ⚪ Neutral
+  SOLUSDT      | bp -17.2% | volΔ6h  -49.6% | fund -0.0015% | L= 62.7% | ⚪ Neutral
+  BNBUSDT      | bp +11.6% | volΔ6h  -43.4% | fund +0.0000% | L= 66.2% | ⚪ Neutral
+  SUIUSDT      | bp +20.3% | volΔ6h  -58.5% | fund +0.0061% | L= 72.9% | 🟢 Mild buy
+  INJUSDT      | bp +29.6% | volΔ6h  -62.4% | fund -0.0360% | L= 59.4% | 🟢 Mild buy
+  ARBUSDT      | bp -33.4% | volΔ6h  -59.0% | fund -0.0139% | L= 61.8% | ⚪ Neutral
+  OPUSDT       | bp -28.1% | volΔ6h  -67.7% | fund +0.0019% | L= 71.6% | ⚪ Neutral
+  FETUSDT      | bp -37.4% | volΔ6h  -78.4% | fund +0.0100% | L= 72.0% | ⚪ Neutral
+  DOGEUSDT     | bp -10.9% | volΔ6h  -44.6% | fund +0.0100% | L= 76.4% | ⚪ Neutral
+  XRPUSDT      | bp -19.4% | volΔ6h  -57.6% | fund -0.0021% | L= 74.4% | ⚪ Neutral
+  HYPEUSDT     | bp -39.5% | volΔ6h  -58.4% | fund -0.0047% | L= 63.0% | ⚪ Neutral
+  LINKUSDT     | bp -25.6% | volΔ6h  -66.7% | fund +0.0026% | L= 68.9% | ⚪ Neutral
+  NEARUSDT     | bp +15.4% | volΔ6h  -62.5% | fund -0.0009% | L= 63.8% | 🟢 Mild buy
+  LTCUSDT      | bp -43.7% | volΔ6h  -58.0% | fund +0.0066% | L= 76.5% | ⚪ Neutral
+  AVAXUSDT     | bp  +4.0% | volΔ6h  -76.4% | fund +0.0100% | L= 73.7% | ⚪ Neutral
+  FARTCOINUSDT | bp  -0.4% | volΔ6h  -69.3% | fund +0.0050% | L= 66.4% | ⚪ Neutral
+  PUMPUSDT     | bp +45.0% | volΔ6h  -28.2% | fund +0.0050% | L= 55.8% | 🟢 Mild buy
+  UNIUSDT      | bp -11.9% | volΔ6h  -66.6% | fund +0.0080% | L= 66.1% | ⚪ Neutral
+  LITUSDT      | bp -41.4% | volΔ6h  -57.3% | fund +0.0050% | L= 56.9% | ⚪ Neutral
+  ZECUSDT      | bp -10.5% | volΔ6h  -68.2% | fund -0.0018% | L= 30.3% | ⚪ Neutral
+  ENAUSDT      | bp -19.1% | volΔ6h  -62.2% | fund +0.0050% | L= 64.4% | ⚪ Neutral
+  VIRTUALUSDT  | bp  +0.5% | volΔ6h  -50.7% | fund +0.0050% | L= 67.9% | ⚪ Neutral
+  ONDOUSDT     | bp -10.1% | volΔ6h  -48.7% | fund +0.0050% | L= 68.9% | ⚪ Neutral
+  TAOUSDT      | bp -10.2% | volΔ6h  -72.2% | fund +0.0050% | L= 71.5% | ⚪ Neutral
+  AAVEUSDT     | bp -36.9% | volΔ6h  -71.5% | fund +0.0045% | L= 69.3% | ⚪ Neutral
+
+=== AGENT 1 — MARKET SCAN: SMC STRUCTURE ===
+--- BTCUSDT | $84,505.6 ---
+  [1D] ranging/mixed, price above EMA50, premium (77% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, discount (38% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, equilibrium (53% of 30-bar range)
+--- ETHUSDT | $2,686.45 ---
+  [1D] HH/HL bullish, price above EMA50, premium (73% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, discount (37% of 30-bar range)
+  [1H] HH/HL bullish, price below EMA50, equilibrium (41% of 30-bar range)
+--- SOLUSDT | $121.64 ---
+  [1D] ranging/mixed, price above EMA50, premium (89% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (73% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, discount (36% of 30-bar range)
+--- BNBUSDT | $777.24 ---
+  [1D] HH/HL bullish, price above EMA50, premium (77% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, equilibrium (47% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, premium (62% of 30-bar range)
+--- SUIUSDT | $1.24 ---
+  [1D] ranging/mixed, price above EMA50, premium (92% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (87% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, premium (70% of 30-bar range)
+--- INJUSDT | $7.818 ---
+  [1D] HH/HL bullish, price above EMA50, premium (78% of 30-bar range)
+  [4H] LH/LL bearish, price above EMA50, discount (32% of 30-bar range)
+  [1H] HH/HL bullish, price below EMA50, premium (80% of 30-bar range)
+--- ARBUSDT | $0.2207 ---
+  [1D] HH/HL bullish, price above EMA50, premium (80% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, discount (23% of 30-bar range)
+  [1H] HH/HL bullish, price below EMA50, discount (21% of 30-bar range)
+--- OPUSDT | $0.14257 ---
+  [1D] HH/HL bullish, price above EMA50, premium (87% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (71% of 30-bar range)
+  [1H] ranging/mixed, price above EMA50, discount (20% of 30-bar range)
+--- FETUSDT | $0.2403 ---
+  [1D] HH/HL bullish, price above EMA50, premium (83% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (72% of 30-bar range)
+  [1H] ranging/mixed, price above EMA50, discount (13% of 30-bar range)
+--- DOGEUSDT | $0.09668 ---
+  [1D] ranging/mixed, price above EMA50, premium (67% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, equilibrium (43% of 30-bar range)
+  [1H] HH/HL bullish, price below EMA50, discount (39% of 30-bar range)
+--- XRPUSDT | $1.5168 ---
+  [1D] ranging/mixed, price above EMA50, premium (66% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, discount (32% of 30-bar range)
+  [1H] ranging/mixed, price below EMA50, discount (31% of 30-bar range)
+--- HYPEUSDT | $91.271 ---
+  [1D] ranging/mixed, price above EMA50, premium (70% of 30-bar range)
+  [4H] ranging/mixed, price below EMA50, discount (18% of 30-bar range)
+  [1H] HH/HL bullish, price below EMA50, discount (11% of 30-bar range)
+--- LINKUSDT | $14.018 ---
+  [1D] ranging/mixed, price above EMA50, premium (88% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (81% of 30-bar range)
+  [1H] ranging/mixed, price above EMA50, discount (24% of 30-bar range)
+--- NEARUSDT | $5.231 ---
+  [1D] HH/HL bullish, price above EMA50, premium (93% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (82% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, premium (65% of 30-bar range)
+--- LTCUSDT | $70.56 ---
+  [1D] HH/HL bullish, price above EMA50, premium (84% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (73% of 30-bar range)
+  [1H] LH/LL bearish, price below EMA50, discount (4% of 30-bar range)
+--- AVAXUSDT | $10.938 ---
+  [1D] HH/HL bullish, price above EMA50, premium (82% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, premium (67% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, equilibrium (54% of 30-bar range)
+--- FARTCOINUSDT | $0.1927 ---
+  [1D] ranging/mixed, price above EMA50, premium (70% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, discount (34% of 30-bar range)
+  [1H] ranging/mixed, price below EMA50, equilibrium (50% of 30-bar range)
+--- PUMPUSDT | $0.004771 ---
+  [1D] LH/LL bearish, price above EMA50, premium (80% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (97% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, premium (94% of 30-bar range)
+--- UNIUSDT | $9.701 ---
+  [1D] HH/HL bullish, price above EMA50, premium (81% of 30-bar range)
+  [4H] ranging/mixed, price above EMA50, equilibrium (43% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, discount (38% of 30-bar range)
+--- LITUSDT | $4.6402 ---
+  [1D] HH/HL bullish, price above EMA50, equilibrium (58% of 30-bar range)
+  [4H] LH/LL bearish, price below EMA50, discount (2% of 30-bar range)
+  [1H] LH/LL bearish, price below EMA50, discount (9% of 30-bar range)
+--- ZECUSDT | $1,606.46 ---
+  [1D] HH/HL bullish, price above EMA50, premium (90% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (62% of 30-bar range)
+  [1H] ranging/mixed, price above EMA50, equilibrium (47% of 30-bar range)
+--- ENAUSDT | $0.26903 ---
+  [1D] ranging/mixed, price above EMA50, premium (89% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (81% of 30-bar range)
+  [1H] LH/LL bearish, price above EMA50, discount (22% of 30-bar range)
+--- VIRTUALUSDT | $0.8015 ---
+  [1D] ranging/mixed, price above EMA50, premium (89% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (81% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, equilibrium (51% of 30-bar range)
+--- ONDOUSDT | $0.5393 ---
+  [1D] ranging/mixed, price above EMA50, premium (84% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (78% of 30-bar range)
+  [1H] LH/LL bearish, price above EMA50, discount (36% of 30-bar range)
+--- TAOUSDT | $323.39 ---
+  [1D] ranging/mixed, price above EMA50, premium (86% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (72% of 30-bar range)
+  [1H] ranging/mixed, price above EMA50, discount (40% of 30-bar range)
+--- AAVEUSDT | $153.12 ---
+  [1D] ranging/mixed, price above EMA50, premium (90% of 30-bar range)
+  [4H] HH/HL bullish, price above EMA50, premium (81% of 30-bar range)
+  [1H] HH/HL bullish, price above EMA50, discount (19% of 30-bar range)
+
+=== AGENT 4 — WHALES & POSITIONING (kandidat + BTC) ===
+  SUIUSDT | taker B/S 1h 0.87 | OIΔ24h -1.3% | fund +0.0061%
+    flow 4j (klines, coverage 100%): net SELL-side, buy $49M vs sell $51M (rasio 0.98)
+    print USDT-perp: 12 print >$100k, net BUY-side, top $751k BUY @ 1.2367 [coverage 21% dr 4j (budget 17 req)]
+    COIN-M tidak ada print >$100k [coverage 108%]
+  INJUSDT | taker B/S 1h 0.89 | OIΔ24h +5.0% | fund -0.0360%
+    flow 4j (klines, coverage 100%): net SELL-side, buy $6M vs sell $7M (rasio 0.86)
+    print USDT-perp: 1 print >$100k, net BUY-side, top $101k BUY @ 7.829 [coverage 52% dr 4j (budget 17 req)]
+  NEARUSDT | taker B/S 1h 1.05 | OIΔ24h +2.3% | fund -0.0009%
+    flow 4j (klines, coverage 100%): net SELL-side, buy $72M vs sell $72M (rasio 1.00)
+    print USDT-perp: 20 print >$100k, net BUY-side, top $375k BUY @ 5.22 [coverage 28% dr 4j (budget 19 req)]
+    COIN-M tidak ada print >$100k [coverage 125%]
+  PUMPUSDT | taker B/S 1h 1.01 | OIΔ24h -1.7% | fund +0.0050%
+    flow 4j (klines, coverage 100%): net BUY-side, buy $27M vs sell $26M (rasio 1.04)
+    print USDT-perp: 6 print >$100k, net BUY-side, top $190k SELL @ 0.004698 [coverage 29% dr 4j (budget 21 req)]
+  BTCUSDT | taker B/S 1h 0.71 | OIΔ24h -0.3% | fund +0.0026%
+    flow 4j (klines, coverage 100%): net SELL-side, buy $623M vs sell $722M (rasio 0.86)
+    print USDT-perp: 581 print >$100k, net SELL-side, top $3,398k BUY @ 84497 [coverage 9% dr 4j (budget 29 req)]
+    COIN-M 433 print net SELL-side [coverage 104%] — SEPAKAT ✓
+  (budget whale: 138/140 request untuk 5 pair)
+  CARA BACA: 'flow' dari klines = arah NET taker 4 jam, coverage 100%, ini yang paling tidak bias. 'print' dari tape aggTrades = order individual >$100k beserta level harga, TAPI coverage terbatas (lihat persennya) — kalau coverage <50%, jangan jadikan dasar tunggal; utamakan 'flow'. 'COIN-M' = cross-check di order book berbeda (SEPAKAT = sinyal lebih kuat, BEDA arah = ragu).
+  Interpretasi: taker B/S >1.2 = agresi beli, <0.8 = agresi jual. OI naik + harga naik = long buildup; OI naik + harga turun = short buildup.
+
+=== AGENT 3 — SENTIMENT DATA ===
+  Fear & Greed: 70/100 — Greed (kemarin 74, turun 4)
+  BTC dominance: 58.9% (alt season jika < 45 & turun)
+  Funding agregat: lihat kolom fund di AGENT 4 (positif ekstrem >0.05% = long crowded).
+
+=== AGENT 5 — RISK & EXPOSURE ===
+  Posisi open user: 2 (OP_USDT, LIT_USDT)
+  Volatilitas kandidat (ATR14 1H sebagai % harga) & spread:
+    SUIUSDT      ATR  2.07% | spread 0.008%
+    INJUSDT      ATR  1.47% | spread 0.026%
+    NEARUSDT     ATR  2.58% | spread 0.019%
+    PUMPUSDT     ATR  1.77% | spread 0.021%
+  Rule of thumb: SL struktur 1H idealnya 0.5–2x ATR1H; TP2=2R realistis jika ATR ≥ jarak TP2/12 jam.
+
+=== AGENT 6 — ON-CHAIN & POSITIONING (konfirmasi, BUKAN gate entry) ===
+  n/a (gagal: ModuleNotFoundError)

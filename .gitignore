@@ -31,3 +31,6 @@ playwright-report/
 
 # Hasil QA manual (qa-lengkap.spec.ts) — laporan temuan, bukan sumber
 qa-hasil/
+
+# env uji F3 (merge)
+.venv-merge/
