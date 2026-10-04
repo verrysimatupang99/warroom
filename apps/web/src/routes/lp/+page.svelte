@@ -94,13 +94,17 @@
 		return null;
 	}
 
-	const faktaBagian = $derived((payload?.facts ?? []).filter((f: Fakta) => f.kind === 'bagian'));
+	const faktaBagian = $derived(
+		(payload?.facts ?? []).filter((f: Fakta) => f.key === 'bagian' || f.key === 'lp' || f.key === 'lp_paper')
+	);
 
 	const lp = $derived.by(() => {
 		for (const f of [...faktaBagian].reverse()) {
 			const v = nilaiObj(f.value);
-			const b = v?.['lp'] ?? (v?.['bagian'] as Record<string, unknown> | undefined)?.['lp'];
-			if (b && typeof b === 'object') return { data: b as BagianLp, fakta: f };
+			const b = v?.['lp'] ?? (v?.['bagian'] as Record<string, unknown> | undefined)?.['lp'] ?? v;
+			if (b && typeof b === 'object' && ('posisi_terbuka' in b || 'kandidat' in b || 'posisi' in b)) {
+				return { data: b as BagianLp, fakta: f };
+			}
 		}
 		return null;
 	});

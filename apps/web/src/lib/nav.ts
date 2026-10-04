@@ -68,10 +68,10 @@ export const AREAS: Area[] = [
 		ikon: '▦',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'screener', label: 'Screener', kunci: ['kandidat'], catatan: 'Arjum × TradingView' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['pengukuran'], catatan: 'Broker summary, konsentrasi' },
+			{ slug: 'screener', label: 'Screener', kunci: ['bagian'], catatan: 'Arjum × TradingView' },
+			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, konsentrasi' },
 			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Asing vs lokal' },
-			{ slug: 'watchlist', label: 'Watchlist', kunci: ['kandidat'], catatan: 'Alert-only, tanpa order retail' }
+			{ slug: 'watchlist', label: 'Watchlist', kunci: ['bagian'], catatan: 'ARA Hunter & setup' }
 		]
 	},
 	{
@@ -96,8 +96,8 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (Azure, baca-saja)' },
 			{ slug: 'lp', label: 'LP', kunci: ['lp_paper'], catatan: 'Posisi paper LP, V/L' },
-			{ slug: 'token', label: 'Token', kunci: ['gmgn'], catatan: 'Smart Buy/Money/Whale/…' },
-			{ slug: 'bot', label: 'Bot', kunci: ['bagian'], catatan: 'Uji pumpportal (paper)' }
+			{ slug: 'token', label: 'Token', kunci: ['gmgn'], catatan: 'Trading metrics & win rate' },
+			{ slug: 'bot', label: 'Bot', kunci: ['bagian'], catatan: 'Uji pumpportal (paper) & memecoin' }
 		]
 	},
 	{

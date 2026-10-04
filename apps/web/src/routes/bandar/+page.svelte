@@ -76,10 +76,10 @@
 
 	const bagian = $derived.by(() => {
 		for (const f of [...(payload?.facts ?? [])].reverse()) {
-			if (f.kind !== 'bagian') continue;
+			if (f.key !== 'bagian' && f.key !== 'bandarmologi') continue;
 			const v = nilaiObj(f.value);
-			const b = (v?.['bagian'] as Record<string, unknown> | undefined)?.['bandarmologi'];
-			if (b && typeof b === 'object') return { data: b as Bagian, fakta: f };
+			const b = (v?.['bandarmologi'] ?? (v?.['bagian'] as Record<string, unknown> | undefined)?.['bandarmologi'] ?? v) as Record<string, unknown> | undefined;
+			if (b && typeof b === 'object' && ('hasil' in b || 'diperiksa' in b)) return { data: b as Bagian, fakta: f };
 		}
 		return null;
 	});
