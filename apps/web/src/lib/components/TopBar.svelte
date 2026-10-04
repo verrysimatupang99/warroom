@@ -6,6 +6,7 @@
 	import { getArea, getKesegaran } from '$lib/api/client';
 	import type { SegmenUang } from '$lib/uang';
 	import MoneyStrip from './MoneyStrip.svelte';
+import TemaToggle from './TemaToggle.svelte';
 
 	interface Props {
 		jalur: string;
@@ -123,6 +124,7 @@
 				segar <span class="angka">{segarTeks}</span>
 			</span>
 			<span class="angka text-13 text-text-2" aria-label="jam WIB">{jam} WIB</span>
+			<TemaToggle />
 			<button
 				type="button"
 				class="target-44 transisi relative inline-flex items-center rounded-control border border-line px-2 text-text-3 hover:border-accent-2 hover:text-text"

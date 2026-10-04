@@ -1,10 +1,32 @@
 <!doctype html>
-<html lang="id-ID">
+<html lang="id-ID" data-tema="gelap">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>War Room</title>
+
+		<!-- Font dimuat SUNGGUHAN. Sebelumnya 'Inter'/'JetBrains Mono' hanya dideklarasikan di
+		     CSS tanpa pernah dimuat, jadi yang tampil adalah font sistem. -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+			rel="stylesheet"
+		/>
+
+		<script>
+			// Terapkan tema SEBELUM cat pertama supaya tidak ada kedipan tema salah.
+			try {
+				var t = localStorage.getItem('warroom-tema');
+				if (t === 'terang' || t === 'gelap') {
+					document.documentElement.dataset.tema = t;
+				}
+			} catch (e) {
+				/* localStorage bisa diblokir — lanjut dengan tema bawaan */
+			}
+		</script>
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

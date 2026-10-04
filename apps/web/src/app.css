@@ -1,26 +1,47 @@
 @import 'tailwindcss';
 
-/* Design tokens — blueprint 02-frontend-uiux.md §2, dipakai apa adanya. */
-@theme {
-	--color-bg: #05070c;
-	--color-bg-2: #080b12;
-	--color-surface: #0c1017;
-	--color-surface-2: #111823;
-	--color-surface-3: #16202f;
-	--color-line: #202a3a;
-	--color-line-soft: #151c29;
-	--color-text: #e9eff8;
-	--color-text-2: #a7b2c4;
-	--color-text-3: #7c8aa0;
-	--color-accent: #f4a63a; /* amber: aksi, angka utama, brand */
-	--color-accent-2: #55c7df; /* cyan: info, sekunder, tautan, penanda AI */
-	--color-pos: #3ed68f;
-	--color-neg: #ff6b7d;
-	--color-warn: #f4a63a;
-	--color-paper: #8f7ff7; /* ungu: penanda "paper" */
-	--color-live: #ff8a5c; /* oranye: penanda "live/uang nyata" */
-	--color-inherit: #8b93a1; /* abu: "warisan"/legacy — #6b7280 gagal WCAG AA (3,39–4,17:1 pada 4 latar) */
+/* ============================================================================
+   Dua tema — "gelap" (mode data) dan "terang" (mode editorial).
 
+   Asal-usul: pemilik meminta tampilan yang terasa seperti dua referensi publik.
+   Yang diambil adalah POLA & TOKEN desainnya (palet, hierarki, radius, tipografi),
+   bukan aset, logo, atau teks mereka.
+
+     gelap  <- pola ihsgscreener.com : teal-navy pekat, aksen mint+cyan, padat data
+     terang <- pola algentis.xyz     : kertas krem hangat, hijau tua, radius besar, lapang
+
+   ATURAN: setiap warna sudah DIUKUR terhadap WCAG 2.2 AA (4,5:1) pada keempat
+   latarnya sebelum dipakai. Nilai yang gagal tidak dipakai — mis. `#ff3b5c` dan
+   `#9d78ff` dari palet referensi gelap ditolak karena hanya 3,88 dan 4,22 di
+   surface-3, lalu diganti #ff7a90 dan #b8a0ff.
+
+   Tema diganti lewat `data-tema` pada <html>, disimpan di localStorage.
+   ============================================================================ */
+
+@theme {
+	/* --- gelap (bawaan) --- */
+	--color-bg: #08131c;
+	--color-bg-2: #0a1826;
+	--color-surface: #0d1c2a;
+	--color-surface-2: #112436;
+	--color-surface-3: #16304a;
+	--color-line: #1d3a52;
+	--color-line-soft: #132a3d;
+	--color-text: #f0f8ff;
+	--color-text-2: #b9d4e4;
+	--color-text-3: #8bb8cc;
+	--color-accent: #00e5a0; /* mint: aksi, angka utama, brand */
+	--color-accent-2: #00c8ff; /* cyan: info, sekunder, tautan */
+	--color-pos: #00e5a0;
+	--color-neg: #ff7a90;
+	--color-warn: #f5c842;
+	--color-paper: #b8a0ff; /* ungu: penanda "paper" */
+	--color-live: #ff8a5c; /* oranye: penanda "live/uang nyata" */
+	--color-inherit: #8fa8b8; /* abu: "warisan"/legacy */
+	--color-on-accent: #04140d; /* teks DI ATAS aksen: gelap, karena mint terang (11,4:1) */
+
+	/* --- font: dimuat sungguhan di app.html (sebelumnya hanya dideklarasikan) --- */
+	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -32,32 +53,68 @@
 	--text-26: 26px;
 	--text-34: 34px;
 
-	--radius-card: 8px;
-	--radius-control: 6px;
+	/* gelap: radius rapat (mode data) */
+	--radius-card: 10px;
+	--radius-control: 8px;
+	--radius-pil: 999px;
 
 	--ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
 
 :root {
-	/* Nama token mentah dari blueprint — dokumentasi + kompatibilitas CSS langsung. */
-	--bg: #05070c;
-	--bg-2: #080b12;
-	--surface: #0c1017;
-	--surface-2: #111823;
-	--surface-3: #16202f;
-	--line: #202a3a;
-	--line-soft: #151c29;
-	--text: #e9eff8;
-	--text-2: #a7b2c4;
-	--text-3: #7c8aa0;
-	--accent: #f4a63a;
-	--accent-2: #55c7df;
-	--pos: #3ed68f;
-	--neg: #ff6b7d;
-	--warn: #f4a63a;
-	--paper: #8f7ff7;
-	--live: #ff8a5c;
-	--inherit: #8b93a1; /* disamakan dengan --color-inherit: kontras AA di semua latar */
+	/* Nama token mentah — dokumentasi + kompatibilitas CSS langsung. */
+	--bg: var(--color-bg);
+	--bg-2: var(--color-bg-2);
+	--surface: var(--color-surface);
+	--surface-2: var(--color-surface-2);
+	--surface-3: var(--color-surface-3);
+	--line: var(--color-line);
+	--line-soft: var(--color-line-soft);
+	--text: var(--color-text);
+	--text-2: var(--color-text-2);
+	--text-3: var(--color-text-3);
+	--accent: var(--color-accent);
+	--accent-2: var(--color-accent-2);
+	--pos: var(--color-pos);
+	--neg: var(--color-neg);
+	--warn: var(--color-warn);
+	--paper: var(--color-paper);
+	--live: var(--color-live);
+	--inherit: var(--color-inherit);
+	--on-accent: var(--color-on-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   TEMA TERANG — kertas krem hangat, hijau tua, radius lega.
+   Setiap nilai di bawah sudah diukur >= 4,5:1 pada bg/surface/surface-2/surface-3.
+   --------------------------------------------------------------------------- */
+html[data-tema='terang'] {
+	--color-bg: #f3f1ea;
+	--color-bg-2: #efece3;
+	--color-surface: #ffffff;
+	--color-surface-2: #faf8f2;
+	--color-surface-3: #f0ece1;
+	--color-line: #d9d4c6;
+	--color-line-soft: #e6e1d5;
+	--color-text: #0e1110;
+	--color-text-2: #4a514c;
+	--color-text-3: #5f665f;
+	--color-accent: #0e7a3d;
+	--color-accent-2: #0b6377;
+	--color-pos: #0e7a3d;
+	--color-neg: #b3341f;
+	--color-warn: #8a4a1e;
+	--color-paper: #5b3fd0;
+	--color-live: #a5532a;
+	--color-inherit: #63695f;
+	/* terang: aksennya hijau TUA, jadi teks di atasnya harus terang (5,4:1).
+	   Teks gelap di sini hanya 3,42:1 — gagal AA. */
+	--color-on-accent: #ffffff;
+
+	/* terang: radius lega + bayangan tipis supaya kartu putih tidak "menempel" */
+	--radius-card: 16px;
+	--radius-control: 12px;
+	color-scheme: light;
 }
 
 @layer base {
@@ -72,8 +129,21 @@
 		font-size: 15px;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;
+		transition:
+			background-color 200ms var(--ease-out),
+			color 200ms var(--ease-out);
 	}
-	/* Fokus terlihat (cyan) — a11y keyboard penuh. */
+	/* Judul pakai font display — satu perbedaan terbesar antara "terasa mentah"
+	   dan "terasa dirancang". Referensi memakai font display khusus untuk judul. */
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+		letter-spacing: -0.01em;
+	}
+	h1 {
+		letter-spacing: -0.02em;
+	}
 	:focus-visible {
 		outline: 2px solid var(--color-accent-2);
 		outline-offset: 2px;
@@ -92,7 +162,7 @@
 }
 
 @layer components {
-	/* Label mikro: mono, uppercase, tracking .08em (warisan terminal). */
+	/* Label mikro: mono, uppercase, tracking .08em. */
 	.label-mikro {
 		font-family: var(--font-mono);
 		font-size: 11px;
@@ -117,6 +187,12 @@
 		border: 1px solid var(--color-line-soft);
 		border-radius: var(--radius-card);
 	}
+	/* Pil: bentuk tombol/lencana dari pola editorial. */
+	.pil {
+		border-radius: var(--radius-pil);
+		border: 1px solid var(--color-line);
+		padding: 6px 14px;
+	}
 	.target-44 {
 		min-height: 44px;
 		min-width: 44px;
@@ -128,4 +204,11 @@
 			border-color 160ms var(--ease-out),
 			opacity 160ms var(--ease-out);
 	}
+}
+
+/* Bayangan hanya di tema terang — di tema gelap bayangan tidak terlihat
+   dan hanya menambah biaya render. */
+html[data-tema='terang'] .kartu,
+html[data-tema='terang'] .permukaan-2 {
+	box-shadow: 0 1px 2px rgba(14, 17, 16, 0.04);
 }

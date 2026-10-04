@@ -69,7 +69,7 @@
 		<button
 			type="submit"
 			disabled={memuat}
-			class="target-44 transisi rounded-control bg-accent px-3 text-13 font-bold text-[#1a1206] disabled:opacity-60"
+			class="target-44 transisi rounded-control bg-accent px-3 text-13 font-bold text-on-accent disabled:opacity-60"
 		>
 			{memuat ? 'memeriksa…' : 'masuk'}
 		</button>
