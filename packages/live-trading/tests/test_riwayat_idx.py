@@ -145,3 +145,32 @@ def test_integrasi_nyata_opsional() -> None:
     assert len(v.close) > 0
     if v.cukup:
         assert v.sma10 is not None and v.sma10 > 0
+
+
+def test_sufiks_jk_dinormalkan_di_kueri(monkeypatch) -> None:
+    """Universe Tencent menulis SEMUA ticker sebagai 'CAMP.JK' (516 dari 516).
+
+    Tanpa normalisasi di boundary, kueri `ticker IN ('CAMP.JK')` tidak cocok dengan DB
+    yang menyimpan 'CAMP' → hasil kosong → SMA10 None → kandidat BSJP ditolak tanpa sebab
+    yang terlihat. Tes ini mengunci: yang dikirim ke SQL harus 'CAMP', bukan 'CAMP.JK'.
+    """
+    ditangkap: list[str] = []
+
+    class _P:
+        returncode = 0
+        stdout = json.dumps(
+            [_baris("CAMP", f"2026-09-{d:02d}", 500.0 + d, 505.0, 1000.0) for d in range(1, 12)]
+        )
+        stderr = ""
+
+    def _tangkap(perintah, **k):
+        ditangkap.append(k.get("input", ""))
+        return _P()
+
+    monkeypatch.setattr(R.subprocess, "run", _tangkap)
+    R.ambil_riwayat(["CAMP.JK"])
+
+    assert ditangkap, "subprocess.run harus dipanggil"
+    kirim = ditangkap[0]
+    assert "'CAMP'" in kirim, "kode bersih harus dikirim ke SQL"
+    assert "CAMP.JK" not in kirim, "sufiks .JK tidak boleh sampai ke kueri"

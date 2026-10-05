@@ -122,3 +122,25 @@ def test_diterima_dari_tradingview_saja_tanpa_screener() -> None:
     p = susun_peringkat([], TV)
     assert {k.ticker for k in p.kandidat} == {"SAPX", "DSSA"}
     assert p.dipindai == 2
+
+
+def test_ticker_ber_sufiks_jk_dinormalkan() -> None:
+    """Kandidat dari universe Tencent datang sebagai 'SAPX.JK'.
+
+    Sebelum normalisasi: `riwayat.get('SAPX.JK')` tidak menemukan kunci 'SAPX' dari
+    ambil_riwayat → SMA10 hilang → kandidat ditolak tanpa sebab yang terlihat.
+    Tes ini mengunci: 'SAPX.JK' harus diperlakukan sama seperti 'SAPX'.
+    """
+    screener = [{"stock_code": "SAPX.JK", "bucket": "AKUMULASI"}]
+    tv = [{"ticker": "SAPX.JK", "close": 1200.0, "chg": 8.0, "volume": 5_000_000,
+           "sma10": 1000.0, "vavg10": 2_000_000}]
+    riwayat = {"SAPX": {"sma10": 1000.0, "vavg10": 2_000_000, "sumber": "arsip"}}
+
+    p = susun_peringkat(screener, tv, riwayat=riwayat)
+    tickers = [k.ticker for k in p.kandidat]
+    assert "SAPX" in tickers, f"ticker bersih harus lolos, dapat: {tickers}"
+    assert all(".JK" not in t for t in tickers), "tidak boleh ada .JK di keluaran"
+
+    # Dan kunci riwayat ber-.JK juga harus menemukan nilai yang sama.
+    p2 = susun_peringkat(screener, tv, riwayat={"SAPX.JK": {"sma10": 1000.0, "vavg10": 2_000_000}})
+    assert [k.ticker for k in p2.kandidat] == tickers

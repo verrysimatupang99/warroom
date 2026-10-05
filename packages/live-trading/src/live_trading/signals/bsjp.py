@@ -50,6 +50,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from live_trading.collectors.idx import _kode_bersih  # normalisasi .JK (satu implementasi)
+
 __all__ = ["PARAM", "KandidatBSJP", "PeringkatBSJP", "susun_peringkat"]
 
 # Parameter filter — disalin apa adanya dari idx_bsjp_watch.py (Tencent). Jangan diubah tanpa
@@ -162,6 +164,10 @@ def _baris_ke_kandidat_tera(
     ticker = str(r.get("ticker") or r.get("symbol") or r.get("stock_code") or "").upper()
     if not ticker:
         return None, "tanpa ticker"
+    # Buang sufiks .JK (universe Tencent menulis 'CAMP.JK'). Tanpa ini, `riwayat.get(ticker)`
+    # tidak menemukan kunci 'CAMP' dari ambil_riwayat — SMA10 hilang, kandidat ditolak
+    # tanpa sebab yang terlihat.
+    ticker = _kode_bersih(ticker)
     close = _angka(r.get("close") or r.get("last") or r.get("price"))
     chg = _angka(r.get("chg") if r.get("chg") is not None else r.get("change_pct"))
     vol = _angka(r.get("volume"))
@@ -255,7 +261,9 @@ def susun_peringkat(
       nyata. Selama ``None``, mode bukan ``terukur`` dan itu dinyatakan terang-terangan.
     """
     p = PARAM
-    riwayat_pakai = dict(riwayat or {})
+    # Kunci riwayat dinormalkan juga: pemanggil bisa mengirim {'CAMP.JK': ...} atau
+    # {'CAMP': ...} — dengan ini keduanya menemukan nilai yang sama.
+    riwayat_pakai = {_kode_bersih(k): v for k, v in (riwayat or {}).items()}
 
     # Gabung kandidat: screener + TradingView. TradingView yang menang untuk field harga,
     # karena ia live dan screener tidak memuatnya.
@@ -263,13 +271,13 @@ def susun_peringkat(
     for r in screener_rows or []:
         if not isinstance(r, dict):
             continue
-        t = str(r.get("stock_code") or r.get("ticker") or "").upper()
+        t = _kode_bersih(str(r.get("stock_code") or r.get("ticker") or ""))
         if t:
             gabung[t] = dict(r)
     for r in tv_rows or []:
         if not isinstance(r, dict):
             continue
-        t = str(r.get("ticker") or r.get("symbol") or "").upper()
+        t = _kode_bersih(str(r.get("ticker") or r.get("symbol") or ""))
         if not t:
             continue
         dasar = gabung.get(t, {})

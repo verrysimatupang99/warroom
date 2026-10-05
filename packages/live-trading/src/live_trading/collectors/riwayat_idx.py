@@ -39,6 +39,8 @@ import subprocess
 from dataclasses import dataclass
 from typing import Any
 
+from live_trading.collectors.idx import _kode_bersih  # normalisasi .JK (satu implementasi)
+
 log = logging.getLogger(__name__)
 
 __all__ = ["RiwayatTicker", "ambil_riwayat", "SMA_HARI_DEFAULT"]
@@ -142,7 +144,11 @@ def ambil_riwayat(
     """
     if not tickers:
         return {}
-    bersih = sorted({str(t).strip().upper() for t in tickers if str(t).strip()})
+    # Normalisasi di BOUNDARY: buang sufiks .JK sekali di sini, supaya setiap pemanggil
+    # aman. Universe Tencent (idx_universe.json) menulis SEMUA 516 ticker sebagai 'CAMP.JK';
+    # tanpa ini kueri `ticker IN ('CAMP.JK')` tidak cocok dengan DB yang menyimpan 'CAMP'
+    # → hasil kosong → SMA10 None → kandidat BSJP ditolak tanpa sebab yang terlihat.
+    bersih = sorted({_kode_bersih(t) for t in tickers if _kode_bersih(t)})
     if not bersih:
         return {}
     if len(bersih) > maks_per_panggilan:
