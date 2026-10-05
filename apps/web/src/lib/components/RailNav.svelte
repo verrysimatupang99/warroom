@@ -28,7 +28,7 @@
 				<div>
 					<a
 						href={a.rute}
-						class="transisi flex min-h-[38px] items-center gap-2.5 rounded-control px-2.5 text-13 font-medium {ini
+						class="transisi flex min-h-[44px] items-center gap-2.5 rounded-control px-2.5 text-13 font-medium {ini
 							? 'bg-accent/15 text-accent font-semibold border border-accent/30'
 							: 'text-text-2 hover:bg-surface-2 hover:text-text'}"
 						aria-current={ini ? 'page' : undefined}
@@ -43,8 +43,8 @@
 								<li>
 									<a
 										href={`${a.rute === '/' ? '/' : a.rute}?sub=${anak.slug}`}
-										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
-											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+										class="transisi flex min-h-[44px] items-center rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10'
 											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
 										aria-current={isSubAktif ? 'page' : undefined}
 										title={anak.catatan}
@@ -71,7 +71,7 @@
 				<div>
 					<a
 						href={a.rute}
-						class="transisi flex min-h-[36px] items-center gap-2.5 rounded-control px-2.5 text-12 font-medium {ini
+						class="transisi flex min-h-[44px] items-center gap-2.5 rounded-control px-2.5 text-12 font-medium {ini
 							? 'bg-accent/15 text-accent font-semibold border border-accent/30'
 							: 'text-text-3 hover:bg-surface-2 hover:text-text'}"
 						aria-current={ini ? 'page' : undefined}
@@ -86,8 +86,8 @@
 								<li>
 									<a
 										href={`${a.rute}?sub=${anak.slug}`}
-										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
-											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+										class="transisi flex min-h-[44px] items-center rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10'
 											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
 										aria-current={isSubAktif ? 'page' : undefined}
 										title={anak.catatan}
@@ -114,7 +114,7 @@
 				<div>
 					<a
 						href={a.rute}
-						class="transisi flex min-h-[38px] items-center gap-2.5 rounded-control px-2.5 text-13 font-medium {ini
+						class="transisi flex min-h-[44px] items-center gap-2.5 rounded-control px-2.5 text-13 font-medium {ini
 							? 'bg-accent/15 text-accent font-semibold border border-accent/30'
 							: 'text-text-2 hover:bg-surface-2 hover:text-text'}"
 						aria-current={ini ? 'page' : undefined}
@@ -129,8 +129,8 @@
 								<li>
 									<a
 										href={`${a.rute}?sub=${anak.slug}`}
-										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
-											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+										class="transisi flex min-h-[44px] items-center rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10'
 											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
 										aria-current={isSubAktif ? 'page' : undefined}
 										title={anak.catatan}

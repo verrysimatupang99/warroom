@@ -43,6 +43,10 @@
 	   teks paling sulit dibaca di layar. */
 	--color-live: #e26a95;
 	--color-inherit: #8a8894;
+	/* Permukaan "kanvas" — dipakai untuk kotak kode/nilai mentah dan badge netral
+	   (`bg-canvas`). Sebelumnya kelas `bg-canvas` dipakai 14× tetapi tokennya tidak
+	   ada, jadi latarnya transparan dan kotak itu kehilangan batas visualnya. */
+	--color-canvas: #16151d;
 	/* amber & violet di palet ini terang-menengah, jadi teks di atasnya harus gelap. */
 	--color-on-accent: #14100a;
 
@@ -53,11 +57,22 @@
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
+	/* Skala ukuran teks — SATU tangga, tanpa lompatan.
+	   Sebelum 6 Okt 2026 tangga ini bolong: `text-10`, `text-14`, `text-16`,
+	   `text-20` dipakai di 181 tempat tetapi TIDAK terdefinisi di @theme, jadi
+	   kelas itu tidak menghasilkan apa pun dan teksnya jatuh ke ukuran body
+	   (15px) — label kecil tampil sebesar paragraf, hierarki hilang. Token
+	   yang hilang ditambahkan di sini; ukuran terkecil dinaikkan dari 9px ke
+	   10px supaya tidak ada teks di bawah ambang baca. */
+	--text-10: 10px;
 	--text-11: 11px;
 	--text-12: 12px;
 	--text-13: 13px;
+	--text-14: 14px;
 	--text-15: 15px;
+	--text-16: 16px;
 	--text-19: 19px;
+	--text-20: 20px;
 	--text-26: 26px;
 	--text-34: 34px;
 
@@ -90,6 +105,7 @@
 	--paper: var(--color-paper);
 	--live: var(--color-live);
 	--inherit: var(--color-inherit);
+	--canvas: var(--color-canvas);
 	--on-accent: var(--color-on-accent);
 	/* Permukaan track untuk bar proporsi (meter/board/prob). */
 	--grid: var(--color-surface-3);
@@ -124,6 +140,7 @@ html[data-tema='terang'] {
 	--color-paper: #5b3fd0;
 	--color-live: #a5305c;
 	--color-inherit: #63616b;
+	--color-canvas: #f3f1ea;
 	/* amber tua di sini, jadi teks di atasnya harus terang. */
 	--color-on-accent: #ffffff;
 

@@ -25,6 +25,7 @@
 	} from '$lib/api/types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { live } from '$lib/api/live.svelte';
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
 	import Block from '$lib/components/Block.svelte';

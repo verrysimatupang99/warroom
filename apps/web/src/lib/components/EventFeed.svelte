@@ -14,7 +14,11 @@
 	}
 	let { kejadian, memuat = false, galat = null, onulang = null, prefiksAwal = [] }: Props = $props();
 
-	let pilih = $state<string[]>(prefiksAwal);
+	// `prefiksAwal` dibaca sekali saat mount sebagai nilai awal filter. `$props()`
+	// sudah non-reaktif untuk pembacaan di top-level; `structuredClone` memutus
+	// rujukan supaya Svelte tidak memperingatkan penangkapan nilai reaktif lokal.
+	const awal: string[] = JSON.parse(JSON.stringify(prefiksAwal ?? []));
+	let pilih = $state<string[]>(awal);
 
 	const grup = $derived.by(() => {
 		const s = new Set<string>();

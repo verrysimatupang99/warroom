@@ -324,7 +324,6 @@
 		color: var(--text-3);
 		letter-spacing: 0;
 	}
-	.skor-angka.kosong,
 	.kosong {
 		color: var(--text-3);
 	}

@@ -73,7 +73,7 @@
 				{rawArah}
 			</span>
 			{#if isArahAnomali}
-				<span class="rounded bg-warn/15 text-warn border border-warn/30 px-1.5 py-0.5 text-9 font-bold">
+				<span class="rounded bg-warn/15 text-warn border border-warn/30 px-1.5 py-0.5 text-10 font-bold">
 					⚠ Sisi TP Tidak Sesuai Arah
 				</span>
 			{/if}
@@ -108,7 +108,7 @@
 				{setup.sl != null ? angka(setup.sl) : '—'}
 			</span>
 			{#if slDistancePct}
-				<span class="text-9 text-text-3 block mt-0.5">({slDistancePct}%)</span>
+				<span class="text-10 text-text-3 block mt-0.5">({slDistancePct}%)</span>
 			{/if}
 		</div>
 

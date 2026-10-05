@@ -188,6 +188,7 @@
 						stroke={strokeColor}
 						stroke-width="2"
 						class="cursor-pointer transition-all"
+						role="presentation"
 						onmouseenter={() => (hoverPoint = p)}
 						onmouseleave={() => (hoverPoint = null)}
 					/>

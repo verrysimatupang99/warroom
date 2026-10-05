@@ -22,92 +22,12 @@
 		items?: DecisionItem[];
 	}
 
-	const DEFAULT_DECISIONS: DecisionItem[] = [
-		{
-			id: 'dec-1',
-			ts: '2026-10-04T17:59:40+07:00',
-			jenis: 'VETO',
-			pair: 'BTCUSDT',
-			venue: 'Binance Futures',
-			judul: 'Setup Ditolak: Struktur MTF Tidak Kompak',
-			alasan: 'Screening SMC mendeteksi 4H=netral vs 1H=bullish. Gate A5 menolak order karena multi-timeframe bias berlawanan.',
-			aturan: 'Gate A5 (MTF Alignment)',
-			mode: 'PAPER'
-		},
-		{
-			id: 'dec-2',
-			ts: '2026-10-04T17:59:40+07:00',
-			jenis: 'VETO',
-			pair: 'ETHUSDT',
-			venue: 'Binance Futures',
-			judul: 'Setup Ditolak: Konflik Tren 4H Bearish vs 1H Bullish',
-			alasan: 'Tren 4H masih dominan bearish. Menghindari long counter-trend di area resistance.',
-			aturan: 'Gate A5 (Trend Alignment)',
-			mode: 'PAPER'
-		},
-		{
-			id: 'dec-3',
-			ts: '2026-10-04T17:05:00+07:00',
-			jenis: 'ALERT',
-			pair: 'UBI (LP)',
-			venue: 'Solana DEX',
-			judul: 'Rekomendasi Keluar: Impermanent Loss Melampaui Batas',
-			alasan: 'Impermanent loss mencapai -9.01% setelah 5.3 hari, melampaui toleransi -5.0%. Akumulasi fee $2.12 tidak cukup menutup kerugian harga.',
-			aturan: 'Exit Rule: IL Max Cutoff',
-			mode: 'PAPER'
-		},
-		{
-			id: 'dec-4',
-			ts: '2026-10-04T08:30:00+07:00',
-			jenis: 'ALERT',
-			pair: 'SAPX / WOOD',
-			venue: 'Bursa Efek Indonesia',
-			judul: 'Sinyal Akumulasi Screener Arjum Terdeteksi',
-			alasan: 'SAPX mencetak skor multi-faktor 3.0 dengan akumulasi broker terkonfirmasi. Disimpan ke watchlist pantauan.',
-			aturan: 'Arjum Screener Multi-Factor',
-			mode: 'SIGNAL'
-		},
-		{
-			id: 'dec-5',
-			ts: '2026-09-26T22:48:43+07:00',
-			jenis: 'EXIT_MANUAL',
-			pair: 'LINK_USDT',
-			venue: 'MEXC Futures',
-			r: 0.844,
-			judul: 'Posisi Ditutup Manual: Profit +0.844R Diamankan',
-			alasan: 'TP1 di 14.242 tersentuh. 1 lot penuh ditutup di 14.25 (partial tak didukung di 1 lot terkecil). Net +$0.0374 setelah friksi fee.',
-			aturan: 'Trade Management v2',
-			friksi_pct: 0.02,
-			mode: 'PAPER'
-		},
-		{
-			id: 'dec-6',
-			ts: '2026-09-25T01:05:42+07:00',
-			jenis: 'VETO',
-			pair: 'SOL_USDT',
-			venue: 'MEXC Futures',
-			r: 0.0,
-			judul: 'Order Expired: Batas Waktu 8 Jam Tanpa Fill',
-			alasan: 'Limit order di 115.0 tidak pernah tersentuh selama 8 jam (low 116.03). Order dibatalkan otomatis tanpa risiko rugi.',
-			aturan: 'Expiry Limit Guard',
-			mode: 'PAPER'
-		},
-		{
-			id: 'dec-7',
-			ts: '2026-09-23T13:11:00+07:00',
-			jenis: 'EXIT_TP',
-			pair: 'FET_USDT',
-			venue: 'MEXC Futures',
-			r: 0.5,
-			judul: 'TP1 Hit + Runner Stop BE: Net +0.50R',
-			alasan: 'TP1 di 0.2158 tercapai (+4.76%). 50% profit dilock (+0.5R). Runner SL digeser ke Breakeven (0.2060) dan tersentuh.',
-			aturan: 'Breakeven Arm Rule',
-			friksi_pct: 0.02,
-			mode: 'PAPER'
-		}
-	];
-
-	let { items = DEFAULT_DECISIONS }: Props = $props();
+	// PENTING (6 Okt 2026): komponen ini dulu punya `DEFAULT_DECISIONS` berisi 7
+	// keputusan KARANGAN, dan dirender `<DecisionFeed />` tanpa data — jadi angka
+	// dan narasi palsu tampil sebagai "Live Feed". Itu melanggar aturan inti produk
+	// ("UI tidak boleh mengarang angka"). Default dihapus; tanpa data, komponen
+	// menyatakan kekosongan beserta alasannya.
+	let { items = [] }: Props = $props();
 
 	let filter = $state<'ALL' | 'EKSEKUSI' | 'VETO' | 'ALERT'>('ALL');
 
@@ -138,7 +58,7 @@
 			case 'VETO':
 				return 'bg-warn/15 text-warn border-warn/30';
 			case 'ALERT':
-				return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+				return 'bg-accent-2/15 text-accent-2 border-accent-2/30';
 			default:
 				return 'bg-surface text-text-3 border-line';
 		}
@@ -150,9 +70,15 @@
 		<div>
 			<div class="flex items-center gap-2">
 				<h3 class="text-14 font-bold text-text">Aliran Keputusan &amp; Eksekusi</h3>
-				<span class="rounded bg-pos/10 px-2 py-0.5 text-10 font-bold uppercase text-pos border border-pos/20">
-					Live Feed
-				</span>
+				{#if items.length > 0}
+					<span class="rounded bg-pos/10 px-2 py-0.5 text-10 font-bold uppercase text-pos border border-pos/20">
+						{items.length} tercatat
+					</span>
+				{:else}
+					<span class="rounded bg-surface px-2 py-0.5 text-10 font-bold uppercase text-text-3 border border-line">
+						kosong
+					</span>
+				{/if}
 			</div>
 			<p class="text-11 text-text-3 mt-0.5">
 				Feed kronologis keputusan trading: eksekusi, exit, dan alasan penolakan gate (Veto)
@@ -195,8 +121,12 @@
 	<!-- Feed Stream -->
 	<div class="space-y-2.5">
 		{#if filteredItems.length === 0}
-			<div class="py-6 text-center text-text-3 text-12">
-				Tidak ada aktivitas keputusan pada kategori ini.
+			<div class="py-6 text-center space-y-1">
+				<p class="text-12 font-medium text-text-2">Belum ada keputusan tercatat di kategori ini.</p>
+				<p class="text-11 text-text-3">
+					Feed ini hanya menampilkan keputusan nyata dari ledger (paper/live). Kosong berarti
+					belum ada eksekusi, veto, atau alert yang tercatat — bukan diisi contoh.
+				</p>
 			</div>
 		{:else}
 			{#each filteredItems as item (item.id)}
@@ -233,7 +163,7 @@
 							{#if item.friksi_pct != null}
 								<span>Friksi: ~{item.friksi_pct}%</span>
 							{/if}
-							<span class="rounded px-1.5 py-0.2 bg-surface border border-line text-accent font-bold">
+							<span class="rounded px-1.5 py-0.5 bg-surface border border-line text-accent font-bold">
 								{item.mode}
 							</span>
 						</div>

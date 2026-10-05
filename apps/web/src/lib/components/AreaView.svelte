@@ -194,6 +194,28 @@
 			{@const backtestObj = (faktaBacktest?.value as any) ?? null}
 			{@const ledgerObj = (faktaLedger?.value as any) ?? null}
 
+			<!-- Aliran keputusan dari ledger NYATA (bukan contoh). Status ledger
+			     dipetakan ke jenis keputusan; `note` jadi alasan; tidak ada yang dikarang. -->
+			{@const jenisDariStatus = (st: string | null | undefined): 'ENTRY' | 'EXIT_TP' | 'EXIT_SL' | 'EXIT_MANUAL' | 'VETO' | 'ALERT' => {
+				const s = String(st ?? '').toLowerCase();
+				if (s.includes('tp')) return 'EXIT_TP';
+				if (s.includes('sl')) return 'EXIT_SL';
+				if (s.includes('expired') || s.includes('batal') || s.includes('cancel')) return 'VETO';
+				if (s.includes('manual')) return 'EXIT_MANUAL';
+				return 'ENTRY';
+			}}
+			{@const feedKeputusan = ((ledgerObj?.terakhir ?? []) as any[]).map((tr, i) => ({
+				id: String(tr.signal_id ?? `ledger-${i}`),
+				ts: String(tr.closed_at ?? tr.logged_at ?? ''),
+				jenis: jenisDariStatus(tr.status),
+				pair: String(tr.pair ?? '—'),
+				venue: String(tr.source ?? 'paper'),
+				r: typeof tr.r === 'number' ? tr.r : null,
+				judul: `${String(tr.direction ?? '')} ${String(tr.pair ?? '')} · ${String(tr.status ?? '')}`.trim(),
+				alasan: String(tr.note ?? '—'),
+				mode: 'PAPER' as const
+			})) as import('./DecisionFeed.svelte').DecisionItem[]}
+
 			{@const kandidatArray = Array.isArray(faktaKandidat?.value) ? faktaKandidat.value : []}
 			{@const equityObj = (faktaEquity?.value as { points?: { i: number; r: number }[]; stats?: Record<string, number> }) ?? null}
 			{@const risikoObj = (faktaRisiko?.value as Record<string, unknown>) ?? null}
@@ -238,8 +260,8 @@
 								{/if}
 							</div>
 
-							<!-- Aliran Keputusan Khusus Crypto (Fomo Family) -->
-							<DecisionFeed />
+							<!-- Aliran Keputusan: dari ledger NYATA area ini. -->
+							<DecisionFeed items={feedKeputusan} />
 						</div>
 
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols) -->
@@ -271,7 +293,7 @@
 														<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
 															{p.direction}
 														</span>
-														<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-9 font-bold">
+														<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-10 font-bold">
 															{p.status ?? 'OPEN'}
 														</span>
 													</div>
@@ -279,19 +301,19 @@
 												</div>
 												<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-11">
 													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-9 text-text-3 uppercase">Entry</div>
+														<div class="text-10 text-text-3 uppercase">Entry</div>
 														<div class="font-bold text-text">${angka(p.entry)}</div>
 													</div>
 													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-9 text-text-3 uppercase">Stop Loss</div>
+														<div class="text-10 text-text-3 uppercase">Stop Loss</div>
 														<div class="font-bold text-neg">${angka(p.stop)}</div>
 													</div>
 													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-9 text-text-3 uppercase">Target 1</div>
+														<div class="text-10 text-text-3 uppercase">Target 1</div>
 														<div class="font-bold text-pos">${angka(p.tp1)}</div>
 													</div>
 													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-9 text-text-3 uppercase">Ukuran (USD)</div>
+														<div class="text-10 text-text-3 uppercase">Ukuran (USD)</div>
 														<div class="font-bold text-accent">${angka(p.size_usd)}</div>
 													</div>
 												</div>
@@ -408,22 +430,22 @@
 								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
 									<span class="text-10 text-text-3 uppercase block">Lolos Bersih</span>
 									<span class="angka text-14 font-bold text-pos">+{backtestObj?.lolos_bersih ?? '—'} R</span>
-									<span class="text-9 text-text-3 block">{backtestObj?.lolos_terisi ?? 0} terisi</span>
+									<span class="text-10 text-text-3 block">{backtestObj?.lolos_terisi ?? 0} terisi</span>
 								</div>
 								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
 									<span class="text-10 text-text-3 uppercase block">Ditolak Bersih</span>
 									<span class="angka text-14 font-bold text-neg">{backtestObj?.ditolak_bersih ?? '—'} R</span>
-									<span class="text-9 text-text-3 block">Rugi Terhindar</span>
+									<span class="text-10 text-text-3 block">Rugi Terhindar</span>
 								</div>
 								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
 									<span class="text-10 text-text-3 uppercase block">Beda Lolos (Delta)</span>
 									<span class="angka text-14 font-bold text-pos">+{backtestObj?.beda_lolos?.beda_r ?? '—'} R</span>
-									<span class="text-9 text-pos block">t={backtestObj?.beda_lolos?.t ?? '—'}</span>
+									<span class="text-10 text-pos block">t={backtestObj?.beda_lolos?.t ?? '—'}</span>
 								</div>
 								<div class="rounded bg-surface p-2 border border-line-soft font-mono">
 									<span class="text-10 text-text-3 uppercase block">Signifikansi (p)</span>
 									<span class="angka text-14 font-bold text-accent">{backtestObj?.beda_lolos?.p_approx ?? '—'}</span>
-									<span class="text-9 text-text-3 block">p &lt; 0.05 Signifikan</span>
+									<span class="text-10 text-text-3 block">p &lt; 0.05 Signifikan</span>
 								</div>
 							</div>
 
@@ -525,7 +547,7 @@
 										<div class="flex-1 min-w-[200px]">
 											<div class="flex items-center gap-2 mb-1">
 												<span class="font-bold font-mono text-13 text-text">{tr.pair}</span>
-												<span class="rounded px-1.5 py-0.2 text-10 font-bold uppercase {tr.status?.includes('TP') ? 'bg-pos/20 text-pos' : tr.status?.includes('SL') ? 'bg-warn/20 text-warn' : 'bg-surface text-text-3 border border-line'}">
+												<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {tr.status?.includes('TP') ? 'bg-pos/20 text-pos' : tr.status?.includes('SL') ? 'bg-warn/20 text-warn' : 'bg-surface text-text-3 border border-line'}">
 													{tr.status}
 												</span>
 												<span class="text-10 font-mono text-text-3">{waktuWIB(tr.closed_at)}</span>
@@ -763,7 +785,7 @@
 									<h3 class="text-14 font-bold text-text">Arming 3-Way &amp; Kesiapan Dana Nyata</h3>
 									<p class="text-11 text-text-3">Status 3 gerbang izin sebelum modal nyata dihubungkan ke pasar</p>
 								</div>
-								<span class="rounded px-2 py-0.5 text-10 font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-warn/15 text-warn border border-warn/30 font-mono">
 									SIMULASI PAPER (LOCKED)
 								</span>
 							</div>
@@ -774,7 +796,7 @@
 										<div class="font-bold text-text">Gate 1: Statistical Edge Lolos (CI &gt; BE)</div>
 										<p class="text-10 text-text-3">Interval kepercayaan bawah 95% harus melampaui break-even.</p>
 									</div>
-									<span class="rounded px-2 py-0.5 text-10 font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30">BELUM CUKUP</span>
+									<span class="rounded px-2 py-0.5 text-10 font-bold text-warn bg-warn/10 border border-warn/30">BELUM CUKUP</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line flex items-center justify-between">
 									<div>
@@ -799,10 +821,10 @@
 			<!-- ========================================== -->
 			{#if kunci === 'idx'}
 				{#if isWeekendWIB}
-					<div class="rounded-card border border-amber-500/30 bg-amber-500/10 p-3 text-12 text-amber-200/90 flex items-start gap-2.5">
+					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
 						<div>
-							<div class="font-bold text-amber-300">Bursa Efek Indonesia (IDX) Tutup — Akhir Pekan</div>
+							<div class="font-bold text-warn">Bursa Efek Indonesia (IDX) Tutup — Akhir Pekan</div>
 							<p class="text-11 text-text-2 mt-0.5">
 								Pasar saham domestik beroperasi Senin – Jumat (09:00 – 15:55 WIB). Data Arjum, TradingView Screener, dan Bandarmologi di bawah mencerminkan penutupan sesi reguler terakhir.
 							</p>
@@ -851,9 +873,9 @@
 													</td>
 													<td class="py-2 px-2.5 whitespace-nowrap">
 														<span class="rounded px-2 py-0.5 text-11 font-medium border border-line {
-															r.bucket?.includes('PANTULAN') ? 'text-amber-400 bg-amber-400/10' :
-															r.bucket?.includes('DISTRIBUSI') ? 'text-rose-400 bg-rose-400/10' :
-															r.bucket?.includes('SENYAP') ? 'text-cyan-400 bg-cyan-400/10' :
+															r.bucket?.includes('PANTULAN') ? 'text-warn bg-warn/10' :
+															r.bucket?.includes('DISTRIBUSI') ? 'text-neg bg-neg/10' :
+															r.bucket?.includes('SENYAP') ? 'text-accent-2 bg-accent-2/10' :
 															'text-text-2 bg-surface'
 														}">
 															{r.bucket ?? '—'}
@@ -956,11 +978,16 @@
 								</div>
 								<span
 									class="rounded px-2 py-0.5 text-10 font-bold font-mono border {bsjpObj?.mode ===
-									'jendela'
-										? 'text-pos bg-pos/10 border-pos/30'
-										: 'text-warn bg-warn/10 border-warn/30'}"
+									'proksi'
+										? 'text-warn bg-warn/10 border-warn/30'
+										: 'text-pos bg-pos/10 border-pos/30'}"
+									title={bsjpObj?.sumber_angka ?? ''}
 								>
-									{bsjpObj?.mode === 'jendela' ? 'EDGE TERUKUR' : 'PROKSI — BELUM TERUKUR'}
+									{bsjpObj?.mode === 'terukur'
+										? 'EDGE TERUKUR DI SINI'
+										: bsjpObj?.mode === 'bersumber'
+											? 'EDGE TERUKUR (DARI SUMBER)'
+											: 'PROKSI — BELUM TERUKUR'}
 								</span>
 							</div>
 
@@ -975,9 +1002,9 @@
 							{:else}
 								<!-- Mode proksi WAJIB menjelaskan batasnya di sini, bukan disembunyikan. -->
 								<div
-									class="mb-3 rounded border p-2.5 text-11 {bsjpObj?.mode === 'jendela'
-										? 'border-pos/30 bg-pos/10 text-pos'
-										: 'border-warn/40 bg-warn/10 text-warn'}"
+									class="mb-3 rounded border p-2.5 text-11 {bsjpObj?.mode === 'proksi'
+										? 'border-warn/40 bg-warn/10 text-warn'
+										: 'border-pos/30 bg-pos/10 text-pos'}"
 								>
 									{bsjpObj?.catatan_kejujuran}
 								</div>
@@ -998,6 +1025,16 @@
 										<span class="text-13 font-bold text-text">{bsjpObj?.n_sampel ?? 0}</span>
 									</div>
 								</div>
+
+								<!-- Legenda tier: apa arti STRONG vs ARA, dan dari mana angkanya.
+								     Sebelumnya istilah ini muncul tanpa penjelasan. -->
+								<p class="mb-3 text-11 text-text-3 leading-relaxed">
+									<span class="text-text-2 font-medium">Tier:</span>
+									<b class="text-pos">STRONG</b> = kandidat teratas (net est ≈ +0,86%/trade dari
+									walk-forward sumber) · <b class="text-accent">ARA</b> = lonjakan harga harian
+									(net est ≈ +1,06%/trade dari sumber) — filter ARA di sumber <b>tidak</b> memeriksa
+									SMA10, jadi ia bercampur antara saham menguat dan yang bangkit dari penurunan.
+								</p>
 
 								<div class="overflow-x-auto">
 									<table class="w-full text-left text-12">
@@ -1143,14 +1180,14 @@
 								</div>
 								<div class="rounded bg-surface p-3 border border-line">
 									<div class="text-11 text-text-3">Emiten Akumulasi Senyap</div>
-									<div class="text-20 font-bold text-cyan-400 font-mono mt-1">
+									<div class="text-20 font-bold text-accent-2 font-mono mt-1">
 										{idxArjum.filter((r) => r.bucket?.includes('SENYAP')).length}
 									</div>
 									<div class="text-11 text-text-3 mt-1">Tanpa lonjakan volume retail</div>
 								</div>
 								<div class="rounded bg-surface p-3 border border-line">
 									<div class="text-11 text-text-3">Konflik Distribusi</div>
-									<div class="text-20 font-bold text-amber-400 font-mono mt-1">
+									<div class="text-20 font-bold text-warn font-mono mt-1">
 										{idxArjum.filter((r) => r.bucket?.includes('KONFLIK')).length}
 									</div>
 									<div class="text-11 text-text-3 mt-1">Broker akumulasi vs asing jual</div>
@@ -1225,10 +1262,10 @@
 			<!-- ========================================== -->
 			{#if kunci === 'forex'}
 				{#if isWeekendWIB}
-					<div class="rounded-card border border-amber-500/30 bg-amber-500/10 p-3 text-12 text-amber-200/90 flex items-start gap-2.5">
+					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
 						<div>
-							<div class="font-bold text-amber-300">Pasar Forex & Spot Komoditas (XAU/USD) Tutup — Akhir Pekan</div>
+							<div class="font-bold text-warn">Pasar Forex & Spot Komoditas (XAU/USD) Tutup — Akhir Pekan</div>
 							<p class="text-11 text-text-2 mt-0.5">
 								Perdagangan valuta dan spot emas global beristirahat setiap akhir pekan. Sesi Sydney & Tokyo akan membuka likuiditas baru mulai Senin pagi (~04:00 WIB).
 							</p>
@@ -1391,7 +1428,7 @@
 									<h3 class="text-14 font-bold text-text">Integrasi Akun Demo OANDA</h3>
 									<p class="text-11 text-text-3">Status feed harga broker dan eksekusi pesanan simulasi</p>
 								</div>
-								<span class="rounded px-2 py-0.5 text-10 font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-warn/15 text-warn border border-warn/30 font-mono">
 									SIMULASI DEMO
 								</span>
 							</div>
@@ -1564,7 +1601,7 @@
 													<td class="py-2 px-2.5 font-bold text-text">
 														{s.symbol}
 														{#if s.whale}
-															<span class="ml-1 text-10 text-accent font-sans border border-accent/20 bg-accent/10 px-1 py-0.2 rounded">
+															<span class="ml-1 text-10 text-accent font-sans border border-accent/20 bg-accent/10 px-1 py-0.5 rounded">
 																WHALE
 															</span>
 														{/if}

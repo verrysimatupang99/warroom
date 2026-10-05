@@ -111,6 +111,83 @@
 			ci95?: [number, number];
 		} | null) ?? null
 	);
+	const dataPolyPaper = $derived(
+		(cariFakta(faktaPoly, 'poly_paper') as {
+			arms?: { nama: string; balance: number; pnl: number; wins: number; losses: number; entries: number; settled: number }[];
+		} | null) ?? null
+	);
+
+	// Papan peringkat strategi — HANYA dari angka nyata (equity crypto + arm Polymarket).
+	// Tidak ada baris contoh; kalau sumbernya kosong, kartunya menyatakan kosong.
+	const strategiNyata = $derived.by(() => {
+		type Baris = {
+			rank: number;
+			id: string;
+			nama: string;
+			venue: string;
+			tipe: 'PAPER' | 'LIVE' | 'SIGNAL-ONLY' | 'RESEARCH';
+			winrate_pct: number | null;
+			total_r: number | null;
+			expectancy_r: number | null;
+			n_samples: number;
+			max_dd_r: number | null;
+			status: 'UNGGUL' | 'PENGUJIAN' | 'FLAG_EXIT' | 'MONITOR';
+			status_detail: string;
+			friksi_est_pct?: number | null;
+		};
+		const out: Baris[] = [];
+
+		// 1) Crypto SMC — dari fakta `equity` (ledger paper nyata).
+		const s = dataEquity?.stats as Record<string, number> | undefined;
+		if (s && typeof s.trades === 'number' && s.trades > 0) {
+			const wr = typeof s.winrate_pct === 'number' ? s.winrate_pct : null;
+			out.push({
+				rank: 0,
+				id: 'crypto-smc',
+				nama: 'Crypto SMC Multi-Timeframe (paper)',
+				venue: 'MEXC / Binance Futures',
+				tipe: 'PAPER',
+				winrate_pct: wr,
+				total_r: typeof s.total_r === 'number' ? s.total_r : null,
+				expectancy_r: typeof s.expectancy_r === 'number' ? s.expectancy_r : null,
+				n_samples: s.trades,
+				max_dd_r: typeof s.max_drawdown_r === 'number' ? s.max_drawdown_r : null,
+				status: 'MONITOR',
+				status_detail: `Sampel ${s.trades} trade — belum cukup & belum split beku. Angka apa adanya dari ledger paper.`
+			});
+		}
+
+		// 2) Arm Polymarket — dari fakta `poly_paper.arms` (ledger paper nyata).
+		for (const a of dataPolyPaper?.arms ?? []) {
+			const n = (a.wins ?? 0) + (a.losses ?? 0);
+			const wr = n > 0 ? ((a.wins ?? 0) / n) * 100 : null;
+			out.push({
+				rank: 0,
+				id: `poly-${a.nama.replace(/\s+/g, '-').toLowerCase()}`,
+				nama: `Polymarket ${a.nama}`,
+				venue: 'Polymarket CLOB 5m',
+				tipe: 'PAPER',
+				winrate_pct: wr,
+				// PnL arm dalam USD, BUKAN R — jangan salah label sebagai R.
+				total_r: null,
+				expectancy_r: null,
+				n_samples: a.settled ?? n,
+				max_dd_r: null,
+				status: (a.pnl ?? 0) > 0 ? 'PENGUJIAN' : (a.pnl ?? 0) < 0 ? 'FLAG_EXIT' : 'MONITOR',
+				status_detail: `PnL ${a.pnl >= 0 ? '+' : ''}$${a.pnl.toFixed(2)} (USD, bukan R) · balance $${a.balance.toFixed(2)} · ${a.settled} settled. Edge belum lolos gate.`
+			});
+		}
+
+		// Urut: yang punya R di atas (urut R), sisanya urut winrate. Kosong di bawah.
+		out.sort((a, b) => {
+			if (a.total_r != null && b.total_r != null) return b.total_r - a.total_r;
+			if (a.total_r != null) return -1;
+			if (b.total_r != null) return 1;
+			return (b.winrate_pct ?? -1) - (a.winrate_pct ?? -1);
+		});
+		out.forEach((r, i) => (r.rank = i + 1));
+		return out;
+	});
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
 
@@ -173,7 +250,7 @@
 	<!-- ---------- header (mengikuti .top beebots) ---------- -->
 	<header class="top">
 		<div>
-			<div class="logo">War<span>Room</span></div>
+			<h1 class="logo">War<span>Room</span></h1>
 			<div class="brand-sub">
 				<span class="mode mode-paper">PAPER</span>
 				<span class="dim">multi-market · 7 area &amp; riset</span>
@@ -217,8 +294,9 @@
 	{:else if sub === 'kinerja'}
 		<!-- ---------- tab Kinerja ---------- -->
 		<section class="grid" aria-label="Kinerja">
+			<h2 class="sr-only">Kinerja</h2>
 			<div class="kolom">
-				<StrategyLeaderboard />
+				<StrategyLeaderboard strategies={strategiNyata} />
 				<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
 				<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
 			</div>
@@ -240,6 +318,7 @@
 	{:else}
 		<!-- ---------- tab Sinyal (bawaan) ---------- -->
 		<section class="grid" aria-label="Sinyal per pasar">
+			<h2 class="sr-only">Sinyal per pasar</h2>
 			<!-- Kolom utama: SATU pasar penuh, isinya berganti sesuai pilihan rail. -->
 			<div>
 				{#if pasarDipilih}
