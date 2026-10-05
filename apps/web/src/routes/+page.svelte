@@ -1,9 +1,16 @@
 <script lang="ts">
-	// Home — Cockpit sinyal lintas pasar (gaya A+B, 5 Okt 2026).
+	// Home — War Room, cangkang beebots (6 Okt 2026).
 	//
-	// Tata letak: strip ringkasan di atas (B), lalu kartu sinyal terbaik per pasar bertumpuk
-	// (A). Aturan yang dipegang halaman ini:
-	// - Angka yang belum lewat split beku WAJIB tampil sebagai klaim eksplorasi, bukan edge.
+	// TATA LETAK: mengikuti App.tsx beebots — header dengan kartu angka, lalu grid
+	// "kolom utama + rail kanan". Bedanya satu hal, dan itu disengaja: beebots
+	// menampilkan 3 kolom karena 3 lebah memang seragam. Di sini ada 6 pasar dengan
+	// BENTUK DATA YANG BERBEDA (crypto punya entry/SL/TP, Polymarket punya win-rate vs
+	// break-even, BSJP punya tier, LP punya IL, forex belum punya sinyal). Memaksakan
+	// enam kolom seragam akan menghapus perbedaan itu — jadi dipakai SATU kolom penuh
+	// yang isinya berganti sesuai pasar terpilih, dan rail kanan jadi pemilihnya.
+	//
+	// ATURAN YANG TIDAK BOLEH HILANG:
+	// - Angka yang belum lewat split beku tampil sebagai klaim eksplorasi, bukan edge.
 	// - Pasar tanpa sinyal tetap tampil dengan alasannya; skor "—", bukan 0.
 	import { getAlerts, getArea, getKesegaran, getKesehatan, getSinyalPerPasar } from '$lib/api/client';
 	import type {
@@ -19,7 +26,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { AREAS } from '$lib/nav';
-	import KartuSinyalPasar from '$lib/components/KartuSinyalPasar.svelte';
+	import KolomPasar from '$lib/components/KolomPasar.svelte';
 	import SubNav from '$lib/components/SubNav.svelte';
 	import EquityCurve from '$lib/components/EquityCurve.svelte';
 	import RiskMeter from '$lib/components/RiskMeter.svelte';
@@ -38,8 +45,9 @@
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 
-	// URL = satu-satunya sumber kebenaran untuk tab (pelajaran 5 Okt: state yang disalin
-	// bisa menyimpang dari URL dan membuat tab macet).
+	// URL = satu-satunya sumber kebenaran (pelajaran 5 Okt: state yang disalin bisa
+	// menyimpang dari URL). Pasar terpilih juga lewat query, supaya bisa di-bookmark
+	// dan tombol Back bekerja.
 	const areaHome = AREAS.find((a) => a.kunci === 'home')!;
 	const sub = $derived.by(() => {
 		const s = page.url.searchParams.get('sub');
@@ -106,349 +114,200 @@
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
 
-	// Strip ringkasan (gaya B) — semuanya dihitung dari data yang benar-benar ada.
+	// Kartu angka header — semuanya dihitung dari data yang benar-benar ada.
 	const ringkas = $derived([
-		{ n: daftar.length, t: 'Pasar dipantau', w: 'var(--text)' },
-		{ n: daftar.filter((r) => r.ada).length, t: 'Ada sinyal', w: 'var(--accent)' },
+		{ n: daftar.length, t: 'Pasar dipantau', sub: 'multi-market', w: 'var(--text-2)' },
+		{
+			n: daftar.filter((r) => r.ada).length,
+			t: 'Ada sinyal',
+			sub: 'dari konfigurasi terukur',
+			w: 'var(--accent)'
+		},
 		{
 			n: daftar.filter((r) => r.ada && r.terverifikasi).length,
 			t: 'Terverifikasi',
-			w: 'var(--warn)'
+			sub: 'lolos split beku',
+			w: 'var(--color-pos)'
 		},
 		{
 			n: (kesegaran?.facts ?? []).filter((f) => f.status === 'basi').length,
 			t: 'Fakta basi',
+			sub: 'perlu disegarkan',
 			w: 'var(--warn)'
-		},
-		{
-			n: sehat?.status ?? '—',
-			t: 'Layanan',
-			w: sehat?.status === 'ok' ? 'var(--accent)' : 'var(--warn)'
 		}
 	]);
 
-	// Sorotan (gaya B): sinyal berskor tertinggi yang benar-benar ada.
-	const sorotan = $derived(
-		daftar
-			.filter((r) => r.ada && r.skor != null)
-			.slice()
-			.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0))[0] ?? null
+	// Urutan rail: berskor tinggi di atas, yang kosong di bawah. Sama seperti
+	// leaderboard beebots, tapi urutannya berguna untuk memilih.
+	const pasarTerurut = $derived(
+		daftar.slice().sort((a, b) => {
+			if (a.skor == null && b.skor == null) return a.label.localeCompare(b.label);
+			if (a.skor == null) return 1;
+			if (b.skor == null) return -1;
+			return (b.skor ?? 0) - (a.skor ?? 0);
+		})
+	);
+
+	const pasarDipilih = $derived.by(() => {
+		const p = page.url.searchParams.get('pasar');
+		const ada = pasarTerurut.find((r) => r.pasar === p);
+		return ada ?? pasarTerurut[0] ?? null;
+	});
+
+	function pilihPasar(p: string) {
+		if (typeof window !== 'undefined') {
+			const url = new URL(window.location.href);
+			url.searchParams.set('pasar', p);
+			void goto(url.pathname + url.search, { keepFocus: true, noScroll: true });
+		}
+	}
+
+	const peringkatTerpilih = $derived(
+		Math.max(1, pasarTerurut.findIndex((r) => r.pasar === pasarDipilih?.pasar) + 1)
 	);
 </script>
 
 <svelte:head><title>Home — War Room</title></svelte:head>
 
-<div class="ruang">
-	<header class="kepala">
+<div class="app">
+	<!-- ---------- header (mengikuti .top beebots) ---------- -->
+	<header class="top">
 		<div>
-			<h1>Sinyal per pasar</h1>
-			<p>
-				Satu sinyal terbaik tiap pasar dari konfigurasi terukur. Status verifikasi selalu
-				ditampilkan — angka yang belum lewat split beku adalah klaim eksplorasi, bukan edge.
-			</p>
+			<div class="logo">War<span>Room</span></div>
+			<div class="brand-sub">
+				<span class="mode mode-paper">PAPER</span>
+				<span class="dim">multi-market · 7 area &amp; riset</span>
+			</div>
 		</div>
-		<div class="status">
-			<span class="pil-mikro">
-				<span class="titik" style="--w:{live.status === 'live' ? 'var(--pos)' : 'var(--warn)'}"></span>
-				SSE {live.status}
-			</span>
-			<span class="pil-mikro">DB {sehat?.db ? 'ok' : '—'}</span>
-			{#if kesegaran?.checked_at}
-				<span class="pil-mikro">kesegaran {umurDetik(kesegaran.facts?.[0]?.age_s ?? null)}</span>
+
+		<div class="counters">
+			{#each ringkas as r (r.t)}
+				<div class="counter">
+					<div class="eyebrow">{r.t}</div>
+					<div class="counter-value" style="color:{r.w}">{r.n}</div>
+					<div class="counter-sub">{r.sub}</div>
+				</div>
+			{/each}
+		</div>
+
+		<div class="top-right">
+			<div class="recon recon-{live.status === 'live' ? 'ok' : 'idle'}">
+				<span class="recon-light" aria-hidden="true"></span>
+				<div>
+					<div class="eyebrow">Aliran</div>
+					<div class="recon-text">SSE {live.status}</div>
+				</div>
+			</div>
+			{#if alerts && alerts.terbuka > 0}
+				<a class="eyebrow" href="/sistem" style="text-decoration:none">
+					⚠ {alerts.terbuka} alert butuh perhatian →
+				</a>
 			{/if}
 		</div>
 	</header>
 
-	<!-- Sub-nav Home: URL = SSOT, jadi tiap tab benar-benar punya tampilan sendiri. -->
+	<!-- Sub-nav Home: URL = SSOT. -->
 	<SubNav area={areaHome} aktif={sub} onpilih={pilihSub} />
-
-	{#if alerts && alerts.terbuka > 0}
-		<div class="banner" data-testid="alert-banner">
-			<span>⚠</span>
-			<span><b class="angka">{alerts.terbuka}</b> alert butuh perhatian</span>
-			<a href="/sistem">Buka Sistem →</a>
-		</div>
-	{/if}
 
 	{#if galat}
 		<ErrorState pesan={galat} onulang={() => void muat()} />
 	{:else if memuat}
 		<Skeleton tinggi={84} />
-		<Skeleton tinggi={150} />
-		<Skeleton tinggi={150} />
+		<Skeleton tinggi={220} />
 	{:else if sub === 'kinerja'}
-		<section class="kinerja" aria-label="Kinerja">
-			<StrategyLeaderboard />
-			<div class="dua-kolom">
-				<div class="kolom">
-					<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
-					<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
-				</div>
-				<div class="kolom">
-					<RiskMeter risiko={dataRisiko} />
-					<div class="kartu-kejadian">
-						<div class="kepala-kejadian">
-							<h3>Kejadian Real-Time</h3>
-							<span class="label-mikro">{live.status}</span>
-						</div>
-						<EventFeed
-							kejadian={live.kejadian}
-							memuat={live.status === 'menyambung'}
-							galat={live.pesan}
-						/>
-					</div>
-				</div>
+		<!-- ---------- tab Kinerja ---------- -->
+		<section class="grid" aria-label="Kinerja">
+			<div class="kolom">
+				<StrategyLeaderboard />
+				<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
+				<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
 			</div>
+			<aside class="rail">
+				<RiskMeter risiko={dataRisiko} />
+				<section class="rail-card">
+					<div class="rail-head">
+						<span class="eyebrow">Kejadian real-time</span>
+						<span class="dim">{live.status}</span>
+					</div>
+					<EventFeed
+						kejadian={live.kejadian}
+						memuat={live.status === 'menyambung'}
+						galat={live.pesan}
+					/>
+				</section>
+			</aside>
 		</section>
 	{:else}
-		<!-- Tab "sinyal" (default): strip ringkasan (B) + kartu per pasar (A) -->
-		<section class="strip" aria-label="Ringkasan">
-			{#each ringkas as r (r.t)}
-				<div class="chip">
-					<b class="angka" style="--w:{r.w}">{r.n}</b>
-					<span class="label-mikro">{r.t}</span>
-				</div>
-			{/each}
-		</section>
-
-		<!-- Sorotan (B): satu keputusan jelas saat pertama buka -->
-		{#if sorotan}
-			<section class="sorotan" aria-label="Sinyal terkuat">
-				<span class="label-mikro">Sinyal terkuat saat ini · {sorotan.label}</span>
-				<div class="baris">
-					<span class="subjek angka">{sorotan.subjek ?? '—'}</span>
-					{#if sorotan.arah}<span class="arah">{sorotan.arah}</span>{/if}
-					{#if sorotan.skor != null}
-						<span class="skor-besar angka">{sorotan.skor}<span class="skor-dari">/100</span></span>
-					{/if}
-				</div>
-				<p class="alasan">{sorotan.alasan}</p>
-				{#if !sorotan.terverifikasi}
-					<p class="jujur" role="note">{sorotan.catatan_kejujuran}</p>
+		<!-- ---------- tab Sinyal (bawaan) ---------- -->
+		<section class="grid" aria-label="Sinyal per pasar">
+			<!-- Kolom utama: SATU pasar penuh, isinya berganti sesuai pilihan rail. -->
+			<div>
+				{#if pasarDipilih}
+					<KolomPasar s={pasarDipilih} peringkat={peringkatTerpilih} />
+				{:else}
+					<p class="dim">
+						Belum ada pasar yang bisa ditampilkan. Tiap pasar menyebutkan alasannya — sengaja
+						tidak diisi angka 0 supaya tidak terlihat seperti data.
+					</p>
 				{/if}
-			</section>
-		{/if}
+			</div>
 
-		<!-- Kartu per pasar (A). Pasar yang sudah jadi sorotan DIBUANG dari daftar:
-		     sebelumnya ia dirender dua kali (sekali sebagai sorotan, sekali sebagai kartu)
-		     dengan teks kata-per-kata sama, sehingga daftar terlihat punya satu pasar lebih
-		     banyak daripada yang sebenarnya dan pengguna membaca informasi yang sama 2x. -->
-		<section class="daftar" aria-label="Sinyal tiap pasar">
-			{#each daftar.filter((s) => s.pasar !== (sorotan?.pasar ?? '')) as s (s.pasar)}
-				<KartuSinyalPasar {s} />
-			{/each}
+			<!-- Rail kanan: pemilih pasar + ringkasan. -->
+			<aside class="rail">
+				<section class="rail-card board">
+					<div class="rail-head">
+						<span class="eyebrow">Pasar</span>
+						<span class="dim">skor</span>
+					</div>
+					{#each pasarTerurut as r, i (r.pasar)}
+						<button
+							class="board-row"
+							aria-current={r.pasar === pasarDipilih?.pasar}
+							style="--bee:{r.ada ? 'var(--accent)' : 'var(--text-3)'}"
+							onclick={() => pilihPasar(r.pasar)}
+						>
+							<span class="board-rank">{i + 1}</span>
+							<span class="board-name">{r.label}</span>
+							<span class="board-eq">{r.skor != null ? r.skor : '—'}</span>
+							<span class="board-bar">
+								<span style="transform:scaleX({r.skor != null ? r.skor / 100 : 0})"></span>
+							</span>
+						</button>
+					{/each}
+				</section>
+
+				<section class="rail-card">
+					<div class="rail-head">
+						<span class="eyebrow">Kesegaran</span>
+						<span class="dim">{sehat?.db ? 'db ok' : 'db —'}</span>
+					</div>
+					<div class="dim" style="font-size:0.8rem">
+						{#if kesegaran?.checked_at}
+							Diperiksa {umurDetik(kesegaran.facts?.[0]?.age_s ?? null)} lalu
+						{:else}
+							Belum ada pemeriksaan
+						{/if}
+					</div>
+				</section>
+
+				{#if daftar.length > 0 && !sinyal?.ada}
+					<section class="rail-card">
+						<div class="eyebrow">Catatan</div>
+						<p class="dim" style="font-size:0.8rem;margin:0.4rem 0 0">
+							Belum ada pasar yang menghasilkan sinyal. Tiap pasar menyebutkan alasannya —
+							sengaja tidak diisi angka 0 supaya tidak terlihat seperti data.
+						</p>
+					</section>
+				{/if}
+			</aside>
 		</section>
-
-		{#if daftar.length > 0 && !sinyal?.ada}
-			<p class="catatan">
-				Belum ada pasar yang menghasilkan sinyal. Tiap kartu menyebutkan alasannya — sengaja
-				tidak diisi angka 0 supaya tidak terlihat seperti data.
-			</p>
-		{/if}
 	{/if}
 </div>
 
 <style>
-	.ruang {
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-	}
-	.kepala {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 16px;
-		flex-wrap: wrap;
-	}
-	h1 {
-		font-family: var(--font-display);
-		font-size: 22px;
-		margin: 0 0 4px;
-	}
-	.kepala p {
-		margin: 0;
-		font-size: 12px;
-		color: var(--text-3);
-		max-width: 64ch;
-	}
-	.status {
-		display: flex;
-		gap: 6px;
-		flex-wrap: wrap;
-	}
-	.pil-mikro {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--text-3);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-pil);
-		padding: 3px 9px;
-	}
-	.titik {
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: var(--w);
-	}
-	.banner {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 12px;
-		color: var(--text-2);
-		background: color-mix(in srgb, var(--warn) 10%, transparent);
-		border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
-		border-radius: var(--radius-card);
-		padding: 10px 14px;
-	}
-	.banner a {
-		margin-left: auto;
-		color: var(--warn);
-	}
-	.strip {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-		gap: 8px;
-	}
-	.chip {
-		background: var(--surface);
-		border: 1px solid var(--line-soft);
-		border-radius: var(--radius-card);
-		padding: 10px 12px;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-	.chip b {
-		font-size: 18px;
-		font-weight: 700;
-		color: var(--w, var(--text));
-	}
-	.sorotan {
-		background: linear-gradient(160deg, var(--surface-2), var(--surface));
-		border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-		border-radius: var(--radius-card);
-		padding: 16px;
-	}
-	.baris {
-		display: flex;
-		align-items: baseline;
-		gap: 10px;
-		flex-wrap: wrap;
-		margin-top: 6px;
-	}
-	.subjek {
-		font-size: 28px;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.arah {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		padding: 2px 8px;
-		border-radius: 6px;
-		color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 14%, transparent);
-		border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-	}
-	.skor-besar {
-		font-size: 34px;
-		font-weight: 700;
-		line-height: 1;
-		color: var(--w, var(--accent));
-	}
-	/* Skala skor: tanpa ini, "72" tidak berarti apa-apa. Diukur 6 Okt 2026 — kartu
-	   menampilkan skor tanpa penyebut, dan tidak ada acuan di halaman mana pun. */
-	.skor-dari {
-		font-size: 13px;
-		font-weight: 400;
-		color: var(--text-3);
-		margin-left: 1px;
-	}
-	.alasan {
-		margin: 10px 0 0;
-		font-size: 12px;
-		color: var(--text-2);
-	}
-	.daftar {
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-	}
-	/* Catatan kejujuran — elemen paling khas di produk ini, jadi TIDAK boleh memakai
-	   pola generik (border kiri tebal) yang justru jadi penanda UI hasil AI. Dipakai
-	   penanda teks + latar tipis: tetap menonjol, tapi jelas disengaja. */
-	.jujur {
-		margin: 10px 0 0;
-		font-size: 11px;
-		line-height: 1.5;
-		color: var(--warn);
-		background: color-mix(in srgb, var(--warn) 7%, transparent);
-		border-radius: 6px;
-		padding: 7px 10px 7px 26px;
-		position: relative;
-	}
-	.jujur::before {
-		content: '!';
-		position: absolute;
-		left: 9px;
-		top: 8px;
-		width: 12px;
-		height: 12px;
-		border-radius: 50%;
-		background: var(--warn);
-		color: var(--bg);
-		font-size: 9px;
-		font-weight: 700;
-		line-height: 12px;
-		text-align: center;
-	}
-	.catatan {
-		font-size: 12px;
-		color: var(--text-3);
-		margin: 0;
-	}
-	.kinerja {
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-	}
-	.dua-kolom {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 16px;
-	}
 	.kolom {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-	}
-	@media (min-width: 1024px) {
-		.dua-kolom {
-			grid-template-columns: 7fr 5fr;
-		}
-	}
-	.kartu-kejadian {
-		background: var(--surface-2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		padding: 12px;
-	}
-	.kepala-kejadian {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		border-bottom: 1px solid var(--line-soft);
-		padding-bottom: 8px;
-		margin-bottom: 8px;
-	}
-	.kepala-kejadian h3 {
-		font-size: 13px;
-		font-weight: 500;
-		margin: 0;
+		gap: 1rem;
 	}
 </style>
