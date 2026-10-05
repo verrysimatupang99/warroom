@@ -13,6 +13,7 @@
 	interface SetupData {
 		pair?: string;
 		arah?: string;
+		direction?: string;
 		tier?: string;
 		entry?: number;
 		sl?: number;
@@ -31,10 +32,19 @@
 
 	let expandRules = $state(false);
 
-	const isLong = $derived((setup.arah ?? 'LONG').toUpperCase() === 'LONG');
+	const rawArah = $derived((setup.direction ?? setup.arah ?? 'LONG').toUpperCase());
+	const isLong = $derived(rawArah === 'LONG');
 	const pairClean = $derived(
 		(setup.pair ?? 'UNKNOWN').replace(/USDT$/, ' / USDT').replace(/USD$/, ' / USD')
 	);
+
+	// Deteksi bila TP atau SL berada di sisi yang salah (anomali arah)
+	const isArahAnomali = $derived.by(() => {
+		if (!setup.entry || !setup.tp1) return false;
+		if (isLong && setup.tp1 <= setup.entry) return true;
+		if (!isLong && setup.tp1 >= setup.entry) return true;
+		return false;
+	});
 
 	// Hitung rasio Risk-Reward (RR)
 	const rr = $derived.by(() => {
@@ -60,8 +70,13 @@
 					? 'bg-pos/15 text-pos border border-pos/30'
 					: 'bg-neg/15 text-neg border border-neg/30'}"
 			>
-				{setup.arah ?? 'LONG'}
+				{rawArah}
 			</span>
+			{#if isArahAnomali}
+				<span class="rounded bg-warn/15 text-warn border border-warn/30 px-1.5 py-0.5 text-9 font-bold">
+					⚠ Sisi TP Tidak Sesuai Arah
+				</span>
+			{/if}
 		</div>
 
 		<div class="flex items-center gap-1.5 text-11">
