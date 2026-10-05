@@ -23,13 +23,28 @@ from warroom_core.db import Fact, User, session_scope
 from warroom_core.db.session import SASession
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 
-from warroom_api import auth, live
+from warroom_api import auth, limits, live
 from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area, latest_facts
 from warroom_api.errors import install_error_handlers
 from warroom_api.metrics import collect_metrics, render_prometheus
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
+
+# Pembatas laju in-process (satu proses uvicorn). Diukur dari temuan audit 5 Okt 2026:
+# login tanpa batas = brute force + amplifikasi scrypt (16 MiB/percobaan); verifier
+# tanpa batas = kuota LLM berbayar bisa dibakar habis. Batas dapat dinaikkan lewat env
+# untuk operasi yang sah, tapi tidak bisa dimatikan (nilai tak sah → bawaan).
+LOGIN_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_LOGIN_PER_MIN", 10))
+VERIFIER_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_VERIFIER_PER_MIN", 30))
+NARRATE_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_NARRATE_PER_MIN", 20))
+
+
+def _kunci_klien(request: Request) -> str:
+    """Kunci pembatas per pemanggil: IP klien bila ada, selain itu 'lokal'."""
+    if request.client and request.client.host:
+        return request.client.host
+    return "lokal"
 
 
 # --- skema permintaan/balasan ----------------------------------------------------------
@@ -162,7 +177,13 @@ def create_app() -> FastAPI:
     # --- auth -------------------------------------------------------------------------
 
     @app.post("/api/v1/auth/login")
-    def login(body: LoginBody, response: Response) -> dict[str, Any]:
+    def login(body: LoginBody, response: Response, request: Request) -> dict[str, Any]:
+        # Batas laju per IP klien (asli, dari XFF yang ditambahkan nginx) — temuan audit 5 Okt.
+        if not LOGIN_LIMITER.izinkan(_kunci_klien(request)):
+            raise HTTPException(
+                status_code=429,
+                detail="terlalu banyak percobaan login; coba lagi nanti",
+            )
         sid = auth.login(body.username, body.password, body.totp)
         if sid is None:
             raise HTTPException(status_code=401, detail="kredensial tidak sah")
@@ -720,9 +741,13 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/ai/narrate")
     def ai_narrate(
-        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
+        body: dict[str, Any],
+        request: Request,
+        user: Annotated[User, Depends(auth.require_role("operator"))],
     ) -> dict[str, Any]:
         """Narasi ber-grounding dari fakta di DB. Tanpa fakta → `insufficient`, bukan tebakan."""
+        if not NARRATE_LIMITER.izinkan(_kunci_klien(request)):
+            raise HTTPException(status_code=429, detail="terlalu banyak permintaan narasi; coba lagi nanti")
         from warroom_llm import CallRequest, FactRef, Gateway
         from warroom_llm.config import default_config
         from warroom_llm.prompts import PromptRegistry
@@ -769,18 +794,26 @@ def create_app() -> FastAPI:
     ) -> dict[str, Any]:
         """Penilai kedua untuk kartu pod (P3-T5).
 
-        Dipanggil **hanya** dari proses lokal: wajib sesi pengguna ATAU token layanan
-        (`WARROOM_SERVICE_TOKEN`) ATAU berasal dari 127.0.0.1. Semua jalur lain ditolak —
-        endpoint ini membakar token LLM, jadi tidak boleh terbuka.
+        Dipanggil **hanya** dari proses lokal: token layanan (`WARROOM_SERVICE_TOKEN`)
+        atau berasal dari 127.0.0.1. Jalur sesi pengguna **wajib** peran `operator` —
+        temuan audit 5 Okt 2026: sebelumnya `viewer` pun bisa memanggil, dan endpoint
+        ini membakar kuota LLM berbayar. Setiap jalur dibatasi laju.
         """
+        if not VERIFIER_LIMITER.izinkan(_kunci_klien(request)):
+            raise HTTPException(status_code=429, detail="terlalu banyak permintaan verifier; coba lagi nanti")
         token_env = os.environ.get("WARROOM_SERVICE_TOKEN", "")
         token_kirim = request.headers.get("x-warroom-token", "")
         dari_lokal = request.client is not None and request.client.host in {"127.0.0.1", "::1"}
         token_sah = bool(token_env) and hmac.compare_digest(token_env, token_kirim)
-        if user is None and not token_sah and not dari_lokal:
+        # Sesi pengguna: wajib peran operator. Token/lokal: tanpa peran (proses internal).
+        sesi_berwenang = user is not None and auth.has_role(user, "operator")
+        if not sesi_berwenang and not token_sah and not dari_lokal:
             raise HTTPException(
                 status_code=401,
-                detail={"code": "unauthenticated", "message": "butuh sesi, token layanan, atau lokal"},
+                detail={
+                    "code": "unauthenticated",
+                    "message": "butuh sesi operator, token layanan, atau lokal",
+                },
             )
         klaim = [str(k) for k in (body.get("klaim") or [])][:12]
         if not klaim:

@@ -31,8 +31,10 @@ __all__ = [
     "COOKIE_NAME",
     "Role",
     "current_user",
+    "has_role",
     "hash_password",
     "issue_session",
+    "optional_user",
     "require_role",
     "revoke_session",
     "verify_password",
@@ -160,7 +162,7 @@ def require_role(minimum: Role):
     """Dependensi pabrik: menolak 403 bila peran pengguna di bawah ``minimum``."""
 
     def _dep(user: Annotated[User, Depends(current_user)]) -> User:
-        if _ROLE_RANK.get(user.role, 0) < _ROLE_RANK[minimum]:
+        if not has_role(user, minimum):
             raise HTTPException(
                 status_code=403,
                 detail=f"butuh peran {minimum}; peran Anda {user.role}",
@@ -168,6 +170,16 @@ def require_role(minimum: Role):
         return user
 
     return _dep
+
+
+def has_role(user: User, minimum: Role) -> bool:
+    """True bila peran pengguna >= ``minimum`` (dipakai di jalur auth campuran).
+
+    Dipisah dari `require_role` supaya endpoint yang menerima **dua** jenis
+    pemanggil (sesi pengguna ATAU token layanan) tetap bisa menegakkan peran
+    minimum pada jalur sesi tanpa memaksa token layanan punya peran.
+    """
+    return _ROLE_RANK.get(user.role, 0) >= _ROLE_RANK[minimum]
 
 
 def login(username: str, password: str, totp_code: str | None = None) -> str | None:
