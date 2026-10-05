@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from live_trading.config import get_settings
-from live_trading.execution.paper import PaperBroker, compute_r
+from live_trading.execution.paper import PaperBroker, compute_be_stop, compute_r
 
 
 def _broker(tmp_path: Path) -> PaperBroker:
@@ -75,6 +75,36 @@ def test_tp1_digeser_ke_break_even_bukan_ditutup(tmp_path: Path) -> None:
     pos = b.positions()[0]
     assert pos.status == "tp1_hit_runner"
     assert pos.stop == 100.0
+
+
+def test_compute_be_stop_long_dan_short() -> None:
+    # default fee_buffer_pct = 0.001 (0.10% round-trip)
+    assert compute_be_stop("LONG", 100.0) == 100.1
+    assert compute_be_stop("SHORT", 100.0) == 99.9
+    # custom fee buffer
+    assert compute_be_stop("LONG", 1000.0, fee_buffer_pct=0.002) == 1002.0
+    assert compute_be_stop("SHORT", 1000.0, fee_buffer_pct=0.002) == 998.0
+
+
+def test_tp1_digeser_ke_net_break_even_mexc(tmp_path: Path) -> None:
+    """Saat net_be=True, TP1 kena -> stop digeser ke entry * (1 + fee_buffer) bukan entry murni."""
+    b = _broker(tmp_path)
+    b.open_position(
+        pair="SOLUSDT", direction="LONG", entry=100.0, stop=95.0, tp1=105.0, tp2=110.0, size_usd=100.0
+    )
+    b.open_position(
+        pair="AVAXUSDT", direction="SHORT", entry=100.0, stop=105.0, tp1=95.0, tp2=90.0, size_usd=100.0
+    )
+
+    closed = b.evaluate({"SOLUSDT": 106.0, "AVAXUSDT": 94.0}, net_be=True)
+    assert closed == []
+
+    positions = {p.pair: p for p in b.positions()}
+    assert positions["SOLUSDT"].status == "tp1_hit_runner"
+    assert positions["SOLUSDT"].stop == pytest.approx(100.1)  # 100 * 1.001
+
+    assert positions["AVAXUSDT"].status == "tp1_hit_runner"
+    assert positions["AVAXUSDT"].stop == pytest.approx(99.9)  # 100 * 0.999
 
 
 def test_harga_tidak_diketahui_tidak_menutup_posisi(tmp_path: Path) -> None:

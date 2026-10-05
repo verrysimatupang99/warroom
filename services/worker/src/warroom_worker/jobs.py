@@ -719,7 +719,7 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
                 prices[pair] = c.pair_snapshot(pair, klines=2)["price"]
             except Exception:
                 continue
-        closed = b_crypto.evaluate(prices)
+        closed = b_crypto.evaluate(prices, net_be=True)
         total_eval += len(positions)
         total_closed += len(closed)
         for rec in closed:
@@ -787,7 +787,7 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
             tp2 = float(r["tp2"])
             atr = float(r.get("atr") or abs(entry - stop) / 1.5)
 
-            dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd)
+            dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd, fee_buffer_pct=0.0013)
             if dec.allowed:
                 pos = b_crypto.open_position(
                     pair=pair,

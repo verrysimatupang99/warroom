@@ -6,6 +6,8 @@ import datetime as dt
 import json
 from pathlib import Path
 
+import pytest
+
 from live_trading.config import get_settings
 from live_trading.risk import RiskGate, r_closed_on, read_ledger
 
@@ -27,6 +29,19 @@ def test_ukuran_posisi_dari_atr(tmp_path: Path) -> None:
     assert lebar.risk_usd == 10.0 and sempit.risk_usd == 10.0
     assert lebar.size_usd < sempit.size_usd
     assert lebar.size_usd == 166.67  # 10 / 0.06
+
+
+def test_fee_buffer_mengurangi_ukuran_posisi(tmp_path: Path) -> None:
+    """Buffer fee memperbesar jarak stop efektif, mencegah pembengkakan leverage di stop ketat."""
+    g = _gate(tmp_path, risk_per_trade_pct=1.0, max_leverage=5.0)
+    tanpa_buffer = g.check(pair="BTCUSDT", price=100.0, atr=1.0, equity_usd=1000.0, fee_buffer_pct=0.0)
+    dengan_buffer = g.check(pair="BTCUSDT", price=100.0, atr=1.0, equity_usd=1000.0, fee_buffer_pct=0.0013)
+
+    assert tanpa_buffer.allowed and dengan_buffer.allowed
+    assert dengan_buffer.size_usd < tanpa_buffer.size_usd
+    # 10 / 0.015 = 666.67 vs 10 / 0.0163 = 613.50
+    assert tanpa_buffer.size_usd == pytest.approx(666.67, abs=0.01)
+    assert dengan_buffer.size_usd == pytest.approx(613.50, abs=0.01)
 
 
 def test_batas_rugi_harian_menolak(tmp_path: Path) -> None:

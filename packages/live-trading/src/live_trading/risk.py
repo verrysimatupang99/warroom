@@ -165,6 +165,7 @@ class RiskGate:
         atr: float,
         equity_usd: float,
         stop_mult: float = 1.5,
+        fee_buffer_pct: float = 0.0,
     ) -> RiskDecision:
         """Boleh entry? Kalau boleh, seberapa besar?"""
         if price <= 0 or atr <= 0:
@@ -201,7 +202,8 @@ class RiskGate:
             return RiskDecision(False, f"jarak stop tidak masuk akal ({stop_pct:.1%})")
 
         risk_usd = equity_usd * (self.s.risk_per_trade_pct / 100.0)
-        size_usd = risk_usd / stop_pct
+        effective_stop_pct = stop_pct + fee_buffer_pct
+        size_usd = risk_usd / effective_stop_pct
 
         cap = equity_usd * self.s.max_leverage
         if size_usd > cap:

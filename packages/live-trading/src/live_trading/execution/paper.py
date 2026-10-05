@@ -38,6 +38,13 @@ def compute_r(direction: str, entry: float, stop: float, exit_price: float) -> f
     return round(move / risk, 3)
 
 
+def compute_be_stop(direction: str, entry: float, fee_buffer_pct: float = 0.001) -> float:
+    """True Net Break-Even stop yang menutup biaya round-trip taker MEXC (0.05% entry + 0.05% exit)."""
+    if direction.upper() == "LONG":
+        return round(entry * (1.0 + fee_buffer_pct), 8)
+    return round(entry * (1.0 - fee_buffer_pct), 8)
+
+
 @dataclass
 class PaperPosition:
     signal_id: str
@@ -87,7 +94,9 @@ class PaperBroker:
     def _save(self, positions: list[PaperPosition]) -> None:
         self.s.state_dir.mkdir(parents=True, exist_ok=True)
         payload = {"updated_at": _now_wib(), "positions": [p.to_dict() for p in positions]}
-        self.positions_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        tmp = self.positions_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        tmp.replace(self.positions_path)
 
     def _append_ledger(self, record: dict[str, Any]) -> None:
         self.s.state_dir.mkdir(parents=True, exist_ok=True)
@@ -152,11 +161,11 @@ class PaperBroker:
         self._save([p for p in positions if p.signal_id != signal_id])
         return record
 
-    def evaluate(self, prices: dict[str, float]) -> list[dict[str, Any]]:
+    def evaluate(self, prices: dict[str, float], net_be: bool = False) -> list[dict[str, Any]]:
         """Periksa SL/TP terhadap harga sekarang; tutup yang kena.
 
-        TP1 kena → stop digeser ke entry (break-even) dan status jadi
-        ``tp1_hit_runner``; sisa posisi dibiarkan jalan ke TP2.
+        TP1 kena → stop digeser ke entry (atau True Net Break-Even bila net_be=True)
+        dan status jadi ``tp1_hit_runner``; sisa posisi dibiarkan jalan ke TP2.
         """
         closed: list[dict[str, Any]] = []
         positions = self.positions()
@@ -179,7 +188,7 @@ class PaperBroker:
                 closed.append(self.close_position(p.signal_id, p.tp2, "closed_TP2"))
             elif hit_tp1 and p.status == "open":
                 p.status = "tp1_hit_runner"
-                p.stop = p.entry  # break-even, bukan trailing agresif
+                p.stop = compute_be_stop(p.direction, p.entry) if net_be else p.entry
                 keep.append(p)
             else:
                 keep.append(p)
