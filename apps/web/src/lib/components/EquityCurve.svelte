@@ -206,6 +206,36 @@
 				</div>
 			{/if}
 		</div>
+
+		<!-- Fallback aksesibilitas (panduan chart skill): kurva yang hanya bisa dibaca
+		     lewat hover/warna tidak cukup. Tabel ini memberi nilai yang sama tanpa
+		     bergantung pada penglihatan atau warna, dan bisa difokus keyboard. -->
+		<details class="mt-2">
+			<summary class="label-mikro cursor-pointer text-text-3 hover:text-text">
+				Tabel data ({validPoints.length} titik)
+			</summary>
+			<div class="mt-1 max-h-48 overflow-auto rounded-control border border-line">
+				<table class="w-full border-collapse text-12">
+					<caption class="sr-only">Nilai R per trade</caption>
+					<thead>
+						<tr class="bg-surface-2 text-left">
+							<th scope="col" class="px-2 py-1 label-mikro">Trade</th>
+							<th scope="col" class="px-2 py-1 label-mikro text-right">R</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each validPoints as p (p.i)}
+							<tr class="border-t border-line-soft">
+								<td class="angka px-2 py-1 text-text-3">#{p.i}</td>
+								<td class="angka px-2 py-1 text-right {p.r >= 0 ? 'text-pos' : 'text-neg'}">
+									{p.r >= 0 ? '+' : ''}{angka(p.r)} R
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</details>
 	{:else}
 		<div class="flex h-36 flex-col items-center justify-center text-center text-text-3">
 			<p class="text-12">Belum cukup data titik ekuitas untuk menggambar kurva.</p>
