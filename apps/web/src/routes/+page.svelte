@@ -360,7 +360,7 @@
 						<span class="eyebrow">Kesegaran</span>
 						<span class="dim">{sehat?.db ? 'db ok' : 'db —'}</span>
 					</div>
-					<div class="dim" style="font-size:0.8rem">
+					<div class="dim text-13">
 						{#if kesegaran?.checked_at}
 							Diperiksa {umurDetik(kesegaran.facts?.[0]?.age_s ?? null)} lalu
 						{:else}
@@ -372,7 +372,7 @@
 				{#if daftar.length > 0 && !sinyal?.ada}
 					<section class="rail-card">
 						<div class="eyebrow">Catatan</div>
-						<p class="dim" style="font-size:0.8rem;margin:0.4rem 0 0">
+						<p class="dim text-13 mt-1.5">
 							Belum ada pasar yang menghasilkan sinyal. Tiap pasar menyebutkan alasannya —
 							sengaja tidak diisi angka 0 supaya tidak terlihat seperti data.
 						</p>

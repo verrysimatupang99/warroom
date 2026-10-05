@@ -170,7 +170,7 @@
 			{#each metrik as m (m.label)}
 				<div>
 					<div class="meter-head"><span>{m.label}</span></div>
-					<div class="num angka" style="font-size:1.05rem;font-weight:700">{m.nilai}</div>
+					<div class="num angka text-16 font-bold">{m.nilai}</div>
 				</div>
 			{/each}
 		</div>

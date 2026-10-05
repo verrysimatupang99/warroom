@@ -34,9 +34,10 @@ else
   fail=1
 fi
 
-step "4/4 web: npm ci + build (apps/web)"
-( cd "$WARROOM/apps/web" && npm ci --no-audit --no-fund && npm run build )
-check $? "web build"
+step "4/4 web: npm ci + lint token + check + test + build (apps/web)"
+( cd "$WARROOM/apps/web" && npm ci --no-audit --no-fund \
+  && node scripts/lint-tokens.mjs src && npm run check && npm run test && npm run build )
+check $? "web lint token + check + test + build"
 
 printf '\n=== ringkasan ===\n'
 if [ "$fail" -eq 0 ]; then echo "SEMUA HIJAU"; else echo "ADA YANG GAGAL"; fi
