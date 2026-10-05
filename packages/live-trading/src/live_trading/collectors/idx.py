@@ -44,6 +44,30 @@ class QuotaExhausted(RuntimeError):
     """Kuota harian Arjum di bawah ambang aman — jangan panggil API."""
 
 
+def _kode_bersih(code: str | None) -> str:
+    """Normalisasi kode emiten: buang sufiks ``.JK`` lalu besarkan.
+
+    KENAPA INI ADA — bug nyata yang ditemukan 6 Okt 2026 dan memakan ~99% kuota Arjum
+    di Hermes Tencent (1.447 dari 1.474 panggilan yang benar-benar kena kuota):
+
+        symbol 'CAMP.JK'  ->  yfinance membentuk 'CAMP.JK.JK'  ->  404
+                          ->  fallback ke Arjum  ->  kuota terpakai
+
+    Akarnya: WebSocket daemon menulis ticker ber-sufiks ``.JK``, lalu konsumen yang
+    memanggil ``pool_history(symbol)`` mengirimnya apa adanya. yfinance menambahkan
+    ``.JK`` sendiri, jadi hasilnya sufiks ganda dan permintaan selalu gagal — diam-diam,
+    karena kegagalan itu jatuh ke fallback yang justru berbiaya.
+
+    Karena ``.JK`` adalah sufiks Yahoo, ia tidak pernah bagian dari kode emiten IDX.
+    Membuangnya di sini membuat fungsi ini idempoten: ``BBRI``, ``BBRI.JK``, dan
+    ``bbri.jk`` semuanya jadi ``BBRI``.
+    """
+    kode = str(code or "").strip().upper()
+    if kode.endswith(".JK"):
+        kode = kode[:-3]
+    return kode
+
+
 @dataclass
 class ArjumCollector:
     settings: Settings
@@ -221,13 +245,13 @@ class ArjumCollector:
         )
 
     def broker_summary(self, code: str) -> dict[str, Any]:
-        code = code.upper()
+        code = _kode_bersih(code)
         return self.get(
             f"/api/broker-summary/{code}", ttl_key="broker_summary", cache_key=f"broker_summary_{code}"
         )
 
     def history(self, code: str, frame: str = "daily") -> dict[str, Any]:
-        code = code.upper()
+        code = _kode_bersih(code)
         return self.get(
             f"/api/history/{code}",
             {"frame": frame},
@@ -236,5 +260,5 @@ class ArjumCollector:
         )
 
     def analysis(self, code: str) -> dict[str, Any]:
-        code = code.upper()
+        code = _kode_bersih(code)
         return self.get(f"/api/analysis/{code}", ttl_key="analysis", cache_key=f"analysis_{code}")
