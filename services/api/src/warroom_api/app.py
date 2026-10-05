@@ -325,6 +325,22 @@ def create_app() -> FastAPI:
             "notes": r.notes,
         }
 
+    # --- sinyal terbaik per pasar (Home, 5 Okt 2026) -----------------------------------
+    # Satu kontrak untuk seluruh UI baru: semua pasar dinormalkan ke bentuk yang sama,
+    # lengkap dengan status verifikasi (klaim eksplorasi tidak boleh terlihat seperti edge).
+
+    @app.get("/api/v1/sinyal/per-pasar")
+    def sinyal_per_pasar(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        from warroom_core.sinyal import sinyal_terbaik_per_pasar
+
+        with session_scope() as s:
+            rows = sinyal_terbaik_per_pasar(s)
+        return {
+            "sinyal": [r.to_dict() for r in rows],
+            "count": len(rows),
+            "ada": sum(1 for r in rows if r.ada),
+        }
+
     # --- split beku (ADR-003, P1 5 Okt 2026) ------------------------------------------
     # Gate menerima "frozen:<id>"; endpoint ini yang membuat id itu NYATA.
 

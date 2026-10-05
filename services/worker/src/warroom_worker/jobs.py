@@ -819,17 +819,38 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     biaya = {"asumsi": True, "total_bps": None, "sumber": "error",
                              "alasan": f"{type(exc).__name__}: {exc}"}
 
-                pos = b_crypto.open_position(
-                    pair=pair,
-                    direction=direction,
-                    entry=entry,
-                    stop=stop,
-                    tp1=tp1,
-                    tp2=tp2,
-                    size_usd=dec.size_usd or 0.0,
-                    note=f"auto-open dari scanner ({dec.risk_usd} USD risiko); biaya {biaya.get('sumber')}",
-                    cost_bps=float(biaya["total_bps"]) if biaya.get("total_bps") is not None else None,
+                # Jalur keputusan TUNGGAL (paper & live). Ukuran/SL/TP dari sini, bukan
+                # dihitung ulang di eksekutor — itu yang membuat paper benar-benar 1:1.
+                from live_trading.execution.keputusan import Konteks, jalur_untuk, putuskan_masuk
+
+                kep = putuskan_masuk(
+                    {**r, "atr": atr, "tp1": tp1, "tp2": tp2},
+                    Konteks(
+                        equity_usd=stg.equity_usd,
+                        fee_bps=float(biaya["total_bps"]) if biaya.get("total_bps") is not None else None,
+                        mode="paper",
+                        slot_tersisa=max(0, stg.max_concurrent_positions - len(b_crypto.positions())),
+                    ),
                 )
+                if not kep.masuk:
+                    continue
+                pos = b_crypto.open_position(
+                    pair=kep.pair,
+                    direction=kep.arah,
+                    entry=float(kep.entry),
+                    stop=float(kep.sl),
+                    tp1=float(kep.tp1),
+                    tp2=float(kep.tp2),
+                    size_usd=float(kep.size_usd or 0.0),
+                    note=f"jalur-tunggal ({kep.alasan}); biaya {biaya.get('sumber')}",
+                    cost_bps=kep.cost_bps,
+                )
+                # Jejak keputusan disimpan supaya bisa dibandingkan baris-demi-baris dengan
+                # mode live nanti — itu bukti 1:1 yang bisa diperiksa, bukan klaim.
+                s.add(Event(type="keputusan.masuk", actor="paper_scan",
+                            payload_json={**kep.to_dict(), "jalur": jalur_untuk(kep),
+                                          "sumber_biaya": biaya.get("sumber")},
+                            severity="info"))
                 s.add(Event(type="cost.measured", actor="paper_scan",
                             payload_json={"pair": pair, "direction": direction,
                                           "size_usd": dec.size_usd, **biaya},
