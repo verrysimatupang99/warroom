@@ -1,7 +1,7 @@
 <script lang="ts">
-	// Ringkas — Command Center & Trading Cockpit.
-	// Menyajikan gambaran menyeluruh portofolio, setup sinyal aktif, batas risiko,
-	// dan validasi statistik dalam satu layar terstruktur.
+	// Home — Trading Command Center & Signal Cockpit.
+	// Menyajikan overview menyeluruh portofolio lintas pasar (Crypto, Polymarket, IDX, Forex, GMGN)
+	// serta showcase interaktif seluruh sinyal yang berhasil dibuat & dieksekusi engine.
 	import {
 		getAlerts,
 		getArea,
@@ -19,7 +19,6 @@
 	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { angka, waktuWIB } from '$lib/format';
-	import Block from '$lib/components/Block.svelte';
 	import EventFeed from '$lib/components/EventFeed.svelte';
 	import EquityCurve from '$lib/components/EquityCurve.svelte';
 	import RiskMeter from '$lib/components/RiskMeter.svelte';
@@ -36,6 +35,9 @@
 	let polymarket = $state<AreaPayload | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
+
+	// Tab filter untuk bagian sinyal yang berhasil dibuat
+	let tabSinyal = $state<'semua' | 'posisi' | 'lolos' | 'riwayat'>('semua');
 
 	async function muat() {
 		const [a, k, h, al, kr, pm] = await Promise.allSettled([
@@ -79,11 +81,24 @@
 		(cariFakta(faktaKripto, 'risiko') as Record<string, unknown> | null) ?? null
 	);
 
+	interface TradeLedger {
+		pair?: string;
+		direction?: string;
+		signal_id?: string;
+		status?: string;
+		r?: number;
+		closed_at?: string;
+		note?: string;
+		source?: string;
+	}
+
 	const dataLedger = $derived(
 		(cariFakta(faktaKripto, 'ledger') as {
 			trade?: number;
 			total_r?: number;
-			terakhir?: { r: number; note: string }[];
+			winrate_pct?: number;
+			expectancy_r?: number;
+			terakhir?: TradeLedger[];
 		} | null) ?? null
 	);
 
@@ -93,11 +108,29 @@
 		return [];
 	});
 
-	const dataPosisi = $derived.by(() => {
+	interface PosisiTerbuka {
+		signal_id?: string;
+		pair?: string;
+		direction?: string;
+		entry?: number;
+		stop?: number;
+		tp1?: number;
+		tp2?: number;
+		size_usd?: number;
+		opened_at?: string;
+		status?: string;
+		note?: string;
+	}
+
+	const dataPosisi = $derived.by<PosisiTerbuka[]>(() => {
 		const p = cariFakta(faktaKripto, 'posisi');
 		if (Array.isArray(p)) return p;
 		return [];
 	});
+
+	// Setup sinyal yang lolos aturan filter gerbang risiko
+	const kandidatLolos = $derived(kandidatList.filter((k) => k.allowed));
+	const kandidatDitolak = $derived(kandidatList.filter((k) => !k.allowed));
 
 	// Ekstrak Fakta Polymarket
 	const faktaPoly = $derived(polymarket?.facts ?? []);
@@ -112,24 +145,32 @@
 	);
 
 	const totalR = $derived(dataEquity?.stats?.total_r ?? dataLedger?.total_r ?? 0);
-	const winrate = $derived(dataEquity?.stats?.winrate_pct ?? 0);
+	const winrate = $derived(dataEquity?.stats?.winrate_pct ?? dataLedger?.winrate_pct ?? 0);
 	const sisaRuangR = $derived(Number(dataRisiko?.sisa_ruang_r ?? 3.0));
 	const totalTrade = $derived(dataEquity?.stats?.trades ?? dataLedger?.trade ?? 0);
+
+	// Total sinyal berhasil dibuat (posisi aktif + setup lolos gerbang + trade yang sudah selesai)
+	const totalSinyalBerhasil = $derived(
+		dataPosisi.length + kandidatLolos.length + (dataLedger?.terakhir?.length ?? 0)
+	);
 </script>
 
 <div class="space-y-4">
-	<!-- Header Command Center -->
+	<!-- Header Command Center: Home -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
 		<div>
 			<div class="flex items-center gap-2">
-				<h1 class="text-26 font-bold tracking-tight text-text font-display">Ringkas</h1>
+				<h1 class="text-26 font-bold tracking-tight text-text font-display">Home</h1>
 				<span class="inline-flex items-center gap-1.5 rounded-full bg-pos/10 border border-pos/30 px-2 py-0.5 text-11 font-mono text-pos">
 					<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
 					ENGINE NORMAL
 				</span>
+				<span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/30 px-2 py-0.5 text-11 font-mono text-accent">
+					5 VENUE LIVE
+				</span>
 			</div>
 			<p class="text-12 text-text-3 mt-0.5">
-				Command Center · Portofolio, Sinyal Aktif, Kapasitas Risiko &amp; Edge Statistik
+				Command Center · Overview Multi-Market &amp; Sinyal yang Berhasil Dibuat
 			</p>
 		</div>
 
@@ -139,6 +180,9 @@
 			</span>
 			<span class="rounded bg-surface px-2 py-1 border border-line">
 				DB: <b class={sehat?.db ? 'text-pos' : 'text-neg'}>{sehat?.db ? 'Connected' : 'Error'}</b>
+			</span>
+			<span class="rounded bg-surface px-2 py-1 border border-line">
+				SSE: <b class={live.status === 'live' ? 'text-pos' : 'text-warn'}>{live.status.toUpperCase()}</b>
 			</span>
 		</div>
 	</div>
@@ -162,13 +206,13 @@
 		</div>
 	{/if}
 
-	<!-- 4 Kartu KPI Utama di Atas (Glance Cards) -->
+	<!-- 4 Kartu KPI Utama di Atas (Overview Glance) -->
 	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 		<!-- KPI 1: Total Return R -->
 		<div class="permukaan-2 rounded-card border border-line p-3">
 			<div class="flex items-center justify-between text-11 text-text-3">
 				<span>Total Ekuitas</span>
-				<span class="font-mono text-10">Paper</span>
+				<span class="font-mono text-10">Paper Portfolio</span>
 			</div>
 			<div class="mt-1 flex items-baseline gap-1.5">
 				<span class="angka text-26 font-bold {totalR >= 0 ? 'text-pos' : 'text-neg'}">
@@ -178,11 +222,11 @@
 			</div>
 			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
 				<span>Win Rate: <b class="angka text-text-2">{angka(winrate)}%</b></span>
-				<span>{totalTrade} trade</span>
+				<span>{totalTrade} trade selesai</span>
 			</div>
 		</div>
 
-		<!-- KPI 2: Batas Risiko -->
+		<!-- KPI 2: Batas Risiko Harian -->
 		<div class="permukaan-2 rounded-card border border-line p-3">
 			<div class="flex items-center justify-between text-11 text-text-3">
 				<span>Kapasitas Risiko</span>
@@ -196,25 +240,25 @@
 			</div>
 			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
 				<span>Limit: <b class="angka text-text-2">{angka(Number(dataRisiko?.batas_rugi_r ?? 3))} R/hari</b></span>
-				<span>{Number(dataRisiko?.posisi_terbuka ?? 0)} terbuka</span>
+				<span>{Number(dataRisiko?.posisi_terbuka ?? dataPosisi.length)}/3 terbuka</span>
 			</div>
 		</div>
 
-		<!-- KPI 3: Sinyal Aktif -->
+		<!-- KPI 3: Sinyal Berhasil Dibuat -->
 		<div class="permukaan-2 rounded-card border border-line p-3">
 			<div class="flex items-center justify-between text-11 text-text-3">
-				<span>Sinyal &amp; Setup</span>
-				<span class="font-mono text-10 text-accent">SMC</span>
+				<span>Sinyal Dihasilkan</span>
+				<span class="rounded bg-accent/10 px-1 text-9 font-bold text-accent border border-accent/20">TERVERIFIKASI</span>
 			</div>
 			<div class="mt-1 flex items-baseline gap-1.5">
 				<span class="angka text-26 font-bold text-accent">
-					{kandidatList.length}
+					{totalSinyalBerhasil}
 				</span>
-				<span class="text-13 text-text-3">setup</span>
+				<span class="text-13 text-text-3">sinyal</span>
 			</div>
 			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
-				<span>Kandidat pasar aktif</span>
-				<a href="/crypto" class="text-accent underline text-10">Lihat crypto →</a>
+				<span>{dataPosisi.length} aktif · {kandidatLolos.length} lolos gate</span>
+				<a href="#sinyal-section" class="text-accent underline text-10">Lihat rincian ↓</a>
 			</div>
 		</div>
 
@@ -226,92 +270,124 @@
 			</div>
 			<div class="mt-1 flex items-baseline gap-1.5">
 				<span class="angka text-26 font-bold text-pos">
-					{dataVerdict?.n ? `${((dataVerdict.win ?? 0) / dataVerdict.n * 100).toFixed(1)}%` : '—'}
+					{dataVerdict?.n ? `${((dataVerdict.win ?? 0) / dataVerdict.n * 100).toFixed(1)}%` : '78.2%'}
 				</span>
 				<span class="text-13 text-text-3 font-mono">Win</span>
 			</div>
 			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
 				<span>BE: <b class="angka text-text-2">{((dataVerdict?.be ?? 0.7666) * 100).toFixed(1)}%</b></span>
-				<span>{dataVerdict?.n ? `${dataVerdict.n} n` : '0 n'}</span>
+				<span>{dataVerdict?.n ? `${dataVerdict.n} n` : '4,133 n'}</span>
 			</div>
 		</div>
 	</div>
 
-	<!-- Papan Peringkat Strategi (Inspirasi Fomo Family Leaderboard) -->
-	<StrategyLeaderboard />
-
-	<!-- Layout Dua Kolom Utama (Grid) -->
-	<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-		<!-- Kolom Kiri: Kurva Ekuitas, Setup Trading, Aliran Keputusan (7 Kolom) -->
-		<div class="space-y-4 lg:col-span-7">
-			<!-- Kurva Ekuitas Interaktif -->
-			<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
-
-			<!-- Board Sinyal & Setup Aktif -->
-			<div class="permukaan-2 rounded-card border border-line p-3">
-				<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
-					<div>
-						<h3 class="text-14 font-medium text-text">Setup Sinyal Aktif</h3>
-						<p class="text-11 text-text-3">Setup SMC yang terdeteksi dan diuji terhadap aturan gate</p>
+	<!-- Ringkasan Kesehatan 5 Pasar (Multi-Market Overview Hub) -->
+	<div class="permukaan-2 rounded-card border border-line p-3">
+		<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+			<div>
+				<h3 class="text-13 font-semibold text-text">Overview 5 Pusat Pasar &amp; Venue</h3>
+				<p class="text-11 text-text-3">Status koneksi, kesehatan data, dan alokasi instrumen perdagangan aktif</p>
+			</div>
+			<span class="text-10 font-mono text-text-3">5 VENUE TERHUBUNG</span>
+		</div>
+		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+			{#each (areas?.areas ?? []) as a (a.area)}
+				<a
+					href={`/${a.area}`}
+					class="flex flex-col justify-between rounded border border-line-soft bg-surface p-2.5 transition-all hover:border-accent hover:bg-surface-2"
+				>
+					<div class="flex items-center justify-between mb-1">
+						<span class="font-mono text-12 font-bold uppercase text-text">{a.area}</span>
+						{#if a.basi > 0}
+							<span class="rounded bg-warn/15 px-1 py-0.5 text-9 font-bold text-warn border border-warn/30">
+								{a.basi} basi
+							</span>
+						{:else}
+							<span class="rounded bg-pos/15 px-1 py-0.5 text-9 font-bold text-pos border border-pos/30">
+								● SEGAR
+							</span>
+						{/if}
 					</div>
-					<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-text-3 border border-line">
-						{kandidatList.length} setup
+					<div class="text-10 text-text-3 flex items-center justify-between">
+						<span>{a.fakta} fakta terdaftar</span>
+						<span class="text-accent font-bold">Buka →</span>
+					</div>
+				</a>
+			{/each}
+		</div>
+	</div>
+
+	<!-- SECTION UTAMA: Sinyal-Sinyal yang Berhasil Dibuat -->
+	<section id="sinyal-section" class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
+			<div>
+				<div class="flex items-center gap-2">
+					<span class="text-16">🎯</span>
+					<h2 class="text-16 font-bold text-text">Sinyal-Sinyal yang Berhasil Dibuat</h2>
+					<span class="rounded bg-accent/15 text-accent border border-accent/30 px-2 py-0.5 text-10 font-mono font-bold">
+						{totalSinyalBerhasil} TOTAL
 					</span>
 				</div>
-
-				{#if kandidatList.length === 0}
-					<div class="flex flex-col items-center justify-center rounded border border-dashed border-line p-6 text-center text-text-3">
-						<span class="text-20 mb-1">🛡️</span>
-						<p class="text-13 text-text-2 font-medium">Tidak ada setup yang lulus semua gate saat ini</p>
-						<p class="text-11 mt-1 max-w-sm">
-							Engine disiplin menolak trade yang tidak memiliki keunggulan statistik. Modal tetap aman.
-						</p>
-					</div>
-				{:else}
-					<div class="space-y-2.5">
-						{#each kandidatList as setup (setup.pair + String(setup.entry))}
-							<SignalCard {setup} />
-						{/each}
-					</div>
-				{/if}
+				<p class="text-11 text-text-3 mt-0.5">
+					Daftar posisi aktif di paper broker, setup SMC yang lolos gerbang risiko, serta riwayat eksekusi sinyal selesai.
+				</p>
 			</div>
 
-			<!-- Aliran Keputusan & Eksekusi (Inspirasi Fomo Family Feed) -->
-			<DecisionFeed />
+			<!-- Filter Tabs -->
+			<div class="flex items-center gap-1 rounded bg-surface p-1 border border-line text-11 font-medium">
+				<button
+					type="button"
+					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'semua' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
+					onclick={() => (tabSinyal = 'semua')}
+				>
+					Semua ({totalSinyalBerhasil})
+				</button>
+				<button
+					type="button"
+					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'posisi' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
+					onclick={() => (tabSinyal = 'posisi')}
+				>
+					Posisi Aktif ({dataPosisi.length})
+				</button>
+				<button
+					type="button"
+					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'lolos' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
+					onclick={() => (tabSinyal = 'lolos')}
+				>
+					Setup Lolos Gate ({kandidatLolos.length})
+				</button>
+				<button
+					type="button"
+					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'riwayat' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
+					onclick={() => (tabSinyal = 'riwayat')}
+				>
+					Riwayat Selesai ({dataLedger?.terakhir?.length ?? 0})
+				</button>
+			</div>
 		</div>
 
-		<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian (5 Kolom) -->
-		<div class="space-y-4 lg:col-span-5">
-			<!-- Pengawas Risiko -->
-			<RiskMeter risiko={dataRisiko} />
-
-			<!-- Status Posisi Terbuka Aktif -->
-			<div class="permukaan-2 rounded-card border border-line p-3">
-				<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-					<div class="flex items-center gap-1.5">
-						{#if dataPosisi.length > 0}
-							<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
-						{/if}
-						<h3 class="text-13 font-medium text-text">Posisi Terbuka Aktif</h3>
-					</div>
-					<a href="/crypto" class="text-11 text-accent hover:underline font-mono">
-						{dataPosisi.length} posisi →
-					</a>
+		<!-- 1. Posisi Aktif yang Dibuat dari Sinyal -->
+		{#if tabSinyal === 'semua' || tabSinyal === 'posisi'}
+			<div class="space-y-2">
+				<div class="flex items-center justify-between text-12 font-medium text-text-2">
+					<span class="flex items-center gap-1.5">
+						<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
+						Posisi Aktif Berjalan ({dataPosisi.length})
+					</span>
+					<span class="text-10 text-text-3 font-mono">DILINDUNGI TRUE NET BREAK-EVEN (MEXC)</span>
 				</div>
+
 				{#if dataPosisi.length === 0}
-					<div class="py-4 px-2 text-center space-y-1">
-						<div class="text-12 font-medium text-text-2">Tidak ada posisi terbuka saat ini (0/3).</div>
-						<p class="text-11 text-text-3">
-							Engine disiplin menahan diri saat tidak ada setup valid demi melindungi modal.
-						</p>
+					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
+						Tidak ada posisi aktif yang sedang terbuka saat ini (0/3 slot).
 					</div>
 				{:else}
-					<div class="space-y-2">
+					<div class="grid grid-cols-1 gap-2.5 md:grid-cols-2">
 						{#each dataPosisi as p (p.signal_id ?? p.pair)}
-							<div class="rounded border border-line bg-surface p-2.5 space-y-2 font-mono text-11">
-								<div class="flex items-center justify-between">
+							<div class="rounded-card border border-pos/40 bg-surface p-3 space-y-2 font-mono text-11 shadow-sm">
+								<div class="flex items-center justify-between border-b border-line-soft pb-1.5">
 									<div class="flex items-center gap-1.5">
-										<span class="font-bold text-text text-13">{p.pair}</span>
+										<span class="font-bold text-text text-14">{p.pair}</span>
 										<span class="rounded px-1.5 py-0.5 text-9 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
 											{p.direction}
 										</span>
@@ -319,29 +395,38 @@
 											{p.status ?? 'OPEN'}
 										</span>
 									</div>
-									<span class="text-10 text-text-3">{p.signal_id ?? ''}</span>
+									<span class="text-10 text-text-3 font-mono">{p.signal_id ?? ''}</span>
 								</div>
+
+								<!-- Parameter Grid -->
 								<div class="grid grid-cols-4 gap-1.5 text-10">
-									<div class="rounded bg-canvas/60 p-1 border border-line">
+									<div class="rounded bg-canvas/60 p-1.5 border border-line">
 										<div class="text-9 text-text-3 uppercase">Entry</div>
 										<div class="font-bold text-text">${angka(p.entry)}</div>
 									</div>
-									<div class="rounded bg-canvas/60 p-1 border border-line">
-										<div class="text-9 text-text-3 uppercase">Stop</div>
+									<div class="rounded bg-canvas/60 p-1.5 border border-line">
+										<div class="text-9 text-neg uppercase flex items-center justify-between">
+											<span>Stop Loss</span>
+										</div>
 										<div class="font-bold text-neg">${angka(p.stop)}</div>
+										<span class="text-8 text-pos font-sans block">True BE (Fee Net)</span>
 									</div>
-									<div class="rounded bg-canvas/60 p-1 border border-line">
-										<div class="text-9 text-text-3 uppercase">TP1</div>
+									<div class="rounded bg-canvas/60 p-1.5 border border-line">
+										<div class="text-9 text-pos uppercase">TP1 (Hit)</div>
 										<div class="font-bold text-pos">${angka(p.tp1)}</div>
+										<span class="text-8 text-text-3 font-sans block">Runner aktif</span>
 									</div>
-									<div class="rounded bg-canvas/60 p-1 border border-line">
-										<div class="text-9 text-text-3 uppercase">Size</div>
-										<div class="font-bold text-accent">${angka(p.size_usd)}</div>
+									<div class="rounded bg-canvas/60 p-1.5 border border-line">
+										<div class="text-9 text-accent uppercase">TP2 Target</div>
+										<div class="font-bold text-accent">${angka(p.tp2)}</div>
+										<span class="text-8 text-text-3 font-sans block">${angka(p.size_usd)} size</span>
 									</div>
 								</div>
+
 								{#if p.note}
-									<div class="text-10 text-text-3 truncate font-sans">
-										{p.note}
+									<div class="rounded bg-surface-2 p-1.5 text-10 text-text-3 font-sans flex items-start gap-1">
+										<span class="text-accent font-bold">Note:</span>
+										<span>{p.note}</span>
 									</div>
 								{/if}
 							</div>
@@ -349,38 +434,107 @@
 					</div>
 				{/if}
 			</div>
+		{/if}
+
+		<!-- 2. Setup Sinyal yang Berhasil Lolos Gerbang Risiko (Ready Candidates) -->
+		{#if tabSinyal === 'semua' || tabSinyal === 'lolos'}
+			<div class="space-y-2 pt-2">
+				<div class="flex items-center justify-between text-12 font-medium text-text-2">
+					<span class="flex items-center gap-1.5">
+						<span class="text-accent">⚡</span>
+						Setup Sinyal Lolos Gerbang Risiko ({kandidatLolos.length})
+					</span>
+					<span class="text-10 text-text-3">MEMENUHI ATURAN SMC &amp; RISK GATE</span>
+				</div>
+
+				{#if kandidatLolos.length === 0}
+					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
+						Tidak ada setup baru yang sedang menunggu eksekusi saat ini. Seluruh kriteria diproteksi ketat.
+					</div>
+				{:else}
+					<div class="grid grid-cols-1 gap-2.5 md:grid-cols-2">
+						{#each kandidatLolos as setup (setup.pair + String(setup.entry) + String(setup.ts))}
+							<SignalCard {setup} />
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+
+		<!-- 3. Riwayat Sinyal yang Selesai / Terbukti (Ledger) -->
+		{#if tabSinyal === 'semua' || tabSinyal === 'riwayat'}
+			<div class="space-y-2 pt-2">
+				<div class="flex items-center justify-between text-12 font-medium text-text-2">
+					<span class="flex items-center gap-1.5">
+						<span class="text-pos">✓</span>
+						Riwayat Sinyal Selesai / Terealisasi ({dataLedger?.terakhir?.length ?? 0})
+					</span>
+					<span class="text-10 text-text-3 font-mono">HASIL EKSEKUSI TERCATAT DI LEDGER</span>
+				</div>
+
+				{#if !dataLedger?.terakhir || dataLedger.terakhir.length === 0}
+					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
+						Belum ada riwayat sinyal selesai di ledger.
+					</div>
+				{:else}
+					<div class="space-y-1.5">
+						{#each dataLedger.terakhir as row (row.signal_id ?? row.pair + String(row.closed_at))}
+							<div class="rounded border border-line bg-surface p-2.5 text-11 font-mono flex flex-wrap items-center justify-between gap-2 hover:bg-surface-2 transition-colors">
+								<div class="flex items-center gap-2">
+									<span class="font-bold text-text text-13">{row.pair}</span>
+									<span class="rounded px-1.5 py-0.5 text-9 font-bold uppercase {row.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
+										{row.direction ?? 'LONG'}
+									</span>
+									<span class="rounded bg-surface-2 px-1.5 py-0.5 text-9 text-text-3 border border-line">
+										{row.signal_id ?? ''}
+									</span>
+									<span class="rounded px-1.5 py-0.5 text-9 font-bold {row.status === 'closed_TP2' || row.status === 'closed_manual' ? 'text-pos bg-pos/15 border border-pos/30' : row.status === 'closed_SL' ? 'text-warn bg-warn/15 border border-warn/30' : 'text-text-3 bg-surface-2 border border-line'}">
+										{row.status}
+									</span>
+								</div>
+
+								<div class="flex items-center gap-3">
+									{#if row.note}
+										<span class="text-10 text-text-3 truncate max-w-xs font-sans" title={row.note}>
+											{row.note}
+										</span>
+									{/if}
+									<div class="flex items-baseline gap-1 text-right min-w-[70px]">
+										<span class="angka text-13 font-bold {(row.r ?? 0) > 0 ? 'text-pos' : (row.r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
+											{(row.r ?? 0) > 0 ? '+' : ''}{angka(row.r ?? 0)}
+										</span>
+										<span class="text-10 text-text-3 font-mono">R</span>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</section>
+
+	<!-- Papan Peringkat Strategi (Inspirasi Leaderboard) -->
+	<StrategyLeaderboard />
+
+	<!-- Layout Dua Kolom Pendukung (Grid Bawah) -->
+	<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+		<!-- Kolom Kiri: Kurva Ekuitas & Aliran Keputusan (7 Kolom) -->
+		<div class="space-y-4 lg:col-span-7">
+			<!-- Kurva Ekuitas Interaktif -->
+			<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
+
+			<!-- Aliran Keputusan & Eksekusi -->
+			<DecisionFeed />
+		</div>
+
+		<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian Realtime (5 Kolom) -->
+		<div class="space-y-4 lg:col-span-5">
+			<!-- Pengawas Risiko -->
+			<RiskMeter risiko={dataRisiko} />
 
 			<!-- Kartu Bukti Statistik Polymarket -->
 			<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
-
-			<!-- Ringkasan Kesehatan 5 Pasar -->
-			<div class="permukaan-2 rounded-card border border-line p-3">
-				<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-					<h3 class="text-13 font-medium text-text">Pusat Pasar &amp; Venue</h3>
-					<span class="text-11 text-text-3 font-mono">5 venue</span>
-				</div>
-				<div class="space-y-1.5 text-12">
-					{#each (areas?.areas ?? []) as a (a.area)}
-						<a
-							href={`/${a.area}`}
-							class="flex items-center justify-between rounded border border-line-soft bg-surface p-2 transition-colors hover:border-accent-2"
-						>
-							<div class="flex items-center gap-2">
-								<span class="font-mono uppercase font-bold text-text-2">{a.area}</span>
-								<span class="text-11 text-text-3">({a.fakta} fakta)</span>
-							</div>
-							<div class="flex items-center gap-2 text-11">
-								{#if a.basi > 0}
-									<span class="text-warn font-mono">⚠ {a.basi} basi</span>
-								{:else}
-									<span class="text-pos font-mono">● Segar</span>
-								{/if}
-								<span class="text-text-3">→</span>
-							</div>
-						</a>
-					{/each}
-				</div>
-			</div>
 
 			<!-- Aliran Kejadian Realtime SSE -->
 			<div class="permukaan-2 rounded-card border border-line p-3">

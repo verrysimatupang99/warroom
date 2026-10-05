@@ -22,8 +22,8 @@ export interface Area {
 
 export const AREAS: Area[] = [
 	{
-		kunci: 'ringkas',
-		label: 'Ringkas',
+		kunci: 'home',
+		label: 'Home',
 		rute: '/',
 		ikon: '⌂',
 		kategori: 'pasar',
