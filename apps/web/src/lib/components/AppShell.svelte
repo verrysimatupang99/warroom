@@ -29,7 +29,7 @@
 	>
 		<div class="border-b border-line p-3">
 			<p class="text-15 text-text font-bold font-display">War Room</p>
-			<p class="label-mikro text-text-3">multi-market · 11 venue &amp; riset</p>
+			<p class="label-mikro text-text-3">multi-market · 7 area &amp; riset</p>
 		</div>
 		<RailNav {jalur} />
 	</aside>

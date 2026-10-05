@@ -125,8 +125,20 @@
 	.kartu.utama {
 		border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 	}
+	/* Kartu kosong: JANGAN pakai opacity pada seluruh kartu.
+	   Diukur 6 Okt 2026 pada CSS ter-scope asli: `opacity: 0.6` menjatuhkan teks alasan
+	   (--text-3, 12px) dari 8,08:1 ke **3,77:1** — di bawah ambang AA 4,5:1 untuk teks
+	   normal. Opacity mengalikan SELURUH subpohon, jadi ia menurunkan kontras semua teks
+	   sekaligus, termasuk catatan kejujuran yang justru harus paling terbaca di kartu kosong.
+	   Yang dilemahkan sekarang hanya latar/border-nya, bukan teksnya. */
 	.kartu.kosong {
-		opacity: 0.6;
+		background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+		border-style: dashed;
+		border-color: color-mix(in srgb, var(--line) 70%, transparent);
+	}
+	.kartu.kosong .label-mikro,
+	.kartu.kosong .subjek {
+		color: var(--text-2);
 	}
 	header {
 		display: flex;

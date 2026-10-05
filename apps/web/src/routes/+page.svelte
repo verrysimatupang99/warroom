@@ -218,7 +218,9 @@
 				<div class="baris">
 					<span class="subjek angka">{sorotan.subjek ?? '—'}</span>
 					{#if sorotan.arah}<span class="arah">{sorotan.arah}</span>{/if}
-					{#if sorotan.skor != null}<span class="skor-besar angka">{sorotan.skor}</span>{/if}
+					{#if sorotan.skor != null}
+						<span class="skor-besar angka">{sorotan.skor}<span class="skor-dari">/100</span></span>
+					{/if}
 				</div>
 				<p class="alasan">{sorotan.alasan}</p>
 				{#if !sorotan.terverifikasi}
@@ -227,10 +229,13 @@
 			</section>
 		{/if}
 
-		<!-- Kartu per pasar (A) -->
+		<!-- Kartu per pasar (A). Pasar yang sudah jadi sorotan DIBUANG dari daftar:
+		     sebelumnya ia dirender dua kali (sekali sebagai sorotan, sekali sebagai kartu)
+		     dengan teks kata-per-kata sama, sehingga daftar terlihat punya satu pasar lebih
+		     banyak daripada yang sebenarnya dan pengguna membaca informasi yang sama 2x. -->
 		<section class="daftar" aria-label="Sinyal tiap pasar">
-			{#each daftar as s (s.pasar)}
-				<KartuSinyalPasar {s} utama={s.pasar === sorotan?.pasar} />
+			{#each daftar.filter((s) => s.pasar !== (sorotan?.pasar ?? '')) as s (s.pasar)}
+				<KartuSinyalPasar {s} />
 			{/each}
 		</section>
 
@@ -351,10 +356,18 @@
 		border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
 	}
 	.skor-besar {
-		font-size: 22px;
+		font-size: 34px;
 		font-weight: 700;
-		color: var(--accent);
-		margin-left: auto;
+		line-height: 1;
+		color: var(--w, var(--accent));
+	}
+	/* Skala skor: tanpa ini, "72" tidak berarti apa-apa. Diukur 6 Okt 2026 — kartu
+	   menampilkan skor tanpa penyebut, dan tidak ada acuan di halaman mana pun. */
+	.skor-dari {
+		font-size: 13px;
+		font-weight: 400;
+		color: var(--text-3);
+		margin-left: 1px;
 	}
 	.alasan {
 		margin: 10px 0 0;
