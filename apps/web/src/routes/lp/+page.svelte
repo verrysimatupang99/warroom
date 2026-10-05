@@ -14,8 +14,29 @@
 	// USD apa pun kalau harga belum lengkap. Itu ditulis apa adanya, bukan ditebak.
 	import { getArea } from '$lib/api/client';
 	import type { AreaPayload, Fakta } from '$lib/api/types';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { AREAS } from '$lib/nav';
 	import Block from '$lib/components/Block.svelte';
+	import SubNav from '$lib/components/SubNav.svelte';
 	import FreshnessBadge from '$lib/components/FreshnessBadge.svelte';
+
+	const areaLp = AREAS.find((a) => a.kunci === 'lp')!;
+	let sub = $state(page.url.searchParams.get('sub') ?? 'posisi');
+
+	$effect(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s && areaLp.anak.some((a) => a.slug === s)) {
+			sub = s;
+		}
+	});
+
+	function pilihSub(s: string) {
+		sub = s;
+		if (typeof window !== 'undefined') {
+			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+		}
+	}
 
 	interface Posisi {
 		pool?: string;
@@ -124,142 +145,152 @@
 	<title>LP — War Room</title>
 </svelte:head>
 
-<div class="space-y-3">
-	<header class="flex flex-wrap items-baseline justify-between gap-2">
-		<h1 class="text-16 text-text">Liquidity Provider</h1>
-		<p class="text-11 text-text-3">
-			Hanya <span class="angka">LP vs hold</span> yang bisa membuktikan LP menguntungkan — dan itu
+<div class="space-y-4">
+	<div class="border-b border-line pb-3">
+		<div class="flex items-center gap-2">
+			<h1 class="text-22 font-bold text-text font-display">Liquidity Provider (LP Pool)</h1>
+			<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
+				DEFI &amp; LP
+			</span>
+		</div>
+		<p class="text-12 text-text-3 mt-1">
+			Hanya <span class="angka font-mono text-accent">LP vs hold</span> yang bisa membuktikan LP menguntungkan — dan itu
 			butuh harga masuk <em>dan</em> keluar posisi.
 		</p>
-	</header>
+	</div>
+
+	<!-- Sub-navigasi Tabs -->
+	<SubNav area={areaLp} aktif={sub} onpilih={pilihSub} />
 
 	{#if galat}
 		<p class="rounded border border-neg/40 p-2 text-12 text-neg">Gagal memuat: {galat}</p>
 	{/if}
 
-	<Block
-		judul="Posisi LP (uang nyata)"
-		deskripsi="Yang betul-betul diparkir & dicatat — hanya dari sini IL vs hold bisa dihitung"
-		memuat={memuat}
-	>
-		{#if !lp}
-			<p class="text-12 text-text-3">Belum ada fakta <span class="angka">bagian.lp</span>.</p>
-		{:else if (lp.data.jumlah ?? 0) === 0}
-			<p class="text-13 text-text-2">
-				<span class="angka">0 posisi</span> — belum ada uang yang diparkir di LP.
-			</p>
-			<p class="mt-1 text-11 text-text-3">
-				Ini bukan kegagalan: mengukur dulu sebelum menyetor. Untuk mencatat posisi nyata, catat
-				<b>kedua kaki</b> (jumlah token + jumlah quote) saat masuk dan saat keluar — tanpa itu,
-				semua angka LP tetap <span class="angka">belum diketahui</span>.
-			</p>
-		{:else}
-			<ul class="space-y-2">
-				{#each lp.data.posisi_terbuka ?? [] as p (p.pool)}
-					<li class="rounded border border-line p-2">
-						<div class="flex flex-wrap items-baseline gap-2">
-							<span class="angka text-13 text-text">{p.pasangan ?? '—'}</span>
-							<span class="text-11 text-text-3">{p.dex ?? '—'} {p.label_pool ?? ''}</span>
-							<span class="text-10 text-text-3">terbuka {p.umur_jam ?? 0} jam</span>
-						</div>
-						<p class="text-11 text-text-3">
-							menunggu ditutup — IL vs hold baru bisa dihitung setelah keluar
-						</p>
-					</li>
-				{/each}
-			</ul>
-
-			{#each lp.data.riwayat ?? [] as p (p.pool + String(p.umur_jam))}
-				{@const h = p.hitung ?? {}}
-				<div class="mt-2 rounded border border-line p-2">
-					<div class="flex flex-wrap items-baseline gap-2">
-						<span class="angka text-13 text-text">{p.pasangan ?? '—'}</span>
-						<span class="text-11 text-text-3">{p.dex ?? '—'}</span>
-						{#if h.menang}
-							<span
-								class="angka text-12 {h.menang === 'LP'
-									? 'text-pos'
-									: h.menang === 'hold'
-										? 'text-neg'
-										: 'text-text-3'}"
-							>
-								{h.menang === 'LP' ? 'LP menang' : h.menang === 'hold' ? 'hold lebih untung' : 'seri'}
-							</span>
-						{/if}
-					</div>
-					<p class="angka mt-1 text-12 text-text-2">
-						kaki base {pct(h.kenaikan_base_pct)} · kaki quote {pct(h.kenaikan_quote_pct)}
-						{#if h.jumlah_kedua_kaki_naik}
-							<span class="text-pos">· kedua kaki naik (fee masuk)</span>
-						{/if}
-					</p>
-					{#if h.il_vs_hold_pct != null}
-						<p class="angka text-12 text-text-2">
-							imbal hasil tertimbang {pct(h.imbal_hasil_tertimbang_pct)} vs hold {pct(
-								h.imbal_hasil_hold_pct
-							)}
-							→ <b class={h.il_vs_hold_pct < 0 ? 'text-neg' : 'text-pos'}>{pct(h.il_vs_hold_pct)}</b>
-							<span class="text-11 text-text-3">(selisih LP vs hold)</span>
-						</p>
-					{/if}
-					{#if h.return_lp_pct != null}
-						<p class="angka text-12 text-text-2">
-							nilai USD: masuk {usd(h.return_lp_pct != null ? undefined : undefined)} · LP {pct(
-								h.return_lp_pct
-							)} vs hold {pct(h.return_hold_pct)} → {h.lp_vs_hold_usd != null
-								? `$${h.lp_vs_hold_usd.toFixed(2)}`
-								: '—'}
-						</p>
-					{/if}
-					{#each h.catatan ?? [] as c}
-						<p class="text-11 text-text-3">· {c}</p>
+	{#if sub === 'posisi'}
+		<Block
+			judul="Posisi LP (Uang Nyata)"
+			deskripsi="Yang betul-betul diparkir &amp; dicatat — hanya dari sini IL vs hold bisa dihitung"
+			memuat={memuat}
+		>
+			{#if !lp}
+				<p class="text-12 text-text-3">Belum ada fakta <span class="angka font-mono">bagian.lp</span>.</p>
+			{:else if (lp.data.jumlah ?? 0) === 0}
+				<p class="text-13 text-text-2">
+					<span class="angka font-bold">0 posisi</span> — belum ada uang yang diparkir di LP.
+				</p>
+				<p class="mt-1 text-11 text-text-3">
+					Ini bukan kegagalan: mengukur dulu sebelum menyetor. Untuk mencatat posisi nyata, catat
+					<b>kedua kaki</b> (jumlah token + jumlah quote) saat masuk dan saat keluar — tanpa itu,
+					semua angka LP tetap <span class="angka font-mono">belum diketahui</span>.
+				</p>
+			{:else}
+				<ul class="space-y-2">
+					{#each lp.data.posisi_terbuka ?? [] as p (p.pool)}
+						<li class="rounded border border-line p-2.5 bg-surface">
+							<div class="flex flex-wrap items-baseline gap-2">
+								<span class="angka text-14 font-bold text-text font-mono">{p.pasangan ?? '—'}</span>
+								<span class="text-11 text-text-3">{p.dex ?? '—'} {p.label_pool ?? ''}</span>
+								<span class="text-10 text-text-3">terbuka {p.umur_jam ?? 0} jam</span>
+							</div>
+							<p class="text-11 text-text-3 mt-1">
+								menunggu ditutup — IL vs hold baru bisa dihitung setelah keluar
+							</p>
+						</li>
 					{/each}
-				</div>
-			{/each}
-		{/if}
-	</Block>
+				</ul>
 
-	<Block
-		judul="Kandidat pool"
-		deskripsi="Hasil pencarian — BELUM ada uang di sini; diurutkan berdasarkan volume, bukan likuiditas"
-		memuat={memuat}
-	>
-		{#if !lp || (lp.data.kandidat ?? []).length === 0}
-			<p class="text-12 text-text-3">Tidak ada kandidat (pencarian opsional — posisi tetap tampil).</p>
-		{:else}
-			<ul class="space-y-2">
-				{#each lp.data.kandidat ?? [] as k (k.pair + String(k.alamat ?? k.pair))}
-					<li class="rounded border border-line p-2">
+				{#each lp.data.riwayat ?? [] as p (p.pool + String(p.umur_jam))}
+					{@const h = p.hitung ?? {}}
+					<div class="mt-2 rounded border border-line p-2.5 bg-surface">
 						<div class="flex flex-wrap items-baseline gap-2">
-							<span class="angka text-13 text-text">{k.pair}</span>
-							<span class="text-11 text-text-3">{k.dex} {k.label_pool ?? ''} · {k.rantai}</span>
-							<span class="angka text-12 {kelasKualitas(k.kualitas)}">{k.kualitas}</span>
+							<span class="angka text-14 font-bold text-text font-mono">{p.pasangan ?? '—'}</span>
+							<span class="text-11 text-text-3">{p.dex ?? '—'}</span>
+							{#if h.menang}
+								<span
+									class="angka text-12 font-bold {h.menang === 'LP'
+										? 'text-pos'
+										: h.menang === 'hold'
+											? 'text-neg'
+											: 'text-text-3'}"
+								>
+									{h.menang === 'LP' ? 'LP MENANG' : h.menang === 'hold' ? 'HOLD LEBIH UNTUNG' : 'SERI'}
+								</span>
+							{/if}
 						</div>
-						<p class="angka text-12 text-text-2">
-							volume 24j {usd(k.vol_24h)} · likuiditas {usd(k.liq_usd)} · turnover {k.turnover_24h ??
-								'—'}×
-							{#if k.chg_h24 != null}· harga 24j {pct(k.chg_h24)}{/if}
+						<p class="angka mt-1 text-12 text-text-2">
+							kaki base {pct(h.kenaikan_base_pct)} · kaki quote {pct(h.kenaikan_quote_pct)}
+							{#if h.jumlah_kedua_kaki_naik}
+								<span class="text-pos font-semibold">· kedua kaki naik (fee masuk)</span>
+							{/if}
 						</p>
-						{#each k.catatan ?? [] as c}
-							<p class="text-11 text-text-3">· {c}</p>
+						{#if h.il_vs_hold_pct != null}
+							<p class="angka text-12 text-text-2">
+								imbal hasil tertimbang {pct(h.imbal_hasil_tertimbang_pct)} vs hold {pct(
+									h.imbal_hasil_hold_pct
+								)}
+								→ <b class={h.il_vs_hold_pct < 0 ? 'text-neg' : 'text-pos'}>{pct(h.il_vs_hold_pct)}</b>
+								<span class="text-11 text-text-3">(selisih LP vs hold)</span>
+							</p>
+						{/if}
+						{#if h.return_lp_pct != null}
+							<p class="angka text-12 text-text-2">
+								nilai USD: masuk {usd(undefined)} · LP {pct(
+									h.return_lp_pct
+								)} vs hold {pct(h.return_hold_pct)} → {h.lp_vs_hold_usd != null
+									? `$${h.lp_vs_hold_usd.toFixed(2)}`
+									: '—'}
+							</p>
+						{/if}
+						{#each h.catatan ?? [] as c}
+							<p class="text-11 text-text-3 mt-0.5">• {c}</p>
 						{/each}
-					</li>
+					</div>
 				{/each}
-			</ul>
-		{/if}
-		{#if lp}
-			{#each lp.data.catatan ?? [] as c}
-				<p class="mt-2 text-11 text-text-3">· {c}</p>
-			{/each}
-			<p class="mt-1 flex items-center gap-2 text-11 text-text-3">
-				sumber <span class="angka">{lp.fakta.source}</span>
-				<FreshnessBadge
-					status={lp.fakta.status}
-					age_s={lp.fakta.age_s}
-					ttl_s={lp.fakta.ttl_s}
-					source={lp.fakta.source}
-				/>
-			</p>
-		{/if}
-	</Block>
+			{/if}
+		</Block>
+	{:else if sub === 'kandidat'}
+		<Block
+			judul="Kandidat Pool Liquidity"
+			deskripsi="Hasil pencarian — BELUM ada uang di sini; diurutkan berdasarkan volume, bukan likuiditas"
+			memuat={memuat}
+		>
+			{#if !lp || (lp.data.kandidat ?? []).length === 0}
+				<p class="text-12 text-text-3">Tidak ada kandidat (pencarian opsional — posisi tetap tampil).</p>
+			{:else}
+				<ul class="space-y-2">
+					{#each lp.data.kandidat ?? [] as k (k.pair + String(k.alamat ?? k.pair))}
+						<li class="rounded border border-line p-2.5 bg-surface">
+							<div class="flex flex-wrap items-baseline gap-2">
+								<span class="angka text-14 font-bold text-text font-mono">{k.pair}</span>
+								<span class="text-11 text-text-3">{k.dex} {k.label_pool ?? ''} · {k.rantai}</span>
+								<span class="angka text-12 font-semibold {kelasKualitas(k.kualitas)}">{k.kualitas}</span>
+							</div>
+							<p class="angka text-12 text-text-2 mt-1">
+								volume 24j {usd(k.vol_24h)} · likuiditas {usd(k.liq_usd)} · turnover {k.turnover_24h ??
+									'—'}×
+								{#if k.chg_h24 != null}· harga 24j {pct(k.chg_h24)}{/if}
+							</p>
+							{#each k.catatan ?? [] as c}
+								<p class="text-11 text-text-3 mt-0.5">• {c}</p>
+							{/each}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if lp}
+				{#each lp.data.catatan ?? [] as c}
+					<p class="mt-2 text-11 text-text-3">• {c}</p>
+				{/each}
+				<p class="mt-2 flex items-center gap-2 text-11 text-text-3">
+					sumber <span class="angka font-mono">{lp.fakta.source}</span>
+					<FreshnessBadge
+						status={lp.fakta.status}
+						age_s={lp.fakta.age_s}
+						ttl_s={lp.fakta.ttl_s}
+						source={lp.fakta.source}
+					/>
+				</p>
+			{/if}
+		</Block>
+	{/if}
 </div>

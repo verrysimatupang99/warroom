@@ -23,7 +23,8 @@
 		KesegaranPayload,
 		Proposal
 	} from '$lib/api/types';
-	import { live } from '$lib/api/live.svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
 	import Block from '$lib/components/Block.svelte';
@@ -33,7 +34,21 @@
 	import ProposalCard from '$lib/components/ProposalCard.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
-	let sub = $state('layanan');
+	let sub = $state(page.url.searchParams.get('sub') ?? 'layanan');
+
+	$effect(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s && area.anak.some((a) => a.slug === s)) {
+			sub = s;
+		}
+	});
+
+	function pilihSub(s: string) {
+		sub = s;
+		if (typeof window !== 'undefined') {
+			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+		}
+	}
 
 	let areas = $state<AreasPayload | null>(null);
 	let kesegaran = $state<KesegaranPayload | null>(null);
@@ -111,7 +126,7 @@
 		<p class="text-12 text-text-3">Unit lintas host, kesegaran, biaya, event, AI, kebijakan, audit.</p>
 	</div>
 
-	<SubNav {area} aktif={sub} onpilih={(s) => (sub = s)} />
+	<SubNav {area} aktif={sub} onpilih={pilihSub} />
 
 	{#if sub === 'layanan'}
 		<Block judul="Layanan" deskripsi="/api/v1/health + registry area" memuat={memuat && !sehat}>

@@ -27,7 +27,12 @@ export const AREAS: Area[] = [
 		rute: '/',
 		ikon: '⌂',
 		kategori: 'pasar',
-		anak: []
+		anak: [
+			{ slug: 'overview', label: 'Overview', kunci: [], catatan: 'Ringkasan KPI & 5 venue pasar' },
+			{ slug: 'sinyal', label: 'Sinyal & Eksekusi', kunci: [], catatan: 'Posisi aktif, setup lolos gate, riwayat closed' },
+			{ slug: 'kinerja', label: 'Kinerja', kunci: [], catatan: 'Kurva ekuitas & leaderboard strategi' },
+			{ slug: 'risiko', label: 'Risiko & Event', kunci: [], catatan: 'Batas risiko & log kejadian realtime' }
+		]
 	},
 	{
 		kunci: 'crypto',
@@ -106,7 +111,11 @@ export const AREAS: Area[] = [
 		rute: '/bukti',
 		ikon: '✓',
 		kategori: 'riset',
-		anak: []
+		anak: [
+			{ slug: 'evaluasi', label: 'Evaluasi Gate', kunci: [], catatan: 'Evaluasi gate objektif per venue' },
+			{ slug: 'fakta', label: 'Fakta Mentah', kunci: [], catatan: 'Jejak fakta empiris & umur fakta' },
+			{ slug: 'klaim', label: 'Batas Klaim', kunci: [], catatan: 'Hal yang tidak kami klaim (ADR-003)' }
+		]
 	},
 	{
 		kunci: 'bandar',

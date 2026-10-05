@@ -19,6 +19,10 @@
 	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { angka, waktuWIB } from '$lib/format';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { AREAS } from '$lib/nav';
+	import SubNav from '$lib/components/SubNav.svelte';
 	import EventFeed from '$lib/components/EventFeed.svelte';
 	import EquityCurve from '$lib/components/EquityCurve.svelte';
 	import RiskMeter from '$lib/components/RiskMeter.svelte';
@@ -38,6 +42,43 @@
 
 	// Tab filter untuk bagian sinyal yang berhasil dibuat
 	let tabSinyal = $state<'semua' | 'posisi' | 'lolos' | 'riwayat'>('semua');
+
+	const areaHome = $derived(AREAS.find((a) => a.kunci === 'home')!);
+	let sub = $state(page.url.searchParams.get('sub') ?? 'overview');
+
+	$effect(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s) {
+			sub = s;
+			if (s === 'sinyal') {
+				tabSinyal = 'semua';
+				document.getElementById('sinyal-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'kinerja') {
+				document.getElementById('kinerja-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'risiko') {
+				document.getElementById('risiko-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'overview') {
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			}
+		}
+	});
+
+	function pilihSub(s: string) {
+		sub = s;
+		if (typeof window !== 'undefined') {
+			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+			if (s === 'sinyal') {
+				tabSinyal = 'semua';
+				document.getElementById('sinyal-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'kinerja') {
+				document.getElementById('kinerja-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'risiko') {
+				document.getElementById('risiko-section')?.scrollIntoView({ behavior: 'smooth' });
+			} else if (s === 'overview') {
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			}
+		}
+	}
 
 	async function muat() {
 		const [a, k, h, al, kr, pm] = await Promise.allSettled([
@@ -187,8 +228,14 @@
 		</div>
 	</div>
 
-	<!-- Alert Banner jika ada alert terbuka -->
-	{#if alerts && alerts.terbuka > 0}
+	<!-- Sub-navigasi Section Home -->
+	{#if areaHome?.anak?.length}
+		<SubNav area={areaHome} aktif={sub} onpilih={pilihSub} />
+	{/if}
+
+	<div id="overview-section" class="space-y-4">
+		<!-- Alert Banner jika ada alert terbuka -->
+		{#if alerts && alerts.terbuka > 0}
 		<div
 			class="rounded-card border border-warn/40 bg-warn/10 px-4 py-3 text-12 text-text-2 shadow-sm flex items-center justify-between"
 			data-testid="alert-banner"
@@ -315,6 +362,7 @@
 				</a>
 			{/each}
 		</div>
+	</div>
 	</div>
 
 	<!-- SECTION UTAMA: Sinyal-Sinyal yang Berhasil Dibuat -->
@@ -514,24 +562,25 @@
 		{/if}
 	</section>
 
-	<!-- Papan Peringkat Strategi (Inspirasi Leaderboard) -->
-	<StrategyLeaderboard />
+	<!-- Papan Peringkat Strategi & Kinerja -->
+	<div id="kinerja-section" class="space-y-4">
+		<StrategyLeaderboard />
 
-	<!-- Layout Dua Kolom Pendukung (Grid Bawah) -->
-	<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-		<!-- Kolom Kiri: Kurva Ekuitas & Aliran Keputusan (7 Kolom) -->
-		<div class="space-y-4 lg:col-span-7">
-			<!-- Kurva Ekuitas Interaktif -->
-			<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
+		<!-- Layout Dua Kolom Pendukung (Grid Bawah) -->
+		<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+			<!-- Kolom Kiri: Kurva Ekuitas & Aliran Keputusan (7 Kolom) -->
+			<div class="space-y-4 lg:col-span-7">
+				<!-- Kurva Ekuitas Interaktif -->
+				<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
 
-			<!-- Aliran Keputusan & Eksekusi -->
-			<DecisionFeed />
-		</div>
+				<!-- Aliran Keputusan & Eksekusi -->
+				<DecisionFeed />
+			</div>
 
-		<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian Realtime (5 Kolom) -->
-		<div class="space-y-4 lg:col-span-5">
-			<!-- Pengawas Risiko -->
-			<RiskMeter risiko={dataRisiko} />
+			<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian Realtime (5 Kolom) -->
+			<div id="risiko-section" class="space-y-4 lg:col-span-5">
+				<!-- Pengawas Risiko -->
+				<RiskMeter risiko={dataRisiko} />
 
 			<!-- Kartu Bukti Statistik Polymarket -->
 			<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
@@ -548,5 +597,6 @@
 				<EventFeed kejadian={live.kejadian} memuat={live.status === 'menyambung'} galat={live.pesan} />
 			</div>
 		</div>
+	</div>
 	</div>
 </div>

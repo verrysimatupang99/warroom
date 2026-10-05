@@ -1,13 +1,15 @@
 <script lang="ts">
-	// Rail nav desktop: Dikelompokkan dalam kategori (Pasar, Riset, Sistem).
-	// Memberikan kejelasan navigasi, hirarki visual, dan kemudahan akses.
-	import { AREAS, areaDariJalur, type Area } from '$lib/nav';
+	// Rail nav desktop: Dikelompokkan dalam 3 kategori terstruktur (Pasar & Trading, Riset & Analisis, Operasional).
+	// Memberikan kejelasan navigasi, hirarki visual, indikator aktif, dan sub-menu yang responsif saat diklik.
+	import { page } from '$app/state';
+	import { AREAS, areaDariJalur } from '$lib/nav';
 
 	interface Props {
 		jalur: string;
 	}
 	let { jalur }: Props = $props();
 	const aktif = $derived(areaDariJalur(jalur));
+	const subAktif = $derived(page.url.searchParams.get('sub'));
 
 	const grupPasar = $derived(AREAS.filter((a) => a.kategori === 'pasar'));
 	const grupRiset = $derived(AREAS.filter((a) => a.kategori === 'riset'));
@@ -15,9 +17,9 @@
 </script>
 
 <nav aria-label="Navigasi area" class="flex flex-col gap-4 p-3" data-testid="rail-nav">
-	<!-- Kategori: Pasar & Trading -->
+	<!-- Kategori 1: Pasar & Trading -->
 	<div>
-		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5">
+		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5 uppercase">
 			Pasar &amp; Trading
 		</span>
 		<div class="space-y-0.5">
@@ -35,15 +37,17 @@
 						<span>{a.label}</span>
 					</a>
 					{#if ini && a.anak.length}
-						<ul class="mt-1 mb-1.5 ml-4 space-y-0.5 border-l border-line-soft pl-2.5">
-							{#each a.anak as anak (anak.slug)}
+						<ul class="mt-1 mb-1.5 ml-4 space-y-0.5 border-l border-line-soft pl-2">
+							{#each a.anak as anak, idx (anak.slug)}
+								{@const isSubAktif = subAktif ? subAktif === anak.slug : idx === 0}
 								<li>
 									<a
-										href={`${a.rute}?sub=${anak.slug}`}
-										class="transisi block rounded-control px-2 py-1 text-11 {jalur.includes('?sub=') &&
-										jalur.includes(anak.slug)
-											? 'text-accent font-bold'
-											: 'text-text-3 hover:text-text'}"
+										href={`${a.rute === '/' ? '/' : a.rute}?sub=${anak.slug}`}
+										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
+										aria-current={isSubAktif ? 'page' : undefined}
+										title={anak.catatan}
 									>
 										{anak.label}
 									</a>
@@ -56,9 +60,9 @@
 		</div>
 	</div>
 
-	<!-- Kategori: Riset & Analisis -->
+	<!-- Kategori 2: Riset & Analisis -->
 	<div>
-		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5">
+		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5 uppercase">
 			Riset &amp; Analisis
 		</span>
 		<div class="space-y-0.5">
@@ -75,14 +79,33 @@
 						<span class="w-4 text-center text-13 font-mono" aria-hidden="true">{a.ikon}</span>
 						<span>{a.label}</span>
 					</a>
+					{#if ini && a.anak.length}
+						<ul class="mt-1 mb-1.5 ml-4 space-y-0.5 border-l border-line-soft pl-2">
+							{#each a.anak as anak, idx (anak.slug)}
+								{@const isSubAktif = subAktif ? subAktif === anak.slug : idx === 0}
+								<li>
+									<a
+										href={`${a.rute}?sub=${anak.slug}`}
+										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
+										aria-current={isSubAktif ? 'page' : undefined}
+										title={anak.catatan}
+									>
+										{anak.label}
+									</a>
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				</div>
 			{/each}
 		</div>
 	</div>
 
-	<!-- Kategori: Operasional -->
+	<!-- Kategori 3: Operasional -->
 	<div>
-		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5">
+		<span class="label-mikro px-2 text-10 font-bold tracking-wider text-text-3/70 block mb-1.5 uppercase">
 			Operasional
 		</span>
 		<div class="space-y-0.5">
@@ -100,15 +123,17 @@
 						<span>{a.label}</span>
 					</a>
 					{#if ini && a.anak.length}
-						<ul class="mt-1 mb-1.5 ml-4 space-y-0.5 border-l border-line-soft pl-2.5">
-							{#each a.anak as anak (anak.slug)}
+						<ul class="mt-1 mb-1.5 ml-4 space-y-0.5 border-l border-line-soft pl-2">
+							{#each a.anak as anak, idx (anak.slug)}
+								{@const isSubAktif = subAktif ? subAktif === anak.slug : idx === 0}
 								<li>
 									<a
 										href={`${a.rute}?sub=${anak.slug}`}
-										class="transisi block rounded-control px-2 py-1 text-11 {jalur.includes('?sub=') &&
-										jalur.includes(anak.slug)
-											? 'text-accent font-bold'
-											: 'text-text-3 hover:text-text'}"
+										class="transisi block rounded-control px-2 py-1 text-11 {isSubAktif
+											? 'text-accent font-bold bg-accent/10 border-l-2 border-accent pl-1.5'
+											: 'text-text-3 hover:text-text hover:bg-surface-2'}"
+										aria-current={isSubAktif ? 'page' : undefined}
+										title={anak.catatan}
 									>
 										{anak.label}
 									</a>

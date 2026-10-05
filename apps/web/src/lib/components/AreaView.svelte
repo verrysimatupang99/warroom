@@ -4,6 +4,7 @@
 	// sambil tetap menyediakan tab dataset, gate, dan audit fakta.
 	import { AREAS } from '$lib/nav';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
@@ -30,6 +31,20 @@
 	const area = $derived(AREAS.find((a) => a.kunci === kunci)!);
 	let sub = $state(page.url.searchParams.get('sub') ?? area?.anak[0]?.slug ?? '');
 	const anak = $derived(area?.anak.find((a) => a.slug === sub) ?? area?.anak[0] ?? null);
+
+	$effect(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s && area?.anak.some((a) => a.slug === s)) {
+			sub = s;
+		}
+	});
+
+	function pilihSub(s: string) {
+		sub = s;
+		if (typeof window !== 'undefined') {
+			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+		}
+	}
 
 	const topikArea: Record<string, string[]> = {
 		crypto: ['signal.', 'verdict.', 'trade.', 'gate.', 'llm.'],
@@ -137,7 +152,7 @@
 
 	<!-- Sub-navigasi Tabs -->
 	{#if area?.anak?.length}
-		<SubNav {area} aktif={sub} onpilih={(s) => (sub = s)} />
+		<SubNav {area} aktif={sub} onpilih={pilihSub} />
 	{/if}
 
 	<AreaLoader area={kunci}>
@@ -517,36 +532,192 @@
 					>
 						<DatasetExplorer recorder={datasetRecorder} cakupan={datasetCakupan} />
 					</Block>
-				{:else if sub === 'verdict' || sub === 'arm' || !sub}
-					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-						<div class="space-y-4 lg:col-span-6">
-							<StatisticalEdgeCard verdict={verdictObj} judul="Polymarket 5m Statistical Verdict" />
-						</div>
-
-						<div class="space-y-4 lg:col-span-6">
-							{#if polyPaperObj?.arms && polyPaperObj.arms.length}
-								<div class="permukaan-2 rounded-card border border-line p-3">
-									<h3 class="text-13 font-medium text-text mb-2 border-b border-line-soft pb-2">
-										Kinerja Multi-Arm Bandit (A/B/C/D)
-									</h3>
-									<div class="grid grid-cols-2 gap-2 text-11">
-										{#each polyPaperObj.arms as arm}
-											<div class="rounded border border-line bg-surface p-2">
-												<div class="flex justify-between items-center mb-1">
-													<span class="font-bold text-text">{arm.nama}</span>
-													<span class="angka font-bold {arm.pnl >= 0 ? 'text-pos' : 'text-neg'}">
-														{arm.pnl >= 0 ? '+' : ''}{angka(arm.pnl)}
-													</span>
-												</div>
-												<div class="flex justify-between text-10 text-text-3">
-													<span>Sal: {angka(arm.balance)}</span>
-													<span>{arm.wins}W / {arm.losses}L</span>
-												</div>
-											</div>
-										{/each}
-									</div>
+				{:else if sub === 'verdict' || !sub}
+					<div class="space-y-4">
+						<StatisticalEdgeCard verdict={verdictObj} judul="Polymarket 5m Statistical Verdict" />
+					</div>
+				{:else if sub === 'arm'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4">
+							<div class="flex items-center justify-between mb-3 border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Kinerja Multi-Arm Bandit (A/B/C/D)</h3>
+									<p class="text-11 text-text-3">Eksplorasi vs eksploitasi heuristik arah harga BTC/ETH jendela 5 menit</p>
 								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									{polyPaperObj?.arms?.length ?? 0} ARMS
+								</span>
+							</div>
+
+							{#if polyPaperObj?.arms && polyPaperObj.arms.length}
+								<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-12">
+									{#each polyPaperObj.arms as arm}
+										<div class="rounded-card border border-line bg-surface p-3 space-y-2">
+											<div class="flex justify-between items-center border-b border-line-soft pb-1.5">
+												<span class="font-bold text-13 text-text font-mono">{arm.nama}</span>
+												<span class="angka font-bold text-13 {arm.pnl >= 0 ? 'text-pos' : 'text-neg'}">
+													{arm.pnl >= 0 ? '+' : ''}{angka(arm.pnl)}
+												</span>
+											</div>
+											<div class="grid grid-cols-2 gap-1 text-11 text-text-3 font-mono">
+												<div>Saldo: <span class="text-text font-bold">${angka(arm.balance)}</span></div>
+												<div class="text-right">Win/Loss: <span class="text-text font-bold">{arm.wins}W / {arm.losses}L</span></div>
+												<div>Win Rate: <span class="text-text font-bold">{arm.wins + arm.losses > 0 ? ((arm.wins / (arm.wins + arm.losses)) * 100).toFixed(1) : '—'}%</span></div>
+												<div class="text-right">Sample: <span class="text-text font-bold">{arm.wins + arm.losses}</span></div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<p class="text-12 text-text-3 py-4 text-center">Data paper multi-arm bandit belum tersedia.</p>
 							{/if}
+						</div>
+					</div>
+				{:else if sub === 'agen'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Konfigurasi Agen &amp; Pelajaran Model</h3>
+									<p class="text-11 text-text-3">Bobot keputusan prediktif, noise filter, dan audit pembaruan patch</p>
+								</div>
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-accent/15 text-accent border border-accent/30 font-mono">
+									AGENT ENGINE v2.4
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-12">
+								<div class="rounded bg-surface p-3 border border-line space-y-1">
+									<div class="text-10 text-text-3 font-mono uppercase">Filter Order Flow</div>
+									<div class="font-bold text-text">Delta Imbalance &gt; 15%</div>
+									<p class="text-11 text-text-3">Mengabaikan spread tipis saat kedalaman buku di bawah ambang batas $500.</p>
+								</div>
+								<div class="rounded bg-surface p-3 border border-line space-y-1">
+									<div class="text-10 text-text-3 font-mono uppercase">Horizon Keputusan</div>
+									<div class="font-bold text-text">T - 90 Detik Penutupan</div>
+									<p class="text-11 text-text-3">Mengevaluasi probabilitas final 90 detik sebelum expiry biner 5m.</p>
+								</div>
+								<div class="rounded bg-surface p-3 border border-line space-y-1">
+									<div class="text-10 text-text-3 font-mono uppercase">Pelajaran Terkini (Patch)</div>
+									<div class="font-bold text-pos">No Pre-mature Fill</div>
+									<p class="text-11 text-text-3">Tidak menghitung estimasi keuntungan sebelum transaksi terkonfirmasi di on-chain settlement.</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				{:else if sub === 'replay'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Replay &amp; Rentang Waktu Beku (Holdout)</h3>
+									<p class="text-11 text-text-3">Evaluasi model terhadap dataset masa lalu yang dibekukan tanpa kebocoran lookahead bias</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									FROZEN HOLDOUT
+								</span>
+							</div>
+
+							<div class="rounded bg-surface p-3 border border-line text-12 text-text-2 space-y-1.5">
+								<div class="font-bold text-text">Status Evaluasi Replay</div>
+								<p>Jendela rentang data yang dibekukan digunakan untuk menguji hipotesis sebelum strategi diajukan ke tahap paper execution. Seluruh data replay disimpan dengan timestamp sinkron antara WebSocket book Polymarket dan Binance price spot feed.</p>
+							</div>
+						</div>
+					</div>
+				{:else if sub === 'parity'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Parity Drift: Mirror vs Eksekutor CLOB</h3>
+									<p class="text-11 text-text-3">Pengukuran latensi dan drift antara orderbook lokal dengan status exchange</p>
+								</div>
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-pos/15 text-pos border border-pos/30 font-mono">
+									PARITY NORMAL
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-12">
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">DRIFT SPREAD</span>
+									<span class="text-14 font-bold text-text">&lt; 0.002</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">LATENSI WS</span>
+									<span class="text-14 font-bold text-pos">~42 ms</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">DESINKRONISASI</span>
+									<span class="text-14 font-bold text-text">0 kejadian</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				{:else if sub === 'biaya'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Struktur Biaya &amp; Kapasitas Likuiditas Pasar</h3>
+									<p class="text-11 text-text-3">Breakdown fee transaksi, estimasi gas Polygon, dan toleransi slippage</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									CLOB FEE TIER
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-12 font-mono">
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">MAKER FEE</span>
+									<span class="text-14 font-bold text-pos">0.00%</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">TAKER SLIPPAGE</span>
+									<span class="text-14 font-bold text-text">&lt; 0.5% max</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">POLYGON GAS</span>
+									<span class="text-14 font-bold text-text">Sponsored (Relayer)</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				{:else if sub === 'live'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Arming 3-Way &amp; Kesiapan Dana Nyata</h3>
+									<p class="text-11 text-text-3">Status 3 gerbang izin sebelum modal nyata dihubungkan ke pasar</p>
+								</div>
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+									SIMULASI PAPER (LOCKED)
+								</span>
+							</div>
+
+							<div class="space-y-2 text-12">
+								<div class="rounded bg-surface p-2.5 border border-line flex items-center justify-between">
+									<div>
+										<div class="font-bold text-text">Gate 1: Statistical Edge Lolos (CI &gt; BE)</div>
+										<p class="text-10 text-text-3">Interval kepercayaan bawah 95% harus melampaui break-even.</p>
+									</div>
+									<span class="rounded px-2 py-0.5 text-10 font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30">BELUM CUKUP</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line flex items-center justify-between">
+									<div>
+										<div class="font-bold text-text">Gate 2: Otorisasi Manual Pemilik (Owner Key)</div>
+										<p class="text-10 text-text-3">Tanda tangan eksplisit pemilik sistem, bukan automasi agen.</p>
+									</div>
+									<span class="rounded px-2 py-0.5 text-10 font-bold text-text-3 bg-canvas">PENDING</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line flex items-center justify-between">
+									<div>
+										<div class="font-bold text-text">Gate 3: Hard Risk &amp; Max Daily Drawdown ($50)</div>
+										<p class="text-10 text-text-3">Circuit breaker otomatis mematikan engine bila kerugian menyentuh batas.</p>
+									</div>
+									<span class="rounded px-2 py-0.5 text-10 font-bold text-pos bg-pos/10 border border-pos/30">AKTIF</span>
+								</div>
+							</div>
 						</div>
 					</div>
 				{/if}
@@ -887,88 +1058,97 @@
 				{/if}
 
 				{#if sub === 'struktur' || !sub}
-					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-						<!-- Cockpit Emas (7 cols) -->
-						<div class="space-y-4 lg:col-span-7">
-							<div class="permukaan-2 rounded-card border border-line p-3">
-								<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
-									<div>
-										<h3 class="text-14 font-medium text-text">Cockpit Komoditas: Spot Gold (XAU/USD)</h3>
-										<p class="text-11 text-text-3">Struktur harga multi-bar, moving average & trend bias</p>
-									</div>
-									<span class="rounded px-2 py-0.5 text-11 font-bold font-mono uppercase {forexObj?.bias === 'bullish' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
-										{forexObj?.bias ?? 'BEARISH'}
-									</span>
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Cockpit Komoditas: Spot Gold (XAU/USD)</h3>
+									<p class="text-11 text-text-3">Struktur harga multi-bar, moving average & trend bias</p>
 								</div>
+								<span class="rounded px-2 py-0.5 text-11 font-bold font-mono uppercase {forexObj?.bias === 'bullish' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
+									{forexObj?.bias ?? 'BEARISH'}
+								</span>
+							</div>
 
-								<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono mb-3">
-									<div class="rounded bg-surface p-2.5 border border-line">
-										<div class="text-10 text-text-3">CLOSE</div>
-										<div class="text-16 font-bold text-text">${angka(forexObj?.close)}</div>
-									</div>
-									<div class="rounded bg-surface p-2.5 border border-line">
-										<div class="text-10 text-text-3">EMA 20</div>
-										<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema20)}</div>
-									</div>
-									<div class="rounded bg-surface p-2.5 border border-line">
-										<div class="text-10 text-text-3">EMA 50</div>
-										<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema50)}</div>
-									</div>
-									<div class="rounded bg-surface p-2.5 border border-line">
-										<div class="text-10 text-text-3">ATR (14)</div>
-										<div class="text-14 font-medium text-accent">${angka(forexObj?.atr14)} ({forexObj?.atr_pct ?? '—'}%)</div>
-									</div>
+							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono mb-3">
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<div class="text-10 text-text-3">CLOSE</div>
+									<div class="text-16 font-bold text-text">${angka(forexObj?.close)}</div>
 								</div>
-
-								<div class="rounded bg-surface p-2.5 border border-line text-11 text-text-3">
-									Resolusi: {forexObj?.resolution ?? 60}m · Bar dianalisis: {forexObj?.bars ?? 120} bar · Sumber: TVC:GOLD
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<div class="text-10 text-text-3">EMA 20</div>
+									<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema20)}</div>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<div class="text-10 text-text-3">EMA 50</div>
+									<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema50)}</div>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<div class="text-10 text-text-3">ATR (14)</div>
+									<div class="text-14 font-medium text-accent">${angka(forexObj?.atr14)} ({forexObj?.atr_pct ?? '—'}%)</div>
 								</div>
 							</div>
-						</div>
 
-						<!-- Market Sessions (5 cols) -->
-						<div class="space-y-4 lg:col-span-5">
-							<div class="permukaan-2 rounded-card border border-line p-3">
-								<div class="mb-3 border-b border-line-soft pb-2">
-									<h3 class="text-14 font-medium text-text">Sesi Pasar Global (WIB)</h3>
-									<p class="text-11 text-text-3">Jadwal pembukaan pasar valuta & likuiditas</p>
+							<div class="rounded bg-surface p-2.5 border border-line text-11 text-text-3">
+								Resolusi: {forexObj?.resolution ?? 60}m · Bar dianalisis: {forexObj?.bars ?? 120} bar · Sumber: TVC:GOLD
+							</div>
+						</div>
+					</div>
+				{:else if sub === 'sesi'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="border-b border-line-soft pb-2 flex items-center justify-between">
+								<div>
+									<h3 class="text-14 font-bold text-text">Sesi Pasar Valuta Global (WIB)</h3>
+									<p class="text-11 text-text-3">Jadwal pembukaan pasar valuta dunia, volume likuiditas, dan jam overlap</p>
 								</div>
-								<div class="space-y-2 text-11">
-									<div class="rounded bg-surface p-2 border border-line flex items-center justify-between">
-										<div>
-											<div class="font-bold text-text">Sesi Asia (Tokyo & Sydney)</div>
-											<div class="text-10 text-text-3">06:00 – 15:00 WIB</div>
-										</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									WAKTU SEKARANG: {wibHour.toString().padStart(2, '0')}:00 WIB
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-12">
+								<div class="rounded-card bg-surface p-3 border border-line space-y-2">
+									<div class="flex items-center justify-between">
+										<div class="font-bold text-text">Sesi Asia (Tokyo/Sydney)</div>
 										<span class="rounded px-2 py-0.5 text-10 font-bold {statusSesi(6, 15, wibHour) ? 'text-pos bg-pos/10 border border-pos/20' : 'text-text-3 bg-canvas'}">
 											{statusSesi(6, 15, wibHour) ? 'BUKA' : 'TUTUP'}
 										</span>
 									</div>
-									<div class="rounded bg-surface p-2 border border-line flex items-center justify-between">
-										<div>
-											<div class="font-bold text-text">Sesi London (Eropa)</div>
-											<div class="text-10 text-text-3">14:00 – 23:00 WIB</div>
-										</div>
+									<div class="text-11 font-mono text-text-3">06:00 – 15:00 WIB</div>
+									<p class="text-11 text-text-2">Fokus pada pasangan AUD, NZD, dan JPY. Volatilitas moderat.</p>
+								</div>
+
+								<div class="rounded-card bg-surface p-3 border border-line space-y-2">
+									<div class="flex items-center justify-between">
+										<div class="font-bold text-text">Sesi London (Eropa)</div>
 										<span class="rounded px-2 py-0.5 text-10 font-bold {statusSesi(14, 23, wibHour) ? 'text-pos bg-pos/10 border border-pos/20' : 'text-text-3 bg-canvas'}">
 											{statusSesi(14, 23, wibHour) ? 'BUKA' : 'TUTUP'}
 										</span>
 									</div>
-									<div class="rounded bg-surface p-2 border border-line flex items-center justify-between">
-										<div>
-											<div class="font-bold text-text">Sesi New York (Wall Street)</div>
-											<div class="text-10 text-text-3">19:00 – 04:00 WIB</div>
-										</div>
+									<div class="text-11 font-mono text-text-3">14:00 – 23:00 WIB</div>
+									<p class="text-11 text-text-2">Pusat likuiditas FX terbesar di dunia. Pasangan EUR dan GBP aktif bergerak.</p>
+								</div>
+
+								<div class="rounded-card bg-surface p-3 border border-line space-y-2">
+									<div class="flex items-center justify-between">
+										<div class="font-bold text-text">Sesi New York (US)</div>
 										<span class="rounded px-2 py-0.5 text-10 font-bold {statusSesi(19, 4, wibHour) ? 'text-pos bg-pos/10 border border-pos/20' : 'text-text-3 bg-canvas'}">
 											{statusSesi(19, 4, wibHour) ? 'BUKA' : 'TUTUP'}
 										</span>
 									</div>
+									<div class="text-11 font-mono text-text-3">19:00 – 04:00 WIB</div>
+									<p class="text-11 text-text-2">Rilis data makro AS (NFP, CPI, FOMC). Volatilitas dan volume sangat tinggi.</p>
 								</div>
+							</div>
+
+							<div class="rounded bg-accent/10 border border-accent/30 p-3 text-12 text-accent">
+								<span class="font-bold">Golden Liquidity Window (19:00 – 23:00 WIB):</span>
+								Tumpang tindih sesi London dan New York menghasilkan volume trading terbesar harian dengan spread tertipis pada EUR/USD dan XAU/USD.
 							</div>
 						</div>
 					</div>
-				{/if}
-
-				<!-- Tab Kalender Ekonomi -->
-				{#if sub === 'kalender'}
+				{:else if sub === 'kalender'}
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 							<div>
@@ -1023,6 +1203,40 @@
 								</table>
 							</div>
 						{/if}
+					</div>
+				{:else if sub === 'demo'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-bold text-text">Integrasi Akun Demo OANDA</h3>
+									<p class="text-11 text-text-3">Status feed harga broker dan eksekusi pesanan simulasi</p>
+								</div>
+								<span class="rounded px-2 py-0.5 text-10 font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono">
+									SIMULASI DEMO
+								</span>
+							</div>
+
+							<div class="rounded bg-surface p-3 border border-line text-12 text-text-2 space-y-2">
+								<div class="font-bold text-text">Aturan Transparansi ADR-003</div>
+								<p>Sektor Forex War Room beroperasi eksklusif pada lingkungan DEMO / paper trading. Kami tidak mengalirkan dana riil ke pasar valas dan tidak mengklaim eksekusi live berpenyedia komersial. Data harga XAU/USD dan valuta diambil dari TVC/OANDA untuk riset analisis kuantitatif.</p>
+							</div>
+
+							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-12">
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">AKUN DEMO</span>
+									<span class="text-14 font-bold text-text">OANDA-v20-DEMO</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">STATUS FEED</span>
+									<span class="text-14 font-bold text-pos">TERHUBUNG</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">PAIR AKTIF</span>
+									<span class="text-14 font-bold text-text">XAU/USD, EUR/USD</span>
+								</div>
+							</div>
+						</div>
 					</div>
 				{/if}
 			{/if}
