@@ -18,7 +18,10 @@ describe('fallback SSE → polling', () => {
 				throw new Error('jaringan mati');
 			})
 		);
-		const { live } = await import('./live.svelte.ts');
+		// Impor dinamis SENGAJA: `vi.resetModules()` menghapus registry modul, dan hanya
+		// `await import()` memuat ulang modul dengan `fetch` yang sudah dipalsukan. Impor
+		// statis akan memakai instance lama dari registry dan tes jadi tidak bermakna.
+		const { live } = await import('./live.svelte');
 		live.mulai();
 		// beri satu putaran mikro-task supaya handler gagal jalan
 		await new Promise((r) => setTimeout(r, 50));

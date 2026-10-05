@@ -20,6 +20,7 @@
 	import EquityCurve from './EquityCurve.svelte';
 	import StatisticalEdgeCard from './StatisticalEdgeCard.svelte';
 	import DecisionFeed from './DecisionFeed.svelte';
+	import type { DecisionItem } from './DecisionFeed.svelte';
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import type { Fakta } from '$lib/api/types';
 
@@ -214,7 +215,7 @@
 				judul: `${String(tr.direction ?? '')} ${String(tr.pair ?? '')} · ${String(tr.status ?? '')}`.trim(),
 				alasan: String(tr.note ?? '—'),
 				mode: 'PAPER' as const
-			})) as import('./DecisionFeed.svelte').DecisionItem[]}
+			})) as DecisionItem[]}
 
 			{@const kandidatArray = Array.isArray(faktaKandidat?.value) ? faktaKandidat.value : []}
 			{@const equityObj = (faktaEquity?.value as { points?: { i: number; r: number }[]; stats?: Record<string, number> }) ?? null}
