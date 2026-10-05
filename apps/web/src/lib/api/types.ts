@@ -225,3 +225,16 @@ export interface FaktaDataset {
 	labels?: { [k: string]: unknown };
 	[k: string]: unknown;
 }
+
+/** `GET /api/v1/design/tokens` — token dari app.css, dibaca API (bukan disalin).
+ *
+ * Arahnya SENGAJA terbalik dari biasanya: CSS adalah sumbernya, API yang membacanya.
+ * Jadi frontend tidak perlu memanggil ini untuk merender (token sudah di CSS-nya);
+ * tipe ini untuk alat lain (ekspor, chart, atau sesi agen) yang butuh nilainya. */
+export interface DesignTokens {
+	ada: boolean;
+	sumber?: string;
+	jumlah?: number;
+	token?: Record<string, string>;
+	alasan?: string;
+}

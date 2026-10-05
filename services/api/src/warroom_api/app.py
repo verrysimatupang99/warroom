@@ -12,6 +12,7 @@ from __future__ import annotations
 import hmac
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, Response
@@ -237,6 +238,38 @@ def create_app() -> FastAPI:
             "db": db_ok,
             "time": datetime.now(UTC).isoformat(),
             "user": user.username,
+        }
+
+    @app.get("/api/v1/design/tokens")
+    def design_tokens(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Token desain dari SATU sumber: blok `@theme` di apps/web/src/app.css.
+
+        Kenapa endpoint ini ada: token hidup di CSS, tetapi alat non-browser (chart,
+        ekspor, atau sesi agen) kadang butuh nilainya. Menyalinnya ke Python akan
+        menciptakan sumber kedua yang bisa menyimpang — jadi di sini CSS-nya DIBACA,
+        bukan disalin. Bila berkas tak terbaca, jawab jujur (`ada: false`), bukan
+        mengarang nilai.
+        """
+        import re
+
+        kandidat = [
+            Path("/home/admin/warroom/apps/web/src/app.css"),
+            Path(__file__).resolve().parents[4] / "apps" / "web" / "src" / "app.css",
+        ]
+        berkas = next((p for p in kandidat if p.exists()), None)
+        if berkas is None:
+            return {"ada": False, "alasan": "app.css tidak ditemukan dari API ini"}
+        teks = berkas.read_text(encoding="utf-8")
+        # Hanya ambil blok @theme (lapis primitive + semantic); nilai mentah token.
+        token: dict[str, str] = {}
+        for blok in re.findall(r"@theme\s*\{(.*?)\n\}", teks, re.DOTALL):
+            for m in re.finditer(r"(--[a-z0-9-]+)\s*:\s*([^;]+);", blok):
+                token[m.group(1)] = m.group(2).strip()
+        return {
+            "ada": bool(token),
+            "sumber": "apps/web/src/app.css",
+            "jumlah": len(token),
+            "token": token,
         }
 
     @app.get("/api/v1/freshness")

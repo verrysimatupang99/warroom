@@ -205,3 +205,22 @@ def test_totp_diwajibkan_bila_terdaftar(client, make_user) -> None:
     r = client.post("/api/v1/auth/login",
                     json={"username": username, "password": "rahasia-uji-123", "totp": code})
     assert r.status_code == 200
+
+def test_design_tokens_membaca_css_dan_bukan_mengarang(client, make_user) -> None:
+    """Endpoint token membaca app.css; kalau tak terbaca, menjawab jujur (ada:false).
+
+    Yang dijaga: token tidak boleh disalin ke Python (sumber kedua bisa menyimpang),
+    dan ketiadaan berkas tidak boleh jadi angka karangan.
+    """
+    username, sid = make_user("owner-token", role="owner")
+    body = client.get("/api/v1/design/tokens", headers=_cookie(sid)).json()
+
+    if body["ada"]:
+        # app.css ada di mesin ini -> wajib memuat token inti.
+        assert body["sumber"] == "apps/web/src/app.css"
+        assert body["jumlah"] > 10
+        for t in ("--color-accent", "--color-bg", "--radius-card"):
+            assert t in body["token"], f"token {t} tidak terbaca dari app.css"
+    else:
+        # Tidak boleh ada token separuh — harus jujur menyebut alasan.
+        assert body.get("alasan")
