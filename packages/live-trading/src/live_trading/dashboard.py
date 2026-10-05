@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime as dt
 import html
 import json
+import logging
 import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,6 +22,8 @@ from typing import Any
 
 from .config import Settings, get_settings
 from .risk import RiskGate
+
+log = logging.getLogger(__name__)
 
 GMGN_DIR = Path.home() / "gmgn-paper" / "state"
 _FRONTEND_DIR = (Path(__file__).resolve().parent.parent.parent / "frontend").resolve()
@@ -500,14 +503,28 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["bagian"]["idx_tv"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         try:
-            # BSJP (beli sore jual pagi): peringkat kandidat tahan semalam. Selama data belum
-            # memuat harga buka/tutup harian, ini PROKSI dan menyebutkan batasnya sendiri —
-            # jangan ditampilkan sebagai edge terukur (lihat signals/bsjp.py).
+            # BSJP (beli sore jual pagi): peringkat kandidat tahan semalam, memakai filter
+            # yang sudah diuji walk-forward (lihat signals/bsjp.py). SMA10 diambil dari arsip
+            # tick Arjum (collectors/riwayat_idx.py) supaya TIDAK menambah panggilan kuota REST.
+            # Angka net-nya BERSUMBER dari walk-forward Tencent, bukan hitungan ulang di sini —
+            # `terverifikasi_di_warroom=False` dan catatan_kejujuran wajib ikut tampil.
+            from .collectors import riwayat_idx
             from .signals import bsjp
 
             scr_rows = (snap["bagian"].get("idx") or {}).get("rows") or []
             tv_rows = (snap["bagian"].get("idx_tv") or {}).get("rows") or []
-            snap["bagian"]["bsjp"] = bsjp.susun_peringkat(scr_rows, tv_rows).to_dict()
+            # SMA10 hanya untuk ticker yang lolos gerbang harga dulu: menghemat kueri dan
+            # tidak menarik riwayat emiten yang toh akan ditolak.
+            calon = [str(r.get("ticker") or "").upper() for r in tv_rows if r.get("ticker")]
+            riwayat: dict[str, dict] = {}
+            try:
+                if calon:
+                    riwayat = {t: v.to_dict() for t, v in riwayat_idx.ambil_riwayat(calon).items()}
+            except Exception as exc:  # noqa: BLE001 — SMA10 opsional; BSJP tetap jalan tanpa itu
+                log.warning("bsjp: riwayat SMA10 gagal: %s", exc)
+            snap["bagian"]["bsjp"] = bsjp.susun_peringkat(
+                scr_rows, tv_rows, riwayat=riwayat
+            ).to_dict()
         except Exception as exc:  # noqa: BLE001
             snap["bagian"]["bsjp"] = {"error": f"{type(exc).__name__}: {exc}"}
 
