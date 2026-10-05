@@ -18,7 +18,7 @@
 		KesegaranPayload
 	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
-	import { angka, waktuWIB } from '$lib/format';
+	import { angka, statusRisikoDari, waktuWIB } from '$lib/format';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { AREAS } from '$lib/nav';
@@ -188,6 +188,11 @@
 	const totalR = $derived(dataEquity?.stats?.total_r ?? dataLedger?.total_r ?? 0);
 	const winrate = $derived(dataEquity?.stats?.winrate_pct ?? dataLedger?.winrate_pct ?? 0);
 	const sisaRuangR = $derived(Number(dataRisiko?.sisa_ruang_r ?? 3.0));
+	// Badge risiko: SATU definisi ambang dengan RiskMeter (temuan 5 Okt 2026 — dulu
+	// badge ini dipatok literal "AMAN" sehingga bisa hijau walau data belum ada).
+	const statusRisikoHome = $derived(
+		statusRisikoDari(dataRisiko?.hari_ini_r, dataRisiko?.batas_rugi_r)
+	);
 	const totalTrade = $derived(dataEquity?.stats?.trades ?? dataLedger?.trade ?? 0);
 
 	// Total sinyal berhasil dibuat (posisi aktif + setup lolos gerbang + trade yang sudah selesai)
@@ -277,7 +282,12 @@
 		<div class="permukaan-2 rounded-card border border-line p-3">
 			<div class="flex items-center justify-between text-11 text-text-3">
 				<span>Kapasitas Risiko</span>
-				<span class="rounded bg-pos/10 px-1 text-9 font-bold text-pos border border-pos/20">AMAN</span>
+				<span
+					class="rounded px-1 text-9 font-bold uppercase border {statusRisikoHome.kelas}"
+					title="Ambang sama dengan RiskMeter: ≥90% limit tercapai, ≥60% waspada"
+				>
+					{statusRisikoHome.label}
+				</span>
 			</div>
 			<div class="mt-1 flex items-baseline gap-1.5">
 				<span class="angka text-26 font-bold text-text">

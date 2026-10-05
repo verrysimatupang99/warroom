@@ -12,7 +12,12 @@ from pathlib import Path
 
 import pytest
 from warroom_core.db import Event, Fact, session_scope
-from warroom_worker.facts_publish import canonical_hash, publish_snapshot
+from warroom_worker.facts_publish import (
+    BAGIAN_WAJIB,
+    canonical_hash,
+    periksa_kelengkapan_bagian,
+    publish_snapshot,
+)
 
 SNAPSHOT_ASLI = Path.home() / "live-trading" / "state" / "snapshot.json"
 
@@ -31,12 +36,17 @@ def _bersihkan_tabel(db):
 
 @pytest.fixture
 def snapshot_uji(tmp_path: Path) -> Path:
-    """Snapshot sintetis dengan bentuk yang sama seperti aslinya (termasuk 'dibuat')."""
+    """Snapshot sintetis dengan bentuk yang sama seperti aslinya (termasuk 'dibuat').
+
+    `bagian` memuat SELURUH 12 kunci wajib — meniru snapshot nyata. Snapshot yang
+    kekurangan bagian kini ditandai `status="separuh"` (penjaga 5 Okt 2026), jadi
+    fixture harus lengkap supaya tetap mewakili jalur normal.
+    """
     dibuat = datetime(2026, 10, 2, 20, 0, tzinfo=UTC).isoformat()
     payload = {
         "dibuat": dibuat,
         "mode": "paper",
-        "bagian": {"crypto": "ok", "idx": "ok", "forex": "ok"},
+        "bagian": {k: "ok" for k in BAGIAN_WAJIB},
         "risiko": {"ruang_rugi_r": 3.0, "posisi_terpakai": 0},
         "equity": {"usd": 100.0, "r": 3.844},
         "ledger": {"trade": 5, "menang": 4},
@@ -152,6 +162,75 @@ def test_fakta_basi_terdeteksi_lewat_ttl(db, snapshot_uji: Path) -> None:
         f = s.query(Fact).filter_by(key="mode").one()
         umur = datetime.now(UTC) - f.observed_at
     assert umur > timedelta(seconds=f.ttl_s)
+
+
+# --- Regresi: penjaga snapshot separuh (temuan 5 Okt 2026) ---------------------------------
+#
+# Gejala: penulis snapshot melaporkan sukses, tetapi `bagian` hanya memuat sebagian sub-bagian.
+# Nilai yang ADA tetap benar sehingga tak ada yang menangkapnya dari luar; yang HILANG tidak
+# dilaporkan siapa pun. Penjaga menandai status "separuh" + alert, bukan "ok".
+
+
+def test_periksa_kelengkapan_bagian_deteksi_yang_hilang() -> None:
+    lengkap = {k: "ok" for k in BAGIAN_WAJIB}
+    assert periksa_kelengkapan_bagian({"bagian": lengkap}) == []
+    kurang = dict(lengkap)
+    kurang.pop("macro")
+    kurang.pop("lp")
+    assert periksa_kelengkapan_bagian({"bagian": kurang}) == ["lp", "macro"]
+
+
+def test_periksa_kelengkapan_bagian_tanpa_bagian_anggap_semua_hilang() -> None:
+    """`bagian` bukan dict → seluruh kontrak dianggap hilang, bukan 'nol'."""
+    assert periksa_kelengkapan_bagian({}) == sorted(BAGIAN_WAJIB)
+    assert periksa_kelengkapan_bagian({"bagian": None}) == sorted(BAGIAN_WAJIB)
+
+
+def test_periksa_kelengkapan_bagian_tangkap_kunci_yang_pernah_ada() -> None:
+    """Kunci yang pernah terbit lalu hilang harus terdeteksi walau belum masuk kontrak."""
+    hilang = periksa_kelengkapan_bagian(
+        {"bagian": {"crypto": "ok"}}, bagian_sebelumnya={"bagian_baru_yang_pernah_ada"}
+    )
+    assert "bagian_baru_yang_pernah_ada" in hilang
+
+
+def test_snapshot_separuh_ditandai_bukan_ok(db, snapshot_uji: Path) -> None:
+    """Snapshot yang kekurangan bagian → status 'separuh' + alert + event warning."""
+    from warroom_core.db import Alert
+
+    payload = json.loads(snapshot_uji.read_text(encoding="utf-8"))
+    payload["bagian"].pop("macro")  # satu sub-bagian hilang
+    snapshot_uji.write_text(json.dumps(payload), encoding="utf-8")
+
+    with session_scope() as s:
+        rep = publish_snapshot(s, snapshot_uji)
+    assert rep.status == "separuh"
+    assert "macro" in rep.detail
+
+    with session_scope() as s:
+        ev = s.query(Event).filter_by(type="snapshot.published").one()
+        assert ev.severity == "warning"
+        assert ev.payload_json["bagian_hilang"] == ["macro"]
+        a = s.query(Alert).filter_by(subject="snapshot/separuh").one()
+        assert a.ack_at is None
+
+
+def test_snapshot_separuh_alert_tidak_menumpuk(db, snapshot_uji: Path) -> None:
+    """Terbit dua kali separuh → tetap satu alert terbuka (dedupe per subjek)."""
+    from warroom_core.db import Alert
+
+    payload = json.loads(snapshot_uji.read_text(encoding="utf-8"))
+    payload["bagian"].pop("macro")
+    snapshot_uji.write_text(json.dumps(payload), encoding="utf-8")
+    with session_scope() as s:
+        publish_snapshot(s, snapshot_uji)
+    # ubah observed_at supaya tidak bentrok idempoten (kind,key,observed_at)
+    payload["dibuat"] = datetime(2026, 10, 2, 21, 0, tzinfo=UTC).isoformat()
+    snapshot_uji.write_text(json.dumps(payload), encoding="utf-8")
+    with session_scope() as s:
+        publish_snapshot(s, snapshot_uji)
+    with session_scope() as s:
+        assert s.query(Alert).filter_by(subject="snapshot/separuh").count() == 1
 
 # --- Regresi: perangkap `dibuat` berformat WIB tanpa penanda zona ---------------------------
 #

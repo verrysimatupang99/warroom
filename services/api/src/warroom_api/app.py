@@ -692,8 +692,24 @@ def create_app() -> FastAPI:
     def live_dry_run(
         body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
     ) -> dict[str, Any]:
-        """Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3."""
+        """Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3.
+
+        Hanya subperintah yang di-allowlist yang diterima. Subperintah lain → **422**,
+        bukan 200-dengan-pesan-gagal: permintaannya memang tidak sah, dan pemanggil
+        tidak boleh menganggapnya berhasil. (Temuan audit 5 Okt 2026.)
+        """
         sub = str(body.get("subperintah", "depth"))
+        if sub not in live.SUBPERINTAH_DRY_RUN_DIIZINKAN:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "subperintah_ditolak",
+                    "message": (
+                        f"subperintah '{sub}' tidak diizinkan untuk uji kering; "
+                        f"pilihan: {', '.join(sorted(live.SUBPERINTAH_DRY_RUN_DIIZINKAN))}"
+                    ),
+                },
+            )
         return live.jalankan_kering_kedalaman(sub)
 
     # --- P3: LLM gateway (konsol, prompt, narasi) ----------------------------------------

@@ -43,6 +43,10 @@ class LLMConfig:
     providers: tuple[ProviderSpec, ...] = ()
     # provider -> {"in": usd/1k token, "out": usd/1k token}; kosong = biaya tidak dihitung.
     pricing: dict[str, dict[str, float]] = field(default_factory=dict)
+    # Gagal-tertutup: bila provider di rantai tidak punya entri `pricing` dan anggaran
+    # harian > 0, anggaran TIDAK bisa dihitung — blokir, jangan anggap biaya nol.
+    # Bisa dimatikan sadar lewat `budget.failClosedOnMissingPricing: false`.
+    budget_fail_closed: bool = True
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> LLMConfig:
@@ -74,6 +78,7 @@ class LLMConfig:
             budget_per_role={str(k): float(v) for k, v in (budget.get("perRoleDailyUsd") or {}).items()},
             providers=providers,
             pricing={str(k): dict(v) for k, v in (data.get("pricing") or {}).items()},
+            budget_fail_closed=bool(budget.get("failClosedOnMissingPricing", True)),
         )
 
     @classmethod
@@ -147,7 +152,9 @@ def default_config() -> LLMConfig:
             "retry": {"attempts": 2, "backoffMs": 800},
             "circuit": {"failures": 5, "windowSec": 120, "cooldownSec": 300},
             "cache": {"ttlSec": 900, "maxEntries": 2000},
-            "budget": {"dailyUsd": 3.0, "perRoleDailyUsd": {}},
+            # failClosedOnMissingPricing WAJIB true: tanpa harga, anggaran harian tak
+            # bisa dihitung dan dulu diam-diam dianggap nol (fail-open, temuan 5 Okt 2026).
+            "budget": {"dailyUsd": 3.0, "perRoleDailyUsd": {}, "failClosedOnMissingPricing": True},
             "providers": [
                 {
                     "name": "nutaraline",
@@ -162,5 +169,11 @@ def default_config() -> LLMConfig:
                     "models": {"fast": "qonek/deepseek-v4.1-flash", "deep": "qonek/deepseek-v4.1-flash"},
                 },
             ],
+            # Harga per 1k token (USD) — nilai placeholder konservatif. Sesuaikan dengan
+            # tarif provider yang disepakati; tanpa ini _cost() selalu None.
+            "pricing": {
+                "nutaraline": {"in": 0.001, "out": 0.002},
+                "qonek": {"in": 0.001, "out": 0.002},
+            },
         }
     )

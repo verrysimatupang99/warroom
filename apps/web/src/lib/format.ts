@@ -10,6 +10,28 @@ export function ada(v: unknown): boolean {
 	return v !== null && v !== undefined && v !== '';
 }
 
+/**
+ * Status risiko bersama — SATU definisi ambang untuk KPI Home dan RiskMeter.
+ *
+ * Kenapa dipisah: badge "AMAN" dulu dipatok literal di kartu KPI (temuan 5 Okt 2026),
+ * jadi bisa bilang "AMAN" walau data risiko belum ada / sudah lewat batas. Fungsi ini
+ * memaksa kedua tempat memakai ambang yang sama persis (90% / 60%).
+ */
+export interface StatusRisiko {
+	label: string;
+	kelas: string;
+}
+
+export function statusRisikoDari(hariIniR: unknown, batasR: unknown): StatusRisiko {
+	if (!ada(hariIniR) || !ada(batasR) || Number(batasR) <= 0) {
+		return { label: '—', kelas: 'text-text-3 bg-surface border-line' };
+	}
+	const pct = Math.min(100, Math.max(0, (Math.abs(Number(hariIniR)) / Number(batasR)) * 100));
+	if (pct >= 90) return { label: 'LIMIT TERCAPAI', kelas: 'text-neg bg-neg/10 border-neg/40' };
+	if (pct >= 60) return { label: 'WASPADA', kelas: 'text-warn bg-warn/10 border-warn/40' };
+	return { label: 'AMAN', kelas: 'text-pos bg-pos/10 border-pos/40' };
+}
+
 function keAngka(v: unknown): number | null {
 	if (!ada(v)) return null;
 	const n = typeof v === 'number' ? v : Number(v);

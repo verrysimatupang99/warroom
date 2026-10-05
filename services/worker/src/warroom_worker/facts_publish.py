@@ -26,10 +26,38 @@ from typing import Any
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Event, Fact, Strategy
 
-__all__ = ["DEFAULT_TTL_S", "PublishReport", "canonical_hash", "publish_snapshot"]
+__all__ = [
+    "BAGIAN_WAJIB",
+    "DEFAULT_TTL_S",
+    "PublishReport",
+    "canonical_hash",
+    "periksa_kelengkapan_bagian",
+    "publish_snapshot",
+]
 
 DEFAULT_TTL_S = 600  # snapshot dibangun tiap 15 menit (config.snapshot_ttl_s)
 SOURCE = "state/snapshot.json"
+
+# Sub-bagian yang WAJIB ada di setiap snapshot. Bila salah satu hilang sementara proses
+# melaporkan sukses, snapshot itu SEPARUH — kelas bug yang tak terlihat dari luar: nilai
+# yang ADA tetap benar, yang HILANG tidak dilaporkan siapa pun. Daftar ini diverifikasi
+# terhadap `bagian` nyata di state/snapshot.json (12 kunci, 5 Okt 2026).
+BAGIAN_WAJIB: frozenset[str] = frozenset(
+    {
+        "bandarmologi",
+        "crypto",
+        "dex",
+        "forex",
+        "hyperliquid",
+        "idx",
+        "idx616",
+        "idx_tv",
+        "lp",
+        "macro",
+        "memecoin",
+        "overextended",
+    }
+)
 
 # Kunci tingkat atas yang memang memuat angka; sisanya tetap dipublikasikan sebagai fakta
 # supaya UI tidak perlu tahu struktur berkas.
@@ -95,6 +123,25 @@ class PublishReport:
     detail: str = ""
 
 
+def periksa_kelengkapan_bagian(
+    payload: dict[str, Any], *, bagian_sebelumnya: set[str] | None = None
+) -> list[str]:
+    """Sub-bagian yang HILANG dari ``payload["bagian"]`` (kosong = lengkap).
+
+    Acuan ganda supaya tahan perubahan kontrak:
+    - ``BAGIAN_WAJIB`` (kontrak eksplisit kode);
+    - ``bagian_sebelumnya`` (snapshot terbit terakhir) — menangkap kunci yang PERNAH ada
+      lalu hilang, walau namanya belum masuk kontrak.
+
+    Bila ``bagian`` bukan dict, SELURUH bagian wajib dianggap hilang — bukan "nol".
+    """
+    bagian = payload.get("bagian")
+    wajib = BAGIAN_WAJIB | set(bagian_sebelumnya or ())
+    if not isinstance(bagian, dict):
+        return sorted(wajib)
+    return sorted(wajib - set(bagian))
+
+
 def publish_snapshot(
     s: SASession,
     path: str | Path,
@@ -112,6 +159,21 @@ def publish_snapshot(
         return PublishReport(status="rusak", detail=f"{type(exc).__name__}: {exc}")
     if not isinstance(payload, dict):
         return PublishReport(status="rusak", detail="snapshot bukan objek JSON")
+
+    # Penjaga snapshot separuh (temuan 5 Okt 2026): bandingkan `bagian` sekarang vs kontrak
+    # + bagian terbit sebelumnya. Diambil SEBELUM menulis, supaya snapshot separuh tidak
+    # pernah diterbitkan sebagai "ok". Fakta tetap ditulis agar bagian yang MASIH BENAR
+    # tetap terbaca — yang diperbaiki adalah klaim implisit "snapshot lengkap".
+    from sqlalchemy import select
+
+    sebelum = s.scalars(
+        select(Fact.value_json)
+        .where(Fact.kind == "snapshot", Fact.key == "bagian")
+        .order_by(Fact.observed_at.desc())
+        .limit(1)
+    ).first()
+    bagian_sebelumnya = set(sebelum) if isinstance(sebelum, dict) else set()
+    hilang = periksa_kelengkapan_bagian(payload, bagian_sebelumnya=bagian_sebelumnya)
 
     observed = _observed_at(payload, p)
     rows = [
@@ -158,11 +220,41 @@ def publish_snapshot(
             "keys": sorted(payload.keys()),
             "count": len(created),
             "numeric_keys": [k for k in _NUMERIC_KEYS if k in payload],
+            "bagian_hilang": hilang,
         },
         fact_ids=[f.id for f in created],
-        severity="info",
+        severity="warning" if hilang else "info",
     )
     s.add(ev)
+    s.flush()
+
+    if hilang:
+        # Alert ber-dedupe subjek: satu kondisi terbuka = satu alert (tidak menumpuk).
+        from warroom_core.db import Alert
+
+        sudah = s.scalar(
+            select(Alert.id).where(Alert.subject == "snapshot/separuh").where(Alert.ack_at.is_(None)).limit(1)
+        )
+        if sudah is None:
+            s.add(
+                Alert(
+                    severity="warning",
+                    subject="snapshot/separuh",
+                    message=f"snapshot separuh: bagian hilang {hilang} (sumber {p})",
+                    suggested_action=(
+                        "periksa penulis snapshot (job refresh-snapshot / unit live-trading-*); "
+                        "bandingkan bagian yang dilaporkan `lt snapshot` vs isi berkas"
+                    ),
+                    fact_ids=[f.id for f in created],
+                )
+            )
+        return PublishReport(
+            status="separuh",
+            facts=len(created),
+            keys=sorted(str(k) for k in payload),
+            observed_at=observed.isoformat(),
+            detail=f"bagian hilang: {hilang}",
+        )
 
     return PublishReport(
         status="ok",

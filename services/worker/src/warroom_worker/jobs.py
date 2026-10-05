@@ -582,7 +582,9 @@ def handler_learner(s: SASession, job: Job) -> str:
     _tulis_fakta(
         s, kind="learner", key="ringkas",
         value={"diusulkan": dipakai, "keputusan": ringkas_keputusan, "seed_baru": dibuat,
-               "kill_switch": False},
+               # Dibaca, bukan di-hardcode: kalau tidak, fakta ini menulis "saklar mati"
+               # ke UI meski saklar nyala atau tak terbaca (temuan 5 Okt 2026).
+               "kill_switch": autonomy.kill_switch_aktif(s)},
         # Job harian: TTL harus lebih panjang dari interval (86400 dtk) supaya fakta tidak
         # tampil "basi" permanen di antara dua jalan. Telat > 25 jam tetap terlihat.
         source="agent-lessons.jsonl + registry parameter", ttl_s=90_000,
@@ -698,9 +700,9 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
     - Buat Alert info untuk notifikasi instan Telegram
     - Buat Event stream untuk Web SSE
     """
+    from live_trading.collectors.crypto import CryptoCollector
     from live_trading.config import get_settings
     from live_trading.execution.paper import PaperBroker
-    from live_trading.collectors.crypto import CryptoCollector
 
     stg = get_settings()
     total_eval = 0
@@ -722,6 +724,8 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
         closed = b_crypto.evaluate(prices, net_be=True)
         total_eval += len(positions)
         total_closed += len(closed)
+        for err in b_crypto.errors:
+            hasil_detail.append(f"GAGAL {err}")
         for rec in closed:
             subjek = f"trade/{rec['signal_id']}"
             r_val = float(rec.get("r", 0))

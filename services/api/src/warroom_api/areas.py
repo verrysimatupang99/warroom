@@ -79,11 +79,23 @@ def latest_facts(s: SASession, kind: str = "snapshot") -> dict[str, Fact]:
     return {f.key: f for f in rows}
 
 
-def facts_for_area(s: SASession, area: str, now: datetime | None = None) -> dict[str, Any]:
-    """Fakta satu area. Area tak dikenal → daftar kunci area yang ada (bukan error 500)."""
+def facts_for_area(
+    s: SASession,
+    area: str,
+    now: datetime | None = None,
+    *,
+    terbaru: dict[str, Fact] | None = None,
+    extra_cache: dict[str, dict[str, Fact]] | None = None,
+) -> dict[str, Any]:
+    """Fakta satu area. Area tak dikenal → daftar kunci area yang ada (bukan error 500).
+
+    ``terbaru``/``extra_cache`` opsional: dipakai pemanggil batch (``areas_summary``)
+    supaya `latest_facts` tidak dijalankan ulang per area (N+1 — temuan 5 Okt 2026).
+    """
     t = now or datetime.now(UTC)
     kunci_area = AREA_KEYS.get(area)
-    terbaru = latest_facts(s)
+    if terbaru is None:
+        terbaru = latest_facts(s)
     if kunci_area is None:
         return {
             "area": area,
@@ -97,7 +109,9 @@ def facts_for_area(s: SASession, area: str, now: datetime | None = None) -> dict
     # `kunci_hilang` tetap melaporkan kunci snapshot yang absen.
     extra: list[Fact] = []
     for kind, key in AREA_EXTRA.get(area, ()):
-        f = latest_facts(s, kind).get(key)
+        if extra_cache is not None and kind not in extra_cache:
+            extra_cache[kind] = latest_facts(s, kind)
+        f = (extra_cache[kind] if extra_cache is not None else latest_facts(s, kind)).get(key)
         if f is not None:
             extra.append(f)
     return {
@@ -111,11 +125,17 @@ def facts_for_area(s: SASession, area: str, now: datetime | None = None) -> dict
 
 
 def areas_summary(s: SASession, now: datetime | None = None) -> list[dict[str, Any]]:
-    """Ringkas tiap area: berapa fakta, berapa basi, kapan diperbarui terakhir."""
+    """Ringkas tiap area: berapa fakta, berapa basi, kapan diperbarui terakhir.
+
+    `latest_facts` dijalankan SEKALI untuk semua area (dulu sekali per area → 8 statement
+    per permintaan; temuan N+1 5 Okt 2026). Hasil akhir identik dengan versi lama.
+    """
     t = now or datetime.now(UTC)
+    terbaru = latest_facts(s)
+    extra_cache: dict[str, dict[str, Fact]] = {}
     out: list[dict[str, Any]] = []
     for area in AREA_KEYS:
-        info = facts_for_area(s, area, t)
+        info = facts_for_area(s, area, t, terbaru=terbaru, extra_cache=extra_cache)
         basi = sum(1 for f in info["facts"] if f["status"] == "basi")
         terakhir = max((f["observed_at"] for f in info["facts"]), default=None)
         out.append(

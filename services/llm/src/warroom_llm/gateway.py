@@ -158,6 +158,16 @@ class Gateway:
     def _budget_blocked(self, role: str) -> bool:
         if role in EXEMPT_BUDGET_ROLES:
             return False
+        # Gagal-tertutup (temuan 5 Okt 2026): bila provider di rantai tak punya harga,
+        # anggaran harian TIDAK bisa dihitung. Dulu ini diam-diam dianggap nol sehingga
+        # anggaran ber-nilai nyata tak pernah terpicu. Sekarang: blokir, kecuali
+        # `failClosedOnMissingPricing` dimatikan sadar di konfigurasi.
+        if (
+            self._cfg.budget_fail_closed
+            and self._cfg.budget_daily_usd > 0
+            and any(p.name not in self._cfg.pricing for p in self._cfg.chain())
+        ):
+            return True
         limit_role = self._cfg.budget_per_role.get(role)
         try:
             with self._session() as s:

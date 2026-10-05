@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -22,7 +23,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Event, Grant
 
-__all__ = ["ARMING_PATHS", "arming_status", "grant_aktif", "grant_baru", "pastikan_grant", "scope_kurang"]
+__all__ = [
+    "ARMING_PATHS",
+    "SUBPERINTAH_DRY_RUN_DIIZINKAN",
+    "arming_status",
+    "grant_aktif",
+    "grant_baru",
+    "pastikan_grant",
+    "scope_kurang",
+]
 
 GATE_FILE = "/etc/poly-pilot/activation-approved"
 OPERATOR_FILE = "/etc/poly-pilot/operator.json"
@@ -233,15 +242,48 @@ def pastikan_grant(s: SASession, scope: str) -> None:
         raise PermissionError(json.dumps({"kurang": kurang}))
 
 
+# Subperintah CLI `lt` yang AMAN dipanggil dari endpoint HTTP: hanya baca/ukur, tanpa
+# efek samping state, tanpa jalur tulis. Temuan audit 5 Okt 2026: endpoint ini dulu
+# meneruskan `subperintah` apa adanya, sehingga subperintah ber-efek samping
+# (`snapshot` menulis, `paper` membuka/menutup posisi, `dedupe` menghapus, `dashboard`
+# menjalankan server) bisa dipanggil dari web. `depth` = satu-satunya yang sesuai
+# maksud "uji kering kedalaman buku".
+SUBPERINTAH_DRY_RUN_DIIZINKAN = frozenset({"depth"})
+
+
+def _lt_bin() -> Path:
+    """Lokasi CLI `lt` yang benar — dari venv tempat API ini berjalan.
+
+    Temuan QA 5 Okt 2026: kode lama memakai `$WARROOM_DOMAIN_HOME/.venv/bin/lt`
+    (`/home/admin/live-trading/.venv/bin/lt`), yang **sudah tidak ada** di host ini —
+    jadi `/live/dry-run` selalu membalas `{"status":"tidak-ada"}` (mati, bukan jalan).
+    Aturan yang sama dipakai worker (`_lt_bin` di jobs.py): venv tempat proses ini
+    berjalan selalu menunjuk paket repo, jadi itu yang dipakai lebih dulu.
+    """
+    kandidat = Path(sys.executable).parent / "lt"
+    if kandidat.exists():
+        return kandidat
+    return Path(os.environ.get("WARROOM_DOMAIN_HOME", str(Path.home() / "live-trading"))) / ".venv/bin/lt"
+
+
 def jalankan_kering_kedalaman(subperintah: str = "depth", *, timeout_s: int = 120) -> dict[str, Any]:
     """Uji kering: ukur kedalaman buku (tanpa order), lewat CLI domain.
 
     Dipakai P6-T3. Angka yang keluar adalah hasil perintah nyata; bila gagal → status+alasan.
+    Hanya subperintah di ``SUBPERINTAH_DRY_RUN_DIIZINKAN`` yang dijalankan (fail-closed).
     """
-    lt = Path(os.environ.get("WARROOM_DOMAIN_HOME", str(Path.home() / "live-trading"))) / ".venv/bin/lt"
+    if subperintah not in SUBPERINTAH_DRY_RUN_DIIZINKAN:
+        return {
+            "status": "ditolak",
+            "detail": (
+                f"subperintah '{subperintah}' tidak diizinkan untuk uji kering; "
+                f"pilihan: {', '.join(sorted(SUBPERINTAH_DRY_RUN_DIIZINKAN))}"
+            ),
+        }
+    lt = _lt_bin()
     if not lt.exists():
         return {"status": "tidak-ada", "detail": f"CLI domain tidak ada: {lt}"}
-    hasil = subprocess.run(  # noqa: S603
+    hasil = subprocess.run(  # noqa: S603 — path tetap + subperintah sudah di-allowlist
         [str(lt), subperintah], capture_output=True, text=True, check=False, timeout=timeout_s
     )
     if hasil.returncode != 0:

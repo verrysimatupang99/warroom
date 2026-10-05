@@ -29,20 +29,23 @@
 	let { kunci }: Props = $props();
 
 	const area = $derived(AREAS.find((a) => a.kunci === kunci)!);
-	let sub = $state(page.url.searchParams.get('sub') ?? area?.anak[0]?.slug ?? '');
+	// URL = satu-satunya sumber kebenaran (SSOT). Dulu `sub` disimpan sebagai $state dan
+	// disinkronkan lewat $effect TANPA cabang else, sehingga kembali ke rute induk
+	// (klik menu area / tombol Back) membuat tab macet di nilai sebelumnya — URL, RailNav,
+	// SubNav, dan isi halaman saling tak cocok (temuan 5 Okt 2026). Turunan langsung ini
+	// menghapus seluruh kelas bug itu: tak ada state yang bisa menyimpang dari URL.
+	const sub = $derived.by(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s && area?.anak.some((a) => a.slug === s)) return s;
+		return area?.anak[0]?.slug ?? '';
+	});
 	const anak = $derived(area?.anak.find((a) => a.slug === sub) ?? area?.anak[0] ?? null);
 
-	$effect(() => {
-		const s = page.url.searchParams.get('sub');
-		if (s && area?.anak.some((a) => a.slug === s)) {
-			sub = s;
-		}
-	});
-
 	function pilihSub(s: string) {
-		sub = s;
 		if (typeof window !== 'undefined') {
-			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+			// replaceState:false supaya Back/Forward peramban menelusuri tab (dulu true,
+			// sehingga riwayat tab tidak terbentuk dan Back melompat keluar area).
+			void goto(`?sub=${s}`, { keepFocus: true, noScroll: true });
 		}
 	}
 

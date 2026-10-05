@@ -1,7 +1,7 @@
 <script lang="ts">
 	// RiskMeter: Pengawas batas risiko real-time & kapasitas trading.
 	// Operator dapat langsung tahu: seberapa aman alokasi risiko hari ini.
-	import { angka } from '$lib/format';
+	import { angka, statusRisikoDari } from '$lib/format';
 
 	interface RisikoData {
 		mode?: string;
@@ -36,13 +36,8 @@
 		Math.min(100, Math.max(0, (Math.abs(hariIniR) / (batasR || 1)) * 100))
 	);
 
-	const statusRisiko = $derived(
-		pctTerpakai >= 90
-			? { label: 'LIMIT TERCAPAI', kelas: 'text-neg bg-neg/10 border-neg/40' }
-			: pctTerpakai >= 60
-				? { label: 'WASPADA', kelas: 'text-warn bg-warn/10 border-warn/40' }
-				: { label: 'AMAN', kelas: 'text-pos bg-pos/10 border-pos/40' }
-	);
+	// Status dari helper bersama — ambang identik dengan badge di Home (temuan 5 Okt 2026).
+	const statusRisiko = $derived(statusRisikoDari(hariIniR, batasR));
 </script>
 
 <div class="permukaan-2 rounded-card border border-line p-3">

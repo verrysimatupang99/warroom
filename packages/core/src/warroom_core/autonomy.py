@@ -168,6 +168,16 @@ def usulkan(
     p = s.scalar(select(Parameter).where(Parameter.name == nama))
     if p is None:
         raise ValueError(f"parameter '{nama}' tidak terdaftar")
+    # Pagar kill switch (temuan 5 Okt 2026): saklar aktif ATAU tak terbaca → tidak ada
+    # usulan sama sekali. Pagar ini di dalam `usulkan` supaya pemanggil yang lupa memeriksa
+    # sendiri (mis. jalur baru) tetap gagal-tertutup.
+    if kill_switch_aktif(s):
+        return {
+            "keputusan": "ditolak",
+            "sebab": "kill switch AI aktif atau tak terbaca — tidak ada usulan",
+            "proposal_id": None,
+            "gate": "",
+        }
     keputusan, sebab = putuskan_usulan(s, nama, nilai_baru, evidence=evidence)
 
     verdict_gate = ""
@@ -279,9 +289,18 @@ def rollback(s: SASession, proposal_id: int, *, actor: str = "owner") -> bool:
 
 
 def kill_switch_aktif(s: SASession) -> bool:
-    """True = semua peran tulis AI berhenti; peran baca tetap jalan."""
+    """True = semua peran tulis AI berhenti; peran baca tetap jalan.
+
+    Gagal-tertutup (temuan 5 Okt 2026): baris hilang ATAU nilainya bukan boolean False
+    dihitung AKTIF. Hanya `false` eksplisit yang membuka tulisan AI — arah yang sama
+    dengan default `paused=True` saat `operator.json` tak terbaca (live.py). Sebelumnya
+    baris hilang dibaca sebagai "saklar mati", yaitu izin menulis justru saat statusnya
+    paling tak bisa dipercaya.
+    """
     p = s.scalar(select(Parameter).where(Parameter.name == "ai.kill_switch"))
-    return bool(p.value_json) if p is not None else False
+    if p is None:
+        return True
+    return p.value_json is not False
 
 
 def set_kill_switch(s: SASession, aktif: bool, *, actor: str = "owner") -> bool:
