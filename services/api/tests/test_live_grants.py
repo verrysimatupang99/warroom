@@ -74,13 +74,18 @@ def test_kill_switch_hanya_owner(client, make_user) -> None:
     assert st["kill_switch"] is True
 
 
-def test_apply_dan_rollback_proposal_lewat_api(client, make_user) -> None:
+def test_apply_dan_rollback_proposal_lewat_api(client, make_user, db) -> None:
+    from warroom_core.db import FrozenSplit
+
     _, sid = make_user("p5-owner2", role="owner")
     with session_scope() as s:
+        # Split beku harus terdaftar: sejak P1, label "frozen:" yang dikarang dibuang dan
+        # gate menolak usulan — jadi tes ini butuh split yang benar-benar ada.
+        s.add(FrozenSplit(id="uji-api", dataset="uji", source="/tmp", files_json=[], manifest_hash="x"))
         autonomy.seed_parameters(s)
         autonomy.usulkan(
             s, "agent.threshold", 0.86, alasan="ubah",
-            evidence={"n": 500, "win": 420, "be": 0.77, "split": "frozen:x"},
+            evidence={"n": 500, "win": 420, "be": 0.77, "split": "frozen:uji-api"},
         )
         pid = s.query(Proposal).one().id
 

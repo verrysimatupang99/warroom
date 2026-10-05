@@ -70,6 +70,16 @@ class GateBody(BaseModel):
     rule: str = ""
 
 
+class FreezeBody(BaseModel):
+    """Bekukan satu direktori dataset jadi split yang bisa dirujuk gate (ADR-003)."""
+
+    dataset: str
+    root: str
+    # Bila True (bawaan), tolak dataset tanpa penanda hasil — split yang tak bisa dinilai
+    # tidak boleh terlihat sah.
+    require_outcome: bool = True
+
+
 class FactBody(BaseModel):
     kind: str
     key: str
@@ -267,6 +277,24 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/gate/evaluate")
     def gate_evaluate(body: GateBody, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        # "frozen:<id>" hanya label sampai id-nya dicek. Tanpa ini, siapa pun bisa menulis
+        # split beku SETELAH melihat hasil — gate jadi upacara tanpa isi (ADR-003, P1).
+        if body.split and body.split.startswith("frozen:"):
+            from warroom_core import splits as _splits
+
+            with session_scope() as s:
+                if _splits.split_untuk_gate(s, body.split) is None:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "split_tidak_terdaftar",
+                            "message": (
+                                "split beku tidak terdaftar di platform — bekukan dulu "
+                                "via POST /api/v1/datasets/freeze, jangan mengarang id"
+                            ),
+                            "split": body.split,
+                        },
+                    )
         r = evaluate(
             GateInput(
                 n=body.n,
@@ -296,6 +324,50 @@ def create_app() -> FastAPI:
             "deff": r.deff,
             "notes": r.notes,
         }
+
+    # --- split beku (ADR-003, P1 5 Okt 2026) ------------------------------------------
+    # Gate menerima "frozen:<id>"; endpoint ini yang membuat id itu NYATA.
+
+    @app.post("/api/v1/datasets/freeze")
+    def datasets_freeze(
+        body: FreezeBody, user: Annotated[User, Depends(auth.require_role("owner"))]
+    ) -> dict[str, Any]:
+        from warroom_core import splits as _splits
+
+        with session_scope() as s:
+            try:
+                hasil = _splits.bekukan(
+                    s,
+                    dataset=body.dataset,
+                    root=body.root,
+                    created_by=user.email,
+                    require_outcome=body.require_outcome,
+                )
+            except (FileNotFoundError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=422, detail={"code": "bekukan_gagal", "message": str(exc)}
+                ) from exc
+        return hasil
+
+    @app.get("/api/v1/datasets/splits")
+    def datasets_splits(
+        user: Annotated[User, Depends(auth.current_user)],
+        dataset: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        from warroom_core import splits as _splits
+
+        with session_scope() as s:
+            rows = _splits.daftar(s, dataset=dataset)
+        return {"splits": rows, "count": len(rows)}
+
+    @app.post("/api/v1/datasets/splits/{split_id}/verify")
+    def datasets_splits_verify(
+        split_id: str, user: Annotated[User, Depends(auth.current_user)]
+    ) -> dict[str, Any]:
+        from warroom_core import splits as _splits
+
+        with session_scope() as s:
+            return _splits.verifikasi(s, split_id)
 
     # --- penulis fakta (operator) -------------------------------------------------------
 

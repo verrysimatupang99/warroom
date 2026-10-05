@@ -550,12 +550,19 @@ def handler_learner(s: SASession, job: Job) -> str:
 
     terbaru = _pelajaran_terakhir()
     if terbaru is not None:
+        # Bila ada split beku TERVERIFIKASI untuk dataset ini, pasang ke bukti supaya gate
+        # bisa lolos. Kalau tidak ada, biarkan kosong: gate akan menolak — dan itu benar.
+        from warroom_core import splits as _splits
+
+        split_beku = _splits.split_terverifikasi_terbaru(s, "poly-agent")
         ev = {
             "n": terbaru.get("rows"),
             "win": round(float(terbaru.get("winPct", 0)) / 100 * int(terbaru.get("rows", 0))),
             "be": float(terbaru.get("bePct", 0)) / 100,
-            # Sengaja TIDAK diberi split beku: log agen adalah rentang bergulir, bukan split beku.
+            # Log agen adalah rentang bergulir, BUKAN split beku. Split hanya dipasang bila
+            # benar-benar ada & terverifikasi; kalau tidak, gate menolak (lebih baik begitu).
             "sumber": "agent-lessons.jsonl",
+            "split": split_beku,
             "label": terbaru.get("label"),
         }
         patch = terbaru.get("patch") or {}
@@ -793,6 +800,25 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
 
             dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd, fee_buffer_pct=0.0013)
             if dec.allowed:
+                # Biaya TERUKUR dari buku nyata (P2) — bukan asumsi 0,1%. Sisi masuk = sisi
+                # yang kita cross: LONG membeli di ask, SHORT menjual di bid; keluar di sisi
+                # sebaliknya. Bila buku tak terbaca, biaya ditandai asumsi (bukan angka palsu).
+                biaya: dict[str, Any] = {"asumsi": True, "total_bps": None, "sumber": "tak-diukur"}
+                try:
+                    from live_trading.collectors.depth import DepthCollector
+                    from live_trading.execution import costs
+
+                    rep = DepthCollector(stg).report(pair, limit=100, max_bps=costs.MAKS_BPS)
+                    sisi_masuk = "ask" if direction.upper() == "LONG" else "bid"
+                    sisi_keluar = "bid" if direction.upper() == "LONG" else "ask"
+                    biaya = costs.biaya_dari_depth(
+                        rep, sisi_masuk=sisi_masuk, size_usd=float(dec.size_usd or 0.0),
+                        sisi_keluar=sisi_keluar,
+                    )
+                except Exception as exc:  # noqa: BLE001 — biaya gagal diukur jangan blokir order
+                    biaya = {"asumsi": True, "total_bps": None, "sumber": "error",
+                             "alasan": f"{type(exc).__name__}: {exc}"}
+
                 pos = b_crypto.open_position(
                     pair=pair,
                     direction=direction,
@@ -801,14 +827,21 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     tp1=tp1,
                     tp2=tp2,
                     size_usd=dec.size_usd or 0.0,
-                    note=f"auto-open dari scanner ({dec.risk_usd} USD risiko)",
+                    note=f"auto-open dari scanner ({dec.risk_usd} USD risiko); biaya {biaya.get('sumber')}",
+                    cost_bps=float(biaya["total_bps"]) if biaya.get("total_bps") is not None else None,
                 )
+                s.add(Event(type="cost.measured", actor="paper_scan",
+                            payload_json={"pair": pair, "direction": direction,
+                                          "size_usd": dec.size_usd, **biaya},
+                            severity="info" if not biaya.get("asumsi") else "warning"))
                 subjek = f"trade/{pos.signal_id}"
                 pesan = (
                     f"🟢 [PAPER TRADE DIBUKA - CRYPTO]\n"
                     f"Pair: {pos.pair} ({pos.direction})\n"
                     f"Entry: ${pos.entry} | SL: ${pos.stop} | TP1: ${pos.tp1} | TP2: ${pos.tp2}\n"
                     f"Ukuran: ${pos.size_usd} | Risiko: ${dec.risk_usd} (1.0% equity)\n"
+                    f"Biaya: {biaya.get('total_bps') or '?'} bps "
+                    f"({'asumsi fee saja' if biaya.get('asumsi') else 'terukur dari buku'})\n"
                     f"Signal ID: {pos.signal_id}"
                 )
                 _alert(s, subject=subjek, message=pesan, aksi="lihat di /crypto?sub=eksekusi", severity="info")
@@ -819,6 +852,26 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
         kirim_tertunda(s, limit=5)
 
     return f"kandidat={len(rows)} dibuka={len(dibuka)} detail={', '.join(dibuka) or 'tidak ada yang lolos gate'}"
+
+
+def handler_retensi(s: SASession, job: Job) -> str:
+    """Retensi data terjadwal (P5): batasi pertumbuhan `facts` tanpa menghapus yang dipakai.
+
+    Simpan `keep_versi` versi terbaru per (kind,key). Default TIDAK menghapus `events`
+    (jejak audit) — operator bisa menyalakannya lewat payload hapus_events=true.
+    """
+    from warroom_core import retensi
+
+    hasil = retensi.jalankan(
+        s,
+        keep_versi=int(job.payload_json.get("keep_versi", retensi.KEEP_VERSI_DEFAULT)),
+        events_hari=int(job.payload_json.get("events_hari", retensi.EVENTS_HARI_DEFAULT)),
+        llm_call_hari=int(job.payload_json.get("llm_call_hari", retensi.LLM_CALL_HARI_DEFAULT)),
+        hapus_events=bool(job.payload_json.get("hapus_events", False)),
+        hapus_llm_calls=bool(job.payload_json.get("hapus_llm_calls", True)),
+    )
+    d = hasil["dihapus"]
+    return f"facts_dihapus={d['facts']} events_dihapus={d['events']} llm_dihapus={d['llm_calls']} (simpan {hasil['rencana']['keep_versi']} versi/kunci)"
 
 
 def register_handlers() -> dict[str, Any]:
@@ -842,6 +895,7 @@ def register_handlers() -> dict[str, Any]:
             "llm-brief": handler_llm_brief,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
+            "retensi": handler_retensi,
         }
     )
     return schedule.HANDLERS

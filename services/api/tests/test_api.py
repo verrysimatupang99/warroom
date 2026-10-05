@@ -154,8 +154,14 @@ def test_fakta_basi_ditandai_basi(client, make_user) -> None:
 # --- gate: endpoint == modul (satu implementasi) -----------------------------------------
 
 
-def test_endpoint_gate_sama_dengan_modul(client, make_user) -> None:
+def test_endpoint_gate_sama_dengan_modul(client, make_user, db) -> None:
+    from warroom_core.db import FrozenSplit, session_scope
     from warroom_core.gate import GateInput, evaluate
+
+    # Split beku harus TERDAFTAR — sejak P1 (5 Okt 2026), gate menolak label "frozen:"
+    # yang dikarang karena itu membuat split bisa ditulis SETELAH hasilnya dilihat.
+    with session_scope() as s:
+        s.add(FrozenSplit(id="studi-2026-09", dataset="studi", source="/tmp", files_json=[], manifest_hash="x"))
 
     _, sid = make_user("gatecek", role="viewer")
     body = {"n": 1175, "win": 928, "be": 0.77, "ci": 0.90, "split": "frozen:studi-2026-09"}

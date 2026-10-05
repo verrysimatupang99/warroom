@@ -42,6 +42,7 @@ _JOB_BERAT = (
     "signal-sync",  # membaca ledger domain + MEMBUAT alert (bisa memicu kirim Telegram)
     "paper-eval",
     "paper-scan",
+    "retensi",  # menghapus baris `facts` di DB nyata — bukan untuk tes
 )
 
 
@@ -66,10 +67,10 @@ def test_daftar_job_idempoten(db) -> None:
     assert set(pertama) == {
         "publish-facts", "freshness", "notify", "refresh-snapshot", "collect", "backup",
         "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync", "signal-sync", "reconcile",
-        "learner", "prompts-sync", "llm-brief", "paper-eval", "paper-scan",
+        "learner", "prompts-sync", "llm-brief", "paper-eval", "paper-scan", "retensi",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 17
+    assert total == 18
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:

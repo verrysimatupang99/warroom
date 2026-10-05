@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy import select
 from warroom_core import autonomy
-from warroom_core.db import Alert, Event, Fact, Job, Parameter, Proposal, session_scope
+from warroom_core.db import Alert, Event, Fact, FrozenSplit, Job, Parameter, Proposal, session_scope
 
 
 @pytest.fixture(autouse=True)
@@ -19,7 +19,15 @@ def _bersihkan(db):
         s.query(Event).delete()
         s.query(Alert).delete()
         s.query(Job).delete()
+        s.query(FrozenSplit).delete()
     yield
+
+
+def _split_beku(s) -> str:
+    """Daftarkan split beku sungguhan — gate menolak label "frozen:" yang dikarang."""
+    s.add(FrozenSplit(id="uji-autonomy", dataset="poly-agent", source="/tmp", files_json=[], manifest_hash="x"))
+    s.flush()
+    return "frozen:uji-autonomy"
 
 
 def test_seed_mendaftarkan_parameter_dan_tidak_menimpa_nilai_yang_ada(db) -> None:
@@ -89,7 +97,7 @@ def test_usulan_dalam_batas_dengan_bukti_beku_diterapkan_dan_tercatat(db) -> Non
         hasil = autonomy.usulkan(
             s, "agent.threshold", 0.86,
             alasan="kencangkan setelah gate gagal",
-            evidence={"n": 500, "win": 420, "be": 0.77, "ci": 0.90, "split": "frozen:2026-10-03"},
+            evidence={"n": 500, "win": 420, "be": 0.77, "ci": 0.90, "split": _split_beku(s)},
         )
     assert hasil["keputusan"] == "diterapkan"
     with session_scope() as s:
@@ -111,7 +119,7 @@ def test_evidence_lemah_masih_diterapkan_tapi_gate_tercatat_gagal(db) -> None:
         hasil = autonomy.usulkan(
             s, "agent.threshold", 0.88,
             alasan="kencangkan karena gate gagal",
-            evidence={"n": 300, "win": 237, "be": 0.77, "ci": 0.90, "split": "frozen:2026-10-03"},
+            evidence={"n": 300, "win": 237, "be": 0.77, "ci": 0.90, "split": _split_beku(s)},
         )
     assert hasil["keputusan"] == "diterapkan"
     assert hasil["gate"] == "gagal"
@@ -126,7 +134,7 @@ def test_rollback_mengembalikan_nilai_dan_tercatat(db) -> None:
         autonomy.seed_parameters(s)
         autonomy.usulkan(
             s, "agent.threshold", 0.86, alasan="ubah",
-            evidence={"n": 500, "win": 420, "be": 0.77, "split": "frozen:x"},
+            evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)},
         )
         pr = s.query(Proposal).one()
         pid = pr.id
@@ -178,7 +186,7 @@ def test_hash_konfigurasi_berubah_saat_parameter_berubah(db) -> None:
         h1 = autonomy.hash_konfigurasi(s)
     with session_scope() as s:
         autonomy.usulkan(s, "agent.threshold", 0.86, alasan="x",
-                         evidence={"n": 500, "win": 420, "be": 0.77, "split": "frozen:x"})
+                         evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)})
         h2 = autonomy.hash_konfigurasi(s)
     assert h1 != h2
 

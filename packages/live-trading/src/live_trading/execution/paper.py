@@ -38,11 +38,18 @@ def compute_r(direction: str, entry: float, stop: float, exit_price: float) -> f
     return round(move / risk, 3)
 
 
-def compute_be_stop(direction: str, entry: float, fee_buffer_pct: float = 0.001) -> float:
-    """True Net Break-Even stop yang menutup biaya round-trip taker MEXC (0.05% entry + 0.05% exit)."""
+def compute_be_stop(
+    direction: str, entry: float, fee_buffer_pct: float = 0.001, total_bps: float | None = None
+) -> float:
+    """True Net Break-Even stop yang menutup biaya round-trip.
+
+    ``total_bps`` (bila diberi) = biaya TERUKUR dari buku order (P2) — dipakai apa adanya.
+    Tanpa itu, jatuh ke ``fee_buffer_pct`` lama (0,1% = asumsi fee taker MEXC 0,05%×2).
+    """
+    pct = (total_bps / 10000.0) if total_bps is not None else fee_buffer_pct
     if direction.upper() == "LONG":
-        return round(entry * (1.0 + fee_buffer_pct), 8)
-    return round(entry * (1.0 - fee_buffer_pct), 8)
+        return round(entry * (1.0 + pct), 8)
+    return round(entry * (1.0 - pct), 8)
 
 
 def _risk_init(direction: str, entry: float, stop_init: float) -> float:
@@ -61,6 +68,9 @@ class PaperPosition:
     tp2: float
     size_usd: float
     stop_init: float = 0.0  # stop asli saat open; `stop` boleh digeser ke break-even
+    # Biaya round-trip TERUKUR saat open (bps), dari buku order nyata (P2). None = tidak
+    # terukur; evaluate() akan jatuh ke asumsi 0,1% lama.
+    cost_bps: float | None = None
     opened_at: str = field(default_factory=_now_wib)
     status: str = "open"
     source: str = "paper"
@@ -140,6 +150,7 @@ class PaperBroker:
         size_usd: float,
         source: str = "paper",
         note: str = "",
+        cost_bps: float | None = None,
     ) -> PaperPosition:
         pos = PaperPosition(
             signal_id=new_signal_id(),
@@ -151,6 +162,7 @@ class PaperBroker:
             tp2=tp2,
             size_usd=size_usd,
             stop_init=stop,
+            cost_bps=cost_bps,
             source=f"paper-{self.venue}" if source == "paper" else source,
             note=note,
         )
@@ -218,7 +230,11 @@ class PaperBroker:
                     closed.append(self.close_position(p.signal_id, p.tp2, "closed_TP2"))
                 elif hit_tp1 and p.status == "open":
                     p.status = "tp1_hit_runner"
-                    p.stop = compute_be_stop(p.direction, p.entry) if net_be else p.entry
+                    p.stop = (
+                        compute_be_stop(p.direction, p.entry, total_bps=p.cost_bps)
+                        if net_be
+                        else p.entry
+                    )
                     keep.append(p)
                 else:
                     keep.append(p)

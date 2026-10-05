@@ -139,13 +139,21 @@ def putuskan_usulan(
     if isinstance(nilai_baru, (int, float)) and not isinstance(nilai_baru, bool):
         if not evidence or not all(k in evidence for k in ("n", "win", "be")):
             return "ditolak", "bukti kurang: butuh n, win, be (dan split beku) sebelum mengubah angka"
+        # "frozen:<id>" hanya bermakna bila id itu terdaftar. Kalau tidak terdaftar, buang
+        # labelnya supaya gate menolak — bukan meloloskan split yang dikarang (ADR-003).
+        split_ev = evidence.get("split")
+        if split_ev:
+            from warroom_core import splits as _splits
+
+            if _splits.split_untuk_gate(s, str(split_ev)) is None:
+                split_ev = None
         g = evaluate(
             GateInput(
                 n=int(evidence["n"]),
                 win=int(evidence["win"]),
                 be=float(evidence["be"]),
                 ci=float(evidence.get("ci", DEFAULT_CI)),
-                split=evidence.get("split"),
+                split=split_ev,
                 label=evidence.get("label", "konfirmasi"),
             )
         )

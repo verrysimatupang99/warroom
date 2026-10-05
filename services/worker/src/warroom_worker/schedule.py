@@ -187,6 +187,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         payload={"timeout_s": 60},
         note="pemindaian kuantitatif SMC & auto-open posisi paper saat lolos 5 risk gates + alert Telegram.",
     ),
+    JobSpec(
+        name="retensi",
+        interval_s=86400,
+        enabled=True,
+        # Simpan 3 versi terbaru per kunci. `events` (jejak audit) TIDAK dihapus secara
+        # bawaan — operator memutuskan lewat payload bila mau. facts adalah yang tumbuh
+        # paling cepat (1 baris per pengamatan), jadi ini yang wajib dibatasi.
+        payload={"keep_versi": 3, "hapus_events": False, "timeout_s": 120},
+        note="retensi harian: batasi versi `facts` per kunci; `events` (audit) dibiarkan.",
+    ),
 )
 
 # Nama job → fungsi. Diisi oleh `warroom_worker.jobs` saat impor untuk menghindari impor melingkar.

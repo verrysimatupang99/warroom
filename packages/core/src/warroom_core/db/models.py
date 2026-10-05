@@ -362,6 +362,35 @@ class Dataset(Base):
     )
 
 
+class FrozenSplit(Base):
+    """Split data yang DIBEKUKAN sebelum hasilnya dilihat (ADR-003, P1 roadmap 5 Okt 2026).
+
+    Kenapa tabel, bukan sekadar string di payload: gate menerima ``split="frozen:<id>"``
+    dan mempercayainya. Tanpa catatan yang tidak bisa diubah, "frozen:" hanyalah label —
+    siapa pun bisa menuliskannya setelah melihat hasil. Baris di sini mengikat id itu ke
+    daftar berkas + sha256 yang benar-benar dibaca, sehingga bisa diverifikasi ulang.
+
+    Append-only: tidak ada alur yang boleh mengubah baris split setelah ditulis.
+    """
+
+    __tablename__ = "frozen_splits"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # dipakai sebagai frozen:<id>
+    dataset: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    source: Mapped[str] = mapped_column(String(400), nullable=False, default="")
+    # Berkas yang termasuk split + sha256-nya: {"file": "...", "sha256": "...", "bytes": N}
+    files_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
+    manifest_hash: Mapped[str] = mapped_column(String(80), nullable=False, default="")
+    partitions_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    window_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    window_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rows: Mapped[int | None] = mapped_column(BigInteger)
+    created_by: Mapped[str] = mapped_column(String(80), nullable=False, default="system")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Job(Base):
     """Jadwal deklaratif (P1-T4).
 
