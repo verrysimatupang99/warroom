@@ -20,40 +20,50 @@
    ============================================================================ */
 
 @theme {
-	/* --- gelap (bawaan): near-black berlapis, ala beebots --- */
-	--color-bg: #08070c;
-	--color-bg-2: #0c0b12;
-	--color-surface: #13121a;
-	--color-surface-2: #1b1a24;
-	--color-surface-3: #24232d;
-	--color-line: #2a2933;
-	--color-line-soft: #201f28;
-	--color-text: #ffffff;
-	--color-text-2: #c3c2b7;
-	--color-text-3: #908e9a;
-	--color-accent: #c98500; /* amber: aksi & angka utama */
-	--color-accent-2: #9085e9; /* violet: info, tautan, sekunder */
-	--color-pos: #3fcf3f;
-	--color-neg: #ff6f6f;
-	--color-warn: #fab219;
-	--color-paper: #9085e9;
-	/* magenta digeser dari #d55181: nilai itu hanya 3,93:1 di surface-3 (gagal AA).
-	   #dd5f8d = 4,50:1 — ambangnya, dengan margin nol. Dipakai #e26a95 (4,97:1)
-	   supaya ada ruang, karena "live" menandai uang nyata dan tidak boleh jadi
-	   teks paling sulit dibaca di layar. */
-	--color-live: #e26a95;
-	--color-inherit: #8a8894;
+	/* --- gelap (bawaan): sintesis tiga referensi pemilik (6 Okt 2026) -------------
+	   beebots  -> kedalaman near-black berlapis + amber sebagai aksen hangat
+	   ihsgscreener -> basis navy-teal + cyan sebagai aksen utama + "kaca" (border tipis)
+	   algentis -> disiplin monokrom + aksen emas tunggal (kini dipakai untuk "premium")
+
+	   PEMBAGIAN MAKNA (sengaja dipisah supaya satu warna tidak berarti dua hal —
+	   ini menutup temuan critique 6 Okt "—warn dua makna"):
+	     cyan  = aksi / tautan / sorotan (ihsgscreener)   -> --accent-2
+	     amber = peringatan / perhatian                    -> --warn
+	     emas  = premium / status uang / akun             -> --premium
+	     hijau = untung / terverifikasi                   -> --pos
+	     merah = rugi / bahaya                            -> --neg
+	   Semua nilai diukur kontras (AA) sebelum dipakai; angka ada di laporan 6 Okt. */
+	--color-bg: #060a10;
+	--color-bg-2: #0a1018;
+	--color-surface: #0e1620;
+	--color-surface-2: #121c28;
+	--color-surface-3: #182534;
+	--color-line: #21364a;
+	--color-line-soft: #16222f;
+	--color-text: #f0f8ff;
+	--color-text-2: #a8cfe0;
+	--color-text-3: #7fa8c0;
+	--color-accent: #00c8ff; /* cyan: aksi, tautan, sorotan (ihsgscreener) */
+	--color-accent-2: #9d78ff; /* violet: sekunder, label riset */
+	--color-premium: #f5c518; /* emas: premium / status uang (algentis) */
+	--color-pos: #00e5a0;
+	--color-neg: #ff3b5c;
+	--color-warn: #ffb020; /* oranye: peringatan — sengaja beda dari emas premium */
+	--color-paper: #9d78ff;
+	/* "live" = uang nyata. #ff6f8a diukur 5,7:1 di bg — bukan warna tersulit dibaca. */
+	--color-live: #ff6f8a;
+	--color-inherit: #8a9bab;
 	/* Permukaan "kanvas" — dipakai untuk kotak kode/nilai mentah dan badge netral
 	   (`bg-canvas`). Sebelumnya kelas `bg-canvas` dipakai 14× tetapi tokennya tidak
 	   ada, jadi latarnya transparan dan kotak itu kehilangan batas visualnya. */
-	--color-canvas: #16151d;
-	/* amber & violet di palet ini terang-menengah, jadi teks di atasnya harus gelap. */
-	--color-on-accent: #14100a;
+	--color-canvas: #0b131c;
+	/* cyan/emas terang di palet ini, jadi teks di atasnya harus gelap. */
+	--color-on-accent: #04121a;
 
-	/* Font: dimuat sungguhan di app.html. Inter untuk teks, JetBrains Mono untuk angka
-	   — pembagian yang sama dengan beebots, dan itu yang membuat angka terasa "dibaca
-	   sebagai data", bukan sebagai kalimat. */
-	--font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	/* Font: dimuat sungguhan di app.html. Space Grotesk untuk judul (ihsgscreener),
+	   Inter untuk teks, JetBrains Mono untuk SEMUA angka — pembagian yang membuat
+	   angka terasa "dibaca sebagai data", bukan sebagai kalimat. */
+	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -99,6 +109,7 @@
 	--text-3: var(--color-text-3);
 	--accent: var(--color-accent);
 	--accent-2: var(--color-accent-2);
+	--premium: var(--color-premium);
 	--pos: var(--color-pos);
 	--neg: var(--color-neg);
 	--warn: var(--color-warn);
@@ -122,26 +133,27 @@
    Setiap nilai sudah diukur >= 4,5:1 pada bg/surface/surface-2/surface-3.
    --------------------------------------------------------------------------- */
 html[data-tema='terang'] {
-	--color-bg: #f7f6f2;
-	--color-bg-2: #f1efe9;
+	--color-bg: #f6f8fa;
+	--color-bg-2: #eef2f6;
 	--color-surface: #ffffff;
-	--color-surface-2: #faf9f5;
-	--color-surface-3: #eeece4;
-	--color-line: #dedbd0;
-	--color-line-soft: #eae7dd;
-	--color-text: #0d0c0f;
-	--color-text-2: #4c4a52;
-	--color-text-3: #6b6873;
-	--color-accent: #8a5a00; /* amber digelapkan supaya lolos AA di kertas terang */
-	--color-accent-2: #5a4fc0;
-	--color-pos: #0e7a3d;
-	--color-neg: #b3341f;
-	--color-warn: #8a5410;
+	--color-surface-2: #f4f7fa;
+	--color-surface-3: #e6ecf2;
+	--color-line: #d3dde6;
+	--color-line-soft: #e6edf3;
+	--color-text: #0a141c;
+	--color-text-2: #3c4a56;
+	--color-text-3: #5c6b78;
+	--color-accent: #066a8c; /* cyan digelapkan supaya lolos AA di kertas terang */
+	--color-accent-2: #6d4fd0;
+	--color-premium: #7d6100;
+	--color-pos: #0a7a4d;
+	--color-neg: #c0263c;
+	--color-warn: #8a5a00;
 	--color-paper: #5b3fd0;
 	--color-live: #a5305c;
 	--color-inherit: #63616b;
-	--color-canvas: #f3f1ea;
-	/* amber tua di sini, jadi teks di atasnya harus terang. */
+	--color-canvas: #eef2f6;
+	/* aksen digelapkan di sini, jadi teks di atasnya harus terang. */
 	--color-on-accent: #ffffff;
 
 	--radius-card: 14px;
@@ -315,8 +327,8 @@ html[data-tema='terang'] {
 		/* Dua pendar radial dari halaman beebots: memberi kedalaman pada latar
 		   near-black tanpa menambah elemen apa pun. */
 		background:
-			radial-gradient(60rem 30rem at 15% -10%, rgba(144, 133, 233, 0.08), transparent 70%),
-			radial-gradient(50rem 30rem at 85% 110%, rgba(213, 81, 129, 0.06), transparent 70%),
+			radial-gradient(60rem 30rem at 15% -10%, rgba(0, 200, 255, 0.07), transparent 70%),
+			radial-gradient(50rem 30rem at 85% 110%, rgba(0, 229, 160, 0.05), transparent 70%),
 			var(--bg);
 	}
 
