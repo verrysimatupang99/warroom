@@ -492,27 +492,27 @@
 									<table class="w-full text-left text-12 font-mono">
 										<thead class="border-b border-line text-text-3 text-11">
 											<tr>
-												<th class="py-2 px-2.5">SIMBOL</th>
-												<th class="py-2 px-2.5 text-right">PUMP %</th>
-												<th class="py-2 px-2.5 text-right">DARI PUNCAK</th>
-												<th class="py-2 px-2.5 text-right">OI Δ</th>
-												<th class="py-2 px-2.5 text-right">FUNDING</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">SIMBOL</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">PUMP %</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">DARI PUNCAK</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">OI Δ</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">FUNDING</th>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft">
 											{#each overextObj.paling_overextended ?? [] as o (o.symbol ?? o.simbol)}
 												<tr class="hover:bg-surface/50 transition-colors">
-													<td class="py-2 px-2.5 font-bold text-text">{o.symbol ?? o.simbol}</td>
-													<td class="py-2 px-2.5 text-right text-warn">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{o.symbol ?? o.simbol}</td>
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-warn">
 														{o.pump_pct != null ? `${o.pump_pct}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 														{o.dari_puncak_pct != null ? `${o.dari_puncak_pct}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 														{o.oi_delta_pct != null ? `${o.oi_delta_pct}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 														{o.funding_pct != null ? `${o.funding_pct}%` : '—'}
 													</td>
 												</tr>
@@ -855,24 +855,24 @@
 									<table class="w-full text-left text-12">
 										<thead class="border-b border-line text-text-3 font-normal text-11 font-mono">
 											<tr>
-												<th class="py-2 px-2.5">KODE</th>
-												<th class="py-2 px-2.5">KATEGORI / BUCKET</th>
-												<th class="py-2 px-2.5">SUMMARY SIGNAL</th>
-												<th class="py-2 px-2.5 text-right">WR EVENT</th>
-												<th class="py-2 px-2.5 text-right">POTENSI</th>
-												<th class="py-2 px-2.5 text-right">MAX DD</th>
-												<th class="py-2 px-2.5">CATATAN</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">KODE</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">BUCKET</th>
+												<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5">SUMMARY SIGNAL</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">WR EVENT</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">POTENSI</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">MAX DD</th>
+												<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5">CATATAN</th>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft">
 											{#each idxArjum as r (r.stock_code)}
 												<tr class="hover:bg-surface/50 transition-colors">
-													<td class="py-2 px-2.5">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
 														<div class="font-bold text-text font-mono">{r.stock_code}</div>
-														<div class="text-10 text-text-3 truncate max-w-[120px]">{r.stock_name ?? ''}</div>
+														<div class="text-10 text-text-3 truncate max-w-[64px] sm:max-w-[120px]">{r.stock_name ?? ''}</div>
 													</td>
-													<td class="py-2 px-2.5 whitespace-nowrap">
-														<span class="rounded px-2 py-0.5 text-11 font-medium border border-line {
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 whitespace-nowrap">
+														<span class="rounded px-1.5 py-0.5 text-10 sm:px-2 sm:text-11 font-medium border border-line {
 															r.bucket?.includes('PANTULAN') ? 'text-warn bg-warn/10' :
 															r.bucket?.includes('DISTRIBUSI') ? 'text-neg bg-neg/10' :
 															r.bucket?.includes('SENYAP') ? 'text-accent-2 bg-accent-2/10' :
@@ -881,19 +881,19 @@
 															{r.bucket ?? '—'}
 														</span>
 													</td>
-													<td class="py-2 px-2.5 text-11 text-text-2 max-w-[280px]">
+													<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-11 text-text-2 max-w-[280px]">
 														{r.summary ?? '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono font-medium {r.wr_event != null && r.wr_event >= 60 ? 'text-pos' : 'text-text-2'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono font-medium {r.wr_event != null && r.wr_event >= 60 ? 'text-pos' : 'text-text-2'}">
 														{r.wr_event != null ? `${r.wr_event.toFixed(1)}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono text-pos">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-pos">
 														{r.potential != null ? `+${r.potential}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono text-neg">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-neg">
 														{r.drawdown != null ? `${r.drawdown}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-11 text-text-3">
+													<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-11 text-text-3">
 														{r.note ?? '—'}
 													</td>
 												</tr>
@@ -925,35 +925,35 @@
 									<table class="w-full text-left text-12">
 										<thead class="border-b border-line text-text-3 font-normal text-11 font-mono">
 											<tr>
-												<th class="py-2 px-2.5">TICKER</th>
-												<th class="py-2 px-2.5 text-right">HARGA (RP)</th>
-												<th class="py-2 px-2.5 text-right">24H CHG</th>
-												<th class="py-2 px-2.5 text-right">VOLUME</th>
-												<th class="py-2 px-2.5 text-right">RSI (14)</th>
-												<th class="py-2 px-2.5 text-center">EMA STATE</th>
-												<th class="py-2 px-2.5 text-right">ATR</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">TICKER</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">HARGA (RP)</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">24H CHG</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">VOLUME</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">RSI (14)</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-center">EMA STATE</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">ATR</th>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft font-mono">
 											{#each idxTv as t (t.ticker)}
 												<tr class="hover:bg-surface/50 transition-colors">
-													<td class="py-2 px-2.5 font-bold text-text">{t.ticker}</td>
-													<td class="py-2 px-2.5 text-right">{t.close?.toLocaleString('id-ID') ?? '—'}</td>
-													<td class="py-2 px-2.5 text-right font-medium {(t.change_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{t.ticker}</td>
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">{t.close?.toLocaleString('id-ID') ?? '—'}</td>
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-medium {(t.change_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 														{(t.change_pct ?? 0) >= 0 ? '+' : ''}{(t.change_pct ?? 0).toFixed(2)}%
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 														{t.volume != null ? `${(t.volume / 1e6).toFixed(1)}M` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right {(t.rsi14 ?? 50) >= 70 ? 'text-warn font-bold' : (t.rsi14 ?? 50) <= 30 ? 'text-pos font-bold' : 'text-text-2'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {(t.rsi14 ?? 50) >= 70 ? 'text-warn font-bold' : (t.rsi14 ?? 50) <= 30 ? 'text-pos font-bold' : 'text-text-2'}">
 														{t.rsi14?.toFixed(1) ?? '—'}
 													</td>
-													<td class="py-2 px-2.5 text-center">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-center">
 														<span class="rounded px-2 py-0.5 text-10 font-sans border border-line {t.ema_state === 'naik' ? 'text-pos bg-pos/10' : 'text-neg bg-neg/10'}">
 															{t.ema_state === 'naik' ? '▲ NAIK' : '▼ TURUN'}
 														</span>
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-3">{t.atr?.toFixed(1) ?? '—'}</td>
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-3">{t.atr?.toFixed(1) ?? '—'}</td>
 												</tr>
 											{/each}
 										</tbody>
@@ -1040,39 +1040,39 @@
 									<table class="w-full text-left text-12">
 										<thead class="border-b border-line text-text-3 text-11 font-mono">
 											<tr>
-												<th class="py-2 px-2.5">TICKER</th>
-												<th class="py-2 px-2.5 text-right">SKOR</th>
-												<th class="py-2 px-2.5 text-right">RSI14</th>
-												<th class="py-2 px-2.5">EMA</th>
-												<th class="py-2 px-2.5 text-right">WR EVENT</th>
-												<th class="py-2 px-2.5 text-right">POTENSI</th>
-												<th class="py-2 px-2.5 text-right">DD</th>
-												<th class="py-2 px-2.5">CATATAN</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">TICKER</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">SKOR</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">RSI14</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">EMA</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">WR EVENT</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">POTENSI</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">DD</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">CATATAN</th>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft">
 											{#each bsjpObj.kandidat ?? [] as k (k.ticker)}
 												<tr class="hover:bg-surface/50 transition-colors">
-													<td class="py-2 px-2.5 font-bold font-mono text-text">{k.ticker}</td>
-													<td class="py-2 px-2.5 text-right font-mono font-bold {k.skor != null ? 'text-accent' : 'text-text-3'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold font-mono text-text">{k.ticker}</td>
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono font-bold {k.skor != null ? 'text-accent' : 'text-text-3'}">
 														{k.skor ?? '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-text-2">
 														{k.rsi14 != null ? k.rsi14.toFixed(1) : '—'}
 													</td>
-													<td class="py-2 px-2.5 font-mono text-11 {k.ema_state === 'naik' ? 'text-pos' : 'text-text-3'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-mono text-11 {k.ema_state === 'naik' ? 'text-pos' : 'text-text-3'}">
 														{k.ema_state ?? '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-text-2">
 														{k.wr_event != null ? `${k.wr_event}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-text-2">
 														{k.potensi != null ? `${k.potensi}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right font-mono {k.drawdown != null && k.drawdown < 0 ? 'text-neg' : 'text-text-3'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono {k.drawdown != null && k.drawdown < 0 ? 'text-neg' : 'text-text-3'}">
 														{k.drawdown != null ? `${k.drawdown}%` : '—'}
 													</td>
-													<td class="py-2 px-2.5 text-10 text-text-3">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-10 text-text-3">
 														{(k.catatan ?? []).join(' · ') || '—'}
 													</td>
 												</tr>
@@ -1385,22 +1385,22 @@
 								<table class="w-full text-left text-12">
 									<thead class="border-b border-line text-text-3 font-normal text-11 font-mono">
 										<tr>
-											<th class="py-2 px-2.5">MATA UANG</th>
-											<th class="py-2 px-2.5">DAMPAK</th>
-											<th class="py-2 px-2.5">AGENDA</th>
-											<th class="py-2 px-2.5 text-right">FORECAST</th>
-											<th class="py-2 px-2.5 text-right">SEBELUMNYA</th>
+											<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">MATA UANG</th>
+											<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">DAMPAK</th>
+											<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">AGENDA</th>
+											<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">FORECAST</th>
+											<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">SEBELUMNYA</th>
 										</tr>
 									</thead>
 									<tbody class="divide-y divide-line-soft">
 										{#each (macroObj.berikutnya ?? []).slice(0, 20) as m (m.ts + m.title + m.mata_uang)}
 											<tr class="hover:bg-surface/50 transition-colors">
-												<td class="py-2 px-2.5 font-bold font-mono text-text">
+												<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold font-mono text-text">
 													<span class="rounded bg-surface px-1.5 py-0.5 border border-line">
 														{m.mata_uang ?? '—'}
 													</span>
 												</td>
-												<td class="py-2 px-2.5">
+												<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
 													<span class="rounded px-2 py-0.5 text-10 font-bold border border-line {
 														m.impact === 'High' ? 'text-neg bg-neg/10' :
 														m.impact === 'Medium' ? 'text-warn bg-warn/10' :
@@ -1410,9 +1410,9 @@
 														{m.impact ?? '—'}
 													</span>
 												</td>
-												<td class="py-2 px-2.5 font-medium text-text">{m.title ?? '—'}</td>
-												<td class="py-2 px-2.5 text-right font-mono text-text-2">{m.forecast || '—'}</td>
-												<td class="py-2 px-2.5 text-right font-mono text-text-3">{m.previous || '—'}</td>
+												<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-medium text-text">{m.title ?? '—'}</td>
+												<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-text-2">{m.forecast || '—'}</td>
+												<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-mono text-text-3">{m.previous || '—'}</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -1586,19 +1586,19 @@
 									<table class="w-full text-left text-12 font-mono">
 										<thead class="border-b border-line text-text-3 font-normal text-11">
 											<tr>
-												<th class="py-2 px-2.5">SIMBOL</th>
-												<th class="py-2 px-2.5">SUMBER</th>
-												<th class="py-2 px-2.5 text-right">BELI USD</th>
-												<th class="py-2 px-2.5 text-right">HARGA (USD)</th>
-												<th class="py-2 px-2.5 text-right">5M CHG</th>
-												<th class="py-2 px-2.5 text-right">1H CHG</th>
-												<th class="py-2 px-2.5 text-right">SHADOW %</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">SIMBOL</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">SUMBER</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">BELI USD</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">HARGA (USD)</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">5M CHG</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">1H CHG</th>
+												<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">SHADOW %</th>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft">
 											{#each (gmgnObj.signals ?? []).slice(-15).reverse() as s (s.key + String(s.ts))}
 												<tr class="hover:bg-surface/50 transition-colors">
-													<td class="py-2 px-2.5 font-bold text-text">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">
 														{s.symbol}
 														{#if s.whale}
 															<span class="ml-1 text-10 text-accent font-sans border border-accent/20 bg-accent/10 px-1 py-0.5 rounded">
@@ -1606,22 +1606,22 @@
 															</span>
 														{/if}
 													</td>
-													<td class="py-2 px-2.5 text-text-3 font-sans text-10 uppercase">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-text-3 font-sans text-10 uppercase">
 														{s.source} ({s.cluster_wallets}w)
 													</td>
-													<td class="py-2 px-2.5 text-right text-text-2">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 														${s.cluster_buy_usd?.toLocaleString('id-ID', { maximumFractionDigits: 0 }) ?? '—'}
 													</td>
-													<td class="py-2 px-2.5 text-right text-text">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text">
 														${s.last_price_usd < 0.01 ? s.last_price_usd?.toFixed(6) : s.last_price_usd?.toFixed(2)}
 													</td>
-													<td class="py-2 px-2.5 text-right font-medium {(s.ret_5m_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-medium {(s.ret_5m_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 														{(s.ret_5m_pct ?? 0) >= 0 ? '+' : ''}{s.ret_5m_pct?.toFixed(1) ?? '—'}%
 													</td>
-													<td class="py-2 px-2.5 text-right font-medium {(s.ret_1h_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-medium {(s.ret_1h_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 														{(s.ret_1h_pct ?? 0) >= 0 ? '+' : ''}{s.ret_1h_pct?.toFixed(1) ?? '—'}%
 													</td>
-													<td class="py-2 px-2.5 text-right {(s.shadow_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
+													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {(s.shadow_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 														{(s.shadow_pct ?? 0) >= 0 ? '+' : ''}{s.shadow_pct?.toFixed(1) ?? '—'}%
 													</td>
 												</tr>
