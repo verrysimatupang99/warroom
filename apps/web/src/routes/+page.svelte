@@ -1,100 +1,41 @@
 <script lang="ts">
-	// Home — Trading Command Center & Signal Cockpit.
-	// Menyajikan overview menyeluruh portofolio lintas pasar (Crypto, Polymarket, IDX, Forex, GMGN)
-	// serta showcase interaktif seluruh sinyal yang berhasil dibuat & dieksekusi engine.
-	import {
-		getAlerts,
-		getArea,
-		getAreas,
-		getKesegaran,
-		getKesehatan
-	} from '$lib/api/client';
-	import type {
-		AlertsPayload,
-		AreaPayload,
-		Fakta,
-		AreasPayload,
-		Kesehatan,
-		KesegaranPayload
-	} from '$lib/api/types';
+	// Home — Cockpit sinyal lintas pasar (gaya A+B, 5 Okt 2026).
+	//
+	// Tata letak: strip ringkasan di atas (B), lalu kartu sinyal terbaik per pasar bertumpuk
+	// (A). Aturan yang dipegang halaman ini:
+	// - Angka yang belum lewat split beku WAJIB tampil sebagai klaim eksplorasi, bukan edge.
+	// - Pasar tanpa sinyal tetap tampil dengan alasannya; skor "—", bukan 0.
+	import { getAlerts, getKesegaran, getKesehatan, getSinyalPerPasar } from '$lib/api/client';
+	import type { AlertsPayload, Kesehatan, KesegaranPayload, SinyalPayload } from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
-	import { angka, statusRisikoDari, waktuWIB } from '$lib/format';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { AREAS } from '$lib/nav';
-	import SubNav from '$lib/components/SubNav.svelte';
-	import EventFeed from '$lib/components/EventFeed.svelte';
-	import EquityCurve from '$lib/components/EquityCurve.svelte';
-	import RiskMeter from '$lib/components/RiskMeter.svelte';
-	import SignalCard from '$lib/components/SignalCard.svelte';
-	import StatisticalEdgeCard from '$lib/components/StatisticalEdgeCard.svelte';
-	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
-	import DecisionFeed from '$lib/components/DecisionFeed.svelte';
+	import { umurDetik } from '$lib/format';
+	import KartuSinyalPasar from '$lib/components/KartuSinyalPasar.svelte';
+	import ErrorState from '$lib/components/ErrorState.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
 
-	let areas = $state<AreasPayload | null>(null);
+	let sinyal = $state<SinyalPayload | null>(null);
 	let kesegaran = $state<KesegaranPayload | null>(null);
 	let sehat = $state<Kesehatan | null>(null);
 	let alerts = $state<AlertsPayload | null>(null);
-	let kripto = $state<AreaPayload | null>(null);
-	let polymarket = $state<AreaPayload | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 
-	// Tab filter untuk bagian sinyal yang berhasil dibuat
-	let tabSinyal = $state<'semua' | 'posisi' | 'lolos' | 'riwayat'>('semua');
-
-	const areaHome = $derived(AREAS.find((a) => a.kunci === 'home')!);
-	let sub = $state(page.url.searchParams.get('sub') ?? 'overview');
-
-	$effect(() => {
-		const s = page.url.searchParams.get('sub');
-		if (s) {
-			sub = s;
-			if (s === 'sinyal') {
-				tabSinyal = 'semua';
-				document.getElementById('sinyal-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'kinerja') {
-				document.getElementById('kinerja-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'risiko') {
-				document.getElementById('risiko-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'overview') {
-				window.scrollTo({ top: 0, behavior: 'smooth' });
-			}
-		}
-	});
-
-	function pilihSub(s: string) {
-		sub = s;
-		if (typeof window !== 'undefined') {
-			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
-			if (s === 'sinyal') {
-				tabSinyal = 'semua';
-				document.getElementById('sinyal-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'kinerja') {
-				document.getElementById('kinerja-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'risiko') {
-				document.getElementById('risiko-section')?.scrollIntoView({ behavior: 'smooth' });
-			} else if (s === 'overview') {
-				window.scrollTo({ top: 0, behavior: 'smooth' });
-			}
-		}
-	}
-
 	async function muat() {
-		const [a, k, h, al, kr, pm] = await Promise.allSettled([
-			getAreas(),
+		const [s, k, h, al] = await Promise.allSettled([
+			getSinyalPerPasar(),
 			getKesegaran(),
 			getKesehatan(),
-			getAlerts(),
-			getArea('crypto'),
-			getArea('polymarket')
+			getAlerts()
 		]);
-		if (a.status === 'fulfilled') areas = a.value;
+		if (s.status === 'fulfilled') {
+			sinyal = s.value;
+			galat = null;
+		} else {
+			galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
+		}
 		if (k.status === 'fulfilled') kesegaran = k.value;
 		if (h.status === 'fulfilled') sehat = h.value;
 		if (al.status === 'fulfilled') alerts = al.value;
-		if (kr.status === 'fulfilled') kripto = kr.value;
-		if (pm.status === 'fulfilled') polymarket = pm.value;
 		memuat = false;
 	}
 
@@ -104,509 +45,253 @@
 		return () => clearInterval(t);
 	});
 
-	// Ekstrak Fakta Kripto
-	const faktaKripto = $derived(kripto?.facts ?? []);
+	const daftar = $derived(sinyal?.sinyal ?? []);
 
-	function cariFakta(koleksi: Fakta[], kunci: string) {
-		return koleksi.find((f) => f.key === kunci)?.value ?? null;
-	}
+	// Strip ringkasan (gaya B) — semuanya dihitung dari data yang benar-benar ada.
+	const ringkas = $derived([
+		{ n: daftar.length, t: 'Pasar dipantau', w: 'var(--text)' },
+		{ n: daftar.filter((r) => r.ada).length, t: 'Ada sinyal', w: 'var(--accent)' },
+		{
+			n: daftar.filter((r) => r.ada && r.terverifikasi).length,
+			t: 'Terverifikasi',
+			w: 'var(--warn)'
+		},
+		{
+			n: (kesegaran?.facts ?? []).filter((f) => f.status === 'basi').length,
+			t: 'Fakta basi',
+			w: 'var(--warn)'
+		},
+		{
+			n: sehat?.status ?? '—',
+			t: 'Layanan',
+			w: sehat?.status === 'ok' ? 'var(--accent)' : 'var(--warn)'
+		}
+	]);
 
-	const dataEquity = $derived(
-		(cariFakta(faktaKripto, 'equity') as {
-			points?: { i: number; r: number }[];
-			stats?: Record<string, number>;
-		} | null) ?? null
-	);
-
-	const dataRisiko = $derived(
-		(cariFakta(faktaKripto, 'risiko') as Record<string, unknown> | null) ?? null
-	);
-
-	interface TradeLedger {
-		pair?: string;
-		direction?: string;
-		signal_id?: string;
-		status?: string;
-		r?: number;
-		closed_at?: string;
-		note?: string;
-		source?: string;
-	}
-
-	const dataLedger = $derived(
-		(cariFakta(faktaKripto, 'ledger') as {
-			trade?: number;
-			total_r?: number;
-			winrate_pct?: number;
-			expectancy_r?: number;
-			terakhir?: TradeLedger[];
-		} | null) ?? null
-	);
-
-	const kandidatList = $derived.by(() => {
-		const k = cariFakta(faktaKripto, 'kandidat');
-		if (Array.isArray(k)) return k;
-		return [];
-	});
-
-	interface PosisiTerbuka {
-		signal_id?: string;
-		pair?: string;
-		direction?: string;
-		entry?: number;
-		stop?: number;
-		tp1?: number;
-		tp2?: number;
-		size_usd?: number;
-		opened_at?: string;
-		status?: string;
-		note?: string;
-	}
-
-	const dataPosisi = $derived.by<PosisiTerbuka[]>(() => {
-		const p = cariFakta(faktaKripto, 'posisi');
-		if (Array.isArray(p)) return p;
-		return [];
-	});
-
-	// Setup sinyal yang lolos aturan filter gerbang risiko
-	const kandidatLolos = $derived(kandidatList.filter((k) => k.allowed));
-	const kandidatDitolak = $derived(kandidatList.filter((k) => !k.allowed));
-
-	// Ekstrak Fakta Polymarket
-	const faktaPoly = $derived(polymarket?.facts ?? []);
-	const dataVerdict = $derived(
-		(cariFakta(faktaPoly, 'verdict') as {
-			n?: number;
-			win?: number;
-			be?: number;
-			ci?: number;
-			ci95?: [number, number];
-		} | null) ?? null
-	);
-
-	const totalR = $derived(dataEquity?.stats?.total_r ?? dataLedger?.total_r ?? 0);
-	const winrate = $derived(dataEquity?.stats?.winrate_pct ?? dataLedger?.winrate_pct ?? 0);
-	const sisaRuangR = $derived(Number(dataRisiko?.sisa_ruang_r ?? 3.0));
-	// Badge risiko: SATU definisi ambang dengan RiskMeter (temuan 5 Okt 2026 — dulu
-	// badge ini dipatok literal "AMAN" sehingga bisa hijau walau data belum ada).
-	const statusRisikoHome = $derived(
-		statusRisikoDari(dataRisiko?.hari_ini_r, dataRisiko?.batas_rugi_r)
-	);
-	const totalTrade = $derived(dataEquity?.stats?.trades ?? dataLedger?.trade ?? 0);
-
-	// Total sinyal berhasil dibuat (posisi aktif + setup lolos gerbang + trade yang sudah selesai)
-	const totalSinyalBerhasil = $derived(
-		dataPosisi.length + kandidatLolos.length + (dataLedger?.terakhir?.length ?? 0)
+	// Sorotan (gaya B): sinyal berskor tertinggi yang benar-benar ada.
+	const sorotan = $derived(
+		daftar
+			.filter((r) => r.ada && r.skor != null)
+			.slice()
+			.sort((a, b) => (b.skor ?? 0) - (a.skor ?? 0))[0] ?? null
 	);
 </script>
 
-<div class="space-y-4">
-	<!-- Header Command Center: Home -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+<svelte:head><title>Home — War Room</title></svelte:head>
+
+<div class="ruang">
+	<header class="kepala">
 		<div>
-			<div class="flex items-center gap-2">
-				<h1 class="text-26 font-bold tracking-tight text-text font-display">Home</h1>
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-pos/10 border border-pos/30 px-2 py-0.5 text-11 font-mono text-pos">
-					<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
-					ENGINE NORMAL
-				</span>
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 border border-accent/30 px-2 py-0.5 text-11 font-mono text-accent">
-					5 VENUE LIVE
-				</span>
-			</div>
-			<p class="text-12 text-text-3 mt-0.5">
-				Command Center · Overview Multi-Market &amp; Sinyal yang Berhasil Dibuat
+			<h1>Sinyal per pasar</h1>
+			<p>
+				Satu sinyal terbaik tiap pasar dari konfigurasi terukur. Status verifikasi selalu
+				ditampilkan — angka yang belum lewat split beku adalah klaim eksplorasi, bukan edge.
 			</p>
 		</div>
-
-		<div class="flex items-center gap-2 text-11 text-text-3 font-mono">
-			<span class="rounded bg-surface px-2 py-1 border border-line">
-				User: <b class="text-text-2">{sehat?.user ?? 'operator'}</b>
+		<div class="status">
+			<span class="pil-mikro">
+				<span class="titik" style="--w:{live.status === 'live' ? 'var(--pos)' : 'var(--warn)'}"></span>
+				SSE {live.status}
 			</span>
-			<span class="rounded bg-surface px-2 py-1 border border-line">
-				DB: <b class={sehat?.db ? 'text-pos' : 'text-neg'}>{sehat?.db ? 'Connected' : 'Error'}</b>
-			</span>
-			<span class="rounded bg-surface px-2 py-1 border border-line">
-				SSE: <b class={live.status === 'live' ? 'text-pos' : 'text-warn'}>{live.status.toUpperCase()}</b>
-			</span>
+			<span class="pil-mikro">DB {sehat?.db ? 'ok' : '—'}</span>
+			{#if kesegaran?.checked_at}
+				<span class="pil-mikro">kesegaran {umurDetik(kesegaran.facts?.[0]?.age_s ?? null)}</span>
+			{/if}
 		</div>
-	</div>
+	</header>
 
-	<!-- Sub-navigasi Section Home -->
-	{#if areaHome?.anak?.length}
-		<SubNav area={areaHome} aktif={sub} onpilih={pilihSub} />
+	{#if alerts && alerts.terbuka > 0}
+		<div class="banner" data-testid="alert-banner">
+			<span>⚠</span>
+			<span><b class="angka">{alerts.terbuka}</b> alert butuh perhatian</span>
+			<a href="/sistem">Buka Sistem →</a>
+		</div>
 	{/if}
 
-	<div id="overview-section" class="space-y-4">
-		<!-- Alert Banner jika ada alert terbuka -->
-		{#if alerts && alerts.terbuka > 0}
-		<div
-			class="rounded-card border border-warn/40 bg-warn/10 px-4 py-3 text-12 text-text-2 shadow-sm flex items-center justify-between"
-			data-testid="alert-banner"
-		>
-			<div class="flex items-center gap-2">
-				<span class="text-16 font-bold text-warn">⚠</span>
-				<div>
-					<span class="angka font-bold text-warn">{alerts.terbuka} Alert</span> membutuhkan perhatian ·
-					<span class="text-text-3">Transport: {alerts.transport.nama}</span>
+	{#if galat}
+		<ErrorState pesan={galat} onulang={() => void muat()} />
+	{:else if memuat}
+		<Skeleton tinggi={84} />
+		<Skeleton tinggi={150} />
+		<Skeleton tinggi={150} />
+	{:else}
+		<!-- Strip ringkasan (B) -->
+		<section class="strip" aria-label="Ringkasan">
+			{#each ringkas as r (r.t)}
+				<div class="chip">
+					<b class="angka" style="--w:{r.w}">{r.n}</b>
+					<span class="label-mikro">{r.t}</span>
 				</div>
-			</div>
-			<a class="rounded bg-warn/20 border border-warn/40 px-2.5 py-1 text-11 font-medium text-warn hover:bg-warn/30 transition-colors" href="/sistem">
-				Buka Sistem →
-			</a>
-		</div>
-	{/if}
-
-	<!-- 4 Kartu KPI Utama di Atas (Overview Glance) -->
-	<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-		<!-- KPI 1: Total Return R -->
-		<div class="permukaan-2 rounded-card border border-line p-3">
-			<div class="flex items-center justify-between text-11 text-text-3">
-				<span>Total Ekuitas</span>
-				<span class="font-mono text-10">Paper Portfolio</span>
-			</div>
-			<div class="mt-1 flex items-baseline gap-1.5">
-				<span class="angka text-26 font-bold {totalR >= 0 ? 'text-pos' : 'text-neg'}">
-					{totalR > 0 ? '+' : ''}{angka(totalR)}
-				</span>
-				<span class="text-13 text-text-3 font-mono">R</span>
-			</div>
-			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
-				<span>Win Rate: <b class="angka text-text-2">{angka(winrate)}%</b></span>
-				<span>{totalTrade} trade selesai</span>
-			</div>
-		</div>
-
-		<!-- KPI 2: Batas Risiko Harian -->
-		<div class="permukaan-2 rounded-card border border-line p-3">
-			<div class="flex items-center justify-between text-11 text-text-3">
-				<span>Kapasitas Risiko</span>
-				<span
-					class="rounded px-1 text-9 font-bold uppercase border {statusRisikoHome.kelas}"
-					title="Ambang sama dengan RiskMeter: ≥90% limit tercapai, ≥60% waspada"
-				>
-					{statusRisikoHome.label}
-				</span>
-			</div>
-			<div class="mt-1 flex items-baseline gap-1.5">
-				<span class="angka text-26 font-bold text-text">
-					{angka(sisaRuangR)}
-				</span>
-				<span class="text-13 text-text-3 font-mono">R Sisa</span>
-			</div>
-			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
-				<span>Limit: <b class="angka text-text-2">{angka(Number(dataRisiko?.batas_rugi_r ?? 3))} R/hari</b></span>
-				<span>{Number(dataRisiko?.posisi_terbuka ?? dataPosisi.length)}/3 terbuka</span>
-			</div>
-		</div>
-
-		<!-- KPI 3: Sinyal Berhasil Dibuat -->
-		<div class="permukaan-2 rounded-card border border-line p-3">
-			<div class="flex items-center justify-between text-11 text-text-3">
-				<span>Sinyal Dihasilkan</span>
-				<span class="rounded bg-accent/10 px-1 text-9 font-bold text-accent border border-accent/20">TERVERIFIKASI</span>
-			</div>
-			<div class="mt-1 flex items-baseline gap-1.5">
-				<span class="angka text-26 font-bold text-accent">
-					{totalSinyalBerhasil}
-				</span>
-				<span class="text-13 text-text-3">sinyal</span>
-			</div>
-			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
-				<span>{dataPosisi.length} aktif · {kandidatLolos.length} lolos gate</span>
-				<a href="#sinyal-section" class="text-accent underline text-10">Lihat rincian ↓</a>
-			</div>
-		</div>
-
-		<!-- KPI 4: Polymarket Edge -->
-		<div class="permukaan-2 rounded-card border border-line p-3">
-			<div class="flex items-center justify-between text-11 text-text-3">
-				<span>Polymarket Edge</span>
-				<span class="font-mono text-10 text-paper">5m Window</span>
-			</div>
-			<div class="mt-1 flex items-baseline gap-1.5">
-				<span class="angka text-26 font-bold text-pos">
-					{dataVerdict?.n ? `${((dataVerdict.win ?? 0) / dataVerdict.n * 100).toFixed(1)}%` : '78.2%'}
-				</span>
-				<span class="text-13 text-text-3 font-mono">Win</span>
-			</div>
-			<div class="mt-1 flex items-center justify-between text-11 text-text-3">
-				<span>BE: <b class="angka text-text-2">{((dataVerdict?.be ?? 0.7666) * 100).toFixed(1)}%</b></span>
-				<span>{dataVerdict?.n ? `${dataVerdict.n} n` : '4,133 n'}</span>
-			</div>
-		</div>
-	</div>
-
-	<!-- Ringkasan Kesehatan 5 Pasar (Multi-Market Overview Hub) -->
-	<div class="permukaan-2 rounded-card border border-line p-3">
-		<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-			<div>
-				<h3 class="text-13 font-semibold text-text">Overview 5 Pusat Pasar &amp; Venue</h3>
-				<p class="text-11 text-text-3">Status koneksi, kesehatan data, dan alokasi instrumen perdagangan aktif</p>
-			</div>
-			<span class="text-10 font-mono text-text-3">5 VENUE TERHUBUNG</span>
-		</div>
-		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-			{#each (areas?.areas ?? []) as a (a.area)}
-				<a
-					href={`/${a.area}`}
-					class="flex flex-col justify-between rounded border border-line-soft bg-surface p-2.5 transition-all hover:border-accent hover:bg-surface-2"
-				>
-					<div class="flex items-center justify-between mb-1">
-						<span class="font-mono text-12 font-bold uppercase text-text">{a.area}</span>
-						{#if a.basi > 0}
-							<span class="rounded bg-warn/15 px-1 py-0.5 text-9 font-bold text-warn border border-warn/30">
-								{a.basi} basi
-							</span>
-						{:else}
-							<span class="rounded bg-pos/15 px-1 py-0.5 text-9 font-bold text-pos border border-pos/30">
-								● SEGAR
-							</span>
-						{/if}
-					</div>
-					<div class="text-10 text-text-3 flex items-center justify-between">
-						<span>{a.fakta} fakta terdaftar</span>
-						<span class="text-accent font-bold">Buka →</span>
-					</div>
-				</a>
 			{/each}
-		</div>
-	</div>
-	</div>
+		</section>
 
-	<!-- SECTION UTAMA: Sinyal-Sinyal yang Berhasil Dibuat -->
-	<section id="sinyal-section" class="permukaan-2 rounded-card border border-line p-4 space-y-3">
-		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
-			<div>
-				<div class="flex items-center gap-2">
-					<span class="text-16">🎯</span>
-					<h2 class="text-16 font-bold text-text">Sinyal-Sinyal yang Berhasil Dibuat</h2>
-					<span class="rounded bg-accent/15 text-accent border border-accent/30 px-2 py-0.5 text-10 font-mono font-bold">
-						{totalSinyalBerhasil} TOTAL
-					</span>
+		<!-- Sorotan (B): satu keputusan jelas saat pertama buka -->
+		{#if sorotan}
+			<section class="sorotan" aria-label="Sinyal terkuat">
+				<span class="label-mikro">Sinyal terkuat saat ini · {sorotan.label}</span>
+				<div class="baris">
+					<span class="subjek angka">{sorotan.subjek ?? '—'}</span>
+					{#if sorotan.arah}<span class="arah">{sorotan.arah}</span>{/if}
+					{#if sorotan.skor != null}<span class="skor-besar angka">{sorotan.skor}</span>{/if}
 				</div>
-				<p class="text-11 text-text-3 mt-0.5">
-					Daftar posisi aktif di paper broker, setup SMC yang lolos gerbang risiko, serta riwayat eksekusi sinyal selesai.
-				</p>
-			</div>
-
-			<!-- Filter Tabs -->
-			<div class="flex items-center gap-1 rounded bg-surface p-1 border border-line text-11 font-medium">
-				<button
-					type="button"
-					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'semua' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
-					onclick={() => (tabSinyal = 'semua')}
-				>
-					Semua ({totalSinyalBerhasil})
-				</button>
-				<button
-					type="button"
-					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'posisi' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
-					onclick={() => (tabSinyal = 'posisi')}
-				>
-					Posisi Aktif ({dataPosisi.length})
-				</button>
-				<button
-					type="button"
-					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'lolos' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
-					onclick={() => (tabSinyal = 'lolos')}
-				>
-					Setup Lolos Gate ({kandidatLolos.length})
-				</button>
-				<button
-					type="button"
-					class="rounded px-2.5 py-1 transition-colors {tabSinyal === 'riwayat' ? 'bg-accent text-bg font-bold' : 'text-text-3 hover:text-text'}"
-					onclick={() => (tabSinyal = 'riwayat')}
-				>
-					Riwayat Selesai ({dataLedger?.terakhir?.length ?? 0})
-				</button>
-			</div>
-		</div>
-
-		<!-- 1. Posisi Aktif yang Dibuat dari Sinyal -->
-		{#if tabSinyal === 'semua' || tabSinyal === 'posisi'}
-			<div class="space-y-2">
-				<div class="flex items-center justify-between text-12 font-medium text-text-2">
-					<span class="flex items-center gap-1.5">
-						<span class="h-2 w-2 rounded-full bg-pos animate-pulse"></span>
-						Posisi Aktif Berjalan ({dataPosisi.length})
-					</span>
-					<span class="text-10 text-text-3 font-mono">DILINDUNGI TRUE NET BREAK-EVEN (MEXC)</span>
-				</div>
-
-				{#if dataPosisi.length === 0}
-					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
-						Tidak ada posisi aktif yang sedang terbuka saat ini (0/3 slot).
-					</div>
-				{:else}
-					<div class="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-						{#each dataPosisi as p (p.signal_id ?? p.pair)}
-							<div class="rounded-card border border-pos/40 bg-surface p-3 space-y-2 font-mono text-11 shadow-sm">
-								<div class="flex items-center justify-between border-b border-line-soft pb-1.5">
-									<div class="flex items-center gap-1.5">
-										<span class="font-bold text-text text-14">{p.pair}</span>
-										<span class="rounded px-1.5 py-0.5 text-9 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
-											{p.direction}
-										</span>
-										<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-9 font-bold">
-											{p.status ?? 'OPEN'}
-										</span>
-									</div>
-									<span class="text-10 text-text-3 font-mono">{p.signal_id ?? ''}</span>
-								</div>
-
-								<!-- Parameter Grid -->
-								<div class="grid grid-cols-4 gap-1.5 text-10">
-									<div class="rounded bg-canvas/60 p-1.5 border border-line">
-										<div class="text-9 text-text-3 uppercase">Entry</div>
-										<div class="font-bold text-text">${angka(p.entry)}</div>
-									</div>
-									<div class="rounded bg-canvas/60 p-1.5 border border-line">
-										<div class="text-9 text-neg uppercase flex items-center justify-between">
-											<span>Stop Loss</span>
-										</div>
-										<div class="font-bold text-neg">${angka(p.stop)}</div>
-										<span class="text-8 text-pos font-sans block">True BE (Fee Net)</span>
-									</div>
-									<div class="rounded bg-canvas/60 p-1.5 border border-line">
-										<div class="text-9 text-pos uppercase">TP1 (Hit)</div>
-										<div class="font-bold text-pos">${angka(p.tp1)}</div>
-										<span class="text-8 text-text-3 font-sans block">Runner aktif</span>
-									</div>
-									<div class="rounded bg-canvas/60 p-1.5 border border-line">
-										<div class="text-9 text-accent uppercase">TP2 Target</div>
-										<div class="font-bold text-accent">${angka(p.tp2)}</div>
-										<span class="text-8 text-text-3 font-sans block">${angka(p.size_usd)} size</span>
-									</div>
-								</div>
-
-								{#if p.note}
-									<div class="rounded bg-surface-2 p-1.5 text-10 text-text-3 font-sans flex items-start gap-1">
-										<span class="text-accent font-bold">Note:</span>
-										<span>{p.note}</span>
-									</div>
-								{/if}
-							</div>
-						{/each}
-					</div>
+				<p class="alasan">{sorotan.alasan}</p>
+				{#if !sorotan.terverifikasi}
+					<p class="jujur" role="note">{sorotan.catatan_kejujuran}</p>
 				{/if}
-			</div>
+			</section>
 		{/if}
 
-		<!-- 2. Setup Sinyal yang Berhasil Lolos Gerbang Risiko (Ready Candidates) -->
-		{#if tabSinyal === 'semua' || tabSinyal === 'lolos'}
-			<div class="space-y-2 pt-2">
-				<div class="flex items-center justify-between text-12 font-medium text-text-2">
-					<span class="flex items-center gap-1.5">
-						<span class="text-accent">⚡</span>
-						Setup Sinyal Lolos Gerbang Risiko ({kandidatLolos.length})
-					</span>
-					<span class="text-10 text-text-3">MEMENUHI ATURAN SMC &amp; RISK GATE</span>
-				</div>
+		<!-- Kartu per pasar (A) -->
+		<section class="daftar" aria-label="Sinyal tiap pasar">
+			{#each daftar as s (s.pasar)}
+				<KartuSinyalPasar {s} utama={s.pasar === sorotan?.pasar} />
+			{/each}
+		</section>
 
-				{#if kandidatLolos.length === 0}
-					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
-						Tidak ada setup baru yang sedang menunggu eksekusi saat ini. Seluruh kriteria diproteksi ketat.
-					</div>
-				{:else}
-					<div class="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-						{#each kandidatLolos as setup (setup.pair + String(setup.entry) + String(setup.ts))}
-							<SignalCard {setup} />
-						{/each}
-					</div>
-				{/if}
-			</div>
+		{#if daftar.length > 0 && !sinyal?.ada}
+			<p class="catatan">
+				Belum ada pasar yang menghasilkan sinyal. Tiap kartu menyebutkan alasannya — sengaja
+				tidak diisi angka 0 supaya tidak terlihat seperti data.
+			</p>
 		{/if}
-
-		<!-- 3. Riwayat Sinyal yang Selesai / Terbukti (Ledger) -->
-		{#if tabSinyal === 'semua' || tabSinyal === 'riwayat'}
-			<div class="space-y-2 pt-2">
-				<div class="flex items-center justify-between text-12 font-medium text-text-2">
-					<span class="flex items-center gap-1.5">
-						<span class="text-pos">✓</span>
-						Riwayat Sinyal Selesai / Terealisasi ({dataLedger?.terakhir?.length ?? 0})
-					</span>
-					<span class="text-10 text-text-3 font-mono">HASIL EKSEKUSI TERCATAT DI LEDGER</span>
-				</div>
-
-				{#if !dataLedger?.terakhir || dataLedger.terakhir.length === 0}
-					<div class="rounded border border-dashed border-line p-4 text-center text-text-3 text-11">
-						Belum ada riwayat sinyal selesai di ledger.
-					</div>
-				{:else}
-					<div class="space-y-1.5">
-						{#each dataLedger.terakhir as row (row.signal_id ?? row.pair + String(row.closed_at))}
-							<div class="rounded border border-line bg-surface p-2.5 text-11 font-mono flex flex-wrap items-center justify-between gap-2 hover:bg-surface-2 transition-colors">
-								<div class="flex items-center gap-2">
-									<span class="font-bold text-text text-13">{row.pair}</span>
-									<span class="rounded px-1.5 py-0.5 text-9 font-bold uppercase {row.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
-										{row.direction ?? 'LONG'}
-									</span>
-									<span class="rounded bg-surface-2 px-1.5 py-0.5 text-9 text-text-3 border border-line">
-										{row.signal_id ?? ''}
-									</span>
-									<span class="rounded px-1.5 py-0.5 text-9 font-bold {row.status === 'closed_TP2' || row.status === 'closed_manual' ? 'text-pos bg-pos/15 border border-pos/30' : row.status === 'closed_SL' ? 'text-warn bg-warn/15 border border-warn/30' : 'text-text-3 bg-surface-2 border border-line'}">
-										{row.status}
-									</span>
-								</div>
-
-								<div class="flex items-center gap-3">
-									{#if row.note}
-										<span class="text-10 text-text-3 truncate max-w-xs font-sans" title={row.note}>
-											{row.note}
-										</span>
-									{/if}
-									<div class="flex items-baseline gap-1 text-right min-w-[70px]">
-										<span class="angka text-13 font-bold {(row.r ?? 0) > 0 ? 'text-pos' : (row.r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
-											{(row.r ?? 0) > 0 ? '+' : ''}{angka(row.r ?? 0)}
-										</span>
-										<span class="text-10 text-text-3 font-mono">R</span>
-									</div>
-								</div>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		{/if}
-	</section>
-
-	<!-- Papan Peringkat Strategi & Kinerja -->
-	<div id="kinerja-section" class="space-y-4">
-		<StrategyLeaderboard />
-
-		<!-- Layout Dua Kolom Pendukung (Grid Bawah) -->
-		<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-			<!-- Kolom Kiri: Kurva Ekuitas & Aliran Keputusan (7 Kolom) -->
-			<div class="space-y-4 lg:col-span-7">
-				<!-- Kurva Ekuitas Interaktif -->
-				<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
-
-				<!-- Aliran Keputusan & Eksekusi -->
-				<DecisionFeed />
-			</div>
-
-			<!-- Kolom Kanan: Pengawas Risiko, Edge Statistik, Feed Kejadian Realtime (5 Kolom) -->
-			<div id="risiko-section" class="space-y-4 lg:col-span-5">
-				<!-- Pengawas Risiko -->
-				<RiskMeter risiko={dataRisiko} />
-
-			<!-- Kartu Bukti Statistik Polymarket -->
-			<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
-
-			<!-- Aliran Kejadian Realtime SSE -->
-			<div class="permukaan-2 rounded-card border border-line p-3">
-				<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-					<div class="flex items-center gap-2">
-						<h3 class="text-13 font-medium text-text">Kejadian Real-Time</h3>
-						<span class="h-2 w-2 rounded-full {live.status === 'live' ? 'bg-pos' : 'bg-warn'} animate-pulse"></span>
-					</div>
-					<span class="text-10 font-mono text-text-3 uppercase">{live.status}</span>
-				</div>
-				<EventFeed kejadian={live.kejadian} memuat={live.status === 'menyambung'} galat={live.pesan} />
-			</div>
-		</div>
-	</div>
-	</div>
+	{/if}
 </div>
+
+<style>
+	.ruang {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.kepala {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 16px;
+		flex-wrap: wrap;
+	}
+	h1 {
+		font-family: var(--font-display);
+		font-size: 22px;
+		margin: 0 0 4px;
+	}
+	.kepala p {
+		margin: 0;
+		font-size: 12px;
+		color: var(--text-3);
+		max-width: 64ch;
+	}
+	.status {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+	.pil-mikro {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--text-3);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-pil);
+		padding: 3px 9px;
+	}
+	.titik {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--w);
+	}
+	.banner {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 12px;
+		color: var(--text-2);
+		background: color-mix(in srgb, var(--warn) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+		border-radius: var(--radius-card);
+		padding: 10px 14px;
+	}
+	.banner a {
+		margin-left: auto;
+		color: var(--warn);
+	}
+	.strip {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+		gap: 8px;
+	}
+	.chip {
+		background: var(--surface);
+		border: 1px solid var(--line-soft);
+		border-radius: var(--radius-card);
+		padding: 10px 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.chip b {
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--w, var(--text));
+	}
+	.sorotan {
+		background: linear-gradient(160deg, var(--surface-2), var(--surface));
+		border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+		border-radius: var(--radius-card);
+		padding: 16px;
+	}
+	.baris {
+		display: flex;
+		align-items: baseline;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin-top: 6px;
+	}
+	.subjek {
+		font-size: 28px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+	.arah {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		padding: 2px 8px;
+		border-radius: 6px;
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+	}
+	.skor-besar {
+		font-size: 22px;
+		font-weight: 700;
+		color: var(--accent);
+		margin-left: auto;
+	}
+	.alasan {
+		margin: 10px 0 0;
+		font-size: 12px;
+		color: var(--text-2);
+	}
+	.daftar {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.jujur {
+		margin: 10px 0 0;
+		font-size: 11px;
+		color: var(--warn);
+		background: color-mix(in srgb, var(--warn) 8%, transparent);
+		border-left: 2px solid var(--warn);
+		padding: 6px 10px;
+		border-radius: 0 6px 6px 0;
+	}
+	.catatan {
+		font-size: 12px;
+		color: var(--text-3);
+		margin: 0;
+	}
+</style>

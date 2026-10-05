@@ -193,6 +193,31 @@ export interface ProposalsPayload {
 	count: number;
 }
 
+/** Satu sinyal terbaik untuk satu pasar (GET /api/v1/sinyal/per-pasar, 5 Okt 2026).
+ * `skor` = None berarti tidak ada angka (BUKAN 0). `terverifikasi` = sudah lewat split beku;
+ * selama false, sinyal ini klaim eksplorasi dan UI wajib menampilkannya apa adanya. */
+export interface SinyalPasar {
+	pasar: string;
+	label: string;
+	ada: boolean;
+	arah: string | null;
+	subjek: string | null;
+	skor: number | null;
+	tier: string | null;
+	alasan: string;
+	terverifikasi: boolean;
+	catatan_kejujuran: string;
+	umur_s: number | null;
+	sumber_fakta: string;
+	detail: Record<string, unknown>;
+}
+
+export interface SinyalPayload {
+	sinyal: SinyalPasar[];
+	count: number;
+	ada: number;
+}
+
 /** Fakta `poly.dataset/recorder` — katalog dataset Polymarket (P4-T3). Bentuk longgar: hanya
  * field yang benar-benar dikirim sumber yang ditampilkan. */
 export interface FaktaDataset {
