@@ -284,8 +284,8 @@
 		padding: 3px 9px;
 	}
 	.titik {
-		width: 6px;
-		height: 6px;
+		width: 7px;
+		height: 7px;
 		border-radius: 50%;
 		background: var(--w);
 	}
@@ -366,14 +366,33 @@
 		flex-direction: column;
 		gap: 12px;
 	}
+	/* Catatan kejujuran — elemen paling khas di produk ini, jadi TIDAK boleh memakai
+	   pola generik (border kiri tebal) yang justru jadi penanda UI hasil AI. Dipakai
+	   penanda teks + latar tipis: tetap menonjol, tapi jelas disengaja. */
 	.jujur {
 		margin: 10px 0 0;
 		font-size: 11px;
+		line-height: 1.5;
 		color: var(--warn);
-		background: color-mix(in srgb, var(--warn) 8%, transparent);
-		border-left: 2px solid var(--warn);
-		padding: 6px 10px;
-		border-radius: 0 6px 6px 0;
+		background: color-mix(in srgb, var(--warn) 7%, transparent);
+		border-radius: 6px;
+		padding: 7px 10px 7px 26px;
+		position: relative;
+	}
+	.jujur::before {
+		content: '!';
+		position: absolute;
+		left: 9px;
+		top: 8px;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--warn);
+		color: var(--bg);
+		font-size: 9px;
+		font-weight: 700;
+		line-height: 12px;
+		text-align: center;
 	}
 	.catatan {
 		font-size: 12px;
