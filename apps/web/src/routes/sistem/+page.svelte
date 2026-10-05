@@ -121,7 +121,7 @@
 	);
 </script>
 
-<div class="space-y-3">
+<div class="space-y-4">
 	<div>
 		<h1 class="text-19 text-text">Sistem &amp; AI</h1>
 		<p class="text-12 text-text-3">Unit lintas host, kesegaran, biaya, event, AI, kebijakan, audit.</p>
