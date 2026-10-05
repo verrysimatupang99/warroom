@@ -1,13 +1,18 @@
 <script lang="ts">
-	// KartuSinyalPasar — satu sinyal terbaik untuk satu pasar (gaya A: kartu bertumpuk).
+	// KartuSinyalPasar — satu sinyal terbaik untuk satu pasar.
 	//
-	// Aturan yang dipegang komponen ini:
+	// Bahasa visual: beebots (6 Okt 2026). Yang diambil adalah disiplinnya —
+	// eyebrow mono, angka tabular, bar proporsi untuk setiap besaran yang punya
+	// maksimum, dan status yang selalu berpasangan glif.
+	//
+	// ATURAN YANG DIPEGANG KOMPONEN INI:
 	// 1. Skor kosong ditampilkan "—", BUKAN 0. Nol adalah angka; "tidak ada" bukan.
-	// 2. Selama `terverifikasi` false, kartu WAJIB menampilkan catatan kejujuran. Klaim
-	//    eksplorasi tidak boleh terlihat sama dengan edge yang sudah lolos split beku.
-	// 3. Pasar tanpa sinyal tetap tampil (redup) dengan alasan — bukan disembunyikan.
+	// 2. Selama `terverifikasi` false, catatan kejujuran WAJIB tampil.
+	// 3. Pasar tanpa sinyal tetap tampil beserta alasannya — bukan disembunyikan.
+	// 4. Skor selalu membawa skalanya (dari 100). Angka tanpa skala adalah hiasan.
 	import type { SinyalPasar } from '$lib/api/types';
 	import { umurDetik } from '$lib/format';
+	import Bar from './Bar.svelte';
 
 	interface Props {
 		s: SinyalPasar;
@@ -24,7 +29,7 @@
 				: 'var(--accent-2)'
 	);
 
-	// Metrik yang layak ditampilkan per pasar — diambil dari detail apa adanya.
+	// Metrik per pasar — apa adanya dari detail. Tidak dikarang bila tidak ada.
 	const metrik = $derived.by(() => {
 		const d = (s.detail ?? {}) as Record<string, unknown>;
 		const out: { label: string; nilai: string }[] = [];
@@ -56,6 +61,34 @@
 		}
 		return out;
 	});
+
+	// Bar kedua yang layak ditampilkan: proporsi pool layak (gmgn) atau
+	// win-rate terhadap break-even (polymarket). Hanya dirender bila angkanya ada.
+	// Tipe ditulis eksplisit — tanpa itu, dua cabang berbeda bentuk membuat TypeScript
+	// menyimpulkan `never` dan setiap akses field jadi error.
+	type Proporsi = { label: string; nilai: number; maks: number; teks: string };
+	const proporsi = $derived.by((): Proporsi | null => {
+		const d = (s.detail ?? {}) as Record<string, unknown>;
+		if (s.pasar === 'gmgn' && typeof d.viable === 'number' && typeof d.pools === 'number') {
+			return {
+				label: 'Pool layak',
+				nilai: d.viable,
+				maks: d.pools,
+				teks: `${d.viable} / ${d.pools}`
+			};
+		}
+		if (s.pasar === 'polymarket' && typeof d.winRate === 'number') {
+			// 100 sebagai maksimum: dengan begitu bar menunjukkan di mana win-rate berada
+			// pada rentang penuh 0-100%, bukan hanya "berapa persen dari dirinya sendiri".
+			return {
+				label: 'Win-rate',
+				nilai: d.winRate,
+				maks: 100,
+				teks: `${d.winRate.toFixed(2)}%`
+			};
+		}
+		return null;
+	});
 </script>
 
 <article
@@ -64,12 +97,12 @@
 >
 	<div class="isi">
 		<header>
-			<span class="nama">{s.label}</span>
+			<span class="label-mikro">{s.label}</span>
 			{#if s.tier}
-				<span class="tier">{s.tier}</span>
+				<span class="tier angka">{s.tier}</span>
 			{/if}
 			{#if s.umur_s != null}
-				<span class="umur">· {umurDetik(s.umur_s)}</span>
+				<span class="umur angka">· {umurDetik(s.umur_s)}</span>
 			{/if}
 		</header>
 
@@ -77,7 +110,7 @@
 			<div class="baris">
 				<span class="subjek angka">{s.subjek ?? '—'}</span>
 				{#if s.arah}
-					<span class="arah" style="--w:{arahWarna}">{s.arah}</span>
+					<span class="arah angka" style="--w:{arahWarna}">{s.arah}</span>
 				{/if}
 			</div>
 
@@ -105,12 +138,33 @@
 		{/if}
 	</div>
 
-	<div class="skor">
+	<!-- Rail kanan: skor + bar proporsi. Pola rail dari beebots — angka besar di atas,
+	     bar di bawahnya, label mono sebagai penanda bagian. -->
+	<div class="rail">
 		<span class="label-mikro">Skor</span>
 		{#if s.skor != null}
-			<b class="angka" style="--w:{arahWarna}">{s.skor}</b>
+			<b class="angka skor-angka" style="--w:{arahWarna}">{s.skor}<span class="dari">/100</span></b>
+			<div class="skor-bar">
+				<Bar nilai={s.skor} maks={100} warna={arahWarna} label="Skor sinyal" tinggi={6} />
+			</div>
 		{:else}
 			<b class="angka kosong">—</b>
+		{/if}
+
+		{#if proporsi}
+			<div class="rail-prop">
+				<span class="label-mikro">{proporsi.label}</span>
+				<div class="skor-bar">
+					<Bar
+						nilai={proporsi.nilai}
+						maks={proporsi.maks}
+						label={proporsi.label}
+						tinggi={6}
+						ambang_warn={0.75}
+					/>
+				</div>
+				<span class="prop-teks angka">{proporsi.teks}</span>
+			</div>
 		{/if}
 	</div>
 </article>
@@ -119,48 +173,39 @@
 	.kartu {
 		display: grid;
 		grid-template-columns: 1fr auto;
-		gap: 16px;
-		padding: 16px;
+		gap: 20px;
+		padding: 16px 18px;
 	}
 	.kartu.utama {
 		border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 	}
 	/* Kartu kosong: JANGAN pakai opacity pada seluruh kartu.
 	   Diukur 6 Okt 2026 pada CSS ter-scope asli: `opacity: 0.6` menjatuhkan teks alasan
-	   (--text-3, 12px) dari 8,08:1 ke **3,77:1** — di bawah ambang AA 4,5:1 untuk teks
-	   normal. Opacity mengalikan SELURUH subpohon, jadi ia menurunkan kontras semua teks
-	   sekaligus, termasuk catatan kejujuran yang justru harus paling terbaca di kartu kosong.
-	   Yang dilemahkan sekarang hanya latar/border-nya, bukan teksnya. */
+	   (--text-3, 12px) dari 8,08:1 ke 3,77:1 — di bawah ambang AA 4,5:1. Opacity
+	   mengalikan SELURUH subpohon, jadi ia melemahkan semua teks sekaligus, termasuk
+	   catatan kejujuran yang justru harus paling terbaca di kartu kosong. */
 	.kartu.kosong {
-		background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+		background: var(--bg-2);
 		border-style: dashed;
-		border-color: color-mix(in srgb, var(--line) 70%, transparent);
-	}
-	.kartu.kosong .label-mikro,
-	.kartu.kosong .subjek {
-		color: var(--text-2);
+		border-color: color-mix(in srgb, var(--line) 80%, transparent);
 	}
 	header {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		flex-wrap: wrap;
-		margin-bottom: 8px;
-	}
-	.nama {
-		font-size: 13px;
-		color: var(--text-3);
+		margin-bottom: 10px;
 	}
 	.tier,
 	.umur {
-		font-family: var(--font-mono);
 		font-size: 10px;
 		color: var(--text-3);
+		letter-spacing: 0.06em;
 	}
 	.tier {
 		border: 1px solid var(--line);
 		border-radius: 5px;
-		padding: 1px 6px;
+		padding: 2px 7px;
 	}
 	.baris {
 		display: flex;
@@ -169,58 +214,58 @@
 		flex-wrap: wrap;
 	}
 	.subjek {
-		font-size: 22px;
+		font-size: 26px;
 		font-weight: 700;
 		color: var(--text);
-		letter-spacing: -0.01em;
+		letter-spacing: -0.03em;
+		line-height: 1;
 	}
 	.arah {
-		font-family: var(--font-mono);
 		font-size: 12px;
-		padding: 2px 8px;
-		border-radius: 6px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		padding: 3px 9px;
+		border-radius: 999px;
 		color: var(--w);
 		background: color-mix(in srgb, var(--w) 14%, transparent);
-		border: 1px solid color-mix(in srgb, var(--w) 30%, transparent);
+		border: 1px solid color-mix(in srgb, var(--w) 32%, transparent);
 	}
 	.metrik {
 		display: flex;
-		gap: 18px;
-		margin-top: 10px;
+		gap: 20px;
+		margin-top: 12px;
 		flex-wrap: wrap;
 	}
 	.metrik div {
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
+		gap: 2px;
 	}
 	.metrik b {
-		font-size: 13px;
+		font-size: 14px;
 		font-weight: 600;
 		color: var(--text);
 	}
 	.alasan {
-		margin: 10px 0 0;
-		font-size: 12px;
+		margin: 12px 0 0;
+		font-size: 13px;
 		color: var(--text-2);
 	}
 	.tak-ada {
 		margin: 4px 0 0;
-		font-size: 12px;
-		color: var(--text-3);
+		font-size: 13px;
+		color: var(--text-2);
 	}
-	/* Catatan kejujuran + penanda terverifikasi. Bentuknya sengaja BUKAN border kiri
-	   tebal: itu penanda paling khas UI hasil AI, dan di sini justru dipakai untuk hal
-	   yang paling penting di produk ini. Dipakai penanda bulat + latar tipis — menonjol
-	   tanpa memakai pola generik, dan bentuknya (bukan hanya warna) yang membedakan
-	   "belum terverifikasi" dari "terverifikasi". */
+	/* Catatan kejujuran. Penanda bulat + latar tipis — BUKAN border kiri tebal, yang
+	   justru pola paling generik pada UI hasil AI. Bentuk (bukan hanya warna) yang
+	   membedakan "belum terverifikasi" dari "terverifikasi". */
 	.jujur,
 	.terverifikasi {
-		margin: 10px 0 0;
-		font-size: 11px;
+		margin: 12px 0 0;
+		font-size: 12px;
 		line-height: 1.5;
-		padding: 7px 10px 7px 26px;
-		border-radius: 6px;
+		padding: 8px 11px 8px 28px;
+		border-radius: var(--radius-control);
 		position: relative;
 	}
 	.jujur::before,
@@ -228,18 +273,18 @@
 		content: '!';
 		position: absolute;
 		left: 9px;
-		top: 8px;
-		width: 12px;
-		height: 12px;
+		top: 9px;
+		width: 13px;
+		height: 13px;
 		border-radius: 50%;
 		font-size: 9px;
 		font-weight: 700;
-		line-height: 12px;
+		line-height: 13px;
 		text-align: center;
 	}
 	.jujur {
 		color: var(--warn);
-		background: color-mix(in srgb, var(--warn) 7%, transparent);
+		background: color-mix(in srgb, var(--warn) 8%, transparent);
 	}
 	.jujur::before {
 		content: '!';
@@ -247,26 +292,54 @@
 		color: var(--bg);
 	}
 	.terverifikasi {
-		color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 7%, transparent);
+		color: var(--pos);
+		background: color-mix(in srgb, var(--pos) 8%, transparent);
 	}
 	.terverifikasi::before {
 		content: '✓';
-		background: var(--accent);
+		background: var(--pos);
 		color: var(--bg);
 	}
-	.skor {
+	.rail {
 		text-align: right;
-		min-width: 64px;
+		min-width: 78px;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 4px;
 	}
-	.skor b {
+	.skor-angka {
 		display: block;
-		font-size: 28px;
+		font-size: 34px;
 		font-weight: 700;
 		color: var(--w, var(--accent));
-		line-height: 1.1;
+		line-height: 1;
+		letter-spacing: -0.03em;
 	}
-	.skor b.kosong {
+	/* Skala skor: tanpa ini "72" tidak berarti apa-apa. Diukur 6 Okt 2026 — kartu
+	   menampilkan skor tanpa penyebut dan tanpa acuan di halaman mana pun. */
+	.dari {
+		font-size: 13px;
+		font-weight: 400;
 		color: var(--text-3);
+		letter-spacing: 0;
+	}
+	.skor-angka.kosong,
+	.kosong {
+		color: var(--text-3);
+	}
+	.skor-bar {
+		width: 78px;
+	}
+	.rail-prop {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 3px;
+		margin-top: 8px;
+	}
+	.prop-teks {
+		font-size: 11px;
+		color: var(--text-2);
 	}
 </style>
