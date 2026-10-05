@@ -33,11 +33,40 @@
 
 	const topikArea: Record<string, string[]> = {
 		crypto: ['signal.', 'verdict.', 'trade.', 'gate.', 'llm.'],
-		idx: ['signal.', 'alert.'],
-		forex: ['signal.', 'alert.'],
-		polymarket: ['verdict.', 'gate.', 'trade.', 'alert.'],
-		gmgn: ['signal.', 'trade.', 'alert.']
+		idx: ['idx.', 'arjum.', 'bandar.'],
+		forex: ['forex.', 'xau.', 'macro.'],
+		polymarket: ['poly.', 'verdict.', 'gate.'],
+		gmgn: ['gmgn.', 'radar.', 'lp.', 'pumpfun.', 'memecoin.']
 	};
+
+	const kejadianArea = $derived.by(() => {
+		const prefiks = topikArea[kunci] ?? [];
+		return live.kejadian.filter((k) => {
+			const t = k.type.toLowerCase();
+			const subjek = String((k.payload as any)?.subject ?? (k.payload as any)?.subjek ?? '').toLowerCase();
+			const pair = String((k.payload as any)?.pair ?? '').toLowerCase();
+
+			// Jika cocok dengan prefiks area
+			if (prefiks.some((p) => t.startsWith(p))) {
+				if ((t.startsWith('trade.') || t.startsWith('signal.')) && kunci !== 'crypto') {
+					return false;
+				}
+				return true;
+			}
+
+			// Penanganan alert spesifik area
+			if (t.startsWith('alert.')) {
+				if (kunci === 'idx' && (subjek.includes('idx') || subjek.includes('arjum') || subjek.includes('saham') || subjek.includes('bandar'))) return true;
+				if (kunci === 'forex' && (subjek.includes('forex') || subjek.includes('xau') || subjek.includes('gold'))) return true;
+				if (kunci === 'polymarket' && (subjek.includes('poly') || subjek.includes('verdict'))) return true;
+				if (kunci === 'gmgn' && (subjek.includes('gmgn') || subjek.includes('pump') || subjek.includes('meme'))) return true;
+				if (kunci === 'crypto' && (subjek.includes('crypto') || pair.includes('usdt') || subjek.includes('trade') || subjek.includes('sinyal'))) return true;
+				return false;
+			}
+
+			return false;
+		});
+	});
 
 	const kolomFakta = [
 		{ kunci: 'kunci', label: 'kunci' },
@@ -114,9 +143,9 @@
 	<AreaLoader area={kunci}>
 		{#snippet children(data)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
-			{@const faktaRisiko = temukanFakta(data.facts, 'risiko')}
-			{@const faktaEquity = temukanFakta(data.facts, 'equity')}
-			{@const faktaLedger = temukanFakta(data.facts, 'ledger')}
+			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
+			{@const faktaEquity = temukanFakta(data.facts, kunci === 'crypto' ? 'equity' : `${kunci}_equity`) ?? temukanFakta(data.facts, 'equity')}
+			{@const faktaLedger = temukanFakta(data.facts, kunci === 'crypto' ? 'ledger' : `${kunci}_ledger`) ?? temukanFakta(data.facts, 'ledger')}
 			{@const faktaVerdict = temukanFakta(data.facts, 'verdict')}
 			{@const faktaPolyPaper = temukanFakta(data.facts, 'poly_paper')}
 			{@const datasetRecorder = temukanFakta(data.facts, 'recorder')}
@@ -125,7 +154,7 @@
 			{@const faktaRadar = temukanFakta(data.facts, 'radar')}
 			{@const faktaLpPaper = temukanFakta(data.facts, 'lp_paper')}
 			{@const faktaGmgn = temukanFakta(data.facts, 'gmgn')}
-			{@const faktaPosisi = temukanFakta(data.facts, 'posisi')}
+			{@const faktaPosisi = temukanFakta(data.facts, kunci === 'crypto' ? 'posisi' : `${kunci}_posisi`) ?? temukanFakta(data.facts, 'posisi')}
 			{@const posisiArray = Array.isArray(faktaPosisi?.value) ? (faktaPosisi.value as any[]) : []}
 
 			{@const bagianObj = (faktaBagian?.value as Record<string, any>) ?? {}}
@@ -1254,7 +1283,7 @@
 					{:else}
 						{#each faktaTerpilih as f (f.key)}
 							<Block judul={f.key} deskripsi={`kind ${f.kind}`} sumber={f.source} age_s={f.age_s} status={f.status}>
-								<NilaiFakta fakta={f} />
+								<NilaiFakta fakta={f} filterKunci={kunci} />
 							</Block>
 						{/each}
 					{/if}
@@ -1274,7 +1303,7 @@
 			<!-- Aliran Kejadian SSE untuk Area ini -->
 			<Block judul="Kejadian Area" deskripsi="Aliran SSE terfilter topik area.">
 				<EventFeed
-					kejadian={live.berdasarkanTopik(topikArea[kunci] ?? [])}
+					kejadian={kejadianArea}
 					memuat={live.status === 'menyambung'}
 					galat={live.pesan}
 				/>

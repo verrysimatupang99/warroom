@@ -10,11 +10,29 @@
 
 	interface Props {
 		fakta: Fakta;
+		filterKunci?: string;
 	}
-	let { fakta }: Props = $props();
+	let { fakta, filterKunci }: Props = $props();
 
-	const tiles = $derived(tilesDari(fakta.value));
-	const tabel = $derived(tabelDari(fakta.value));
+	const tiles = $derived.by(() => {
+		const raw = tilesDari(fakta.value);
+		if (!filterKunci || fakta.key !== 'bagian') return raw;
+		return raw.filter((t) => t.jalur.toLowerCase().startsWith(filterKunci.toLowerCase()));
+	});
+
+	const tabel = $derived.by(() => {
+		const raw = tabelDari(fakta.value);
+		if (!filterKunci || fakta.key !== 'bagian') return raw;
+		return raw.filter((t) => {
+			const j = t.judul.toLowerCase();
+			if (filterKunci === 'idx') return j.includes('idx') || j.includes('bandar') || j.includes('arjum');
+			if (filterKunci === 'crypto') return j.includes('crypto');
+			if (filterKunci === 'forex') return j.includes('forex') || j.includes('macro');
+			if (filterKunci === 'gmgn') return j.includes('gmgn') || j.includes('memecoin') || j.includes('radar');
+			return j.includes(filterKunci.toLowerCase());
+		});
+	});
+
 	const seri = $derived(seriDari(fakta.key, fakta.value));
 	const kosong = $derived(tiles.length === 0 && tabel.length === 0);
 	let drawer = $state(false);
