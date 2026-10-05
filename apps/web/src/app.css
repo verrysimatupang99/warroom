@@ -440,7 +440,12 @@ html[data-tema='terang'] {
 		grid-template-columns: minmax(0, 1fr) 20rem;
 		gap: 1rem;
 		align-items: start;
-		flex: 1;
+		/* `flex: 1` DIHAPUS 6 Okt 2026: itu sisa pola beebots "satu layar penuh"
+		   (body min-height 100vh + flex column + grid melar mengisi sisa tinggi).
+		   Di War Room isi halaman sering lebih pendek dari viewport, jadi flex:1
+		   membuat grid melar (mis. 959px) sementara isinya cuma ~516px — hasilnya
+		   ruang kosong besar di bawah yang terlihat seperti halaman belum termuat.
+		   Tanpa flex:1, tinggi grid = tinggi isi. */
 	}
 
 	/* ---------- kolom pasar (adaptasi .bee beebots) ---------- */
