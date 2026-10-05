@@ -41,10 +41,11 @@ SOURCE = "state/snapshot.json"
 # Sub-bagian yang WAJIB ada di setiap snapshot. Bila salah satu hilang sementara proses
 # melaporkan sukses, snapshot itu SEPARUH — kelas bug yang tak terlihat dari luar: nilai
 # yang ADA tetap benar, yang HILANG tidak dilaporkan siapa pun. Daftar ini diverifikasi
-# terhadap `bagian` nyata di state/snapshot.json (12 kunci, 5 Okt 2026).
+# terhadap `bagian` nyata di state/snapshot.json (13 kunci, 5 Okt 2026 — `bsjp` ditambahkan).
 BAGIAN_WAJIB: frozenset[str] = frozenset(
     {
         "bandarmologi",
+        "bsjp",
         "crypto",
         "dex",
         "forex",

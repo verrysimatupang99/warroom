@@ -5,11 +5,27 @@
 	// (A). Aturan yang dipegang halaman ini:
 	// - Angka yang belum lewat split beku WAJIB tampil sebagai klaim eksplorasi, bukan edge.
 	// - Pasar tanpa sinyal tetap tampil dengan alasannya; skor "—", bukan 0.
-	import { getAlerts, getKesegaran, getKesehatan, getSinyalPerPasar } from '$lib/api/client';
-	import type { AlertsPayload, Kesehatan, KesegaranPayload, SinyalPayload } from '$lib/api/types';
+	import { getAlerts, getArea, getKesegaran, getKesehatan, getSinyalPerPasar } from '$lib/api/client';
+	import type {
+		AlertsPayload,
+		AreaPayload,
+		Fakta,
+		Kesehatan,
+		KesegaranPayload,
+		SinyalPayload
+	} from '$lib/api/types';
 	import { live } from '$lib/api/live.svelte';
 	import { umurDetik } from '$lib/format';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { AREAS } from '$lib/nav';
 	import KartuSinyalPasar from '$lib/components/KartuSinyalPasar.svelte';
+	import SubNav from '$lib/components/SubNav.svelte';
+	import EquityCurve from '$lib/components/EquityCurve.svelte';
+	import RiskMeter from '$lib/components/RiskMeter.svelte';
+	import EventFeed from '$lib/components/EventFeed.svelte';
+	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
+	import StatisticalEdgeCard from '$lib/components/StatisticalEdgeCard.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 
@@ -17,15 +33,34 @@
 	let kesegaran = $state<KesegaranPayload | null>(null);
 	let sehat = $state<Kesehatan | null>(null);
 	let alerts = $state<AlertsPayload | null>(null);
+	let kripto = $state<AreaPayload | null>(null);
+	let polymarket = $state<AreaPayload | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 
+	// URL = satu-satunya sumber kebenaran untuk tab (pelajaran 5 Okt: state yang disalin
+	// bisa menyimpang dari URL dan membuat tab macet).
+	const areaHome = AREAS.find((a) => a.kunci === 'home')!;
+	const sub = $derived.by(() => {
+		const s = page.url.searchParams.get('sub');
+		if (s && areaHome.anak.some((a) => a.slug === s)) return s;
+		return areaHome.anak[0].slug;
+	});
+
+	function pilihSub(s: string) {
+		if (typeof window !== 'undefined') {
+			void goto(`?sub=${s}`, { keepFocus: true, noScroll: true });
+		}
+	}
+
 	async function muat() {
-		const [s, k, h, al] = await Promise.allSettled([
+		const [s, k, h, al, kr, pm] = await Promise.allSettled([
 			getSinyalPerPasar(),
 			getKesegaran(),
 			getKesehatan(),
-			getAlerts()
+			getAlerts(),
+			getArea('crypto'),
+			getArea('polymarket')
 		]);
 		if (s.status === 'fulfilled') {
 			sinyal = s.value;
@@ -36,6 +71,8 @@
 		if (k.status === 'fulfilled') kesegaran = k.value;
 		if (h.status === 'fulfilled') sehat = h.value;
 		if (al.status === 'fulfilled') alerts = al.value;
+		if (kr.status === 'fulfilled') kripto = kr.value;
+		if (pm.status === 'fulfilled') polymarket = pm.value;
 		memuat = false;
 	}
 
@@ -44,6 +81,28 @@
 		const t = setInterval(() => void muat(), 15000);
 		return () => clearInterval(t);
 	});
+
+	const cariFakta = (koleksi: Fakta[], kunci: string) =>
+		koleksi.find((f) => f.key === kunci)?.value ?? null;
+
+	const faktaKripto = $derived(kripto?.facts ?? []);
+	const faktaPoly = $derived(polymarket?.facts ?? []);
+	const dataEquity = $derived(
+		(cariFakta(faktaKripto, 'equity') as {
+			points?: { i: number; r: number }[];
+			stats?: Record<string, number>;
+		} | null) ?? null
+	);
+	const dataRisiko = $derived((cariFakta(faktaKripto, 'risiko') as Record<string, unknown>) ?? null);
+	const dataVerdict = $derived(
+		(cariFakta(faktaPoly, 'verdict') as {
+			n?: number;
+			win?: number;
+			be?: number;
+			ci?: number;
+			ci95?: [number, number];
+		} | null) ?? null
+	);
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
 
@@ -100,6 +159,9 @@
 		</div>
 	</header>
 
+	<!-- Sub-nav Home: URL = SSOT, jadi tiap tab benar-benar punya tampilan sendiri. -->
+	<SubNav area={areaHome} aktif={sub} onpilih={pilihSub} />
+
 	{#if alerts && alerts.terbuka > 0}
 		<div class="banner" data-testid="alert-banner">
 			<span>⚠</span>
@@ -114,8 +176,32 @@
 		<Skeleton tinggi={84} />
 		<Skeleton tinggi={150} />
 		<Skeleton tinggi={150} />
+	{:else if sub === 'kinerja'}
+		<section class="kinerja" aria-label="Kinerja">
+			<StrategyLeaderboard />
+			<div class="dua-kolom">
+				<div class="kolom">
+					<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
+					<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
+				</div>
+				<div class="kolom">
+					<RiskMeter risiko={dataRisiko} />
+					<div class="kartu-kejadian">
+						<div class="kepala-kejadian">
+							<h3>Kejadian Real-Time</h3>
+							<span class="label-mikro">{live.status}</span>
+						</div>
+						<EventFeed
+							kejadian={live.kejadian}
+							memuat={live.status === 'menyambung'}
+							galat={live.pesan}
+						/>
+					</div>
+				</div>
+			</div>
+		</section>
 	{:else}
-		<!-- Strip ringkasan (B) -->
+		<!-- Tab "sinyal" (default): strip ringkasan (B) + kartu per pasar (A) -->
 		<section class="strip" aria-label="Ringkasan">
 			{#each ringkas as r (r.t)}
 				<div class="chip">
@@ -292,6 +378,45 @@
 	.catatan {
 		font-size: 12px;
 		color: var(--text-3);
+		margin: 0;
+	}
+	.kinerja {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.dua-kolom {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+	.kolom {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+	@media (min-width: 1024px) {
+		.dua-kolom {
+			grid-template-columns: 7fr 5fr;
+		}
+	}
+	.kartu-kejadian {
+		background: var(--surface-2);
+		border: 1px solid var(--line);
+		border-radius: var(--radius-card);
+		padding: 12px;
+	}
+	.kepala-kejadian {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-bottom: 1px solid var(--line-soft);
+		padding-bottom: 8px;
+		margin-bottom: 8px;
+	}
+	.kepala-kejadian h3 {
+		font-size: 13px;
+		font-weight: 500;
 		margin: 0;
 	}
 </style>

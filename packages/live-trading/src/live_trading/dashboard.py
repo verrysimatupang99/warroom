@@ -500,6 +500,18 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["bagian"]["idx_tv"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         try:
+            # BSJP (beli sore jual pagi): peringkat kandidat tahan semalam. Selama data belum
+            # memuat harga buka/tutup harian, ini PROKSI dan menyebutkan batasnya sendiri —
+            # jangan ditampilkan sebagai edge terukur (lihat signals/bsjp.py).
+            from .signals import bsjp
+
+            scr_rows = (snap["bagian"].get("idx") or {}).get("rows") or []
+            tv_rows = (snap["bagian"].get("idx_tv") or {}).get("rows") or []
+            snap["bagian"]["bsjp"] = bsjp.susun_peringkat(scr_rows, tv_rows).to_dict()
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["bsjp"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+        try:
             from .collectors import dexscreen
 
             gshadow = []

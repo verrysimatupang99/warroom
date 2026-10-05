@@ -1,6 +1,15 @@
 /**
- * IA (information architecture) War Room.
- * Satu sumber untuk rail, bottom tab, dan sub-nav supaya rute dan chip tidak pernah berbeda definisi.
+ * IA (information architecture) War Room — dirombak 5 Okt 2026.
+ *
+ * Sebelumnya 11 area dengan tumpang tindih. Penggabungan dilakukan berdasarkan SUMBER DATA
+ * halaman lama, bukan selera:
+ * - `/bandar` memanggil `getArea('idx')` → datanya sama dengan `idx.bandarmologi`.
+ * - `/lp` memanggil `getArea('crypto')` + `bagian.lp` → LP sudah punya sub di GMGN.
+ * - `/overextended` memanggil `getArea('crypto')` + `bagian.overextended` → milik Crypto.
+ * - `/bukti` dilayani sub Sistem (kesegaran/audit) + kartu sinyal di Home.
+ *
+ * Hasilnya 7 area; tiap sub punya sumber data yang jelas dan berbeda. Satu sumber untuk
+ * rail, bottom tab, dan sub-nav supaya rute dan chip tidak pernah berbeda definisi.
  */
 
 export interface Anak {
@@ -28,10 +37,8 @@ export const AREAS: Area[] = [
 		ikon: '⌂',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'overview', label: 'Overview', kunci: [], catatan: 'Ringkasan KPI & 5 venue pasar' },
-			{ slug: 'sinyal', label: 'Sinyal & Eksekusi', kunci: [], catatan: 'Posisi aktif, setup lolos gate, riwayat closed' },
-			{ slug: 'kinerja', label: 'Kinerja', kunci: [], catatan: 'Kurva ekuitas & leaderboard strategi' },
-			{ slug: 'risiko', label: 'Risiko & Event', kunci: [], catatan: 'Batas risiko & log kejadian realtime' }
+			{ slug: 'sinyal', label: 'Sinyal', kunci: [], catatan: 'Satu kartu sinyal terbaik per pasar' },
+			{ slug: 'kinerja', label: 'Kinerja', kunci: [], catatan: 'Kurva ekuitas, leaderboard, risiko, kejadian' }
 		]
 	},
 	{
@@ -45,6 +52,7 @@ export const AREAS: Area[] = [
 			{ slug: 'setup', label: 'Setup', kunci: ['kandidat'], catatan: 'Kandidat SMC + verdict per aturan' },
 			{ slug: 'ukur', label: 'Ukur', kunci: ['pengukuran'], catatan: 'Forward: lolos vs ditolak' },
 			{ slug: 'lab', label: 'Lab', kunci: ['backtest'], catatan: 'Walk-forward, uji klaster & beda' },
+			{ slug: 'overextended', label: 'Overextended', kunci: ['bagian'], catatan: 'Pump %, OI vs puncak, funding rate' },
 			{ slug: 'eksekusi', label: 'Eksekusi', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, riwayat perintah' },
 			{ slug: 'data', label: 'Data', kunci: ['pod_llm', 'bagian'], catatan: 'Kesehatan jalur & gap' }
 		]
@@ -74,7 +82,8 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'screener', label: 'Screener', kunci: ['bagian'], catatan: 'Arjum × TradingView' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, konsentrasi' },
+			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, ATS, no-sell' },
+			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian'], catatan: 'Beli Sore Jual Pagi — uji edge overnight' },
 			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Asing vs lokal' },
 			{ slug: 'watchlist', label: 'Watchlist', kunci: ['bagian'], catatan: 'ARA Hunter & setup' }
 		]
@@ -100,54 +109,9 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (Azure, baca-saja)' },
-			{ slug: 'lp', label: 'LP', kunci: ['lp_paper'], catatan: 'Posisi paper LP, V/L' },
+			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian'], catatan: 'Posisi paper LP, V/L, IL vs hold' },
 			{ slug: 'token', label: 'Token', kunci: ['gmgn'], catatan: 'Trading metrics & win rate' },
 			{ slug: 'bot', label: 'Bot', kunci: ['bagian'], catatan: 'Uji pumpportal (paper) & memecoin' }
-		]
-	},
-	{
-		kunci: 'bukti',
-		label: 'Bukti',
-		rute: '/bukti',
-		ikon: '✓',
-		kategori: 'riset',
-		anak: [
-			{ slug: 'evaluasi', label: 'Evaluasi Gate', kunci: [], catatan: 'Evaluasi gate objektif per venue' },
-			{ slug: 'fakta', label: 'Fakta Mentah', kunci: [], catatan: 'Jejak fakta empiris & umur fakta' },
-			{ slug: 'klaim', label: 'Batas Klaim', kunci: [], catatan: 'Hal yang tidak kami klaim (ADR-003)' }
-		]
-	},
-	{
-		kunci: 'bandar',
-		label: 'Bandarmologi',
-		rute: '/bandar',
-		ikon: '🜲',
-		kategori: 'riset',
-		anak: [
-			{ slug: 'broker', label: 'Broker', kunci: ['bagian'], catatan: 'ATS, no-sell, akumulator' },
-			{ slug: 'batas', label: 'Batas', kunci: ['bagian'], catatan: 'Yang bisa & tidak bisa diukur' }
-		]
-	},
-	{
-		kunci: 'lp',
-		label: 'LP Pool',
-		rute: '/lp',
-		ikon: '≋',
-		kategori: 'riset',
-		anak: [
-			{ slug: 'posisi', label: 'Posisi', kunci: ['bagian'], catatan: 'Uang nyata + IL vs hold' },
-			{ slug: 'kandidat', label: 'Kandidat', kunci: ['bagian'], catatan: 'Pencarian pool, urut volume' }
-		]
-	},
-	{
-		kunci: 'overextended',
-		label: 'Overextended',
-		rute: '/overextended',
-		ikon: '⟰',
-		kategori: 'riset',
-		anak: [
-			{ slug: 'ukur', label: 'Ukur', kunci: ['bagian'], catatan: 'Pump %, OI vs puncak, FR' },
-			{ slug: 'uji', label: 'Uji', kunci: ['bagian'], catatan: 'Apakah short pola ini pernah bayar' }
 		]
 	},
 	{
@@ -167,6 +131,17 @@ export const AREAS: Area[] = [
 		]
 	}
 ];
+
+/**
+ * Rute lama → tujuan baru. Area yang digabung tidak dihapus diam-diam: rutenya tetap hidup
+ * sebagai pengalihan supaya penanda buku dan tautan lama tidak mati.
+ */
+export const PENGALIHAN: Record<string, string> = {
+	'/bandar': '/idx?sub=bandarmologi',
+	'/lp': '/gmgn?sub=lp',
+	'/overextended': '/crypto?sub=overextended',
+	'/bukti': '/sistem?sub=kesegaran'
+};
 
 /** Bottom tab mobile: 5 utama */
 export const TAB_MOBILE = ['/', '/crypto', '/polymarket', '/idx', '/sistem'];

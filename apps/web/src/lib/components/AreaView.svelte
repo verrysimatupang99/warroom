@@ -180,6 +180,8 @@
 			{@const idxTv = (bagianObj?.idx_tv?.rows as any[]) ?? []}
 			{@const idxBandar = (bagianObj?.bandarmologi as any) ?? null}
 			{@const idx616 = (bagianObj?.idx616?.terbuka as any[]) ?? []}
+			{@const bsjpObj = (bagianObj?.bsjp as any) ?? null}
+			{@const overextObj = (bagianObj?.overextended as any) ?? null}
 			{@const forexObj = (bagianObj?.forex as any) ?? null}
 			{@const macroObj = (bagianObj?.macro as any) ?? null}
 			{@const memecoinObj = (bagianObj?.memecoin as any) ?? null}
@@ -432,6 +434,74 @@
 								</div>
 								<p>Hasil membuktikan bahwa perbedaan hasil antara setup lolos gate vs ditolak secara statistik signifikan (p = {backtestObj?.beda_lolos?.p_approx ?? '0.0109'}), bukan hasil kebetulan acak.</p>
 							</div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Tab Overextended (dipindah dari area /overextended — datanya dari crypto) -->
+				{#if sub === 'overextended'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Overextended &amp; Uji Edge</h3>
+									<p class="text-11 text-text-3">
+										Seberapa jauh pump harga dari dasar, jarak dari puncak, perubahan OI, dan
+										funding rate.
+									</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									{overextObj?.jumlah ?? 0} simbol
+								</span>
+							</div>
+
+							{#if overextObj?.galat?.length}
+								<div class="rounded bg-warn/10 border border-warn/30 p-2.5 text-11 text-warn">
+									Catatan sumber: {(overextObj.galat ?? []).join('; ')}
+								</div>
+							{/if}
+
+							{#if !overextObj || (overextObj.paling_overextended ?? []).length === 0}
+								<div class="py-6 text-center text-text-3 text-12">
+									Belum ada data overextended pada siklus ini.
+								</div>
+							{:else}
+								<div class="overflow-x-auto">
+									<table class="w-full text-left text-12 font-mono">
+										<thead class="border-b border-line text-text-3 text-11">
+											<tr>
+												<th class="py-2 px-2.5">SIMBOL</th>
+												<th class="py-2 px-2.5 text-right">PUMP %</th>
+												<th class="py-2 px-2.5 text-right">DARI PUNCAK</th>
+												<th class="py-2 px-2.5 text-right">OI Δ</th>
+												<th class="py-2 px-2.5 text-right">FUNDING</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-line-soft">
+											{#each overextObj.paling_overextended ?? [] as o (o.symbol ?? o.simbol)}
+												<tr class="hover:bg-surface/50 transition-colors">
+													<td class="py-2 px-2.5 font-bold text-text">{o.symbol ?? o.simbol}</td>
+													<td class="py-2 px-2.5 text-right text-warn">
+														{o.pump_pct != null ? `${o.pump_pct}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right text-text-2">
+														{o.dari_puncak_pct != null ? `${o.dari_puncak_pct}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right text-text-2">
+														{o.oi_delta_pct != null ? `${o.oi_delta_pct}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right text-text-2">
+														{o.funding_pct != null ? `${o.funding_pct}%` : '—'}
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+								{#if overextObj.catatan?.length}
+									<p class="mt-2 text-10 text-text-3">{(overextObj.catatan ?? []).join(' · ')}</p>
+								{/if}
+							{/if}
 						</div>
 					</div>
 				{/if}
@@ -862,6 +932,112 @@
 														</span>
 													</td>
 													<td class="py-2 px-2.5 text-right text-text-3">{t.atr?.toFixed(1) ?? '—'}</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Tab BSJP: Beli Sore Jual Pagi -->
+				{#if sub === 'bsjp'}
+					<div class="space-y-4">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">BSJP — Beli Sore, Jual Pagi</h3>
+									<p class="text-11 text-text-3">
+										Peringkat kandidat tahan semalam: beli menjelang tutup, jual di pembukaan
+										sesi berikutnya.
+									</p>
+								</div>
+								<span
+									class="rounded px-2 py-0.5 text-10 font-bold font-mono border {bsjpObj?.mode ===
+									'jendela'
+										? 'text-pos bg-pos/10 border-pos/30'
+										: 'text-warn bg-warn/10 border-warn/30'}"
+								>
+									{bsjpObj?.mode === 'jendela' ? 'EDGE TERUKUR' : 'PROKSI — BELUM TERUKUR'}
+								</span>
+							</div>
+
+							{#if bsjpObj?.error}
+								<div class="rounded bg-neg/10 border border-neg/30 p-2.5 text-11 text-neg font-mono">
+									Gagal menyusun BSJP: {bsjpObj.error}
+								</div>
+							{:else if !bsjpObj?.ada}
+								<div class="py-6 text-center text-text-3 text-12">
+									Belum ada kandidat BSJP — screener dan snapshot teknikal kosong.
+								</div>
+							{:else}
+								<!-- Mode proksi WAJIB menjelaskan batasnya di sini, bukan disembunyikan. -->
+								<div
+									class="mb-3 rounded border p-2.5 text-11 {bsjpObj?.mode === 'jendela'
+										? 'border-pos/30 bg-pos/10 text-pos'
+										: 'border-warn/40 bg-warn/10 text-warn'}"
+								>
+									{bsjpObj?.catatan_kejujuran}
+								</div>
+
+								<div class="mb-3 grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-11">
+									<div class="rounded bg-surface p-2 border border-line">
+										<span class="text-10 text-text-3 block">MODE</span>
+										<span class="text-13 font-bold text-text">{bsjpObj?.mode}</span>
+									</div>
+									<div class="rounded bg-surface p-2 border border-line">
+										<span class="text-10 text-text-3 block">EDGE RATA-RATA</span>
+										<span class="text-13 font-bold {bsjpObj?.edge_rata_pct != null ? 'text-pos' : 'text-text-3'}">
+											{bsjpObj?.edge_rata_pct != null ? `${bsjpObj.edge_rata_pct}%` : '—'}
+										</span>
+									</div>
+									<div class="rounded bg-surface p-2 border border-line">
+										<span class="text-10 text-text-3 block">SAMPEL JENDELA</span>
+										<span class="text-13 font-bold text-text">{bsjpObj?.n_sampel ?? 0}</span>
+									</div>
+								</div>
+
+								<div class="overflow-x-auto">
+									<table class="w-full text-left text-12">
+										<thead class="border-b border-line text-text-3 text-11 font-mono">
+											<tr>
+												<th class="py-2 px-2.5">TICKER</th>
+												<th class="py-2 px-2.5 text-right">SKOR</th>
+												<th class="py-2 px-2.5 text-right">RSI14</th>
+												<th class="py-2 px-2.5">EMA</th>
+												<th class="py-2 px-2.5 text-right">WR EVENT</th>
+												<th class="py-2 px-2.5 text-right">POTENSI</th>
+												<th class="py-2 px-2.5 text-right">DD</th>
+												<th class="py-2 px-2.5">CATATAN</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-line-soft">
+											{#each bsjpObj.kandidat ?? [] as k (k.ticker)}
+												<tr class="hover:bg-surface/50 transition-colors">
+													<td class="py-2 px-2.5 font-bold font-mono text-text">{k.ticker}</td>
+													<td class="py-2 px-2.5 text-right font-mono font-bold {k.skor != null ? 'text-accent' : 'text-text-3'}">
+														{k.skor ?? '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+														{k.rsi14 != null ? k.rsi14.toFixed(1) : '—'}
+													</td>
+													<td class="py-2 px-2.5 font-mono text-11 {k.ema_state === 'naik' ? 'text-pos' : 'text-text-3'}">
+														{k.ema_state ?? '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+														{k.wr_event != null ? `${k.wr_event}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right font-mono text-text-2">
+														{k.potensi != null ? `${k.potensi}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-right font-mono {k.drawdown != null && k.drawdown < 0 ? 'text-neg' : 'text-text-3'}">
+														{k.drawdown != null ? `${k.drawdown}%` : '—'}
+													</td>
+													<td class="py-2 px-2.5 text-10 text-text-3">
+														{(k.catatan ?? []).join(' · ') || '—'}
+													</td>
 												</tr>
 											{/each}
 										</tbody>
