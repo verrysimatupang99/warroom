@@ -1002,7 +1002,10 @@ def main(argv: list[str] | None = None) -> int:
 
     paper = sub.add_parser("paper", help="executor paper")
     paper.add_argument("aksi", choices=["list", "open", "close", "eval"])
-    paper.add_argument("--venue", default="crypto", choices=["crypto", "polymarket", "gmgn", "idx", "forex"], help="venue pasar")
+    paper.add_argument(
+        "--venue", default="crypto",
+        choices=["crypto", "polymarket", "gmgn", "idx", "forex"], help="venue pasar",
+    )
     paper.add_argument("--pair")
     paper.add_argument("--direction", default="LONG")
     paper.add_argument("--entry", type=float)

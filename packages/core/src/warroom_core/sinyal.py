@@ -103,7 +103,9 @@ def _crypto(s: SASession) -> SinyalPasar:
             pasar="crypto", label="Crypto (SMC)", ada=False, sumber_fakta="snapshot/kandidat",
             umur_s=_umur(observed),
             alasan="Belum ada kandidat dari pemindaian SMC.",
-            catatan_kejujuran="Pemindai jalan tiap 30 menit; kosong berarti belum ada pair yang lolos struktur.",
+            catatan_kejujuran=(
+                "Pemindai jalan tiap 30 menit; kosong berarti belum ada pair yang lolos struktur."
+            ),
         )
 
     def kunci(k: dict[str, Any]) -> tuple[int, int, int]:

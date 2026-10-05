@@ -744,7 +744,10 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
                 f"Status: {rec.get('status')} @ {rec.get('note')}\n"
                 f"Hasil R: {r_val:+.3f}R | Signal ID: {rec.get('signal_id')}"
             )
-            _alert(s, subject=subjek, message=pesan, aksi="periksa buku kas di /crypto?sub=eksekusi", severity="info")
+            _alert(
+                s, subject=subjek, message=pesan,
+                aksi="periksa buku kas di /crypto?sub=eksekusi", severity="info",
+            )
             s.add(
                 Event(
                     type="trade.closed",
@@ -759,8 +762,18 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
         for p in b_crypto.positions():
             if p.status == "tp1_hit_runner":
                 ev_subjek = f"tp1/{p.signal_id}"
-                if _alert(s, subject=ev_subjek, message=f"🎯 [TP1 TERCAPAI - RUNNER AKTIF]\nPair: {p.pair} ({p.direction})\nStop loss digeser ke break-even (${p.stop}). Sisa posisi menuju TP2 (${p.tp2}).", aksi="pantau posisi di Command Center", severity="info"):
-                    s.add(Event(type="trade.tp1", actor="paper_eval", payload_json=p.to_dict(), severity="info"))
+                _msg = (
+                    f"🎯 [TP1 TERCAPAI - RUNNER AKTIF]\nPair: {p.pair} ({p.direction})\n"
+                    f"Stop loss digeser ke break-even (${p.stop}). Sisa posisi menuju TP2 (${p.tp2})."
+                )
+                if _alert(
+                    s, subject=ev_subjek, message=_msg,
+                    aksi="pantau posisi di Command Center", severity="info",
+                ):
+                    s.add(Event(
+                        type="trade.tp1", actor="paper_eval",
+                        payload_json=p.to_dict(), severity="info",
+                    ))
 
     # Segera kirim alert bila ada perubahan posisi
     if total_closed > 0:
@@ -798,7 +811,9 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
             tp2 = float(r["tp2"])
             atr = float(r.get("atr") or abs(entry - stop) / 1.5)
 
-            dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd, fee_buffer_pct=0.0013)
+            dec = gate.check(
+                pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd, fee_buffer_pct=0.0013
+            )
             if dec.allowed:
                 # Biaya TERUKUR dari buku nyata (P2) — bukan asumsi 0,1%. Sisi masuk = sisi
                 # yang kita cross: LONG membeli di ask, SHORT menjual di bid; keluar di sisi
@@ -865,14 +880,21 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     f"({'asumsi fee saja' if biaya.get('asumsi') else 'terukur dari buku'})\n"
                     f"Signal ID: {pos.signal_id}"
                 )
-                _alert(s, subject=subjek, message=pesan, aksi="lihat di /crypto?sub=eksekusi", severity="info")
-                s.add(Event(type="trade.opened", actor="paper_scan", payload_json=pos.to_dict(), severity="info"))
+                _alert(
+                    s, subject=subjek, message=pesan,
+                    aksi="lihat di /crypto?sub=eksekusi", severity="info",
+                )
+                s.add(Event(
+                    type="trade.opened", actor="paper_scan",
+                    payload_json=pos.to_dict(), severity="info",
+                ))
                 dibuka.append(f"{pos.signal_id} {pos.pair} {pos.direction}")
 
     if dibuka:
         kirim_tertunda(s, limit=5)
 
-    return f"kandidat={len(rows)} dibuka={len(dibuka)} detail={', '.join(dibuka) or 'tidak ada yang lolos gate'}"
+    detail = ", ".join(dibuka) or "tidak ada yang lolos gate"
+    return f"kandidat={len(rows)} dibuka={len(dibuka)} detail={detail}"
 
 
 def handler_retensi(s: SASession, job: Job) -> str:
@@ -892,7 +914,10 @@ def handler_retensi(s: SASession, job: Job) -> str:
         hapus_llm_calls=bool(job.payload_json.get("hapus_llm_calls", True)),
     )
     d = hasil["dihapus"]
-    return f"facts_dihapus={d['facts']} events_dihapus={d['events']} llm_dihapus={d['llm_calls']} (simpan {hasil['rencana']['keep_versi']} versi/kunci)"
+    return (
+        f"facts_dihapus={d['facts']} events_dihapus={d['events']} llm_dihapus={d['llm_calls']} "
+        f"(simpan {hasil['rencana']['keep_versi']} versi/kunci)"
+    )
 
 
 def register_handlers() -> dict[str, Any]:

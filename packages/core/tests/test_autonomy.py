@@ -25,7 +25,9 @@ def _bersihkan(db):
 
 def _split_beku(s) -> str:
     """Daftarkan split beku sungguhan — gate menolak label "frozen:" yang dikarang."""
-    s.add(FrozenSplit(id="uji-autonomy", dataset="poly-agent", source="/tmp", files_json=[], manifest_hash="x"))
+    s.add(FrozenSplit(
+        id="uji-autonomy", dataset="poly-agent", source="/tmp", files_json=[], manifest_hash="x"
+    ))
     s.flush()
     return "frozen:uji-autonomy"
 
