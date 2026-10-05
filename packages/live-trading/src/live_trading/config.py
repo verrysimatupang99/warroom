@@ -39,8 +39,15 @@ class Settings(BaseSettings):
 
     # --- IDX / Arjum (butuh key) -----------------------------------------
     arjum_base: str = "https://stock.arjum.com"
-    arjum_daily_quota: int = 6000
-    arjum_min_remaining: int = 500
+    # Kuota akun SUPPORTER: 1.000 gratis + 5.003 dari plan = 6.003 req/hari (dashboard
+    # Arjum, 5 Okt 2026). Nilai ini hanya dipakai sebagai DEFAULT saat header API tidak ada;
+    # angka sebenarnya selalu diambil dari `x-ratelimit-limit` (dulu tertulis 1000 di berkas
+    # state dan itu salah — terbaca sebagai "limit 1000" padahal akunnya 6.003).
+    arjum_daily_quota: int = 6003
+    # Ambang berhenti = margin keamanan, BUKAN target konsumsi. 150 dari 6.003 ≈ 2,5%:
+    # cukup untuk menghentikan sweep yang kebablasan tanpa mematikan IDX selama seharian.
+    # Nilai lama 500 pernah mengunci IDX padahal sisa 370 (37% kuota) masih banyak.
+    arjum_min_remaining: int = 150
 
     # --- Batas risiko (dipakai risk gate, bukan oleh strategi) -----------
     paper: bool = True

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -85,7 +86,11 @@ def test_idx_mencatat_sisa_kuota_dari_header(tmp_path: Path) -> None:
 
 
 def test_idx_berhenti_sebelum_kuota_habis(tmp_path: Path) -> None:
-    """Guard harus mencegah request, bukan sekadar melaporkan setelah gagal."""
+    """Guard harus mencegah request, bukan sekadar melaporkan setelah gagal.
+
+    Catatan: `date` wajib HARI INI — catatan beda hari sengaja diperlakukan basi (lihat
+    test_idx_tidak_terkunci_oleh_kuota_basi), jadi tanpa `date` guard-nya tidak aktif.
+    """
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -94,13 +99,50 @@ def test_idx_berhenti_sebelum_kuota_habis(tmp_path: Path) -> None:
 
     c = _idx_collector(tmp_path, handler)
     c.settings.state_dir.mkdir(parents=True, exist_ok=True)
-    c.quota_path.write_text(json.dumps({"remaining": 10, "limit": 6000}), encoding="utf-8")
+    hari_ini = (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).strftime("%Y-%m-%d")
+    c.quota_path.write_text(
+        json.dumps({"date": hari_ini, "remaining": 10, "limit": 6000}), encoding="utf-8"
+    )
     c.settings.arjum_min_remaining = 500
 
     with pytest.raises(QuotaExhausted):
         c.health()
 
     assert calls["n"] == 0, "tidak boleh ada request saat kuota di bawah ambang"
+
+
+def test_idx_tidak_terkunci_oleh_kuota_basi(tmp_path: Path) -> None:
+    """Regresi 5 Okt 2026 — guard yang mengunci dirinya sendiri.
+
+    Di produksi, `remaining=370` ditulis 03:27 lalu guard memblokir semua panggilan; karena
+    diblokir, header kuota tidak pernah dibaca lagi sehingga angkanya BEKU 11 jam. Padahal
+    dashboard Arjum saat itu 967/6.003 (sisa 5.036). IDX mati bukan karena kuota habis, tapi
+    karena tak ada yang mengecek. Catatan beda hari harus dianggap basi dan TIDAK memblokir.
+    """
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        return httpx.Response(
+            200, json={"ok": True},
+            headers={"x-ratelimit-remaining": "5036", "x-ratelimit-limit": "6003"},
+        )
+
+    c = _idx_collector(tmp_path, handler)
+    c.settings.state_dir.mkdir(parents=True, exist_ok=True)
+    # catatan KEMARIN dengan sisa kecil — dulu ini membekukan IDX selamanya
+    c.quota_path.write_text(
+        json.dumps({"date": "2026-10-04", "remaining": 370, "limit": 1000}), encoding="utf-8"
+    )
+    c.settings.arjum_min_remaining = 500
+
+    c.health()  # tidak boleh raise
+
+    assert calls["n"] == 1, "kuota basi harus mengizinkan SATU panggilan untuk menyegarkan"
+    q = c.quota()
+    assert q["remaining"] == 5036, "angka segar harus menimpa angka basi"
+    assert q["limit"] == 6003, "limit harus dari header API, bukan nilai lama 1000"
+    assert q["date"] != "2026-10-04"
 
 
 def test_idx_tanpa_key_gagal_jelas(tmp_path: Path) -> None:

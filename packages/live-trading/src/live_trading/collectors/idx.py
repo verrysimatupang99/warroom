@@ -100,6 +100,12 @@ class ArjumCollector:
             return {"remaining": None, "limit": self.settings.arjum_daily_quota}
 
     def _save_quota(self, remaining: int | None, limit: int | None) -> None:
+        """Simpan kuota dari header API.
+
+        `remaining=None` (header tidak ada) TIDAK menimpa angka lama — kecuali hari sudah
+        berganti, di mana angka lama memang tidak berlaku lagi dan lebih jujur dikosongkan
+        daripada menyimpan nilai kemarin.
+        """
         self.settings.state_dir.mkdir(parents=True, exist_ok=True)
         today = (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).strftime("%Y-%m-%d")
         prev = self.quota()
@@ -107,12 +113,34 @@ class ArjumCollector:
             "date": today,
             "remaining": remaining if remaining is not None else prev.get("remaining"),
             "limit": limit or prev.get("limit") or self.settings.arjum_daily_quota,
+            "diperbarui": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
         }
         if prev.get("date") != today and remaining is None:
             rec["remaining"] = None
         self.quota_path.write_text(json.dumps(rec), encoding="utf-8")
 
+    def _kuota_basi(self) -> bool:
+        """Apakah catatan kuota sudah tidak layak dipercaya?
+
+        Kenapa ini ada (temuan 5 Okt 2026): `_guard_quota` memblokir panggilan saat
+        `remaining < ambang`. Karena panggilan diblokir, header kuota tidak pernah dibaca
+        lagi, sehingga `remaining` BEKU pada angka terakhir — selamanya. Terbukti di
+        produksi: berkas menunjukkan `remaining=370, limit=1000` yang ditulis 03:27, padahal
+        dashboard Arjum saat itu sudah 967/6.003 (sisa 5.036). Guard-nya mengunci dirinya
+        sendiri; IDX mati 11 jam bukan karena kuota habis, tapi karena tak ada yang mengecek.
+
+        Catatan dianggap basi bila: beda hari, atau tanggalnya hilang.
+        """
+        rec = self.quota()
+        today = (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).strftime("%Y-%m-%d")
+        return rec.get("date") != today or rec.get("remaining") is None
+
     def _guard_quota(self) -> None:
+        # Kuota basi (beda hari) tidak boleh memblokir: blokir berdasarkan angka kemarin
+        # persis bug di atas. Biarkan satu panggilan lewat untuk membaca header segar;
+        # `_save_quota` akan menimpanya dengan angka hari ini.
+        if self._kuota_basi():
+            return
         remaining = self.quota().get("remaining")
         if remaining is not None and int(remaining) < self.settings.arjum_min_remaining:
             raise QuotaExhausted(
