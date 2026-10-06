@@ -39,6 +39,14 @@
 		background: color-mix(in srgb, var(--color-bg) 88%, transparent);
 		backdrop-filter: blur(8px);
 	}
+	/* Di ponsel nav-horizontal DISEMBUNYIKAN: BottomNav sudah jadi navigasi
+	   ponsel yang benar. Menampilkan keduanya = dua navigasi untuk 7 tautan
+	   yang sama (temuan 6 Okt). Muncul mulai >=768px. */
+	@media (max-width: 767px) {
+		.navbar {
+			display: none;
+		}
+	}
 	.gulir {
 		display: flex;
 		gap: 0.15rem;
