@@ -32,7 +32,7 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     ),
     "idx": (
         "bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko",
-        "idx_akurasi", "idx_sinyal", "pasar_akurasi",
+        "idx_akurasi", "idx_sinyal", "pasar_akurasi", "bandarmologi_skor",
     ),
     "forex": (
         "bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko",

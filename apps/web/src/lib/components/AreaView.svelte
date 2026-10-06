@@ -213,6 +213,8 @@
 			{@const forexSinyalObj = (faktaForexSinyal?.value as any) ?? null}
 			{@const faktaIdxSinyal = temukanFakta(data.facts, 'idx_sinyal')}
 			{@const idxSinyalObj = (faktaIdxSinyal?.value as any) ?? null}
+			{@const faktaBandarSkor = temukanFakta(data.facts, 'bandarmologi_skor')}
+			{@const bandarSkorObj = (faktaBandarSkor?.value as any) ?? null}
 			{@const faktaPasarAkurasi = temukanFakta(data.facts, 'pasar_akurasi')}
 			{@const pasarAkurasiObj = (faktaPasarAkurasi?.value as any) ?? null}
 			<!-- Narasi LLM per market (job llm-brief-<market>, kind ai.brief). Hanya ada bila
@@ -1369,6 +1371,60 @@
 				<!-- Tab Bandarmologi -->
 				{#if sub === 'bandarmologi'}
 					<div class="space-y-4">
+						<!-- Skor Bandarmologi 0–100 (adopsi pola ihsgscreener, 6 Okt): satu angka
+						     ringkas dengan komponen yang bisa diaudit. Alat baca, bukan ajakan beli. -->
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Skor Bandarmologi (0–100)</h3>
+									<p class="text-11 text-text-3">
+										ATS beli/jual + frekuensi + no-sell, dibobot & bisa diaudit per komponen
+									</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									{bandarSkorObj?.n_emiten ?? 0} emiten · {bandarSkorObj?.hari ?? '—'}
+								</span>
+							</div>
+							{#if !bandarSkorObj?.tersedia}
+								<div class="py-4 text-center text-12 text-text-3">
+									Skor belum tersedia ({bandarSkorObj?.alasan ?? 'belum ada broker summary'}).
+								</div>
+							{:else}
+								<div class="space-y-2">
+									{#each bandarSkorObj.emiten as e (e.kode)}
+										<div class="rounded-card border border-line bg-surface p-2.5">
+											<div class="flex flex-wrap items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span class="font-mono font-bold text-text">{e.kode}</span>
+													<span class="rounded px-1.5 py-0.5 text-10 font-bold border {e.kelas === 'AKUMULASI' ? 'text-pos bg-pos/10 border-pos/20' : e.kelas === 'DISTRIBUSI' ? 'text-neg bg-neg/10 border-neg/20' : e.kelas === 'SEIMBANG' ? 'text-text-2 bg-surface border-line' : 'text-warn bg-warn/10 border-warn/20'}">
+														{e.kelas}
+													</span>
+													{#if e.no_sell}
+														<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/30 text-accent bg-accent/10">NO-SELL</span>
+													{/if}
+												</div>
+												<div class="flex items-center gap-2">
+													<div class="h-2 w-32 overflow-hidden rounded bg-canvas border border-line">
+														<div class="h-full rounded {e.skor >= 55 ? 'bg-pos' : e.skor <= 45 ? 'bg-neg' : 'bg-accent'}" style="width: {e.skor}%"></div>
+													</div>
+													<span class="font-mono font-bold text-14 {e.skor >= 55 ? 'text-pos' : e.skor <= 45 ? 'text-neg' : 'text-text-2'}">{e.skor}</span>
+												</div>
+											</div>
+											<div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-10 text-text-3 font-mono">
+												<span>ATS beli {e.rasio_ats_pct}%</span>
+												<span>FRQ beli {e.rasio_frq_pct}%</span>
+												{#each e.komponen as k (k.nama)}
+													<span>{k.nama}: {k.kontribusi > 0 ? '+' : ''}{k.kontribusi}</span>
+												{/each}
+											</div>
+										</div>
+									{/each}
+								</div>
+								<p class="mt-2 text-11 text-text-3">{bandarSkorObj.metode}</p>
+								<p class="mt-1 text-11 text-warn">{bandarSkorObj.emiten[0]?.peringatan}</p>
+							{/if}
+						</div>
+
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
