@@ -21,3 +21,24 @@ test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
   }
   expect(t).toMatch(/INSUFFICIENT|DIRECTIONAL|PRELIMINARY|TUNING/);
 });
+
+/**
+ * Timestamp sinyal (6 Okt, permintaan owner): verdikt "X PELUANG" WAJIB menyebut kapan
+ * sinyalnya digenerate + umurnya, dan tiap baris pasar punya waktu mini. Kelas bug yang
+ * dicegah: pembaca tidak bisa menilai apakah sinyal masih segar atau sisa kemarin.
+ */
+test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
+  const r = await page.request.post('/api/v1/auth/login', {
+    data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
+  });
+  expect(r.ok()).toBe(true);
+  await page.goto('/');
+  await expect(page.getByText(/Sinyal digenerate:/).first()).toBeVisible({ timeout: 25000 });
+  const t = await page.locator('body').innerText();
+  const i = t.indexOf('Sinyal digenerate:');
+  console.log('--- TIMESTAMP ---');
+  console.log(t.slice(i, i + 220));
+  // minimal satu baris pasar membawa waktu mini (🕒 dibuat …)
+  expect(t).toMatch(/dibuat \d{2} \w+ \d{4}/);
+  expect(t).toMatch(/lalu/);
+});

@@ -12,7 +12,7 @@
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
 	import { getArea, getPasarRingkas, getSinyalPerPasar } from '$lib/api/client';
 	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
-	import { umurDetik } from '$lib/format';
+	import { umurDetik, waktuWIB } from '$lib/format';
 
 	let sinyal = $state<SinyalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -48,13 +48,18 @@
 	// Verdikt besar: berapa pasar punya peluang, dan berapa yang terverifikasi.
 	const peluang = $derived(daftar.filter((r) => r.ada));
 	const verdikt = $derived.by(() => {
-		if (daftar.length === 0) return { judul: 'BELUM ADA DATA', nada: 'netral', alasan: 'Sumber belum mengirim sinyal.' };
-		if (peluang.length === 0) return { judul: 'TIDAK ADA PELUANG', nada: 'diam', alasan: `Semua ${daftar.length} pasar ditolak gate. Menunggu lebih baik daripada memaksa.` };
+		if (daftar.length === 0) return { judul: 'BELUM ADA DATA', nada: 'netral', waktu: null, alasan: 'Sumber belum mengirim sinyal.' };
+		if (peluang.length === 0) return { judul: 'TIDAK ADA PELUANG', nada: 'diam', waktu: null, alasan: `Semua ${daftar.length} pasar ditolak gate. Menunggu lebih baik daripada memaksa.` };
 		const teratas = [...peluang].sort((a, b) => (b.skor ?? -1) - (a.skor ?? -1))[0];
+		// Kapan sinyal teratas DIGENERATE — pertanyaan inti: apakah ini masih segar?
+		const waktu = teratas.dibuat_pada
+			? `${waktuWIB(teratas.dibuat_pada)}${teratas.umur_sinyal_s != null ? ` (${umurDetik(teratas.umur_sinyal_s)} lalu)` : ''}`
+			: 'waktu sinyal tidak tercatat di sumber';
 		return {
 			judul: `${peluang.length} PELUANG`,
 			nada: 'ada',
-			alasan: `Teratas: ${teratas.label}${teratas.subjek ? ` · ${teratas.subjek}` : ''}${teratas.skor != null ? ` · skor ${teratas.skor}/100` : ''}. Semua belum terverifikasi — lihat catatan tiap pasar.`
+			waktu,
+			alasan: `Teratas: ${teratas.label}${teratas.subjek ? ` · ${teratas.subjek}` : ''}${teratas.skor != null ? ` · skor ${teratas.skor}/100` : ''} · sinyal ${waktu}. Semua belum terverifikasi — lihat catatan tiap pasar.`
 		};
 	});
 
@@ -139,6 +144,13 @@
 		<section class="verdikt {verdikt.nada}" aria-live="polite">
 			<p class="verdikt-label">Status hari ini</p>
 			<p class="verdikt-judul">{verdikt.judul}</p>
+			<p class="verdikt-waktu angka">
+				{#if verdikt.waktu}
+					Sinyal digenerate: {verdikt.waktu}
+				{:else}
+					Waktu sinyal tidak tercatat
+				{/if}
+			</p>
 			<p class="verdikt-alasan">{verdikt.alasan}</p>
 
 			<!-- SETUP ENTRY: jawaban "masuk di mana". Hanya bila datanya ada. -->
@@ -226,6 +238,11 @@
 							{s.ada ? (s.arah ?? 'ADA') : 'TIDAK ADA'}
 						</span>
 					</div>
+					{#if s.dibuat_pada}
+						<p class="mini-waktu angka">
+							🕒 dibuat {waktuWIB(s.dibuat_pada)}{s.umur_sinyal_s != null ? ` · ${umurDetik(s.umur_sinyal_s)} lalu` : ''}
+						</p>
+					{/if}
 					{#if s.catatan_kejujuran}
 						<p class="catatan">{s.catatan_kejujuran}</p>
 					{/if}
@@ -284,6 +301,9 @@
 	.pakem-TUNING { color: var(--tinta); border-color: var(--tinta); }
 	.pos { color: var(--mint); }
 	.neg { color: var(--merah); }
+
+	.verdikt-waktu { font-size: 0.78rem; color: var(--redup); margin: 0.1rem 0 0.35rem; }
+	.mini-waktu { font-size: 0.72rem; color: var(--redup); margin: 0.2rem 0 0; }
 
 	.ticker {
 		display: flex;

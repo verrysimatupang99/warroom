@@ -216,6 +216,9 @@ export interface SinyalPasar {
 	catatan_kejujuran: string;
 	umur_s: number | null;
 	sumber_fakta: string;
+	/** Kapan sinyal DIGENERATE (ISO apa adanya dari mesin) + umurnya saat ini (detik). */
+	dibuat_pada: string | null;
+	umur_sinyal_s: number | null;
 	detail: Record<string, unknown>;
 }
 

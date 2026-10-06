@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { umurDetik, waktuWIB } from '$lib/format';
+
 	/**
 	 * Sinyal & Entry Setup per market — satu komponen, kolom menyesuaikan keunikan pasar.
 	 *
@@ -82,6 +84,14 @@
 		return 'text-text-2 bg-surface border-line';
 	}
 
+	/** Umur dari string ISO mentah; gagal parse → NaN (ditampilkan '—' oleh umurDetik). */
+	function umurIso(iso: string | null | undefined): number {
+		if (!iso) return NaN;
+		const t = Date.parse(iso);
+		if (Number.isNaN(t)) return NaN;
+		return Math.round((Date.now() - t) / 1000);
+	}
+
 	function kelasStatusStrategi(s: string): string {
 		if (s === 'aktif') return 'text-pos bg-pos/10 border-pos/20';
 		if (s === 'paper') return 'text-accent bg-accent/10 border-accent/20';
@@ -147,6 +157,7 @@
 								<th class="hidden py-1.5 px-1.5 md:table-cell md:py-2 md:px-2.5 text-right">R:R</th>
 								<th class="hidden py-1.5 px-1.5 md:table-cell md:py-2 md:px-2.5 text-right">POI (SMC)</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Status</th>
+								<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 whitespace-nowrap">Dibuat</th>
 							{:else if pasar === 'forex'}
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Pair</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Arah</th>
@@ -158,6 +169,7 @@
 								<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">Konfl.</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Hasil</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">R</th>
+								<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 whitespace-nowrap">Dibuat</th>
 							{:else}
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Ticker</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Setup</th>
@@ -168,6 +180,7 @@
 								<th class="hidden py-1.5 px-1.5 md:table-cell md:py-2 md:px-2.5 text-right">R:R</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Net R</th>
 								<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Status</th>
+								<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 whitespace-nowrap">Dibuat</th>
 								<th class="hidden py-1.5 px-1.5 lg:table-cell lg:py-2 lg:px-2.5">Catatan</th>
 							{/if}
 						</tr>
@@ -198,6 +211,10 @@
 											<div class="text-10 text-text-3 font-normal mt-0.5">gagal: {e.aturan_gagal.slice(0, 2).join(', ')}</div>
 										{/if}
 									</td>
+									<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-text-3 whitespace-nowrap">
+										{e.waktu ? waktuWIB(e.waktu) : '—'}
+										{#if e.waktu}<div class="text-10">{umurDetik(umurIso(e.waktu))} lalu</div>{/if}
+									</td>
 								{:else if pasar === 'forex'}
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{e.pair ?? '—'}</td>
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
@@ -218,6 +235,10 @@
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {e.r == null ? 'text-text-3' : e.r > 0 ? 'text-pos' : e.r < 0 ? 'text-neg' : 'text-text-2'}">
 										{e.r != null ? `${e.r > 0 ? '+' : ''}${e.r}R` : '—'}
 									</td>
+									<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-text-3 whitespace-nowrap">
+										{e.waktu ? waktuWIB(e.waktu) : '—'}
+										{#if e.waktu}<div class="text-10">{umurDetik(umurIso(e.waktu))} lalu</div>{/if}
+									</td>
 								{:else}
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{e.ticker ?? '—'}</td>
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
@@ -233,6 +254,9 @@
 									</td>
 									<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
 										<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase border {kelasStatus(e.hasil ?? e.status)}">{e.hasil ?? e.status ?? '—'}</span>
+									</td>
+									<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-text-3 whitespace-nowrap">
+										{e.dibuat ? waktuWIB(e.dibuat) : '—'}
 									</td>
 									<td class="hidden py-1.5 px-1.5 lg:table-cell lg:py-2 lg:px-2.5 text-11 text-text-3 max-w-[320px]">{e.note ?? '—'}</td>
 								{/if}

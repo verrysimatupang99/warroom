@@ -97,3 +97,123 @@ def test_idx_dan_forex_kosong_menyebut_alasan(db) -> None:
         rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
     assert "BSJP" in rows["idx"].alasan
     assert rows["forex"].ada is False
+
+
+# --- Timestamp sinyal (6 Okt): "kapan sinyal itu digenerate" --------------------------
+# Kelas bug yang dicegah: UI menampilkan "X PELUANG" tanpa waktu — pembaca tidak bisa
+# menilai apakah sinyalnya masih segar atau sisa semalam. `umur_s` (umur fakta di DB)
+# TIDAK sama dengan umur sinyal; keduanya harus ada dan dibedakan.
+
+def test_crypto_membawa_waktu_sinyal_terbaru(db) -> None:
+    from warroom_core.db import Fact
+
+    with session_scope() as s:
+        s.add(
+            Fact(
+                kind="snapshot",
+                key="kandidat",
+                value_json=[
+                    # kandidat terbaik (skor penuh) dibuat lebih lama…
+                    {
+                        "ts": "2026-10-06T08:00:00+00:00",
+                        "pair": "AAAUSDT",
+                        "direction": "LONG",
+                        "tier": "STANDAR",
+                        "entry": 1.0,
+                        "sl": 0.9,
+                        "tp1": 1.2,
+                        "rules": [{"rule": "poi_valid", "ok": True}],
+                    },
+                    # …tetapi ada kandidat lebih baru; waktu itu yang dipakai.
+                    {
+                        "ts": "2026-10-06T13:00:00+00:00",
+                        "pair": "BBBUSDT",
+                        "direction": "SHORT",
+                        "tier": "STANDAR",
+                        "entry": 2.0,
+                        "sl": 2.1,
+                        "tp1": 1.8,
+                        "rules": [{"rule": "poi_valid", "ok": True}],
+                    },
+                ],
+                source="state/snapshot.json",
+                observed_at=datetime.now(UTC),
+                ttl_s=1800,
+                hash="h-timestamp",
+            )
+        )
+    with session_scope() as s:
+        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+    crypto = rows["crypto"]
+    assert crypto.dibuat_pada == "2026-10-06T13:00:00+00:00"
+    assert crypto.umur_sinyal_s is not None and crypto.umur_sinyal_s > 0
+
+
+def test_idx_forex_membawa_entry_dan_waktu(db) -> None:
+    from warroom_core.db import Fact
+
+    with session_scope() as s:
+        s.add(
+            Fact(
+                kind="snapshot",
+                key="idx_sinyal",
+                value_json={
+                    "tersedia": True,
+                    "entries": [
+                        {
+                            "ticker": "MPOW.JK",
+                            "setup": "BSJP_ARA",
+                            "arah": "LONG",
+                            "entry": 105,
+                            "sl": 102.38,
+                            "tp1": 106.05,
+                            "status": "CREATED",
+                            "dibuat": "2026-10-06T09:00:00+07:00",
+                        }
+                    ],
+                },
+                source="state/snapshot.json",
+                observed_at=datetime.now(UTC),
+                ttl_s=1800,
+                hash="h-idx",
+            )
+        )
+        s.add(
+            Fact(
+                kind="snapshot",
+                key="forex_sinyal",
+                value_json={
+                    "tersedia": True,
+                    "entries": [
+                        {
+                            "pair": "XAUUSD",
+                            "arah": "BUY",
+                            "entry": 4151.8,
+                            "sl": 4121.0,
+                            "tp1": 4182.6,
+                            "hasil": "SL",
+                            "waktu": "2026-10-05T13:32:00+07:00",
+                        }
+                    ],
+                },
+                source="state/snapshot.json",
+                observed_at=datetime.now(UTC),
+                ttl_s=1800,
+                hash="h-fx",
+            )
+        )
+    with session_scope() as s:
+        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+
+    idx = rows["idx"]
+    assert idx.ada is True
+    assert idx.subjek == "MPOW.JK"
+    assert idx.tier == "BSJP_ARA"
+    assert idx.dibuat_pada == "2026-10-06T09:00:00+07:00"
+    assert idx.detail["entry"] == 105
+
+    fx = rows["forex"]
+    assert fx.ada is True
+    assert fx.subjek == "XAUUSD"
+    assert fx.dibuat_pada == "2026-10-05T13:32:00+07:00"
+    assert fx.detail["r"] is None

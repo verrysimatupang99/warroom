@@ -61,6 +61,11 @@ class SinyalPasar:
     catatan_kejujuran: str = ""
     umur_s: float | None = None
     sumber_fakta: str = ""
+    # Kapan sinyal ini DIGENERATE oleh mesinnya (ISO apa adanya), + umurnya saat ini.
+    # Dipisah dari `umur_s` (umur FAKTA di DB) — pertanyaan owner 6 Okt: "status hari ini
+    # X peluang itu ada timestamp kapan sinyal itu digenerate ya".
+    dibuat_pada: str | None = None
+    umur_sinyal_s: float | None = None
     detail: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -87,6 +92,17 @@ def _umur(observed: datetime | None) -> float | None:
     return round((datetime.now(UTC) - observed).total_seconds(), 1)
 
 
+def _umur_iso(iso: str | None) -> float | None:
+    """Umur dari string ISO mentah. Gagal parse → None (jujur, bukan 0)."""
+    if not iso:
+        return None
+    try:
+        t = datetime.fromisoformat(str(iso).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return _umur(t)
+
+
 def _skor_dari_rules(rules: list[dict[str, Any]]) -> int | None:
     """Skor = persentase aturan yang lolos. Hard rule yang gagal membuat skor kecil —
     itu benar: setup yang melanggar hard rule bukan setup yang 'hampir lolos'."""
@@ -94,6 +110,15 @@ def _skor_dari_rules(rules: list[dict[str, Any]]) -> int | None:
         return None
     ok = sum(1 for r in rules if r.get("ok"))
     return round(100 * ok / len(rules))
+
+
+def _waktu_kandidat(k: dict[str, Any]) -> str | None:
+    """Waktu sinyal dibuat, apa adanya dari kandidat (``ts`` ISO dari gate)."""
+    for kunci in ("ts", "diambil", "waktu", "created_at"):
+        nilai = k.get(kunci)
+        if nilai:
+            return str(nilai)
+    return None
 
 
 def _crypto(s: SASession) -> SinyalPasar:
@@ -115,6 +140,9 @@ def _crypto(s: SASession) -> SinyalPasar:
         return (_TIER_RANK.get(tier, 0), ok, len(rules))
 
     terbaik = max(kandidat, key=kunci)
+    # Kandidat dengan waktu TERBARU: itu "kapan sinyal ini dibuat". Tanpa ts → jangan mengarang.
+    berwaktu = [k for k in kandidat if _waktu_kandidat(k)]
+    terbaru = max(berwaktu, key=lambda k: str(_waktu_kandidat(k))) if berwaktu else None
     rules = terbaik.get("rules") or []
     gagal = [r for r in rules if not r.get("ok")]
     skor = _skor_dari_rules(rules)
@@ -135,6 +163,8 @@ def _crypto(s: SASession) -> SinyalPasar:
             "peluang (win-rate 14,8%, di bawah break-even) — belum cukup untuk promosi."
         ),
         umur_s=_umur(observed), sumber_fakta="snapshot/kandidat",
+        dibuat_pada=_waktu_kandidat(terbaru) if terbaru else None,
+        umur_sinyal_s=_umur_iso(_waktu_kandidat(terbaru)) if terbaru else None,
         detail={"entry": terbaik.get("entry"), "sl": terbaik.get("sl"), "tp1": terbaik.get("tp1"),
                 "rr": terbaik.get("rr"), "lolos_gate": lolos, "kandidat": len(kandidat)},
     )
@@ -170,6 +200,8 @@ def _polymarket(s: SASession) -> SinyalPasar:
             f"Split beku: {split}"
         ),
         umur_s=_umur(observed), sumber_fakta="poly.verdict/verdict",
+        dibuat_pada=observed.isoformat() if observed else None,
+        umur_sinyal_s=_umur(observed),
         detail={"n": v.get("n"), "win": v.get("win"), "winRate": win,
                 "breakEven_pct": be, "ci95": v.get("ci95"), "deff": v.get("deff"),
                 "nNeeded": v.get("nNeeded"), "split": split},
@@ -177,9 +209,20 @@ def _polymarket(s: SASession) -> SinyalPasar:
 
 
 def _gmgn(s: SASession) -> SinyalPasar:
+    # Radar ditulis job `gmgn-sync` dengan kind `gmgn` (bukan `snapshot`), dan daftar
+    # jendelanya bernama `chains` (bukan `state`). Salah kind/nama = kartu "TIDAK ADA"
+    # palsu di Home padahal radar hidup — ditemukan & diperbaiki 6 Okt.
     r, observed = _ambil(s, "gmgn", "radar")
+    if not isinstance(r, dict):
+        r, observed = _ambil(s, "snapshot", "radar")
     data = (r or {}).get("data") if isinstance(r, dict) else None
-    state = (data or {}).get("state") if isinstance(data, dict) else None
+    state = None
+    if isinstance(data, dict):
+        state = data.get("state") if isinstance(data.get("state"), list) else data.get("chains")
+    if not isinstance(state, list) or not state:
+        # Fallback terakhir: bentuk panel snapshot (`_radar_panel`) — daftar `chains`.
+        chains = (r or {}).get("chains") if isinstance(r, dict) else None
+        state = chains if isinstance(chains, list) else state
     if not isinstance(state, list) or not state:
         return SinyalPasar(
             pasar="gmgn", label="DEX / Memecoin (GMGN)", ada=False, sumber_fakta="gmgn/radar",
@@ -189,6 +232,11 @@ def _gmgn(s: SASession) -> SinyalPasar:
     terbaik = max(state, key=lambda c: (float(c.get("avg_vl") or 0), int(c.get("viable") or 0)))
     vl = float(terbaik.get("avg_vl") or 0)
     viable, pools = int(terbaik.get("viable") or 0), int(terbaik.get("pools") or 0)
+    # Waktu radar ditarik: `diambil_epoch` (sumber) → ISO; kalau tidak ada, waktu fakta.
+    epoch = data.get("diambil_epoch") if isinstance(data, dict) else None
+    waktu = None
+    if isinstance(epoch, (int, float)) and epoch > 0:
+        waktu = datetime.fromtimestamp(float(epoch), tz=UTC).isoformat()
     return SinyalPasar(
         pasar="gmgn", label="DEX / Memecoin (GMGN)", ada=True,
         arah="PANTAU", subjek=str(terbaik.get("chain") or ""),
@@ -200,6 +248,8 @@ def _gmgn(s: SASession) -> SinyalPasar:
             "Ini kelayakan likuiditas, BUKAN edge arah harga. Belum ada bukti PnL dari venue ini."
         ),
         umur_s=_umur(observed), sumber_fakta="gmgn/radar",
+        dibuat_pada=waktu or (observed.isoformat() if observed else None),
+        umur_sinyal_s=_umur_iso(waktu) if waktu else _umur(observed),
         detail={"chain": terbaik.get("chain"), "avg_vl": vl, "viable": viable, "pools": pools,
                 "total_liq": terbaik.get("total_liq"), "best_vl": terbaik.get("best_vl")},
     )
@@ -228,10 +278,89 @@ def _lp(s: SASession) -> SinyalPasar:
             "Ini simulasi LP (IL + fee), bukan yield nyata. Belum ada rekonsiliasi on-chain."
         ),
         umur_s=_umur(observed), sumber_fakta="snapshot/lp_paper",
+        dibuat_pada=observed.isoformat() if observed else None,
+        umur_sinyal_s=_umur(observed),
         detail={"notional": sorotan.get("notional"), "vl": sorotan.get("vl"),
                 "fee_hari": sorotan.get("fee_hari"), "umur_hari": sorotan.get("umur"),
                 "posisi": len(posisi)},
     )
+
+
+def _dari_fakta_sinyal(
+    s: SASession,
+    *,
+    pasar: str,
+    label: str,
+    key: str,
+    sumber: str,
+    catatan: str,
+) -> SinyalPasar | None:
+    """Sinyal terbaik dari fakta ``*_sinyal`` (diterbitkan pasar.py): entry teratas + waktu.
+
+    Dipakai IDX & Forex — sebelumnya keduanya selalu "TIDAK ADA" di Home karena hanya
+    membaca posisi kosong, padahal ledger sinyalnya berisi. Angka diambil apa adanya;
+    baris tanpa waktu tetap tampil tanpa timestamp (tidak dikarang).
+    """
+    nilai, observed = _ambil(s, "snapshot", key)
+    entries = (nilai or {}).get("entries") if isinstance(nilai, dict) else None
+    if not isinstance(entries, list) or not entries:
+        return None
+    pertama = entries[0] if isinstance(entries[0], dict) else {}
+    waktu = None
+    for k in ("waktu", "dibuat", "ditutup"):
+        if pertama.get(k):
+            waktu = str(pertama[k])
+            break
+    subjek = str(pertama.get("pair") or pertama.get("ticker") or "") or None
+    arah = str(pertama.get("arah") or "").upper() or None
+    hasil = str(pertama.get("hasil") or pertama.get("status") or "")
+    return SinyalPasar(
+        pasar=pasar, label=label, ada=True,
+        arah=arah, subjek=subjek, skor=None,
+        tier=str(pertama.get("setup") or pertama.get("tier") or ""),
+        alasan=(
+            f"{len(entries)} sinyal di ledger; teratas {subjek or '—'} "
+            f"{arah or ''} · status {hasil or '—'}"
+        ),
+        terverifikasi=False,
+        catatan_kejujuran=catatan,
+        umur_s=_umur(observed), sumber_fakta=sumber,
+        dibuat_pada=waktu,
+        umur_sinyal_s=_umur_iso(waktu),
+        detail={
+            "entry": pertama.get("entry"), "sl": pertama.get("sl"), "tp1": pertama.get("tp1"),
+            "r": pertama.get("r") if pertama.get("r") is not None else pertama.get("net_r"),
+            "setup": pertama.get("setup"), "zona": pertama.get("zona"), "tf": pertama.get("tf"),
+            "entries": len(entries),
+        },
+    )
+
+
+def _idx(s: SASession) -> SinyalPasar:
+    hasil = _dari_fakta_sinyal(
+        s, pasar="idx", label="IDX (bandarmologi/BSJP)", key="idx_sinyal",
+        sumber="snapshot/idx_sinyal",
+        catatan=(
+            "Ledger mesin IDX (ARA/BSJP/INTRADAY). Mesin sinyalnya di Tencent dan sedang "
+            "BEKU (cron di-pause) — ledger tidak bertambah, bukti tetap utuh."
+        ),
+    )
+    return hasil or _kosong(
+        "idx", "IDX (bandarmologi/BSJP)", "snapshot/idx_sinyal", s,
+        "Belum ada sinyal IDX di ledger mesin; screener bandarmologi & BSJP belum menghasilkan kandidat.",
+    )
+
+
+def _forex(s: SASession) -> SinyalPasar:
+    hasil = _dari_fakta_sinyal(
+        s, pasar="forex", label="Forex", key="forex_sinyal",
+        sumber="snapshot/forex_sinyal",
+        catatan=(
+            "Jurnal mesin XAUUSD/multi-pair dari Tencent. Mesin berhenti bila server "
+            "mati — sinyal baru tidak lagi masuk, yang lama tetap tampil apa adanya."
+        ),
+    )
+    return hasil or _kosong("forex", "Forex", "snapshot/forex_sinyal", s, "Belum ada sinyal Forex.")
 
 
 def _kosong(pasar: str, label: str, sumber: str, s: SASession, alasan: str) -> SinyalPasar:
@@ -252,9 +381,8 @@ def sinyal_terbaik_per_pasar(s: SASession) -> list[SinyalPasar]:
         _polymarket(s),
         _gmgn(s),
         _lp(s),
-        _kosong("idx", "IDX (bandarmologi/BSJP)", "snapshot/idx_posisi", s,
-                "Belum ada posisi/sinyal IDX. Screener bandarmologi & BSJP belum menghasilkan kandidat."),
-        _kosong("forex", "Forex", "snapshot/forex_posisi", s, "Belum ada posisi/sinyal Forex."),
+        _idx(s),
+        _forex(s),
     ]
     urutan = {k: i for i, (k, _l, _s) in enumerate(PASAR)}
     keluar.sort(key=lambda x: urutan.get(x.pasar, 99))
