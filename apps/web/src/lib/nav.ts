@@ -129,6 +129,21 @@ export const AREAS: Area[] = [
 			{ slug: 'kebijakan', label: 'Kebijakan', kunci: [], catatan: 'agent-policy.json' },
 			{ slug: 'audit', label: 'Audit', kunci: [], catatan: 'Jejak perubahan' }
 		]
+	},
+	{
+		// Area RISET — mengikuti arsitektur algentis (/performance, /calendar, /tools).
+		// Isi kita sendiri: bukti ledger nyata, kalender ekonomi dari bagian.macro,
+		// dan kalkulator yang murni berhitung (tak butuh API).
+		kunci: 'riset',
+		label: 'Riset',
+		rute: '/riset',
+		ikon: '⌁',
+		kategori: 'riset',
+		anak: [
+			{ slug: 'kinerja', label: 'Kinerja', kunci: ['equity', 'ledger'], catatan: 'Statistik, trade terakhir, PnL per pair' },
+			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda makro: CPI, NFP, FOMC' },
+			{ slug: 'alat', label: 'Alat', kunci: [], catatan: 'Position size, likuidasi, risk/reward' }
+		]
 	}
 ];
 
