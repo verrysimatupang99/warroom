@@ -169,6 +169,19 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="narasi narrator Polymarket dari akurasi per arm (win-rate entri, fees dibebankan).",
     ),
     JobSpec(
+        name="rekonsiliasi-crypto",
+        interval_s=3600,
+        enabled=True,
+        # Tiap jam: menutup posisi menggantung yang tertinggal dari `watchlist-sync`
+        # (yang hidup di Tencent). Murah: hanya memanggil candle MEXC untuk posisi terbuka,
+        # biasanya nol posisi. TTL tidak relevan — ia menulis fakta lewat ledger/event.
+        payload={},
+        note=(
+            "tutup posisi crypto menggantung (SL dicek lebih dulu); gagal jaringan → "
+            "dilaporkan, tidak menebak. Temuan 6 Okt: 2 posisi tertinggal, 2R hilang."
+        ),
+    ),
+    JobSpec(
         name="learner",
         interval_s=86400,
         enabled=True,

@@ -403,6 +403,39 @@ def handler_reconcile(s: SASession, job: Job) -> str:
     )
 
 
+def handler_rekonsiliasi_crypto(s: SASession, job: Job) -> str:
+    """Tutup posisi menggantung yang tak pernah dicatat `watchlist-sync` (temuan 6 Okt).
+
+    Bukti: OP_USDT & LIT_USDT "still_open" sejak 27 Sep padahal SL 27–28 Sep; ledger
+    melaporkan +3,844R padahal +1,844R. Ledger kehilangan R selama tidak ada penutup.
+    Modul `rekonsiliasi.py` memakai candle MEXC (SL dicek lebih dulu) dan TIDAK menebak
+    saat jaringan gagal — barisnya masuk `gagal[]`.
+    """
+    from live_trading import rekonsiliasi
+    from live_trading.config import get_settings
+
+    rep = rekonsiliasi.rekonsiliasi_watchlist(get_settings().state_dir)
+    baru = rep.get("baru") or []
+    for baris in baru:
+        s.add(
+            Event(
+                type="trade.rekonsiliasi",
+                actor="rekonsiliasi",
+                payload_json=baris,
+                severity="warning" if float(baris.get("r") or 0) < 0 else "info",
+            )
+        )
+    if baru:
+        kirim_tertunda(s, limit=3)
+    rincian = "; ".join(
+        f"{b.get('signal_id')} {b.get('status')} {float(b.get('r') or 0):+.1f}R" for b in baru
+    )
+    return (
+        f"diperiksa={rep.get('diperiksa')} baru={len(baru)} "
+        f"gagal={len(rep.get('gagal') or [])} detail={rincian or 'nihil'}"
+    )
+
+
 def handler_gmgn_sync(s: SASession, job: Job) -> str:
     """Terbitkan fakta GMGN + radar lokal — baca-saja (P4-T4)."""
     from warroom_worker.adapters import gmgn
@@ -1016,6 +1049,7 @@ def register_handlers() -> dict[str, Any]:
             "parity-drift": handler_parity_drift,
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,
+            "rekonsiliasi-crypto": handler_rekonsiliasi_crypto,
             "signal-sync": handler_signal_sync,
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
