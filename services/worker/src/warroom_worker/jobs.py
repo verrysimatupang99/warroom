@@ -894,12 +894,49 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
     return f"eval_posisi={total_eval} ditutup={total_closed} detail={', '.join(hasil_detail) or 'nihil'}"
 
 
+def _kandidat_terbaru_dari_ledger(stg: Any, *, jam_terakhir: float = 6.0) -> list[dict[str, Any]]:
+    """Kandidat lolos TERBARU dari `verdicts.jsonl` — sumber yang sama dengan dashboard.
+
+    Hanya baris `allowed` yang diambil; duplikat pair (entri berulang) diambil yang
+    paling baru saja supaya satu pair tidak membuka dua posisi dalam satu pemindaian.
+    """
+    import json as _json
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
+    path = stg.state_dir / "verdicts.jsonl"
+    if not path.is_file():
+        return []
+    batas = _dt.now(_UTC).timestamp() - jam_terakhir * 3600
+    terbaru: dict[str, dict[str, Any]] = {}
+    for ln in path.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            row = _json.loads(ln)
+        except _json.JSONDecodeError:
+            continue
+        if not row.get("allowed"):
+            continue
+        try:
+            ts = _dt.fromisoformat(str(row["ts"]).replace("Z", "+00:00")).timestamp()
+        except (KeyError, ValueError):
+            continue
+        if ts < batas:
+            continue
+        pair = str(row.get("pair") or "")
+        if not pair:
+            continue
+        if pair not in terbaru or ts > terbaru[pair]["_ts"]:
+            terbaru[pair] = {**row, "_ts": ts}
+    return [v for v in terbaru.values()]
+
 def handler_paper_scan(s: SASession, job: Job) -> str:
     """Pemindaian otomatis & pembukaan posisi paper bila ada sinyal lolos gerbang risiko."""
     from live_trading.config import get_settings
     from live_trading.execution.paper import PaperBroker
     from live_trading.risk import RiskGate
-    from live_trading.signals import engine
 
     stg = get_settings()
     b_crypto = PaperBroker(stg, venue="crypto")
@@ -909,8 +946,15 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     if len(curr_pos) >= stg.max_concurrent_positions:
         return f"slot posisi crypto penuh ({len(curr_pos)}/{stg.max_concurrent_positions})"
 
-    from live_trading.collectors.crypto import DEFAULT_PAIRS
-    rows = engine.scan(stg, list(DEFAULT_PAIRS))
+    # Sumber kandidat = `verdicts.jsonl` (ledger gate), BUKAN `engine.scan` lokal.
+    #
+    # Temuan 6 Okt: job ini memakai engine.scan(DEFAULT_PAIRS) — hanya 6 pair warisan —
+    # sehingga kandidat lolos yang sudah dicatat ledger (AAVE/TIA/ARB, 192 izin dari 68
+    # pair) tidak pernah dieksekusi. Akibatnya akurasi crypto mandek di 6 trade: mesin
+    # tidak bisa membuktikan apa pun karena trade-nya tidak pernah dibuka.
+    # Ledger adalah sumber yang sudah lolos gerbang & sudah ditampilkan UI — eksekusi
+    # harus mengikuti sumber yang sama, bukan pemindaian kedua yang berbeda hasilnya.
+    rows = _kandidat_terbaru_dari_ledger(stg, jam_terakhir=float(job.payload_json.get("jam_terakhir", 6)))
     dibuka: list[str] = []
 
     for r in rows:
@@ -918,9 +962,17 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
             pair = r["pair"]
             direction = r["direction"]
             entry = float(r["entry"])
-            stop = float(r["stop"])
-            tp1 = float(r["tp1"])
-            tp2 = float(r["tp2"])
+            # Ledger menulis `sl`/`tp1`/`tp2`; engine.scan menulis `stop`. Keduanya diterima
+            # supaya sumber kandidat bisa berganti tanpa kehilangan level — dan kalau
+            # benar-benar tidak ada, kandidat dilewati (bukan ditebak).
+            stop_raw = r.get("stop") or r.get("sl")
+            tp1_raw = r.get("tp1")
+            tp2_raw = r.get("tp2") or r.get("tp1")
+            if stop_raw is None or tp1_raw is None:
+                continue
+            stop = float(stop_raw)
+            tp1 = float(tp1_raw)
+            tp2 = float(tp2_raw)
             atr = float(r.get("atr") or abs(entry - stop) / 1.5)
 
             dec = gate.check(

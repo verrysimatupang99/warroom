@@ -262,8 +262,8 @@
 		</section>
 
 		<p class="kaki dim">
-			Pratinjau arah baru. Warna aksen tunggal (mint), ticker di atas, verdikt besar,
-			rincian di bawah. Bandingkan dengan versi sekarang lalu bilang mana yang lebih tepat.
+			Ticker denyut pasar, satu verdikt besar, lalu rincian per pasar. Angka apa adanya
+			dari sumber; yang belum ada ditandai "—".
 		</p>
 	</div>
 </div>

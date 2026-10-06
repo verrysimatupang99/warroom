@@ -675,6 +675,20 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         # Skor bandarmologi (adopsi pola ihsgscreener): satu angka 0–100 per emiten,
         # komponennya diaudit. Butuh `bagian.bandarmologi` — ada hanya saat use_network.
         snap["bandarmologi_skor"] = _bs.skor_bandarmologi(snap.get("bagian") or {})
+        # Dompet paper Rp 10 juta per market (7 Okt): ukuran yang bisa dibandingkan
+        # antar-market — R tidak bisa dibandingkan, rupiah bisa.
+        from . import dompet as _dompet
+
+        snap["dompet"] = _dompet.ringkas_semua_dompet(s.state_dir)
+        # Verifikasi silang LP vs API publik (jawaban "data kita vs internet live").
+        # Berat (3 panggilan HTTP/pool) → hanya saat use_network, dan gagal = ditandai.
+        if use_network:
+            from . import lp_verifikasi as _lpv
+
+            try:
+                snap["lp_verifikasi"] = _lpv.pool_contoh()
+            except Exception as exc:  # noqa: BLE001 — verifikasi opsional
+                snap["lp_verifikasi"] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
     except Exception as exc:  # noqa: BLE001 — satu panel jangan menjatuhkan snapshot
         kosong = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
         snap["crypto_sinyal"] = dict(kosong)
@@ -682,6 +696,8 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         snap["idx_sinyal"] = dict(kosong)
         snap["pasar_akurasi"] = dict(kosong)
         snap["bandarmologi_skor"] = dict(kosong)
+        snap["dompet"] = dict(kosong)
+        snap["lp_verifikasi"] = dict(kosong)
 
     # kandidat & pengukuran (berkas; pengukuran butuh jaringan untuk melacak hasil)
     try:

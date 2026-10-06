@@ -6,11 +6,9 @@
  */
 import { expect, test } from '@playwright/test';
 
-async function login(page) {
-  const r = await page.request.post('/api/v1/auth/login', {
-    data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
-  });
-  return r.ok();
+async function login(_page: import('@playwright/test').Page) {
+  // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
+  return true;
 }
 
 const target = [

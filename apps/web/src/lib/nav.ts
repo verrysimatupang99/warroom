@@ -63,10 +63,12 @@ export const AREAS: Area[] = [
 		ikon: '◎',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'verdict', label: 'Verdict', kunci: ['poly_paper', 'bagian', 'pasar_akurasi'], catatan: 'n vs n dibutuhkan, CI vs BE, parity' },
-			{ slug: 'arm', label: 'Arm', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'A/B/C/D, agen, biaya & kapasitas' },
-			{ slug: 'dataset', label: 'Dataset', kunci: ['bagian'], catatan: 'Katalog dataset + replay rentang beku' },
-			{ slug: 'live', label: 'Live', kunci: ['equity', 'ledger'], catatan: 'Arming 3-way, dana nyata' }
+			// Keputusan owner 7 Okt: fokus ke SETUP B KANDIDAT; arm A/C/D dibekukan (diarsipkan,
+			// tidak dihapus — bukti tetap ada, hanya tidak lagi jadi pusat perhatian).
+			{ slug: 'setup-b', label: 'Setup B', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Fokus: kandidat arm B — verdict, akurasi, dompet' },
+			{ slug: 'riset', label: 'Riset', kunci: ['bagian', 'poly_paper'], catatan: 'Dataset, parity/drift, katalog replay (bekas dataset+verdict)' },
+			{ slug: 'arsip', label: 'Arm Lain (Beku)', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'A momentum · C fade · D favorit — dibekukan, disimpan sebagai bukti' },
+			{ slug: 'live', label: 'Live', kunci: ['equity', 'ledger'], catatan: 'Arming 3-way, dana nyata (status: belum arming)' }
 		]
 	},
 	{
@@ -76,9 +78,13 @@ export const AREAS: Area[] = [
 		ikon: '▦',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'screener', label: 'Screener', kunci: ['bagian', 'idx_akurasi', 'pasar_akurasi'], catatan: 'Arjum × TradingView + akurasi' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, ATS, aliran asing vs lokal' },
-			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian', 'idx_akurasi', 'idx_sinyal'], catatan: 'Beli Sore Jual Pagi + ARA Hunter & sinyal ledger' }
+			// Keputusan owner 7 Okt: "screener" diganti "Sinyal" yang isinya bandarmologi + BSJP.
+			// Sumbernya tetap sama (Arjum + ledger 616), tapi yang ditonjolkan adalah SINYALNYA,
+			// bukan daftar screener mentah.
+			{ slug: 'sinyal', label: 'Sinyal', kunci: ['idx_sinyal', 'idx_akurasi', 'bandarmologi_skor', 'bagian', 'dompet'], catatan: 'Bandarmologi + BSJP + ARA: sinyal, skor, dan akurasi' },
+			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian', 'bandarmologi_skor'], catatan: 'Broker summary, ATS, skor 0–100 per emiten' },
+			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian', 'idx_akurasi', 'idx_sinyal'], catatan: 'Beli Sore Jual Pagi + ARA Hunter (ledger mesin)' },
+			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Modal asing vs lokal, akumulasi senyap, konflik distribusi' }
 		]
 	},
 	{

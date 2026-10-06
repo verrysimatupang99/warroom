@@ -6,10 +6,7 @@
 import { expect, test } from '@playwright/test';
 
 test('skor bandarmologi tampil dengan komponen + peringatan', async ({ page }) => {
-  const r = await page.request.post('/api/v1/auth/login', {
-    data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
-  });
-  expect(r.ok()).toBe(true);
+  // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
   await page.goto('/idx?sub=bandarmologi');
   await expect(page.getByText('Skor Bandarmologi (0–100)').first()).toBeVisible({ timeout: 25000 });
   const t = await page.locator('body').innerText();

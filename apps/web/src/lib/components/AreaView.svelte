@@ -24,6 +24,9 @@
 	import type { DecisionItem } from './DecisionFeed.svelte';
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import AkurasiPasar from './AkurasiPasar.svelte';
+	import DompetPasar from './DompetPasar.svelte';
+	import ForexPair from './ForexPair.svelte';
+	import KalenderDampak from './KalenderDampak.svelte';
 	import SinyalPasar from './SinyalPasar.svelte';
 	import type { Fakta } from '$lib/api/types';
 
@@ -45,7 +48,22 @@
 		aliran: 'bandarmologi', // IDX: Aliran digabung ke Bandarmologi
 		watchlist: 'bsjp', // IDX: Watchlist/ARA Hunter digabung ke BSJP
 		token: 'memecoin', // GMGN: Token + Bot digabung jadi Memecoin
-		bot: 'memecoin'
+		bot: 'memecoin',
+		// Crypto: 7→4 (6 Okt 2026)
+		lab: 'ukur',
+		data: 'cockpit',
+		overextended: 'eksekusi',
+		// IDX (7 Okt): "screener" diganti "sinyal"; "aliran" kini tab sendiri lagi
+		screener: 'sinyal',
+		// Polymarket (7 Okt): fokus Setup B; verdict→setup-b, dataset→riset, arm→arsip
+		verdict: 'setup-b',
+		dataset: 'riset',
+		arm: 'arsip',
+		// Polymarket (7 Okt): sub lama dipetakan ke struktur baru {setup-b, riset, arsip, live}
+		agen: 'arsip',
+		replay: 'riset',
+		parity: 'riset',
+		biaya: 'arsip'
 	};
 
 	const sub = $derived.by(() => {
@@ -213,6 +231,10 @@
 			{@const forexSinyalObj = (faktaForexSinyal?.value as any) ?? null}
 			{@const faktaIdxSinyal = temukanFakta(data.facts, 'idx_sinyal')}
 			{@const idxSinyalObj = (faktaIdxSinyal?.value as any) ?? null}
+			{@const faktaLpVerif = temukanFakta(data.facts, 'lp_verifikasi')}
+			{@const lpVerifObj = (faktaLpVerif?.value as any) ?? null}
+			{@const faktaDompet = temukanFakta(data.facts, 'dompet')}
+			{@const dompetObj = (faktaDompet?.value as any) ?? null}
 			{@const faktaBandarSkor = temukanFakta(data.facts, 'bandarmologi_skor')}
 			{@const bandarSkorObj = (faktaBandarSkor?.value as any) ?? null}
 			{@const faktaPasarAkurasi = temukanFakta(data.facts, 'pasar_akurasi')}
@@ -269,7 +291,14 @@
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
+								<!-- Dompet paper Rp 10 juta — ukuran yang bisa dibandingkan antar-market -->
+								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
 								<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
+								<p class="text-11 text-text-3 -mt-1">
+									Kurva di atas = <b>ledger trade tertutup</b> (satu titik per trade selesai, satuan R), BUKAN kandidat.
+									Kandidat di tabel Setup baru jadi titik setelah dibuka & ditutup; order yang tak pernah terisi
+									ditandai <span class="font-mono">expired</span> dan tidak dihitung. Posisi berjalan terlihat di tab Eksekusi.
+								</p>
 							{/if}
 
 							<div class="permukaan-2 rounded-card border border-line p-3">
@@ -340,9 +369,12 @@
 							<DecisionFeed items={feedKeputusan} />
 						</div>
 
-						<!-- Kolom Kanan: Risiko & Posisi (5 cols) -->
+						<!-- Kolom Kanan: Risiko & Posisi (5 cols). Di tab Setup, RiskMeter disembunyikan:
+						     ia duplikat Cockpit dan membuat kolom terasa kosong saat tak ada posisi. -->
 						<div class="space-y-4 lg:col-span-5">
-							<RiskMeter risiko={risikoObj} />
+							{#if sub === 'cockpit' || !sub}
+								<RiskMeter risiko={risikoObj} />
+							{/if}
 
 							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
 							{#if sub === 'setup' || sub === 'ukur'}
@@ -498,7 +530,7 @@
 					</div>
 				{/if}
 
-				{#if sub === 'lab'}
+				{#if sub === 'lab' || sub === 'ukur'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -546,7 +578,7 @@
 				{/if}
 
 				<!-- Tab Overextended (dipindah dari area /overextended — datanya dari crypto) -->
-				{#if sub === 'overextended'}
+				{#if sub === 'overextended' || sub === 'eksekusi'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -568,7 +600,7 @@
 								</div>
 							{/if}
 
-							{#if !overextObj || (overextObj.paling_overextended ?? []).length === 0}
+							{#if !overextObj || (overextObj.simbol ?? []).length === 0}
 								<div class="py-6 text-center text-text-3 text-12">
 									Belum ada data overextended pada siklus ini.
 								</div>
@@ -585,20 +617,20 @@
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-line-soft">
-											{#each overextObj.paling_overextended ?? [] as o (o.symbol ?? o.simbol)}
+											{#each overextObj.simbol ?? [] as o (o.symbol ?? o.simbol)}
 												<tr class="hover:bg-surface/50 transition-colors">
 													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{o.symbol ?? o.simbol}</td>
 													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-warn">
 														{o.pump_pct != null ? `${o.pump_pct}%` : '—'}
 													</td>
 													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
-														{o.dari_puncak_pct != null ? `${o.dari_puncak_pct}%` : '—'}
+														{o.turun_dari_puncak_pct != null ? `${o.turun_dari_puncak_pct}%` : '—'}
 													</td>
 													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
-														{o.oi_delta_pct != null ? `${o.oi_delta_pct}%` : '—'}
+														{o.oi_mereda_pct != null ? `${o.oi_mereda_pct}%` : '—'}
 													</td>
 													<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
-														{o.funding_pct != null ? `${o.funding_pct}%` : '—'}
+														{o.fr_maks_pct != null ? `${o.fr_maks_pct}%` : '—'}
 													</td>
 												</tr>
 											{/each}
@@ -652,7 +684,7 @@
 					</div>
 				{/if}
 
-				{#if sub === 'data'}
+				{#if sub === 'data' || sub === 'cockpit'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -732,7 +764,7 @@
 			{/if}
 
 
-				{#if sub === 'dataset'}
+				{#if sub === 'riset'}
 					<Block
 						judul="Katalog dataset"
 						deskripsi="poly.dataset/recorder + poly.akses/cakupan — angka apa adanya dari job poly-sync"
@@ -743,8 +775,17 @@
 						<DatasetExplorer recorder={datasetRecorder} cakupan={datasetCakupan} />
 					</Block>
 				{/if}
-				{#if sub === 'verdict'}
+				{#if sub === 'setup-b'}
 					<div class="space-y-4">
+						<!-- Keputusan owner 7 Okt: fokus SETUP B KANDIDAT. Arm lain dibekukan (tab Arsip). -->
+						<div class="rounded-card border border-accent/30 bg-accent/5 p-3">
+							<div class="flex items-center gap-2">
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">FOKUS: SETUP B KANDIDAT</span>
+								<span class="text-11 text-text-3">arm A momentum · C fade · D favorit dibekukan — lihat tab Arsip</span>
+							</div>
+						</div>
+						<!-- Dompet paper Polymarket: arm B (keputusan owner 7 Okt) -->
+						<DompetPasar market="polymarket" dompet={dompetObj} judul="Dompet Paper Polymarket (arm B)" />
 						<!-- Akurasi & PnL per arm (6 Okt): win-rate entri mesin paper, dihitung per arm -->
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket)"
@@ -754,8 +795,17 @@
 						<StatisticalEdgeCard verdict={verdictObj} judul="Polymarket 5m Statistical Verdict" />
 					</div>
 				{/if}
-				{#if sub === 'arm'}
+				{#if sub === 'arsip'}
 					<div class="space-y-4">
+						<div class="rounded-card border border-line bg-surface p-3">
+							<div class="text-12 font-bold text-text-2">Arm beku (bukti disimpan)</div>
+							<p class="text-11 text-text-3">
+								Keputusan owner 7 Okt: hanya Setup B yang dikejar. A/C/D tetap diarsipkan —
+								angkanya jangan dihapus, tapi jangan dijadikan dasar keputusan baru.
+							</p>
+						</div>
+						<!-- Dompet paper Polymarket: arm B (keputusan owner 7 Okt), arm lain dibekukan -->
+						<DompetPasar market="polymarket" dompet={dompetObj} judul="Dompet Paper Polymarket (arm B)" />
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket)"
 							subjudul="Arm A momentum · B kandidat · C fade · D favorit — dari shadow summary"
@@ -796,7 +846,8 @@
 							{/if}
 						</div>
 					</div>
-				{:else if sub === 'agen'}
+				{/if}
+				{#if sub === 'agen' || sub === 'arsip'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -828,7 +879,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if sub === 'replay'}
+				{/if}
+				{#if sub === 'replay' || sub === 'riset'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -847,7 +899,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if sub === 'parity'}
+				{/if}
+				{#if sub === 'parity' || sub === 'riset' || sub === 'setup-b'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -876,7 +929,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if sub === 'biaya'}
+				{/if}
+				{#if sub === 'biaya' || sub === 'arsip'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -905,7 +959,8 @@
 							</div>
 						</div>
 					</div>
-				{:else if sub === 'live'}
+				{/if}
+				{#if sub === 'live'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -960,8 +1015,10 @@
 					</div>
 				{/if}
 
-				{#if sub === 'screener' || !sub}
+				{#if sub === 'sinyal' || !sub}
 					<div class="space-y-4">
+						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya -->
+						<DompetPasar market="idx" dompet={dompetObj} judul="Dompet Paper IDX (Rp 10 juta)" />
 						<!-- Arjum Screener -->
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -1248,7 +1305,7 @@
 				{/if}
 
 				<!-- Tab BSJP: Beli Sore Jual Pagi -->
-				{#if sub === 'bsjp'}
+				{#if sub === 'bsjp' || sub === 'sinyal'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -1369,7 +1426,7 @@
 				{/if}
 
 				<!-- Tab Bandarmologi -->
-				{#if sub === 'bandarmologi'}
+				{#if sub === 'bandarmologi' || sub === 'sinyal'}
 					<div class="space-y-4">
 						<!-- Skor Bandarmologi 0–100 (adopsi pola ihsgscreener, 6 Okt): satu angka
 						     ringkas dengan komponen yang bisa diaudit. Alat baca, bukan ajakan beli. -->
@@ -1535,7 +1592,7 @@
 				{/if}
 
 				<!-- Tab Watchlist: ARA Hunter Setups -->
-				{#if sub === 'watchlist' || sub === 'bsjp'}
+				{#if sub === 'watchlist' || sub === 'bsjp' || sub === 'sinyal'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -1592,6 +1649,65 @@
 						</div>
 					</div>
 				{/if}
+				<!-- 5 BLOK WAJIB (6 Okt 2026): Statistik & verifikasi + Posisi & riwayat.
+				     Sumber: fakta {kunci}_equity / {kunci}_ledger / {kunci}_risiko / {kunci}_posisi.
+				     Kosong ditampilkan apa adanya — bukan 0 yang dikarang. -->
+				<div class="mt-4 space-y-4">
+					<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
+					<RiskMeter risiko={risikoObj} />
+
+					<div class="permukaan-2 rounded-card border border-line p-3">
+						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+							<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
+							<span class="text-11 text-text-3 font-mono">
+								{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
+							</span>
+						</div>
+						{#if posisiArray.length === 0}
+							<div class="py-4 px-2 text-center text-12 text-text-3">
+								Belum ada posisi terbuka pada venue ini.
+							</div>
+						{:else}
+							<div class="space-y-2">
+								{#each posisiArray as p (p.signal_id ?? p.pair)}
+									<div class="flex items-center justify-between gap-2 rounded-card border border-line bg-surface p-2.5 font-mono text-12">
+										<div class="flex items-center gap-2">
+											<span class="font-bold text-text">{p.pair}</span>
+											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
+										</div>
+										<span class="text-11 text-text-3">entry {angka(p.entry)} · SL {angka(p.stop)} · TP {angka(p.tp1)}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<div class="permukaan-2 rounded-card border border-line p-3">
+						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+							<h3 class="text-13 font-medium text-text">Riwayat Eksekusi &amp; Ledger</h3>
+							<span class="text-11 text-text-3 font-mono">{ledgerObj?.trade ?? 0} trade</span>
+						</div>
+						{#if (ledgerObj?.terakhir ?? []).length === 0}
+							<div class="py-4 px-2 text-center text-12 text-text-3">
+								Belum ada trade tereksekusi pada venue ini.
+							</div>
+						{:else}
+							<div class="space-y-2">
+								{#each (ledgerObj?.terakhir ?? []) as tr}
+									<div class="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line-soft bg-surface p-2.5">
+										<div class="flex items-center gap-2">
+											<span class="font-bold font-mono text-13 text-text">{tr.pair}</span>
+											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {String(tr.status ?? '').includes('TP') ? 'bg-pos/20 text-pos' : String(tr.status ?? '').includes('SL') ? 'bg-warn/20 text-warn' : 'bg-surface text-text-3 border border-line'}">{tr.status}</span>
+											<span class="text-10 font-mono text-text-3">{waktuWIB(tr.closed_at)}</span>
+										</div>
+										<span class="font-mono font-bold text-13 {typeof tr.r === 'number' && tr.r > 0 ? 'text-pos' : typeof tr.r === 'number' && tr.r < 0 ? 'text-neg' : 'text-text-3'}">{tr.r == null ? '—' : (tr.r > 0 ? '+' : '') + tr.r + ' R'}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
+
 			{/if}
 
 			<!-- ========================================== -->
@@ -1676,6 +1792,46 @@
 				</div>
 			{/if}
 
+						<!-- Dompet paper forex: Rp 10 juta, dari jurnal mesin -->
+						<DompetPasar market="forex" dompet={dompetObj} judul="Dompet Paper Forex" />
+						<!-- Ringkas per pair: XAUUSD vs NAS100 vs EURUSD (wataknya beda) -->
+						<ForexPair data={forexSinyalObj} />
+						<!-- Kalkulator posisi: dari angka yang sudah ada, bukan taksiran -->
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-2 border-b border-line-soft pb-2">
+								<h3 class="text-14 font-medium text-text">Kalkulator Posisi</h3>
+								<p class="text-11 text-text-3">
+									Ukuran posisi = (risiko% × saldo) ÷ jarak SL. Risiko 1% dari dompet Rp 10 juta = Rp 100.000.
+								</p>
+							</div>
+							<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 font-mono text-12">
+								<div class="rounded bg-surface border border-line p-2.5">
+									<div class="text-10 text-text-3">SALDO AWAL</div>
+									<div class="text-14 font-bold text-text">Rp 10.000.000</div>
+									<div class="text-10 text-text-3 mt-1">Risiko 1% = Rp 100.000 per trade</div>
+								</div>
+								<div class="rounded bg-surface border border-line p-2.5">
+									<div class="text-10 text-text-3">CONTOH TERAKHIR DARI JURNAL</div>
+									{#if forexSinyalObj?.entries?.[0]}
+										{@const e = forexSinyalObj.entries.find((x: any) => x.pair === 'XAUUSD') ?? forexSinyalObj.entries[0]}
+										<div class="text-12 font-bold text-text">{e.pair} {e.arah} @ {angka(e.entry)}</div>
+										<div class="text-10 text-text-3 mt-1">
+											SL {angka(e.sl)} · jarak {e.entry && e.sl ? Math.abs(Number(e.entry) - Number(e.sl)).toFixed(2) : '—'}
+										</div>
+									{:else}
+										<div class="text-11 text-text-3">Belum ada sinyal di jurnal.</div>
+									{/if}
+								</div>
+								<div class="rounded bg-surface border border-line p-2.5">
+									<div class="text-10 text-text-3">ATURAN YANG DIKODEKAN</div>
+									<div class="text-11 text-text-2 space-y-0.5">
+										<div>· 1 posisi per pair (tidak menumpuk)</div>
+										<div>· Blackout ±60 menit event high-impact</div>
+										<div>· BE digeser 1,2R, TP1 parsial 50%</div>
+									</div>
+								</div>
+							</div>
+						</div>
 						<!-- Sinyal & entry setup forex (6 Okt): XAUUSD 4-agen + multi-pair, dari jurnal Tencent -->
 						<SinyalPasar
 							pasar="forex"
@@ -1748,6 +1904,9 @@
 						</div>
 					</div>
 				{:else if sub === 'kalender'}
+					<div class="space-y-4">
+						<!-- Kalender dengan dampak + hitung mundur (riset 7 Okt: yang membuat terasa hidup) -->
+						<KalenderDampak macro={macroObj} />
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 							<div>
@@ -1802,6 +1961,7 @@
 								</table>
 							</div>
 						{/if}
+					</div>
 					</div>
 				{:else if sub === 'demo'}
 					<div class="space-y-4">
@@ -1933,6 +2093,94 @@
 			{/if}
 
 
+				<!-- Penjelasan LP: Robinhood Chain vs Meteora (riset 7 Okt) + verifikasi live.
+				     Fakta yang membingungkan banyak orang dijelaskan di sini dengan bukti. -->
+				{#if sub === 'radar' || !sub}
+					<div class="space-y-3">
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-2 border-b border-line-soft pb-2">
+								<h3 class="text-14 font-medium text-text">LP: "Robinhood Chain" vs Meteora — apa bedanya?</h3>
+								<p class="text-11 text-text-3">
+									Riset 7 Okt: keduanya NYATA, tapi protokolnya BERBEDA dan tidak saling terhubung
+								</p>
+							</div>
+							<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+								<div class="rounded-card border border-accent/30 bg-accent/5 p-3">
+									<div class="mb-1 flex items-center gap-2">
+										<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">ROBINHOOD CHAIN</span>
+									</div>
+									<ul class="space-y-1 text-11 text-text-2">
+										<li>· L2 <b>Arbitrum Orbit</b>, chain ID <b>4663</b>, gas pakai <b>ETH</b> (bukan token sendiri), mainnet 1 Jul 2026</li>
+										<li>· LP-nya = <b>Uniswap v2/v3/v4</b> (bukan Meteora)</li>
+										<li>· Ada <b>Stock Token</b> (TSLA dll) — sekuritas utang ter-tokenisasi</li>
+										<li>· DexScreener mengindeks: chainId <span class="font-mono">robinhood</span>, dexId <span class="font-mono">uniswap</span></li>
+									</ul>
+								</div>
+								<div class="rounded-card border border-line bg-surface p-3">
+									<div class="mb-1 flex items-center gap-2">
+										<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-line text-text-2 bg-canvas">METEORA (SOLANA)</span>
+									</div>
+									<ul class="space-y-1 text-11 text-text-2">
+										<li>· <b>Solana-only</b>: DLMM, DAMM v1/v2, DBC</li>
+										<li>· DAMM v2 = AMM constant-product dengan concentrated liquidity + fee dinamis</li>
+										<li>· Fee: base + dinamis, protocol 20%, cap 99%; posisi = <b>NFT Token-2022</b></li>
+										<li>· <b>Tidak ada</b> hubungan terverifikasi dengan Robinhood Chain</li>
+									</ul>
+								</div>
+							</div>
+							<p class="mt-2 text-11 text-warn">
+								⚠ Miskonsepsi yang umum: menyamakan "LP Robinhood" dengan Meteora. Istilah "concentrated liquidity"
+								dipakai keduanya, tetapi protokol & rantainya berbeda. Selalu sebutkan protokol, bukan hanya "LP".
+							</p>
+						</div>
+
+						<!-- Verifikasi live: data kita vs API publik -->
+						{#if lpVerifObj}
+							<div class="permukaan-2 rounded-card border border-line p-3">
+								<div class="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
+									<div>
+										<h3 class="text-14 font-medium text-text">Verifikasi Harga vs API Publik (live)</h3>
+										<p class="text-11 text-text-3">
+											Jawaban untuk "apakah data kita sama dengan internet live?" — dibandingkan, bukan diklaim
+										</p>
+									</div>
+									<span class="rounded bg-surface border border-line px-2 py-0.5 text-11 font-mono {lpVerifObj.sepakat === lpVerifObj.jumlah ? 'text-pos' : 'text-warn'}">
+										{lpVerifObj.sepakat}/{lpVerifObj.jumlah} sepakat
+									</span>
+								</div>
+								<div class="space-y-2">
+									{#each lpVerifObj.pool ?? [] as p (p.nama)}
+										<div class="rounded-card border border-line bg-surface p-2.5">
+											<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+												<span class="font-mono text-12 font-bold text-text">{p.nama}</span>
+												<span class="rounded px-1.5 py-0.5 text-10 font-bold border {p.kesimpulan === 'SEPAKAT' ? 'text-pos bg-pos/10 border-pos/20' : p.kesimpulan === 'SELISIH' ? 'text-warn bg-warn/10 border-warn/20' : 'text-text-3 bg-canvas border-line'}">{p.kesimpulan}</span>
+											</div>
+											<div class="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
+												{#each Object.entries(p.sumber ?? {}) as [sumber, s]}
+													<div class="rounded bg-canvas/60 border border-line p-1.5 font-mono text-10">
+														<div class="text-text-3 uppercase">{sumber}</div>
+														{#if (s as any).galat}
+															<div class="text-warn">gagal: {String((s as any).galat).slice(0, 40)}</div>
+														{:else}
+															<div class="text-text font-bold">{angka((s as any).harga)}</div>
+															<div class="text-text-3">liq ${Number((s as any).likuiditas_usd ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+														{/if}
+													</div>
+												{/each}
+											</div>
+											{#if p.selisih_pct != null}
+												<div class="mt-1 text-10 text-text-3 font-mono">selisih antar sumber: {p.selisih_pct}% (ambang {lpVerifObj.ambang_selisih_pct}%)</div>
+											{/if}
+											{#if p.catatan}<div class="mt-0.5 text-10 text-text-3">{p.catatan}</div>{/if}
+										</div>
+									{/each}
+								</div>
+								<p class="mt-2 text-10 text-text-3">{lpVerifObj.catatan}</p>
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				{#if sub === 'radar' || !sub}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
@@ -1995,6 +2243,8 @@
 
 				{#if sub === 'lp'}
 					<div class="space-y-4">
+						<!-- Dompet paper LP: Rp 10 juta, dari mark posisi -->
+						<DompetPasar market="gmgn" dompet={dompetObj} judul="Dompet Paper GMGN / LP" />
 						<!-- Akurasi & PnL LP terukur (6 Okt): hasil dinyatakan P&L (IL+fee), bukan R -->
 						<AkurasiPasar
 							judul="Akurasi & PnL LP Terukur"
@@ -2047,6 +2297,72 @@
 											</div>
 										</div>
 									{/each}
+								</div>
+							{/if}
+						</div>
+
+						<!-- MARK LP TERUKUR (6 Okt): fee/IL/LP-vs-hold dari pasar nyata + label pakem.
+						     Sumber: fakta `lp_mark` (job `lp-mark`, DexScreener per alamat pool). -->
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Mark Terukur — Fee, IL, LP vs Hold</h3>
+									<p class="text-11 text-text-3">
+										Harga nyata per alamat pool; fee = taksiran (V/L hari ini × tier × hari)
+									</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									${lpMarkObj?.total_pnl_usd ?? '—'}
+								</span>
+							</div>
+
+							{#if !lpMarkObj || (lpMarkObj.mark ?? []).length === 0}
+								<div class="py-6 text-center text-text-3 text-12">
+									Belum ada mark LP. Job <span class="font-mono">lp-mark</span> akan mengisi setelah posisi LP dibuka.
+								</div>
+							{:else}
+								<div class="space-y-2">
+									{#each lpMarkObj.mark as m (m.symbol)}
+										<div class="rounded-card border border-line bg-surface p-3">
+											<div class="flex flex-wrap items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span class="font-bold font-mono text-13 text-text">{m.symbol}</span>
+													<span class="rounded px-1.5 py-0.5 text-10 font-mono border border-line bg-canvas text-text-3">{m.status}</span>
+													{#if m.sumber}<span class="text-10 font-mono text-text-3">via {m.sumber}</span>{/if}
+												</div>
+												<span class="font-mono font-bold text-13 {typeof m.pnl_usd === 'number' && m.pnl_usd > 0 ? 'text-pos' : typeof m.pnl_usd === 'number' && m.pnl_usd < 0 ? 'text-neg' : 'text-text-3'}">
+													{m.pnl_usd == null ? '—' : (m.pnl_usd > 0 ? '+' : '') + '$' + m.pnl_usd}
+												</span>
+											</div>
+											<div class="mt-2 grid grid-cols-2 gap-2 text-11 font-mono sm:grid-cols-4">
+												<div>
+													<span class="text-text-3 text-10 block">FEE*</span>
+													<span class="text-pos">{m.fee_usd ?? '—'}</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">IL</span>
+													<span class="text-neg">{m.il_pct ?? '—'}%</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">LP vs HOLD</span>
+													<span class="text-text">{m.lp_vs_hold_usd ?? '—'}</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">UMUR</span>
+													<span class="text-text-2">{m.umur_hari ?? '—'} hari</span>
+												</div>
+											</div>
+										</div>
+									{/each}
+									{#if lpMarkObj.pakem}
+										<p class="pt-1 text-11 text-text-3">
+											Pakem bukti: <span class="font-bold font-mono text-text">{lpMarkObj.pakem.tingkat}</span>
+											<span class="font-mono">· n={lpMarkObj.pakem.n} hari={lpMarkObj.pakem.n_hari}</span>
+											{#if lpMarkObj.pakem.alasan?.length}
+												<span>· {lpMarkObj.pakem.alasan[0]}</span>
+											{/if}
+										</p>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -2120,72 +2436,6 @@
 								</div>
 							{/if}
 						</div>
-
-						<!-- MARK LP TERUKUR (6 Okt): fee/IL/LP-vs-hold dari pasar nyata + label pakem.
-						     Sumber: fakta `lp_mark` (job `lp-mark`, DexScreener per alamat pool). -->
-						<div class="permukaan-2 rounded-card border border-line p-3">
-							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
-								<div>
-									<h3 class="text-14 font-medium text-text">Mark Terukur — Fee, IL, LP vs Hold</h3>
-									<p class="text-11 text-text-3">
-										Harga nyata per alamat pool; fee = taksiran (V/L hari ini × tier × hari)
-									</p>
-								</div>
-								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
-									${lpMarkObj?.total_pnl_usd ?? '—'}
-								</span>
-							</div>
-
-							{#if !lpMarkObj || (lpMarkObj.mark ?? []).length === 0}
-								<div class="py-6 text-center text-text-3 text-12">
-									Belum ada mark LP. Job <span class="font-mono">lp-mark</span> akan mengisi setelah posisi LP dibuka.
-								</div>
-							{:else}
-								<div class="space-y-2">
-									{#each lpMarkObj.mark as m (m.symbol)}
-										<div class="rounded-card border border-line bg-surface p-3">
-											<div class="flex flex-wrap items-center justify-between gap-2">
-												<div class="flex items-center gap-2">
-													<span class="font-bold font-mono text-13 text-text">{m.symbol}</span>
-													<span class="rounded px-1.5 py-0.5 text-10 font-mono border border-line bg-canvas text-text-3">{m.status}</span>
-													{#if m.sumber}<span class="text-10 font-mono text-text-3">via {m.sumber}</span>{/if}
-												</div>
-												<span class="font-mono font-bold text-13 {typeof m.pnl_usd === 'number' && m.pnl_usd > 0 ? 'text-pos' : typeof m.pnl_usd === 'number' && m.pnl_usd < 0 ? 'text-neg' : 'text-text-3'}">
-													{m.pnl_usd == null ? '—' : (m.pnl_usd > 0 ? '+' : '') + '$' + m.pnl_usd}
-												</span>
-											</div>
-											<div class="mt-2 grid grid-cols-2 gap-2 text-11 font-mono sm:grid-cols-4">
-												<div>
-													<span class="text-text-3 text-10 block">FEE*</span>
-													<span class="text-pos">{m.fee_usd ?? '—'}</span>
-												</div>
-												<div>
-													<span class="text-text-3 text-10 block">IL</span>
-													<span class="text-neg">{m.il_pct ?? '—'}%</span>
-												</div>
-												<div>
-													<span class="text-text-3 text-10 block">LP vs HOLD</span>
-													<span class="text-text">{m.lp_vs_hold_usd ?? '—'}</span>
-												</div>
-												<div>
-													<span class="text-text-3 text-10 block">UMUR</span>
-													<span class="text-text-2">{m.umur_hari ?? '—'} hari</span>
-												</div>
-											</div>
-										</div>
-									{/each}
-									{#if lpMarkObj.pakem}
-										<p class="pt-1 text-11 text-text-3">
-											Pakem bukti: <span class="font-bold font-mono text-text">{lpMarkObj.pakem.tingkat}</span>
-											<span class="font-mono">· n={lpMarkObj.pakem.n} hari={lpMarkObj.pakem.n_hari}</span>
-											{#if lpMarkObj.pakem.alasan?.length}
-												<span>· {lpMarkObj.pakem.alasan[0]}</span>
-											{/if}
-										</p>
-									{/if}
-								</div>
-							{/if}
-						</div>
 					</div>
 				{/if}
 
@@ -2232,6 +2482,65 @@
 						</div>
 					</div>
 				{/if}
+				<!-- 5 BLOK WAJIB (6 Okt 2026): Statistik & verifikasi + Posisi & riwayat.
+				     Sumber: fakta {kunci}_equity / {kunci}_ledger / {kunci}_risiko / {kunci}_posisi.
+				     Kosong ditampilkan apa adanya — bukan 0 yang dikarang. -->
+				<div class="mt-4 space-y-4">
+					<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
+					<RiskMeter risiko={risikoObj} />
+
+					<div class="permukaan-2 rounded-card border border-line p-3">
+						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+							<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
+							<span class="text-11 text-text-3 font-mono">
+								{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
+							</span>
+						</div>
+						{#if posisiArray.length === 0}
+							<div class="py-4 px-2 text-center text-12 text-text-3">
+								Belum ada posisi terbuka pada venue ini.
+							</div>
+						{:else}
+							<div class="space-y-2">
+								{#each posisiArray as p (p.signal_id ?? p.pair)}
+									<div class="flex items-center justify-between gap-2 rounded-card border border-line bg-surface p-2.5 font-mono text-12">
+										<div class="flex items-center gap-2">
+											<span class="font-bold text-text">{p.pair}</span>
+											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
+										</div>
+										<span class="text-11 text-text-3">entry {angka(p.entry)} · SL {angka(p.stop)} · TP {angka(p.tp1)}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+
+					<div class="permukaan-2 rounded-card border border-line p-3">
+						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+							<h3 class="text-13 font-medium text-text">Riwayat Eksekusi &amp; Ledger</h3>
+							<span class="text-11 text-text-3 font-mono">{ledgerObj?.trade ?? 0} trade</span>
+						</div>
+						{#if (ledgerObj?.terakhir ?? []).length === 0}
+							<div class="py-4 px-2 text-center text-12 text-text-3">
+								Belum ada trade tereksekusi pada venue ini.
+							</div>
+						{:else}
+							<div class="space-y-2">
+								{#each (ledgerObj?.terakhir ?? []) as tr}
+									<div class="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line-soft bg-surface p-2.5">
+										<div class="flex items-center gap-2">
+											<span class="font-bold font-mono text-13 text-text">{tr.pair}</span>
+											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {String(tr.status ?? '').includes('TP') ? 'bg-pos/20 text-pos' : String(tr.status ?? '').includes('SL') ? 'bg-warn/20 text-warn' : 'bg-surface text-text-3 border border-line'}">{tr.status}</span>
+											<span class="text-10 font-mono text-text-3">{waktuWIB(tr.closed_at)}</span>
+										</div>
+										<span class="font-mono font-bold text-13 {typeof tr.r === 'number' && tr.r > 0 ? 'text-pos' : typeof tr.r === 'number' && tr.r < 0 ? 'text-neg' : 'text-text-3'}">{tr.r == null ? '—' : (tr.r > 0 ? '+' : '') + tr.r + ' R'}</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				</div>
+
 			{/if}
 
 			<!-- Gate Blok Evaluasi (Hanya bila ada verdict / gate statistik) -->

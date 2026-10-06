@@ -17,6 +17,7 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import DompetLintasMarket from '$lib/components/DompetLintasMarket.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	const sub = $derived.by(() => {
@@ -46,8 +47,13 @@
 		return () => clearInterval(t);
 	});
 
-	const fakta = (p: AreaPayload | null, key: string): Fakta | null =>
+	const fakta = (p: AreaPayload | null, key: string) =>
 		p?.facts.find((f) => f.key === key) ?? null;
+
+	// Dompet lintas-market: fakta yang sama dengan tiap halaman area (satu sumber angka).
+	const dompetObj = $derived(
+		(fakta(kripto, 'dompet')?.value as { pasar?: Record<string, never>; kurs_usd_idr?: number } | undefined) ?? null
+	);
 
 	// ---- Kinerja ----
 	type Stats = Record<string, number | null>;
@@ -124,6 +130,8 @@
 		<Skeleton baris={6} />
 	{:else if sub === 'kinerja'}
 		<!-- ============ KINERJA (padanan /performance algentis) ============ -->
+		<!-- Satu-satunya tempat market dibandingkan: dompet Rp 10 juta, risiko sama. -->
+		<DompetLintasMarket dompet={dompetObj} />
 		{#if stats}
 			<section class="stat-grid" aria-label="Statistik">
 				<div class="stat"><span class="label">Total R</span><b class="angka {stats.total_r && stats.total_r >= 0 ? 'pos' : 'neg'}">{stats.total_r != null ? `${stats.total_r > 0 ? '+' : ''}${angka(stats.total_r)}` : '—'}</b></div>

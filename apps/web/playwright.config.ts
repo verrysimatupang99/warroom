@@ -28,6 +28,10 @@ bacaEnvFile();
 
 export default defineConfig({
 	testDir: 'e2e',
+	// Login SEKALI untuk seluruh suite (7 Okt): tiap tes yang login sendiri menghabiskan
+	// jatah rate-limit API (10 login/menit) dan gejalanya menyesatkan — "8 tes lewat,
+	// sisanya gagal", seperti server mati padahal limiter bekerja. Sesi dipakai ulang.
+	globalSetup: './e2e/global-setup.ts',
 	timeout: 45_000,
 	expect: { timeout: 10_000 },
 	fullyParallel: false,
@@ -43,7 +47,8 @@ export default defineConfig({
 		// Prasyarat: warroom-api + warroom-worker + warroom-web aktif; kredensial di
 		// ~/.config/warroom/e2e.env.
 		baseURL: process.env.WARROOM_E2E_BASE ?? 'https://0xgunsl1ng3r.xyz',
-		trace: 'retain-on-failure'
+		trace: 'retain-on-failure',
+		storageState: 'e2e/.auth/sesi.json'
 	},
 	projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
 });

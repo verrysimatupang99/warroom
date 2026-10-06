@@ -26,6 +26,7 @@
 					ci: Number.isFinite(Number(v.ci)) ? Number(v.ci) : undefined,
 					min_n: Number.isFinite(Number(v.min_n)) ? Number(v.min_n) : undefined,
 					deff: Number.isFinite(Number(v.deff)) ? Number(v.deff) : undefined,
+					nEff: Number.isFinite(Number(v.nEff)) ? Number(v.nEff) : undefined,
 					split: typeof v.split === 'string' ? v.split : null,
 					rule: typeof v.rule === 'string' ? v.rule : ''
 				};

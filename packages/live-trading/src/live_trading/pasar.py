@@ -366,6 +366,18 @@ def ringkas_crypto_sinyal(state_dir: Path) -> dict[str, Any]:
 # IDX — sinyal & entry setup (ledger mesin, hanya baca)
 # ---------------------------------------------------------------------------
 
+def _umur_hari_terbuka(status: Any, created_at: Any) -> float | None:
+    """Umur (hari) sinyal yang masih terbuka — supaya "masih jalan" bisa dibedakan
+    dari "nyangkut karena mesinnya sudah beku". Gagal parse → None (jangan mengarang)."""
+    if str(status) not in ("CREATED", "OPEN") or not created_at:
+        return None
+    try:
+        t = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return round((datetime.now(UTC) - t).total_seconds() / 86400, 1)
+
+
 def ringkas_idx_sinyal(state_dir: Path) -> dict[str, Any]:
     """Sinyal IDX terbaru dari ledger mesin (sumber sama dengan idx_akurasi)."""
     import sqlite3
@@ -416,13 +428,45 @@ def ringkas_idx_sinyal(state_dir: Path) -> dict[str, Any]:
                 "net_r": r["net_r"],
                 "dibuat": r["created_at"],
                 "ditutup": r["closed_at"],
+                "umur_hari": _umur_hari_terbuka(r["status"], r["created_at"]),
                 "note": r["note"],
             }
         )
+    # Ringkasan SELURUH ledger (bukan hanya 24 yang ditampilkan): berapa sinyal terbuka,
+    # berapa yang sudah menggantung ≥10 hari. Mesin IDX beku → angka ini tidak akan turun
+    # sendiri; menampilkannya adalah cara jujur memberi tahu bahwa posisi itu mati suri.
+    ringkas_terbuka: dict[str, Any] = {"n": 0, "lama": 0, "tertua_hari": None}
+    try:
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        baris = con.execute(
+            "select created_at from signals where status in ('CREATED','OPEN')"
+        ).fetchall()
+        con.close()
+        umur = [
+            u for u in (_umur_hari_terbuka("CREATED", b[0]) for b in baris) if u is not None
+        ]
+        ringkas_terbuka = {
+            "n": len(umur),
+            "lama": sum(1 for u in umur if u >= 10),
+            "tertua_hari": round(max(umur), 1) if umur else None,
+        }
+    except Exception:  # noqa: BLE001 — ringkasan opsional; daftar tetap tampil
+        pass
+    terbuka_lama = ringkas_terbuka["lama"]
     return {
         "tersedia": bool(entries),
         "alasan": None if entries else "ledger IDX kosong",
         "entries": entries,
+        "terbuka": ringkas_terbuka["n"],
+        "terbuka_lama": terbuka_lama,
+        "tertua_hari": ringkas_terbuka["tertua_hari"],
+        "catatan_terbuka": (
+            f"{terbuka_lama} sinyal terbuka ≥10 hari dan TIDAK akan ditutup: mesin IDX "
+            "di Tencent beku (cron di-pause). Hasilnya tidak bisa direkonstruksi tanpa "
+            "menghidupkan mesinnya kembali — jangan dianggap posisi berjalan."
+        )
+        if terbuka_lama
+        else None,
         "strategi": STRATEGI_PASAR["idx"],
         "sumber": "state/idx_ledger.db (tencent:idx616_signal_ledger.db)",
         "suplai": {
@@ -544,10 +588,44 @@ def ringkas_forex_sinyal(state_dir: Path) -> dict[str, Any]:
                 rows, nama=label, kunci_tanggal="closed_at", biaya_tercatat=None
             )
 
+    # Lapisan per-PAIR: ringkas tiap pair (terakhir, berapa sinyal, hasil) supaya bagian forex
+    # tidak terasa "satu blok kosong" — XAUUSD dan NAS100/EURUSD punya watak berbeda.
+    per_pair: dict[str, dict[str, Any]] = {}
+    for e in entries:
+        pair = str(e.get("pair") or "?")
+        d = per_pair.setdefault(
+            pair,
+            {
+                "pair": pair,
+                "strategi": e.get("strategi"),
+                "n_sinyal": 0,
+                "n_tuntas": 0,
+                "menang": 0,
+                "total_r": 0.0,
+                "terakhir": None,
+                "status_terakhir": None,
+                "arah_terakhir": None,
+            },
+        )
+        d["n_sinyal"] += 1
+        if d["terakhir"] is None or str(e.get("waktu") or "") > str(d["terakhir"]):
+            d["terakhir"] = e.get("waktu")
+            d["status_terakhir"] = e.get("hasil") or e.get("status")
+            d["arah_terakhir"] = e.get("arah")
+        if e.get("r") is not None:
+            d["n_tuntas"] += 1
+            d["total_r"] = round(d["total_r"] + float(e["r"]), 4)
+            if float(e["r"]) > 0:
+                d["menang"] += 1
+    for d in per_pair.values():
+        d["winrate_pct"] = round(100 * d["menang"] / d["n_tuntas"], 1) if d["n_tuntas"] else None
+        d["mean_r"] = round(d["total_r"] / d["n_tuntas"], 4) if d["n_tuntas"] else None
+
     return {
         "tersedia": True,
         "alasan": None,
         "entries": entries,
+        "per_pair": per_pair,
         "per_setup": per_setup,
         "seri_pakem": _baris_akurasi(seri, nama="Forex gabungan", biaya_tercatat=None) if seri else None,
         "per_hari": _per_hari(seri),

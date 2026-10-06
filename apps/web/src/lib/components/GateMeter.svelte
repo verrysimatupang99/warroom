@@ -21,6 +21,28 @@
 		if (butuh && butuh > 0) return Math.min(1, hasil.n / butuh);
 		return hasil.verdict === 'lolos' ? 1 : 0;
 	});
+	// n efektif = n terkoreksi klaster (n ÷ deff). Diambil dari hasil gate bila ada,
+	// kalau tidak dari catatan gate ("n efektif 3080 (dari 4133)"). Ini yang membuat
+	// angka "n" jujur: 4.133 mentah, tapi yang dihitung gate lebih kecil.
+	const nEfektif = $derived.by(() => {
+		if (!hasil) return null;
+		if (hasil.nEff != null && Number.isFinite(hasil.nEff)) return hasil.nEff;
+		for (const n of hasil.notes ?? []) {
+			const m = /n efektif\s+([\d.]+)/i.exec(n);
+			if (m) {
+				const v = Number(String(m[1]).replace(/\./g, ''));
+				if (Number.isFinite(v)) return v;
+			}
+		}
+		return null;
+	});
+	// Kemajuan sampel hanya "selesai" bila gate benar-benar lolos. Bila n tercapai tapi
+	// verdict belum lolos (mis. split belum dibekukan), bar TIDAK hijau — supaya tak
+	// terbaca "beres" padahal gate masih tertahan.
+	const tercapai = $derived(progres >= 1);
+	const warnaProgres = $derived(
+		hasil?.verdict === 'lolos' ? 'bg-pos' : tercapai ? 'bg-warn' : 'bg-accent'
+	);
 	const skala = $derived(Math.max(1e-9, Math.max(hasil?.ci_high ?? 0, hasil?.be ?? 0) * 1.05));
 	const bandKiri = $derived(((hasil?.ci_low ?? 0) / skala) * 100);
 	const bandLebar = $derived((((hasil?.ci_high ?? 0) - (hasil?.ci_low ?? 0)) / skala) * 100);
@@ -92,12 +114,17 @@
 			<div class="h-2 w-full overflow-hidden rounded-control bg-surface-3" role="progressbar"
 				aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progres * 100)}
 				aria-label="kemajuan sampel menuju n dibutuhkan">
-				<div class="h-full bg-accent transisi" style={`width:${(progres * 100).toFixed(1)}%`}></div>
+				<div class="h-full {warnaProgres} transisi" style={`width:${(progres * 100).toFixed(1)}%`}></div>
 			</div>
+			{#if tercapai && hasil.verdict !== 'lolos'}
+				<p class="mt-1 text-11 text-warn">
+					n tercapai, tapi gate belum lolos — lihat alasan di bawah (bukan kurang sampel).
+				</p>
+			{/if}
 		</div>
 
 		<div class="mt-3">
-			<div class="label-mikro mb-1">pita CI {hasil.verdict === 'lolos' ? '(batas bawah > BE)' : '(batas bawah ≤ BE)'}</div>
+			<div class="label-mikro mb-1">pita CI {hasil.ci_low > hasil.be ? '(batas bawah > BE)' : '(batas bawah ≤ BE)'}</div>
 			<div class="relative h-4 w-full rounded-control bg-surface-3" aria-hidden="true">
 				<div
 					class="absolute inset-y-0 rounded-control bg-accent-2/40 border border-accent-2/60"

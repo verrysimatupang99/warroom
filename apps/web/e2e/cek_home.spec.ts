@@ -6,10 +6,7 @@
 import { expect, test } from '@playwright/test';
 
 test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
-  const r = await page.request.post('/api/v1/auth/login', {
-    data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
-  });
-  expect(r.ok()).toBe(true);
+  // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
   await page.goto('/');
   await expect(page.getByText('Akurasi & PnL per Market').first()).toBeVisible({ timeout: 25000 });
   const t = await page.locator('body').innerText();
@@ -28,10 +25,7 @@ test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
  * dicegah: pembaca tidak bisa menilai apakah sinyal masih segar atau sisa kemarin.
  */
 test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
-  const r = await page.request.post('/api/v1/auth/login', {
-    data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
-  });
-  expect(r.ok()).toBe(true);
+  // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
   await page.goto('/');
   await expect(page.getByText(/Sinyal digenerate:/).first()).toBeVisible({ timeout: 25000 });
   const t = await page.locator('body').innerText();

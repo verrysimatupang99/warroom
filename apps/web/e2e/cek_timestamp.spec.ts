@@ -6,10 +6,7 @@ for (const [url, jangkar, label] of [
   ['/idx?sub=bsjp', 'Sinyal & Entry Setup (IDX)', 'IDX']
 ] as [string, string, string][]) {
   test(`kolom Dibuat ${label}`, async ({ page }) => {
-    const r = await page.request.post('/api/v1/auth/login', {
-      data: { username: process.env.WARROOM_E2E_USER, password: process.env.WARROOM_E2E_PASS }
-    });
-    expect(r.ok()).toBe(true);
+    // Sesi dari global-setup (login sekali per suite).
     await page.goto(url);
     const j = jangkar.replace(/[()&]/g, '\\$&');
     await expect(page.getByText(new RegExp(j)).first()).toBeVisible({ timeout: 25000 });
