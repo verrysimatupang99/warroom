@@ -17,6 +17,7 @@ import type {
 	Kesehatan,
 	KesegaranPayload,
 	MasukanGate,
+	PasarRingkasPayload,
 	ProposalsPayload,
 	SinyalPayload
 } from './types';
@@ -149,6 +150,8 @@ export const basisApi = BASE;
 /** Sinyal terbaik per pasar untuk Home (5 Okt 2026). Selalu mengembalikan SEMUA pasar —
  * yang kosong pun, supaya kartu tidak hilang diam-diam. */
 export const getSinyalPerPasar = () => minta<SinyalPayload>('/api/v1/sinyal/per-pasar');
+/** Ringkas akurasi+PnL per market untuk Home — dari fakta pasar_akurasi/idx_akurasi. */
+export const getPasarRingkas = () => minta<PasarRingkasPayload>('/api/v1/pasar/ringkas');
 /** Daftar catatan (docs/belajar) — endpoint membaca berkas markdown langsung. */
 export const getDocs = () => minta<DocsPayload>('/api/v1/docs');
 

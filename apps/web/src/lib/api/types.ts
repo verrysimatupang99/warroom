@@ -102,6 +102,8 @@ export interface MasukanGate {
 	min_n?: number;
 	/** Koreksi klaster (>= 1). Meneruskan nilai dari fakta supaya kebijakan sama dengan sumber. */
 	deff?: number;
+	/** n terkoreksi klaster dari fakta (n ÷ deff), bila sumber menyediakannya. */
+	nEff?: number;
 	split?: string | null;
 	label?: string;
 	subject?: string;
@@ -221,6 +223,29 @@ export interface SinyalPayload {
 	sinyal: SinyalPasar[];
 	count: number;
 	ada: number;
+}
+
+/** Ringkas akurasi+PnL per market (endpoint /pasar/ringkas) — angka apa adanya dari fakta. */
+export interface BarisPasarRingkas {
+	pasar: string;
+	label: string;
+	tersedia: boolean;
+	alasan: string | null;
+	n: number | null;
+	n_hari: number | null;
+	winrate_pct: number | null;
+	mean_r: number | null;
+	total_r: number | null;
+	pnl_usd: number | null;
+	tingkat: string | null;
+	setup: string | null;
+	jumlah_setup: number;
+}
+
+export interface PasarRingkasPayload {
+	pasar: Record<string, BarisPasarRingkas>;
+	standar: string | null;
+	sumber: string;
 }
 
 /** Fakta `poly.dataset/recorder` — katalog dataset Polymarket (P4-T3). Bentuk longgar: hanya

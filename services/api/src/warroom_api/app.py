@@ -429,6 +429,68 @@ def create_app() -> FastAPI:
             "ada": sum(1 for r in rows if r.ada),
         }
 
+    @app.get("/api/v1/pasar/ringkas")
+    def pasar_ringkas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Ringkas akurasi+PnL per market untuk Home (angka apa adanya, tanpa hitung ulang).
+
+        Dibaca dari fakta `snapshot/pasar_akurasi` + `snapshot/idx_akurasi` — mesin yang
+        sama dengan halaman per-area, supaya Home tidak pernah berbeda dari halaman detail.
+        Pasar yang belum punya angka TIDAK diisi nol: `tersedia=False` + alasan.
+        """
+        with session_scope() as s:
+            fakta = latest_facts(s)
+            pasar_akurasi = fakta.get("pasar_akurasi")
+            idx_akurasi = fakta.get("idx_akurasi")
+
+        # Label manusia untuk kolom tabel — satu sumber, tidak diulang di UI.
+        LABEL_PASAR = {
+            "crypto": "Crypto (SMC)",
+            "idx": "IDX",
+            "forex": "Forex",
+            "gmgn": "GMGN / LP",
+            "polymarket": "Polymarket",
+        }
+
+        def _baris(nama: str, v: Any) -> dict[str, Any]:
+            per_setup = (v or {}).get("per_setup") or {}
+            kunci_seri, seri = max(
+                per_setup.items(),
+                key=lambda kv: (kv[1].get("n") or 0),
+                default=(None, None),
+            )
+            seri = seri or {}
+            return {
+                "pasar": nama,
+                "label": LABEL_PASAR.get(nama, nama),
+                "tersedia": bool((v or {}).get("tersedia")),
+                "alasan": (v or {}).get("alasan"),
+                "n": seri.get("n"),
+                "n_hari": seri.get("n_hari"),
+                "winrate_pct": seri.get("winrate_pct"),
+                "mean_r": seri.get("mean_r"),
+                "total_r": seri.get("total_r"),
+                "pnl_usd": seri.get("total_pnl_usd", seri.get("pnl_usd")),
+                # IDX memakai nama kunci `pakem`; pasar lain `tingkat` — dibaca keduanya.
+                "tingkat": seri.get("tingkat") or seri.get("pakem"),
+                "setup": seri.get("nama") or kunci_seri,
+                "jumlah_setup": len(per_setup),
+            }
+
+        pa = (pasar_akurasi.value_json if pasar_akurasi else {}) or {}
+        pembagian = pa.get("pasar") or {}
+        ringkas = {
+            "crypto": _baris("crypto", pembagian.get("crypto")),
+            "idx": _baris("idx", idx_akurasi.value_json if idx_akurasi else {}),
+            "forex": _baris("forex", pembagian.get("forex")),
+            "gmgn": _baris("gmgn", pembagian.get("gmgn")),
+            "polymarket": _baris("polymarket", pembagian.get("polymarket")),
+        }
+        return {
+            "pasar": ringkas,
+            "standar": pa.get("standar"),
+            "sumber": "fakta snapshot pasar_akurasi + idx_akurasi (mesin pasar.py)",
+        }
+
     # --- split beku (ADR-003, P1 5 Okt 2026) ------------------------------------------
     # Gate menerima "frozen:<id>"; endpoint ini yang membuat id itu NYATA.
 

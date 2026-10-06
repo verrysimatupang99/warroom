@@ -10,19 +10,21 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getSinyalPerPasar } from '$lib/api/client';
-	import type { AreaPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
+	import { getArea, getPasarRingkas, getSinyalPerPasar } from '$lib/api/client';
+	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
 	import { umurDetik } from '$lib/format';
 
 	let sinyal = $state<SinyalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
+	let akurasi = $state<PasarRingkasPayload | null>(null);
 	let galat = $state<string | null>(null);
 
 	async function muat() {
-		const [s, k] = await Promise.allSettled([getSinyalPerPasar(), getArea('crypto')]);
+		const [s, k, a] = await Promise.allSettled([getSinyalPerPasar(), getArea('crypto'), getPasarRingkas()]);
 		if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
 		else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
 		if (k.status === 'fulfilled') kripto = k.value;
+		if (a.status === 'fulfilled') akurasi = a.value;
 	}
 	$effect(() => {
 		void muat();
@@ -157,6 +159,55 @@
 			{/if}
 		</section>
 
+		<!-- 2b. AKURASI & PnL per market (6 Okt): angka dari mesin pasar.py, satu standar bukti.
+		     Sengaja TIDAK menjumlahkan R dan USD — satuannya beda; kolomnya dipisah. -->
+		<section class="pasar" aria-label="Akurasi dan PnL per market">
+			<div class="judul-bagian">
+				<h2>Akurasi &amp; PnL per Market</h2>
+				<p class="dim">Dari ledger nyata tiap market. Tingkat pakem: <span class="angka">INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING</span> (n efektif per hari).</p>
+			</div>
+			{#if akurasi}
+				<div class="tabel-wrap">
+					<table class="tabel-pasar angka">
+						<thead>
+							<tr>
+								<th>Market</th><th>Setup terbesar</th><th class="ka">n</th><th class="ka">Hari</th>
+								<th class="ka">WR</th><th class="ka">Mean R</th><th class="ka">P&amp;L</th><th>Pakem</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each Object.values(akurasi.pasar) as r (r.pasar)}
+								<tr class:kosong={!r.tersedia}>
+									<td class="nama-pasar">{r.label ?? r.pasar}</td>
+									<td class="dim">{r.setup ?? '—'} <span class="dim">({r.jumlah_setup} setup)</span></td>
+									<td class="ka">{r.n ?? '—'}</td>
+									<td class="ka">{r.n_hari ?? '—'}</td>
+									<td class="ka">{r.winrate_pct != null ? `${r.winrate_pct}%` : '—'}</td>
+									<td class="ka {r.mean_r != null && r.mean_r > 0 ? 'pos' : r.mean_r != null && r.mean_r < 0 ? 'neg' : ''}">
+										{r.mean_r != null ? `${r.mean_r > 0 ? '+' : ''}${r.mean_r}` : '—'}
+									</td>
+									<td class="ka">
+										{#if r.total_r != null}<span class={r.total_r > 0 ? 'pos' : r.total_r < 0 ? 'neg' : ''}>{r.total_r > 0 ? '+' : ''}{r.total_r} R</span>{/if}
+										{#if r.pnl_usd != null}<span class={r.pnl_usd > 0 ? 'pos' : r.pnl_usd < 0 ? 'neg' : ''}>{r.pnl_usd > 0 ? '+' : ''}{r.pnl_usd} USD</span>{/if}
+										{#if r.total_r == null && r.pnl_usd == null}—{/if}
+									</td>
+									<td>
+										<span class="pakem pakem-{r.tingkat ?? 'INSUFFICIENT'}">{r.tingkat ?? '—'}</span>
+									</td>
+								</tr>
+								{#if !r.tersedia && r.alasan}
+									<tr class="kosong"><td colspan="8" class="dim catatan-alasan">{r.alasan}</td></tr>
+								{/if}
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{#if akurasi.standar}<p class="dim kaki-tabel">{akurasi.standar}</p>{/if}
+			{:else}
+				<p class="dim">Ringkasan akurasi belum tersedia.</p>
+			{/if}
+		</section>
+
 		<!-- 3. RINCIAN per pasar -->
 		<section class="pasar" aria-label="Rincian per pasar">
 			{#each daftar as s (s.pasar)}
@@ -213,6 +264,26 @@
 		--tinta: var(--color-text);
 		--redup: var(--color-text-3);
 	}
+
+	.judul-bagian { margin: 0.5rem 0 0.75rem; }
+	.judul-bagian h2 { font-size: 1.05rem; margin: 0 0 0.15rem; letter-spacing: 0.01em; }
+	.tabel-wrap { overflow-x: auto; border: 1px solid var(--garis); border-radius: 0.75rem; background: var(--permukaan); }
+	.tabel-pasar { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+	.tabel-pasar th { text-align: left; font-weight: 500; color: var(--redup); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--garis); white-space: nowrap; }
+	.tabel-pasar td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--garis); vertical-align: top; }
+	.tabel-pasar tr:last-child td { border-bottom: none; }
+	.tabel-pasar .ka { text-align: right; }
+	.tabel-pasar .nama-pasar { text-transform: capitalize; font-weight: 600; }
+	.tabel-pasar tr.kosong { opacity: 0.75; }
+	.catatan-alasan { font-size: 0.75rem; padding-top: 0 !important; }
+	.kaki-tabel { margin-top: 0.5rem; font-size: 0.72rem; }
+	.pakem { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.45rem; border: 1px solid var(--garis); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; }
+	.pakem-INSUFFICIENT { color: var(--merah); border-color: var(--merah); }
+	.pakem-DIRECTIONAL { color: var(--kuning); border-color: var(--kuning); }
+	.pakem-PRELIMINARY { color: var(--mint); border-color: var(--mint); }
+	.pakem-TUNING { color: var(--tinta); border-color: var(--tinta); }
+	.pos { color: var(--mint); }
+	.neg { color: var(--merah); }
 
 	.ticker {
 		display: flex;
