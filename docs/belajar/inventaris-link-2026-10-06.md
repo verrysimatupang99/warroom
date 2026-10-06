@@ -101,3 +101,30 @@ Binance"), **tanpa angka, tanpa bukti yang bisa diperiksa**. Kelas yang sama den
 berisi **satu** hal berguna yang dikubur dalam framing berlebihan. Di tumpukan ini, yang
 berguna bukan klaimnya — melainkan **fakta bahwa MCP Arjum berbagi kuota yang sama**, dan
 itu justru alasan untuk **tidak** memakainya.
+
+---
+
+## KOREKSI (6 Okt 2026, lanjutan) — MCP Arjum DICABUT
+
+Keputusan awal di §2a ("pasang dengan key terpisah, pantau lewat /metrics") **SALAH**,
+dan koreksinya datang dari pemilik:
+
+> *"lah arjum dipake buat war room doang"*
+
+Kunci Arjum (`/home/admin/live-trading/secrets/arjum_api_key`) adalah **milik War Room
+saja**. Jadi memasang MCP `idx-edge` di Hermes Agent — meski memakai kunci yang sama —
+berarti memberi sesi Hermes jalan untuk **memakan kuota War Room**. Itu melanggar aturan
+yang justru sedang kita tegakkan (kuota 6.003/hari).
+
+**Yang dilakukan:** MCP `idx-edge` dihapus dari `~/.hermes/config.yaml`, dan
+`MCP_IDX_EDGE_API_KEY` dihapus dari `~/.hermes/.env`. Backup dibuat sebelum perubahan
+(`*.bak-hapus-idxedge-*`).
+
+**Audit jalur lain** (apakah ada yang memakai kunci Arjum selain War Room):
+- Cron Hermes: **0 job** menyebut Arjum.
+- Skill `quantdinger-operations`: hanya **menyebut** `stock.arjum.com` di dokumentasi.
+- `collectors/idx.py` War Room: tetap utuh (kunci 52 byte, path benar via
+  `WARROOM_DOMAIN_HOME`), kuota sehat 5.949/6.003 saat diperiksa.
+
+**Aturan yang berlaku sekarang:** kunci Arjum = **War Room saja**. Jangan pasang MCP/tool
+Hermes apa pun yang memakai kunci itu.
