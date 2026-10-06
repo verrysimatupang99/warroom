@@ -87,6 +87,11 @@ export interface HasilGate {
 	/** Kebijakan yang dipakai — UI wajib melabeli hasil dengan ini (90% vs 95%+deff). */
 	ci?: number;
 	deff?: number;
+	/** n terkoreksi klaster (n ÷ deff); hadir bila gate memakai koreksi. */
+	nEff?: number | null;
+	/** Pakem bukti (6 Okt): kematangan sampel pada n efektif — terpisah dari verdict. */
+	pakem?: 'INSUFFICIENT' | 'DIRECTIONAL' | 'PRELIMINARY' | 'TUNING';
+	n_efektif?: number;
 }
 
 export interface MasukanGate {

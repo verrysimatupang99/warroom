@@ -25,8 +25,10 @@ __all__ = [
     "DEFAULT_MIN_N",
     "GateInput",
     "GateResult",
+    "PakemTingkat",
     "evaluate",
     "required_n",
+    "tingkat_pakem",
     "wilson_interval",
 ]
 
@@ -192,6 +194,50 @@ class GateResult:
     @property
     def lolos(self) -> bool:
         return self.verdict == "lolos"
+
+    @property
+    def pakem(self) -> str:
+        """Tingkat kematangan sampel pada **n efektif** (n ÷ deff) — pakem bukti owner.
+
+        Dipisahkan dari verdict: gate bisa "gagal" pada sampel PRELIMINARY (aturan belum
+        terbukti) atau "insufficient" pada sampel TUNING (mis. split belum dibekukan).
+        UI wajib menampilkan keduanya — jangan sampai n besar terbaca "hampir lolos"
+        padahal yang kurang bukan sampel.
+        """
+        return tingkat_pakem(self.n_efektif)
+
+    @property
+    def n_efektif(self) -> int:
+        """n setelah koreksi klaster (n ÷ deff), minimal 1 bila ada sampel."""
+        if self.n <= 0:
+            return 0
+        if self.deff and self.deff > 1.0:
+            return max(1, round(self.n / self.deff))
+        return self.n
+
+
+class PakemTingkat:
+    """Ambang pakem bukti (satu sumber untuk gate, UI, dan learner)."""
+
+    DIRECTIONAL = 10
+    PRELIMINARY = 30
+    TUNING = 100
+
+
+def tingkat_pakem(n_efektif: int) -> str:
+    """Kematangan sampel: INSUFFICIENT · DIRECTIONAL · PRELIMINARY · TUNING.
+
+    Ambang disepakati owner 6 Okt 2026 (diangkat dari Tencent
+    `signal-performance-validation`): <10 insufficient · 10–29 directional ·
+    ≥30 preliminary · ≥100 tuning. Pakai **n efektif** (setelah deff), bukan n mentah.
+    """
+    if n_efektif < PakemTingkat.DIRECTIONAL:
+        return "INSUFFICIENT"
+    if n_efektif < PakemTingkat.PRELIMINARY:
+        return "DIRECTIONAL"
+    if n_efektif < PakemTingkat.TUNING:
+        return "PRELIMINARY"
+    return "TUNING"
 
 
 def evaluate(g: GateInput) -> GateResult:

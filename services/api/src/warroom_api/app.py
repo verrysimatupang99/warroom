@@ -407,6 +407,10 @@ def create_app() -> FastAPI:
             "ci": r.ci,
             "deff": r.deff,
             "notes": r.notes,
+            # Pakem bukti (6 Okt): kematangan sampel pada n efektif — terpisah dari verdict
+            # supaya UI tidak membaca "n besar" sebagai "hampir lolos".
+            "pakem": r.pakem,
+            "n_efektif": r.n_efektif,
         }
 
     # --- sinyal terbaik per pasar (Home, 5 Okt 2026) -----------------------------------

@@ -61,9 +61,22 @@
 			<span class="label-mikro rounded-control border px-2 py-0.5 {nada}">
 				{hasil.verdict}
 			</span>
+			{#if hasil.pakem}
+				<span
+					class="angka rounded-control border border-line bg-surface px-2 py-0.5 text-11 text-text-2"
+					title="pakem bukti: INSUFFICIENT <10 · DIRECTIONAL 10–29 · PRELIMINARY ≥30 · TUNING ≥100 (pada n efektif)"
+				>
+					{hasil.pakem}
+				</span>
+			{/if}
 			<span class="angka text-12 text-text-2">
 				n {bulat(hasil.n)}{#if butuh} / {bulat(butuh)}{:else} / n/a{/if}
 			</span>
+			{#if nEfektif != null && nEfektif !== hasil.n}
+				<span class="angka text-12 text-warn" title="n terkoreksi klaster (deff {hasil.deff?.toFixed(3) ?? '—'})">
+					efektif {bulat(nEfektif)}
+				</span>
+			{/if}
 			{#if sisa != null && sisa > 0}
 				<span class="angka text-12 text-text-3">butuh {bulat(sisa)} lagi</span>
 			{/if}
