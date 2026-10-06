@@ -82,10 +82,8 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'screener', label: 'Screener', kunci: ['bagian'], catatan: 'Arjum × TradingView' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, ATS, no-sell' },
-			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian'], catatan: 'Beli Sore Jual Pagi — uji edge overnight' },
-			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Asing vs lokal' },
-			{ slug: 'watchlist', label: 'Watchlist', kunci: ['bagian'], catatan: 'ARA Hunter & setup' }
+			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, ATS, aliran asing vs lokal' },
+			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian'], catatan: 'Beli Sore Jual Pagi + ARA Hunter & setup' }
 		]
 	},
 	{
@@ -110,8 +108,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (Azure, baca-saja)' },
 			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian'], catatan: 'Posisi paper LP, V/L, IL vs hold' },
-			{ slug: 'token', label: 'Token', kunci: ['gmgn'], catatan: 'Trading metrics & win rate' },
-			{ slug: 'bot', label: 'Bot', kunci: ['bagian'], catatan: 'Uji pumpportal (paper) & memecoin' }
+			{ slug: 'memecoin', label: 'Memecoin', kunci: ['gmgn', 'bagian'], catatan: 'Smart money, whale, pumpfun' }
 		]
 	},
 	{

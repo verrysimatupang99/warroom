@@ -35,9 +35,21 @@
 	// (klik menu area / tombol Back) membuat tab macet di nilai sebelumnya — URL, RailNav,
 	// SubNav, dan isi halaman saling tak cocok (temuan 5 Okt 2026). Turunan langsung ini
 	// menghapus seluruh kelas bug itu: tak ada state yang bisa menyimpang dari URL.
+	// Slug LAMA → slug baru, supaya tautan & bookmark tidak mati saat sub dirampingkan
+	// (6 Okt 2026: IDX 5→3, GMGN 4→3). Bukan pengalihan URL, tapi penerjemahan di sini —
+	// halaman tetap satu tempat, dan `?sub=` lama tetap menampilkan isi yang benar.
+	const ALIAS_SUB: Record<string, string> = {
+		aliran: 'bandarmologi', // IDX: Aliran digabung ke Bandarmologi
+		watchlist: 'bsjp', // IDX: Watchlist/ARA Hunter digabung ke BSJP
+		token: 'memecoin', // GMGN: Token + Bot digabung jadi Memecoin
+		bot: 'memecoin'
+	};
+
 	const sub = $derived.by(() => {
 		const s = page.url.searchParams.get('sub');
 		if (s && area?.anak.some((a) => a.slug === s)) return s;
+		const alias = s ? ALIAS_SUB[s] : undefined;
+		if (alias && area?.anak.some((a) => a.slug === alias)) return alias;
 		return area?.anak[0]?.slug ?? '';
 	});
 	const anak = $derived(area?.anak.find((a) => a.slug === sub) ?? area?.anak[0] ?? null);
@@ -1166,7 +1178,7 @@
 				{/if}
 
 				<!-- Tab Aliran (Asing vs Lokal) -->
-				{#if sub === 'aliran'}
+				{#if sub === 'aliran' || sub === 'bandarmologi'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 border-b border-line-soft pb-2">
@@ -1199,7 +1211,7 @@
 				{/if}
 
 				<!-- Tab Watchlist: ARA Hunter Setups -->
-				{#if sub === 'watchlist'}
+				{#if sub === 'watchlist' || sub === 'bsjp'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -1565,7 +1577,7 @@
 					</div>
 				{/if}
 
-				{#if sub === 'token'}
+				{#if sub === 'token' || sub === 'memecoin'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
