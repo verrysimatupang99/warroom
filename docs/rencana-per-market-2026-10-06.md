@@ -45,16 +45,22 @@ perbedaan itu terang-terangan (pelajaran dari algentis: "skip with reasons").
 | **GMGN/LP** | LP Terukur (paper) · Radar (paper) · FOMO Family (rencana) | 5 posisi dinilai, PnL −3,24 USD | INSUFFICIENT |
 | **Polymarket** | 4 arm paper (A momentum −10,34 · B kandidat +6,40 · C fade 0 · D favorit +12,01) | 213 entri | B TUNING, D PRELIMINARY |
 
-## 3. Sub-tab baru (fase ini & berikutnya)
+## 3. Sub-tab baru — status per 6 Okt malam
 
-Sudah ditambahkan sekarang: **Sinyal & Entry Setup** (crypto/forex/IDX) dan **Akurasi per
-Strategi** (semua market, ditempel di sub yang relevan) + dimensi gerbang crypto.
+SUDAH JADI:
+- ✅ **Sinyal & Entry Setup** (crypto/forex/IDX) — kolom khas market, dari `*_sinyal`.
+- ✅ **Akurasi per Strategi** (semua market) + dimensi gerbang crypto.
+- ✅ **Papan Akurasi & PnL per Market** di Home (`/api/v1/pasar/ringkas`).
+- ✅ **Narasi LLM per market** (kartu ✳) + ringkas fakta angka-utuh (bukan 80 char JSON).
+- ✅ **Skor Bandarmologi 0–100** (adopsi ihsgscreener) dengan komponen diaudit.
+- ✅ Registry strategi jujur aktif/paper/rencana (Fib Golden Pocket = rencana).
 
-Rencana lanjut (belum dikerjakan — jangan diklaim):
-- **Suplai** tiap market: umur sinyal terakhir, mesin mana yang menulis, efek server mati.
-- **Entry Plan** (crypto): kalkulator posisi (risiko % → ukuran) memakai angka nyata gate.
-- **Bandarmologi Score** (IDX): adopsi pola ihsgscreener (score 0–100 per emiten) dari ATS+no-sell yang sudah ada.
-- **Skips & alasan** (crypto/Poly): mengapa kandidat ditolak — dari `aturan_gagal`/`skips` yang telah dikumpulkan.
+BELUM (jangan diklaim sudah):
+- **Suplai** tiap market: umur sinyal terakhir + efek server mati (baru berupa catatan teks).
+- **Entry Plan** (crypto): kalkulator ukuran posisi dari risiko % (angka gate sudah tersedia).
+- **Skips & alasan** (crypto/Poly) sebagai panel tersendiri — data sudah terkumpul
+  (`aturan_gagal`, `skips`) tetapi belum dirender.
+- **Fib Golden Pocket**: spesifikasi uji → backtest → keputusan owner (aturan: tidak ada tuning dari cerita; harus walk-forward).
 
 ## 4. LLM yang benar-benar membantu (bukan hiasan)
 
