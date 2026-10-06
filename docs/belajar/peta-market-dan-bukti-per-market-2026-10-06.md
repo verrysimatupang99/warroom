@@ -44,3 +44,27 @@ Job `llm-brief-<market>` (crypto/forex/idx/gmgn/polymarket), 6 jam sekali:
 - Output wajib menyertakan `fact_ids`; kartu UI menampilkan provider + versi prompt + jumlah fakta.
 - Narasi **tidak pernah** menggantikan angka; kartu menyatakan "deskriptif, bukan rekomendasi".
 - Ambang gate & keputusan tetap milik manusia — LLM hanya menjelaskan.
+
+## Timestamp sinyal (6 Okt, permintaan owner)
+
+Setiap sinyal kini menyebut **kapan ia digenerate** — di verdikt Home
+("Sinyal digenerate: 07 Okt 2026, 03.16 WIB (55m lalu)") dan sebagai kolom
+**DIBUAT** di tabel Sinyal & Entry Setup (crypto/forex/IDX).
+
+Bedanya dengan `umur_s` lama (penting):
+- `umur_s` = umur **fakta** di DB (kapan terakhir dipublikasikan ulang).
+- `umur_sinyal_s` = umur **sinyal** sejak mesinnya menghasilkan (field `ts` gate,
+  `waktu` jurnal, `diambil_epoch` radar).
+Yang kedua ini yang menjawab "masih segar atau sisa kemarin".
+
+Sumber waktu per market: crypto `ts` kandidat terbaru · forex `waktu` jurnal ·
+IDX `dibuat` ledger · GMGN `diambil_epoch` radar · Polymarket & LP waktu terbit fakta.
+Kalau sumber tidak punya waktu → ditulis "waktu sinyal tidak tercatat", tidak dikarang.
+
+## Temuan yang ikut diperbaiki (kelas bug "kartu kosong palsu")
+
+1. Home menyatakan **IDX/Forex "TIDAK ADA"** padahal ledger sinyalnya berisi — Home
+   hanya membaca `*_posisi` (kosong). Kini membaca `*_sinyal` (entry teratas + waktu).
+2. **GMGN selalu "TIDAK ADA"**: radar ditulis kind `gmgn` (bukan `snapshot`) dan
+   daftarnya bernama `chains` (bukan `state`). Setelah diperbaiki: robinhood V/L 18.82
+   (34/60 pool layak) tampil dengan waktunya.
