@@ -95,55 +95,50 @@ def test_poly_empat_arm(tmp_path):
     assert p["total_pnl"] == 5.0
 
 
-def test_radar_fetch_live_tulis_cache(tmp_path, monkeypatch):
-    """SSH sukses: umur dihitung dari mtime remote + cache sukses ditulis."""
-    import subprocess
+def test_radar_baca_state_lokal(tmp_path):
+    """State lokal (hasil `lt radar-update`): dibaca, umur dari diambil_epoch."""
     import time
-    import types
 
-    isi = json.dumps(
-        [{"chain": "arc", "window": "OPEN", "hp_count": 1, "avg_vl": 1.5, "age_days": 16}]
-    )
-    mt = int(time.time()) - 600
-    palsu = types.SimpleNamespace(returncode=0, stdout=f"{mt}\n{isi}")
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: palsu)
-    p = dash._radar_panel(state_dir=tmp_path)
-    assert p["tersedia"] is True and p["sumber"] == "live"
-    assert p["arc_window"] == "OPEN" and p["n_chain"] == 1
-    assert 9 <= p["umur_mnt"] <= 11
-    assert (tmp_path / "radar_cache.json").is_file()
-
-
-def test_radar_ssh_gagal_pakai_cache(tmp_path, monkeypatch):
-    """SSH gagal: tampilkan cache terakhir + umurnya (bukan n/a tanpa jejak)."""
-    import subprocess
-    import time
-    import types
-
-    (tmp_path / "radar_cache.json").write_text(
+    (tmp_path / "radar_state.json").write_text(
         json.dumps(
             {
-                "diambil_epoch": time.time() - 1200,
-                "mtime_epoch": time.time() - 1800,
-                "state": [
+                "diambil_epoch": time.time() - 600,
+                "sumber": "lokal",
+                "chains": [
                     {"chain": "arc", "window": "OPEN", "hp_count": 1, "avg_vl": 1.5, "age_days": 16}
                 ],
             }
         ),
         encoding="utf-8",
     )
-    palsu = types.SimpleNamespace(returncode=255, stdout="")
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: palsu)
     p = dash._radar_panel(state_dir=tmp_path)
-    assert p["tersedia"] is True and p["sumber"] == "cache"
-    assert p["arc_window"] == "OPEN" and p["cache_umur_mnt"] >= 19
+    assert p["tersedia"] is True and p["sumber"] == "lokal"
+    assert p["arc_window"] == "OPEN" and p["n_chain"] == 1
+    assert 9 <= p["umur_mnt"] <= 11
 
 
-def test_radar_ssh_gagal_tanpa_cache_jadi_na(tmp_path, monkeypatch):
-    import subprocess
-    import types
+def test_radar_state_basi_umur_jujur(tmp_path):
+    """State lama: umurnya dilaporkan apa adanya (bukan n/a, bukan 0)."""
+    import time
 
-    palsu = types.SimpleNamespace(returncode=255, stdout="")
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: palsu)
+    (tmp_path / "radar_state.json").write_text(
+        json.dumps(
+            {
+                "diambil_epoch": time.time() - 7200,
+                "chains": [
+                    {"chain": "arc", "window": "OPEN", "hp_count": 1, "avg_vl": 1.5, "age_days": 16}
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     p = dash._radar_panel(state_dir=tmp_path)
-    assert p["tersedia"] is False and p["error"] == "ssh gagal"
+    assert p["tersedia"] is True and p["sumber"] == "lokal"
+    assert p["umur_mnt"] >= 119
+
+
+def test_radar_tanpa_state_jadi_na(tmp_path):
+    """Belum pernah `lt radar-update`: n/a + alasan, bukan nilai karangan."""
+    p = dash._radar_panel(state_dir=tmp_path)
+    assert p["tersedia"] is False
+    assert "radar_state.json" in p["error"]

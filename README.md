@@ -5,7 +5,8 @@ Rancangan lengkap: `docs/adr/` (keputusan) + blueprint di `../live-trading/docs/
 
 ## Aturan yang tidak boleh dilanggar
 
-Lihat `AGENTS.md`. Ringkasnya: `/opt/polymarket` baca-saja, Tencent/Azure baca-saja,
+Lihat `AGENTS.md`. Ringkasnya: `/opt/polymarket` baca-saja, Tencent baca-saja
+(Azure sudah dilepas 6 Okt — radar rantai kini lokal di Webdock),
 gate live tidak pernah disentuh, kredensial tidak pernah masuk repo/log/percakapan,
 ambang gate & rumus BE hanya boleh diubah manusia.
 

@@ -16,10 +16,10 @@ def test_sakit_sebut_nama():
     assert any("lp_mark" in b for b in out[1:])
 
 
-def test_cek_produksi_menyertakan_radar_azure(tmp_path):
-    """Radar Azure ikut dipantau lewat cache lokal (azure_watch)."""
+def test_cek_produksi_menyertakan_radar_lokal(tmp_path):
+    """Radar lokal (recreate 6 Okt) dipantau lewat state/radar_state.json."""
     cek = w.cek_produksi(home=tmp_path)
     nama = [n for n, _, _ in cek]
-    assert "radar_azure" in nama
+    assert "radar_lokal" in nama
     batas = {n: b for n, _, b in cek}
-    assert batas["radar_azure"] == 3600.0
+    assert batas["radar_lokal"] == 3600.0

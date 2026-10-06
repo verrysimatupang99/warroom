@@ -328,6 +328,34 @@ def cmd_paper(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_radar_update(args: argparse.Namespace) -> int:
+    """Jalankan radar rantai **lokal** (recreate dari VM Azure) → state/radar_state.json.
+
+    Read-only terhadap pasar (gmgn-cli). Bukan jalur order, bukan jalur kuota Arjum.
+    """
+    from .collectors import radar as radar_mod
+
+    s = get_settings()
+    state = s.state_dir / "radar_state.json"
+    out = radar_mod.jalankan_radar(chains=args.chains, limit=args.limit, state_path=state)
+    hasil = out.get("chains") or []
+    print(f"  radar lokal: {len(hasil)} chain → {state}")
+    for c in hasil:
+        age = c.get("age_days")
+        print(
+            f"    {c.get('chain'):<10} window={c.get('window'):<8} "
+            f"age={age if age is not None else '?':>4} pools={c.get('pools'):>3} "
+            f"avg_vl={c.get('avg_vl'):>6} hp={c.get('hp_count')}"
+        )
+    if not hasil:
+        print("  TIDAK ADA chain terbaca — state lama TIDAK ditimpa (gagal ≠ kosong)")
+        return 1
+    if out.get("alerts"):
+        for a in out["alerts"]:
+            print(f"    alert: {a}")
+    return 0
+
+
 def cmd_snapshot(args: argparse.Namespace) -> int:
     from .dashboard import build_snapshot
 
@@ -999,6 +1027,14 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("snapshot", help="bangun snapshot dashboard").set_defaults(func=cmd_snapshot)
     sub.add_parser("dashboard", help="jalankan dashboard").set_defaults(func=cmd_dashboard)
     sub.choices["snapshot"].add_argument("--offline", action="store_true", help="tanpa jaringan")
+    rd = sub.add_parser("radar-update", help="jalankan radar rantai lokal → state/radar_state.json")
+    rd.add_argument(
+        "--chains",
+        default="robinhood,arc,hyperevm,stable,base",
+        help="daftar chain dipisah koma (bawaan sama dengan radar lama)",
+    )
+    rd.add_argument("--limit", type=int, default=60, help="jumlah pool per chain (bawaan 60)")
+    rd.set_defaults(func=cmd_radar_update)
 
     paper = sub.add_parser("paper", help="executor paper")
     paper.add_argument("aksi", choices=["list", "open", "close", "eval"])

@@ -8,7 +8,10 @@ Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
 1. **`/opt/polymarket` = baca-saja.** Tidak menulis, tidak me-restart unit, tidak mengubah
    config. Menjalankan alat read-only miliknya (mis. `qa/favorite-live-verdict.py --json`)
    hanya lewat allowlist sudo yang ada.
-2. **Tencent & Azure = baca-saja.** Sama seperti domain `live-trading`.
+2. **Tencent = baca-saja.** Sama seperti domain `live-trading`.
+   **Azure sudah tidak dipakai lagi (sejak 6 Okt 2026):** radar rantai dipindah **lokal**
+   ke host ini (`lt radar-update` → `state/radar_state.json`), jadi tidak ada lagi SSH
+   ke VM `20.212.52.5`. Bila VM itu dimatikan, tidak ada yang hilang.
 3. **Gate live tidak pernah disentuh** (`/etc/poly-pilot/activation-approved`): jangan
    dibuat, jangan diubah. Aksi live butuh izin eksplisit owner (grant), dan API menolak
    dengan 409 tanpa itu.

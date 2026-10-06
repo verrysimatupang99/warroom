@@ -145,85 +145,56 @@ def _radar_ringkas(
 
 
 def _radar_panel(raw: str | None = None, state_dir: Any = None) -> dict[str, Any]:
-    """Panel radar Azure — baca-saja via SSH; gagal = cache terakhir, lalu 'n/a'.
+    """Panel radar rantai — dibaca dari state **lokal** (hasil `lt radar-update`).
 
-    ``raw`` hanya untuk tes (isi radar_state.json) — tanpa SSH, tanpa cache.
-    Produksi: SSH pendek (mtime + isi), lalu tulis cache sukses supaya SSH yang
-    gagal tetap menampilkan data terakhir beserta umurnya (jujur, tidak mengarang).
+    Sejak 6 Okt 2026 radar dijalankan di Webdock sendiri (recreate dari VM Azure yang
+    akan dimatikan), jadi TIDAK ada lagi SSH. Sumber kebenaran: ``state/radar_state.json``,
+    ditulis oleh collector ``live_trading.collectors.radar`` saat perintah
+    ``lt radar-update`` dijalankan.
+
+    ``raw`` hanya untuk tes (isi state sebagai daftar chain) — tanpa berkas.
+    Berkas hilang/rusak → ``tersedia=False`` + alasan (bukan nol, bukan nilai karangan).
     """
-    import subprocess
-    import time as _t
-
-    cache_p = (Path(state_dir) / "radar_cache.json") if state_dir else None
-    raw_val: str | None = None
-    mtime: float | None = None
-    error: str | None = None
-    if raw is None:
+    if raw is not None:
         try:
-            p = subprocess.run(
-                [
-                    "ssh",
-                    "-o",
-                    "ConnectTimeout=8",
-                    "-o",
-                    "BatchMode=yes",
-                    "azureuser@20.212.52.5",
-                    "stat -c %Y /opt/gmgn-radar/radar_state.json 2>/dev/null; "
-                    "cat /opt/gmgn-radar/radar_state.json",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=20,
-            )
-            if p.returncode == 0 and p.stdout.strip():
-                baris = p.stdout.split("\n", 1)
-                if baris[0].strip().isdigit():
-                    mtime = float(baris[0].strip())
-                    raw_val = baris[1] if len(baris) > 1 else ""
-                else:
-                    raw_val = p.stdout
-            else:
-                error = "ssh gagal"
-        except Exception as exc:  # noqa: BLE001 — dashboard jangan mati karena satu panel
-            error = type(exc).__name__
-    else:
-        raw_val = raw
-    if raw_val is not None:
-        try:
-            chains = json.loads(raw_val)
+            chains = json.loads(raw)
             if not isinstance(chains, list):
                 raise ValueError("state bukan daftar")
-            hasil = _radar_ringkas(chains, mtime=mtime)
-            if hasil.get("tersedia") and cache_p is not None:
-                try:
-                    cache_p.parent.mkdir(parents=True, exist_ok=True)
-                    cache_p.write_text(
-                        json.dumps(
-                            {"diambil_epoch": _t.time(), "mtime_epoch": mtime, "state": chains}
-                        ),
-                        encoding="utf-8",
-                    )
-                except OSError:
-                    pass
-            return hasil
-        except Exception as exc:  # noqa: BLE001
-            error = error or type(exc).__name__
-    if cache_p is not None:
-        try:
-            d = json.loads(cache_p.read_text(encoding="utf-8"))
-            diambil, mtime_c = d.get("diambil_epoch"), d.get("mtime_epoch")
-            cache_umur = (
-                (_t.time() - float(diambil)) / 60 if isinstance(diambil, (int, float)) else None
-            )
-            hasil = _radar_ringkas(
-                d.get("state") or [], mtime=mtime_c, sumber="cache",
-                cache_umur=cache_umur, error=error or "ssh gagal",
-            )
-            if hasil.get("tersedia"):
-                return hasil
-        except (OSError, json.JSONDecodeError, TypeError, ValueError):
-            pass
-    return {"tersedia": False, "error": error or "tidak tersedia"}
+            return _radar_ringkas(chains, sumber="lokal")
+        except Exception as exc:  # noqa: BLE001 — panel jangan mati karena satu input
+            return {"tersedia": False, "error": type(exc).__name__}
+
+    if state_dir is None:
+        return {"tersedia": False, "error": "state_dir tidak diberikan"}
+
+    p = Path(state_dir) / "radar_state.json"
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except OSError:
+        return {"tersedia": False, "error": "radar_state.json tidak ada — jalankan `lt radar-update`"}
+    except json.JSONDecodeError:
+        return {"tersedia": False, "error": "radar_state.json rusak (JSON)"}
+
+    if isinstance(d, dict):
+        chains = d.get("chains") or []
+        diambil = d.get("diambil_epoch")
+    elif isinstance(d, list):  # format lama (daftar saja)
+        chains, diambil = d, None
+    else:
+        return {"tersedia": False, "error": "bentuk state tidak dikenal"}
+
+    try:
+        mtime = p.stat().st_mtime
+    except OSError:
+        mtime = None
+    # `diambil_epoch` (kapan radar benar-benar jalan) lebih jujur daripada mtime:
+    # salinan berkas / restore bisa memperbarui mtime tanpa data baru.
+    if isinstance(diambil, (int, float)):
+        mtime = float(diambil)
+    hasil = _radar_ringkas(chains, mtime=mtime, sumber="lokal")
+    if not hasil.get("tersedia"):
+        return {"tersedia": False, "error": hasil.get("error", "chain arc tidak ada di state")}
+    return hasil
 
 
 def _lencana_lp(verdict: str | None) -> str:
@@ -1599,10 +1570,9 @@ def _blok(snap):
         body + _arti("kedua policy paper masih merah — jangan live sebelum hijau."),
     )
 
-    # radar azure (baca-saja)
+    # radar rantai — LOKAL (recreate 6 Okt; dulu SSH ke VM Azure)
     rd = snap.get("radar", {})
     um = rd.get("umur_mnt")
-    cum = rd.get("cache_umur_mnt")
     if rd.get("tersedia"):
         chains = "".join(
             f"<tr><td>{e(str(c.get('chain')))}</td><td>{e(str(c.get('window')))}</td>"
@@ -1617,31 +1587,22 @@ def _blok(snap):
             "<table><tr><th>chain</th><th>window</th><th class='n'>HP</th>"
             f"<th class='n'>V/L</th><th class='n'>umur</th></tr>{chains}</table>"
         )
-        if rd.get("sumber") == "cache":
-            body += (
-                f"<p class='err'>ssh gagal ({e(str(rd.get('error', '?')))}): "
-                f"data cache {int(cum or 0)} mnt lalu</p>"
-            )
-        elif isinstance(um, (int, float)):
-            body += f"<p class='sub'>state Azure {int(um)} mnt lalu</p>"
-        if isinstance(cum, (int, float)) and rd.get("sumber") != "cache":
-            body += f"<p class='sub'>terakhir sukses {int(cum)} mnt lalu</p>"
+        if isinstance(um, (int, float)):
+            body += f"<p class='sub'>radar lokal terakhir jalan {int(um)} mnt lalu</p>"
     else:
         body = f"<p class='sub'>radar n/a ({e(str(rd.get('error', 'tidak tersedia')))})</p>"
     if not rd.get("tersedia"):
         bd = _lencana("mati", "n/a")
-    elif rd.get("sumber") == "cache":
-        bd = _lencana("tua", f"cache {int(cum or 0)}m")
     elif isinstance(um, (int, float)) and um > _RADAR_SEGAR_MNT:
         bd = _lencana("warn", f"basi {int(um)}m")
     elif isinstance(um, (int, float)):
         bd = _lencana("ok", f"segar {int(um)}m")
     else:
-        bd = _lencana("ok", "live")
+        bd = _lencana("ok", "lokal")
     blok["radar"] = _card(
-        f"Radar Azure {bd}",
+        f"Radar Rantai {bd}",
         body
-        + _sumber("ssh baca /opt/gmgn-radar/radar_state.json (gagal → cache state/radar_cache.json)")
+        + _sumber("radar lokal dijalankan di host ini (`lt radar-update`) — bukan lagi SSH Azure")
         + _arti(
         f"window Arc {rd.get('arc_window')} — "
         + (

@@ -9,7 +9,7 @@ Diperbarui: **2026-10-02 21:45 UTC** (04:45 WIB, 3 Okt) · Pelaksana: Hermes
 | P4-T1 Adapter Polymarket (baca-saja) | **selesai** | job `poly-sync`: `fakta=7 arm=4 arm_summary=ok`; angka arm dibaca dari berkas summary yang sama |
 | P4-T2 Parity monitor + alarm | **selesai** | job `parity-drift`; status `tidak-bisa-dibandingkan` bila eksekutor tidak memutuskan (bukan drift 0 palsu) |
 | P4-T3 Dataset explorer + ReplayLab UI | **sebagian** | `DatasetExplorer` (sub Dataset di `/polymarket`) **selesai 3 Okt** — katalog `poly.dataset/recorder` + cakupan `poly.akses/cakupan` tampil dari fakta (3 direktori, 2.599 berkas, 6 GB); ReplayLab masih menunggu |
-| P4-T4 Adapter GMGN + radar Azure | **selesai** | job `gmgn-sync`: `gmgn=ok berkas=23 radar=ok sumber=cache` |
+| P4-T4 Adapter GMGN + radar rantai | **selesai** (diperbarui 6 Okt: radar pindah **lokal**) | job `radar-update`: `lt radar-update ok; 5 chain`; job `gmgn-sync`: `gmgn=ok berkas=24 radar=ok sumber=lokal`. Sebelumnya membaca via SSH ke VM Azure; kini dijalankan di host ini (`state/radar_state.json`) |
 | P4-T5 Rekonsiliasi on-chain | **selesai** | job `reconcile`: `klaim=0.0 terverifikasi=False` + alert (tanpa RPC → tidak pernah diklaim terverifikasi) |
 | P5-T1 Registry parameter + bounds + locked | **selesai** | 10 parameter terdaftar; `gate.min_n`/`gate.ci`/`mode` **terkunci** |
 | P5-T2 Learner harian | **selesai** | job `learner`: `diusulkan=4 keputusan={'ditolak': 4}` — semua ditolak karena bukti bukan split beku |

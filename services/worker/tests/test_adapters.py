@@ -246,12 +246,17 @@ def test_gmgn_ringkas_membaca_state_lokal(pohon: Path, monkeypatch) -> None:
     assert r["isi"]["run_config.json"] == {"paper": True}
 
 
-def test_radar_ditandai_sebagai_cache(pohon: Path) -> None:
-    cache = pohon / "radar_cache.json"
-    cache.write_text('{"window": {}}', encoding="utf-8")
-    r = gmgn.radar_ringkas(str(cache))
+def test_radar_dibaca_dari_state_lokal(pohon: Path) -> None:
+    state = pohon / "radar_state.json"
+    state.write_text(
+        '{"diambil_epoch": 1791284647.0, "sumber": "lokal", "chains": [{"chain": "arc"}]}',
+        encoding="utf-8",
+    )
+    r = gmgn.radar_ringkas(str(state))
     assert r["status"] == "ok"
-    assert r["sumber"] == "cache", "harus jelas ini cache, bukan bacaan langsung dari Azure"
+    assert r["sumber"] == "lokal", "radar kini dijalankan lokal, bukan dari host lain"
+    assert r["chains"] == [{"chain": "arc"}]
+    assert r["diambil_epoch"] == 1791284647.0
 
 
 # --- job handler ------------------------------------------------------------------------

@@ -29,6 +29,7 @@ __all__ = [
     "handler_freshness",
     "handler_notify",
     "handler_publish_facts",
+    "handler_radar_update",
     "handler_refresh_snapshot",
     "handler_signal_sync",
     "register_handlers",
@@ -138,6 +139,18 @@ def handler_refresh_snapshot(s: SASession, job: Job) -> str:
     """
     bawaan = int(job.payload_json.get("timeout_s", 900) or 900)
     return _jalankan_lt("snapshot", job, timeout_s=max(bawaan, 900))
+
+
+def handler_radar_update(s: SASession, job: Job) -> str:
+    """`lt radar-update` — radar rantai dijalankan **lokal** (recreate dari VM Azure).
+
+    Sejak 6 Okt 2026 server Azure dimatikan; radar tidak lagi di-SSH dari sini, melainkan
+    dijalankan di host ini dan hasilnya ditulis ke `state/radar_state.json`. Job terpisah
+    (bukan menumpang `refresh-snapshot`) karena panggilan gmgn-cli bisa lambat: satu chain
+    bisa menunggu rate-limit hingga puluhan detik.
+    """
+    bawaan = int(job.payload_json.get("timeout_s", 600) or 600)
+    return _jalankan_lt("radar-update", job, timeout_s=max(bawaan, 600))
 
 
 def handler_backup(s: SASession, job: Job) -> str:
@@ -381,7 +394,7 @@ def handler_reconcile(s: SASession, job: Job) -> str:
 
 
 def handler_gmgn_sync(s: SASession, job: Job) -> str:
-    """Terbitkan fakta GMGN + radar (dari cache) — baca-saja (P4-T4)."""
+    """Terbitkan fakta GMGN + radar lokal — baca-saja (P4-T4)."""
     from warroom_worker.adapters import gmgn
 
     g = gmgn.gmgn_ringkas()
@@ -389,7 +402,7 @@ def handler_gmgn_sync(s: SASession, job: Job) -> str:
                  ttl_s=int(job.payload_json.get("ttl_s", 1800)))
     r = gmgn.radar_ringkas()
     _tulis_fakta(s, kind="gmgn", key="radar", value=r,
-                 source=str(r.get("path", "state/radar_cache.json")), ttl_s=1800)
+                 source=str(r.get("path", "state/radar_state.json")), ttl_s=1800)
     return f"gmgn={g.get('status')} berkas={g.get('files')} radar={r.get('status')} sumber={r.get('sumber')}"
 
 
@@ -929,6 +942,7 @@ def register_handlers() -> dict[str, Any]:
             "notify": handler_notify,
             "collect": handler_collect,
             "refresh-snapshot": handler_refresh_snapshot,
+            "radar-update": handler_radar_update,
             "backup": handler_backup,
             "poly-sync": handler_poly_sync,
             "verdict-sync": handler_verdict_sync,

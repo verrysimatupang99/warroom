@@ -9,6 +9,7 @@
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
 	import Block from './Block.svelte';
+	import FreshnessBadge from './FreshnessBadge.svelte';
 	import SubNav from './SubNav.svelte';
 	import NilaiFakta from './NilaiFakta.svelte';
 	import DataTable from './DataTable.svelte';
@@ -1486,6 +1487,17 @@
 									{radarObj?.chains?.length ?? 0} chain
 								</span>
 							</div>
+							{#if faktaRadar}
+								<p class="mb-3 flex flex-wrap items-center gap-2 text-11 text-text-3">
+									<span class="rounded border border-line bg-canvas px-2 py-0.5 font-mono">
+										sumber: {radarObj?.sumber ?? '—'}
+									</span>
+									<span class="font-mono">
+										radar lokal terakhir jalan {radarObj?.umur_mnt != null ? `${radarObj.umur_mnt} mnt` : '—'} lalu
+									</span>
+									<FreshnessBadge status={faktaRadar.status} age_s={faktaRadar.age_s} source={faktaRadar.source} ringkas />
+								</p>
+							{/if}
 
 							{#if !radarObj || (radarObj.chains ?? []).length === 0}
 								<div class="py-6 text-center text-text-3 text-12">

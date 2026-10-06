@@ -106,7 +106,7 @@ export const AREAS: Area[] = [
 		ikon: '⚡',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (Azure, baca-saja)' },
+			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (lokal Webdock)' },
 			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian'], catatan: 'Posisi paper LP, V/L, IL vs hold' },
 			{ slug: 'memecoin', label: 'Memecoin', kunci: ['gmgn', 'bagian'], catatan: 'Smart money, whale, pumpfun' }
 		]

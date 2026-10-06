@@ -1,8 +1,8 @@
 """Adapter GMGN (baca-saja) — P4-T4.
 
-Sumber: ``~/gmgn-paper/state`` (lokal) dan cache radar Azure yang sudah ada
-(``~/live-trading/state/radar_cache.json``). Tidak ada SSH tulis, tidak ada perubahan
-apa pun di host Azure/Tencent.
+Sumber: ``~/gmgn-paper/state`` (lokal) dan **state radar lokal**
+(``~/live-trading/state/radar_state.json``, hasil `lt radar-update`). Tidak ada SSH,
+tidak ada perubahan apa pun di host lain.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from warroom_worker.adapters.io import baca_json, ringkas_dir
 __all__ = ["gmgn_ringkas", "radar_ringkas"]
 
 GMGN_STATE = "~/gmgn-paper/state"
-RADAR_CACHE = "~/live-trading/state/radar_cache.json"
+RADAR_STATE = "~/live-trading/state/radar_state.json"
 
 
 def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
@@ -51,20 +51,26 @@ def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
     }
 
 
-def radar_ringkas(cache_path: str | None = None) -> dict[str, Any]:
-    """Radar Azure dibaca dari cache lokal (pola yang sudah ada) + umurnya.
+def radar_ringkas(state_path: str | None = None) -> dict[str, Any]:
+    """Radar rantai dibaca dari state **lokal** hasil `lt radar-update`.
 
-    Sumber hidupnya di host Azure (baca-saja); yang kita baca di sini adalah cache —
-    jadi kesegaran wajib ditampilkan, bukan disembunyikan.
+    Sejak 6 Okt 2026 radar dijalankan di Webdock sendiri (recreate dari VM Azure yang
+    akan dimatikan) — tidak ada lagi SSH. Kesegaran tetap dibawa apa adanya: ``mtime``
+    dari ``diambil_epoch`` (kapan radar benar-benar jalan), bukan waktu berkas disentuh.
     """
-    b = baca_json(cache_path or RADAR_CACHE, pakai_sudo=False)
+    b = baca_json(state_path or RADAR_STATE, pakai_sudo=False)
     if not b.ok:
         return {"status": b.status, "path": b.path, "detail": b.detail}
+    data = b.data if isinstance(b.data, dict) else {}
+    diambil = data.get("diambil_epoch")
+    chains = data.get("chains") if isinstance(data.get("chains"), list) else None
     return {
         "status": "ok",
         "path": b.path,
         "mtime": b.mtime.isoformat() if b.mtime else None,
+        "diambil_epoch": diambil,
         "sha256": b.sha256,
-        "data": b.data,
-        "sumber": "cache",  # penting: ini cache, bukan bacaan langsung dari Azure
+        "data": data,
+        "chains": chains,
+        "sumber": "lokal",  # radar lokal Webdock, bukan cache host lain
     }

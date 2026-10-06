@@ -154,6 +154,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="radar-update",
+        interval_s=1800,
+        enabled=True,
+        payload={"timeout_s": 900},
+        note=(
+            "`lt radar-update` — radar rantai dijalankan LOKAL (recreate 6 Okt dari VM Azure "
+            "yang akan dimatikan). State: `state/radar_state.json`; sumbernya `gmgn-cli`, "
+            "bukan Arjum (tidak menyentuh kuota). Irama 30 mnt menjaga rate-limit gmgn-cli."
+        ),
+    ),
+    JobSpec(
         name="collect",
         interval_s=1800,
         enabled=True,

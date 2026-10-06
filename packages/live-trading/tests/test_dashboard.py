@@ -160,7 +160,7 @@ def test_ringkas_dan_urutan() -> None:
         "kandidat-pengukuran-gate",
         "backtest-gate-historis",
         "crypto-binance-perp",
-        "radar-azure",
+        "radar-rantai",
     ]
     pos = [html_out.index(f"id='{k}'") for k in urutan]
     assert pos == sorted(pos), "urutan tampil salah"

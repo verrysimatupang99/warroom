@@ -22,16 +22,14 @@ def jalankan(cek: list[tuple[str, float, float]]) -> list[str]:
 
 
 def cek_produksi(home: Path | None = None) -> list[tuple[str, float, float]]:
-    from ..collectors.azure_watch import umur_file as _umur_radar
-
     h = Path(home or Path.home())
     return [
         ("snapshot", umur(h / "live-trading/state/snapshot.json"), 1200.0),
         ("verdicts", umur(h / "live-trading/state/verdicts.jsonl"), 2400.0),
         ("gmgn_siklus", umur(h / "gmgn-paper/state/cycle.log"), 4200.0),
         ("lp_mark", umur(h / "gmgn-scan/lp_mark.log"), 93600.0),
-        # cache ditulis tiap snapshot sukses baca radar Azure (timer 15 mnt)
-        ("radar_azure", _umur_radar(h / "live-trading/state/radar_cache.json"), 3600.0),
+        # Radar kini LOKAL (recreate 6 Okt): ditulis tiap kali `lt radar-update` jalan.
+        ("radar_lokal", umur(h / "live-trading/state/radar_state.json"), 3600.0),
     ]
 
 
