@@ -35,3 +35,12 @@
 
 Aturan: **jangan pernah menyamarkan epoch beku sebagai "live"**. Ledger yang berhenti
 bertambah ditandai; itu kejujuran inti proyek ini.
+
+## Narasi LLM per market (6 Okt)
+
+Job `llm-brief-<market>` (crypto/forex/idx/gmgn/polymarket), 6 jam sekali:
+- Fakta diringkas **angka-utuh** untuk narator (bukan 80 karakter pertama JSON, yang dulu
+  membuat LLM bercerita tentang checksum).
+- Output wajib menyertakan `fact_ids`; kartu UI menampilkan provider + versi prompt + jumlah fakta.
+- Narasi **tidak pernah** menggantikan angka; kartu menyatakan "deskriptif, bukan rekomendasi".
+- Ambang gate & keputusan tetap milik manusia — LLM hanya menjelaskan.

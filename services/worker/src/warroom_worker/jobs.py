@@ -661,6 +661,55 @@ def handler_prompts_sync(s: SASession, job: Job) -> str:
     return f"prompts: {jumlah} baris disinkronkan dari {len(prompts)} berkas; versi={versi}"
 
 
+def _ringkas_fakta(f: Any, kunci: str) -> str:
+    """Ubah fakta besar jadi teks ANGKA-utuh untuk narator.
+
+    Masalah nyata (6 Okt): narator hanya melihat 80 karakter pertama JSON, sehingga ia
+    bercerita tentang metadata (sha256/checksum) alih-alih hasilnya. Di sini kita ambil
+    bagian yang berisi angka, tanpa mengubah nilainya — LLM tidak boleh menghitung ulang.
+    """
+    v = f.value_json
+    if not isinstance(v, dict):
+        return str(v)[:400]
+    if kunci.endswith("_sinyal"):
+        entries = (v.get("entries") or [])[:5]
+        baris = [
+            {
+                "pair": e.get("pair") or e.get("ticker"),
+                "arah": e.get("arah"),
+                "setup": e.get("setup"),
+                "status": e.get("hasil") or e.get("status"),
+                "skor_gate": e.get("skor"),
+                "entry": e.get("entry"),
+                "sl": e.get("sl"),
+                "tp1": e.get("tp1"),
+                "r": e.get("r") if e.get("r") is not None else e.get("net_r"),
+            }
+            for e in entries
+        ]
+        return f"n_entries={len(v.get('entries') or [])} | " + str(baris)[:1100]
+    if kunci == "pasar_akurasi":
+        pasar = v.get("pasar") or {}
+        baris = []
+        for nama, p in pasar.items():
+            for setup, s in (p.get("per_setup") or {}).items():
+                baris.append(
+                    f"{nama}/{setup}: n={s.get('n')} hari={s.get('n_hari')} "
+                    f"WR={s.get('winrate_pct')}% meanR={s.get('mean_r')} totalR={s.get('total_r')} "
+                    f"pnl_usd={s.get('total_pnl_usd', s.get('pnl_usd'))} tingkat={s.get('tingkat')}"
+                )
+        return " || ".join(baris)[:1200]
+    if kunci == "idx_akurasi":
+        ringkas = v.get("per_setup") or {}
+        baris = [
+            f"{k}: n={s.get('n')} hari={s.get('n_hari')} WR={s.get('winrate_pct')}% "
+            f"meanR={s.get('mean_r')} tingkat={s.get('pakem')}"
+            for k, s in ringkas.items()
+        ]
+        return f"tuntas={v.get('tuntas')} belum={v.get('belum_tuntas')} | " + " || ".join(baris)[:1000]
+    return str(v)[:600]
+
+
 def handler_llm_brief(s: SASession, job: Job) -> str:
     """Narasi ringkas terjadwal dari fakta nyata (peran narrator). Gagal → dicatat, bukan dipaksa."""
     from warroom_core import prompts_dir
@@ -669,13 +718,14 @@ def handler_llm_brief(s: SASession, job: Job) -> str:
     from warroom_llm.prompts import PromptRegistry
 
     area = str(job.payload_json.get("area", "crypto"))
-    kunci = job.payload_json.get("keys") or []
+    # Nama baru memakai `_keys` (underscore = bukan milik skema gateway); `keys` lama tetap dibaca.
+    kunci = job.payload_json.get("_keys") or job.payload_json.get("keys") or []
     terbaru = _fakta_terbaru(s, kunci or None, batas=int(job.payload_json.get("max_facts", 8)))
     fakta = tuple(
         FactRef(
             fact_id=f.id,
             label=f"F{i + 1}",
-            text=f"{f.key}={str(f.value_json)[:80]} (sumber={f.source}, umur_s="
+            text=f"[{f.key}] {_ringkas_fakta(f, f.key)} (sumber={f.source}, umur_s="
             f"{int((datetime.now(UTC) - f.observed_at).total_seconds())})",
         )
         for i, f in enumerate(terbaru)
@@ -970,6 +1020,11 @@ def register_handlers() -> dict[str, Any]:
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
             "llm-brief": handler_llm_brief,
+            "llm-brief-crypto": handler_llm_brief,
+            "llm-brief-forex": handler_llm_brief,
+            "llm-brief-idx": handler_llm_brief,
+            "llm-brief-gmgn": handler_llm_brief,
+            "llm-brief-polymarket": handler_llm_brief,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
             "retensi": handler_retensi,

@@ -58,6 +58,12 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
         ("poly.dataset", "recorder"),
         ("poly.akses", "cakupan"),
     ),
+    # Narasi LLM per market (6 Okt): kind `ai.brief`, key = nama area. Ditulis job
+    # `llm-brief-<market>`; hanya tampil bila ada — tidak ada fakta = tidak ada kartu.
+    "crypto": (("ai.brief", "crypto"),),
+    "idx": (("ai.brief", "idx"),),
+    "forex": (("ai.brief", "forex"),),
+    "gmgn": (("ai.brief", "gmgn"),),
 }
 
 
