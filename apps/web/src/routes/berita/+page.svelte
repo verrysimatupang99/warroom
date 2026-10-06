@@ -5,6 +5,7 @@
 	import { getArea } from '$lib/api/client';
 	import type { AreaPayload, Fakta } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
+	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -51,6 +52,8 @@
 			Judul + tautan dari feed publik. Ringkasan tidak disalin — klik untuk baca di sumbernya.
 		</p>
 	</header>
+
+	<NavInfo />
 
 	{#if galat && !forex}
 		<ErrorState pesan={galat} onulang={muat} />

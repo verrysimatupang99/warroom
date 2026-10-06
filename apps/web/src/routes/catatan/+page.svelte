@@ -7,6 +7,7 @@
 	import type { DocIsi, DocsPayload } from '$lib/api/types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -119,6 +120,8 @@
 		<h1>Catatan</h1>
 		<p class="dim">Dokumentasi proyek: temuan, keputusan, dan pelajaran. Dibaca dari repo.</p>
 	</header>
+
+	<NavInfo />
 
 	{#if galat && !daftar}
 		<ErrorState pesan={galat} onulang={muatDaftar} />
