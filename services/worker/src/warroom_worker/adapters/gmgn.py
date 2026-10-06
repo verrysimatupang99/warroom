@@ -16,6 +16,7 @@ __all__ = ["gmgn_ringkas", "radar_ringkas"]
 
 GMGN_STATE = "~/gmgn-paper/state"
 RADAR_STATE = "~/live-trading/state/radar_state.json"
+LP_MARK_STATE = "~/live-trading/state/lp_mark_terakhir.json"
 
 
 def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
@@ -48,6 +49,31 @@ def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
         "bytes": ringkas.get("bytes"),
         "berkas": berkas[:40],
         "isi": isi,
+    }
+
+
+def lp_mark_ringkas(state_path: str | None = None) -> dict[str, Any]:
+    """Mark LP terukur (hasil `lt lp-mark`) + pakem bukti — dibaca apa adanya.
+
+    Sumber: `state/lp_mark_terakhir.json`, ditulis job `lp-mark` dari harga nyata
+    (DexScreener per alamat pool). Belum ada → status jujur, bukan nol.
+    """
+    b = baca_json(state_path or LP_MARK_STATE, pakai_sudo=False)
+    if not b.ok:
+        return {"status": b.status, "path": b.path, "detail": b.detail}
+    data = b.data if isinstance(b.data, dict) else {}
+    return {
+        "status": data.get("status", "ok"),
+        "path": b.path,
+        "mtime": b.mtime.isoformat() if b.mtime else None,
+        "sha256": b.sha256,
+        "mark": data.get("mark") or [],
+        "total_pnl_usd": data.get("total_pnl_usd"),
+        "total_vs_hold_usd": data.get("total_vs_hold_usd"),
+        "fee_tier": data.get("fee_tier"),
+        "fee_tier_adalah_asumsi": data.get("fee_tier_adalah_asumsi", True),
+        "pakem": data.get("pakem"),
+        "catatan": data.get("catatan") or [],
     }
 
 

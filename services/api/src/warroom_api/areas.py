@@ -31,7 +31,8 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     "idx": ("bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko"),
     "forex": ("bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko"),
     "gmgn": (
-        "bagian", "gmgn", "radar", "lp_paper", "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko"
+        "bagian", "gmgn", "radar", "lp_paper", "lp_mark",
+        "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko",
     ),
     "polymarket": (
         "bagian", "poly_paper", "lp_paper", "equity", "ledger",

@@ -27,6 +27,7 @@ __all__ = [
     "handler_backup",
     "handler_collect",
     "handler_freshness",
+    "handler_lp_mark",
     "handler_notify",
     "handler_publish_facts",
     "handler_radar_update",
@@ -151,6 +152,15 @@ def handler_radar_update(s: SASession, job: Job) -> str:
     """
     bawaan = int(job.payload_json.get("timeout_s", 600) or 600)
     return _jalankan_lt("radar-update", job, timeout_s=max(bawaan, 600))
+
+
+def handler_lp_mark(s: SASession, job: Job) -> str:
+    """`lt lp-mark` — mark posisi LP paper dari pasar nyata → ledger + pakem.
+
+    Read-only pasar (DexScreener per alamat pool). Tidak menyentuh wallet/venue.
+    TTL fakta 2x interval: kalau sama, fakta selalu "basi" tepat sebelum run berikutnya.
+    """
+    return _jalankan_lt("lp-mark", job, timeout_s=int(job.payload_json.get("timeout_s", 300) or 300))
 
 
 def handler_backup(s: SASession, job: Job) -> str:
@@ -403,7 +413,13 @@ def handler_gmgn_sync(s: SASession, job: Job) -> str:
     r = gmgn.radar_ringkas()
     _tulis_fakta(s, kind="gmgn", key="radar", value=r,
                  source=str(r.get("path", "state/radar_state.json")), ttl_s=1800)
-    return f"gmgn={g.get('status')} berkas={g.get('files')} radar={r.get('status')} sumber={r.get('sumber')}"
+    lm = gmgn.lp_mark_ringkas()
+    _tulis_fakta(s, kind="snapshot", key="lp_mark", value=lm,
+                 source=str(lm.get("path", "state/lp_mark_terakhir.json")), ttl_s=7200)
+    return (
+        f"gmgn={g.get('status')} berkas={g.get('files')} radar={r.get('status')} "
+        f"sumber={r.get('sumber')} lp_mark={lm.get('status')}"
+    )
 
 
 def _pesan_sinyal(sg: dict[str, Any], label: str) -> str:
@@ -943,6 +959,7 @@ def register_handlers() -> dict[str, Any]:
             "collect": handler_collect,
             "refresh-snapshot": handler_refresh_snapshot,
             "radar-update": handler_radar_update,
+            "lp-mark": handler_lp_mark,
             "backup": handler_backup,
             "poly-sync": handler_poly_sync,
             "verdict-sync": handler_verdict_sync,

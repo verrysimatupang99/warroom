@@ -356,6 +356,38 @@ def cmd_radar_update(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_lp_mark(args: argparse.Namespace) -> int:
+    """Mark posisi LP paper dari pasar nyata → ledger + pakem bukti.
+
+    Read-only pasar (DexScreener). Tidak menyentuh wallet/venue.
+    """
+    from . import lp_mark_run
+
+    s = get_settings()
+    laporan = lp_mark_run.jalankan_lp_mark(s.state_dir, state_path=args.state)
+    if laporan.get("status") == "tidak-ada-posisi":
+        print(f"  {laporan.get('alasan')}")
+        return 1
+    print(f"  LP mark: {len(laporan.get('mark', []))} posisi → {s.state_dir}")
+    for m in laporan.get("mark", []):
+        print(
+            f"    {str(m.get('symbol')):<10} {m.get('status'):<18} "
+            f"px {m.get('harga_masuk')}→{m.get('harga_sekarang')} "
+            f"fee* {m.get('fee_usd')} IL {m.get('il_pct')}% "
+            f"pnl* {m.get('pnl_usd')} vs-hold {m.get('lp_vs_hold_usd')}"
+        )
+    total = laporan.get("total_pnl_usd")
+    print(f"  total pnl* ${total} (fee = taksiran; V/L hari ini × tier × hari)")
+    pak = laporan.get("pakem")
+    if pak:
+        print(
+            f"  pakem: {pak.get('tingkat')} (n={pak.get('n')} trade, {pak.get('n_hari')} hari)"
+        )
+        for a in pak.get("alasan", []):
+            print(f"    - {a}")
+    return 0
+
+
 def cmd_snapshot(args: argparse.Namespace) -> int:
     from .dashboard import build_snapshot
 
@@ -1035,6 +1067,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     rd.add_argument("--limit", type=int, default=60, help="jumlah pool per chain (bawaan 60)")
     rd.set_defaults(func=cmd_radar_update)
+    lm = sub.add_parser("lp-mark", help="mark posisi LP paper dari pasar nyata → ledger + pakem")
+    lm.add_argument(
+        "--state",
+        default="~/gmgn-scan/lp_paper_state.json",
+        help="berkas state LP paper (bawaan: mesin gmgn-scan)",
+    )
+    lm.set_defaults(func=cmd_lp_mark)
 
     paper = sub.add_parser("paper", help="executor paper")
     paper.add_argument("aksi", choices=["list", "open", "close", "eval"])

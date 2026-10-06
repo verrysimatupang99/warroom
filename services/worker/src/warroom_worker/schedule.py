@@ -165,6 +165,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="lp-mark",
+        interval_s=3600,
+        enabled=True,
+        payload={"timeout_s": 300},
+        note=(
+            "`lt lp-mark` — mark posisi LP paper dari DexScreener (per alamat pool) → "
+            "`state/lp_ledger.jsonl` + nilai pakem bukti (n = hari, bukan baris). "
+            "Irama 1 jam: cukup rapat untuk jejak harian, cukup jauh agar tidak membebani API."
+        ),
+    ),
+    JobSpec(
         name="collect",
         interval_s=1800,
         enabled=True,

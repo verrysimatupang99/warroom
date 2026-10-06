@@ -31,6 +31,7 @@ def _bersihkan(db):
 _JOB_BERAT = (
     "refresh-snapshot",  # memanggil CLI domain (jaringan)
     "radar-update",      # memanggil gmgn-cli (jaringan, bisa kena rate-limit)
+    "lp-mark",           # memanggil DexScreener (jaringan)
     "collect",
     "backup",
     "poly-sync",         # membaca /var/lib lewat sudo
@@ -66,12 +67,13 @@ def test_daftar_job_idempoten(db) -> None:
         kedua = schedule.ensure_jobs(s)
         total = len(s.scalars(select(Job)).all())
     assert set(pertama) == {
-        "publish-facts", "freshness", "notify", "refresh-snapshot", "radar-update", "collect",
-        "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync", "signal-sync",
-        "reconcile", "learner", "prompts-sync", "llm-brief", "paper-eval", "paper-scan", "retensi",
+        "publish-facts", "freshness", "notify", "refresh-snapshot", "radar-update", "lp-mark",
+        "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
+        "signal-sync", "reconcile", "learner", "prompts-sync", "llm-brief", "paper-eval",
+        "paper-scan", "retensi",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 19
+    assert total == 20
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:

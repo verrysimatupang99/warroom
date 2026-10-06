@@ -201,6 +201,8 @@
 			{@const memecoinObj = (bagianObj?.memecoin as any) ?? null}
 			{@const radarObj = (faktaRadar?.value as any) ?? null}
 			{@const lpPaperObj = (faktaLpPaper?.value as any) ?? null}
+			{@const faktaLpMark = temukanFakta(data.facts, 'lp_mark')}
+			{@const lpMarkObj = (faktaLpMark?.value as any) ?? null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
 			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
@@ -1653,6 +1655,72 @@
 											{/each}
 										</tbody>
 									</table>
+								</div>
+							{/if}
+						</div>
+
+						<!-- MARK LP TERUKUR (6 Okt): fee/IL/LP-vs-hold dari pasar nyata + label pakem.
+						     Sumber: fakta `lp_mark` (job `lp-mark`, DexScreener per alamat pool). -->
+						<div class="permukaan-2 rounded-card border border-line p-3">
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Mark Terukur — Fee, IL, LP vs Hold</h3>
+									<p class="text-11 text-text-3">
+										Harga nyata per alamat pool; fee = taksiran (V/L hari ini × tier × hari)
+									</p>
+								</div>
+								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+									${lpMarkObj?.total_pnl_usd ?? '—'}
+								</span>
+							</div>
+
+							{#if !lpMarkObj || (lpMarkObj.mark ?? []).length === 0}
+								<div class="py-6 text-center text-text-3 text-12">
+									Belum ada mark LP. Job <span class="font-mono">lp-mark</span> akan mengisi setelah posisi LP dibuka.
+								</div>
+							{:else}
+								<div class="space-y-2">
+									{#each lpMarkObj.mark as m (m.symbol)}
+										<div class="rounded-card border border-line bg-surface p-3">
+											<div class="flex flex-wrap items-center justify-between gap-2">
+												<div class="flex items-center gap-2">
+													<span class="font-bold font-mono text-13 text-text">{m.symbol}</span>
+													<span class="rounded px-1.5 py-0.5 text-10 font-mono border border-line bg-canvas text-text-3">{m.status}</span>
+													{#if m.sumber}<span class="text-10 font-mono text-text-3">via {m.sumber}</span>{/if}
+												</div>
+												<span class="font-mono font-bold text-13 {typeof m.pnl_usd === 'number' && m.pnl_usd > 0 ? 'text-pos' : typeof m.pnl_usd === 'number' && m.pnl_usd < 0 ? 'text-neg' : 'text-text-3'}">
+													{m.pnl_usd == null ? '—' : (m.pnl_usd > 0 ? '+' : '') + '$' + m.pnl_usd}
+												</span>
+											</div>
+											<div class="mt-2 grid grid-cols-2 gap-2 text-11 font-mono sm:grid-cols-4">
+												<div>
+													<span class="text-text-3 text-10 block">FEE*</span>
+													<span class="text-pos">{m.fee_usd ?? '—'}</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">IL</span>
+													<span class="text-neg">{m.il_pct ?? '—'}%</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">LP vs HOLD</span>
+													<span class="text-text">{m.lp_vs_hold_usd ?? '—'}</span>
+												</div>
+												<div>
+													<span class="text-text-3 text-10 block">UMUR</span>
+													<span class="text-text-2">{m.umur_hari ?? '—'} hari</span>
+												</div>
+											</div>
+										</div>
+									{/each}
+									{#if lpMarkObj.pakem}
+										<p class="pt-1 text-11 text-text-3">
+											Pakem bukti: <span class="font-bold font-mono text-text">{lpMarkObj.pakem.tingkat}</span>
+											<span class="font-mono">· n={lpMarkObj.pakem.n} hari={lpMarkObj.pakem.n_hari}</span>
+											{#if lpMarkObj.pakem.alasan?.length}
+												<span>· {lpMarkObj.pakem.alasan[0]}</span>
+											{/if}
+										</p>
+									{/if}
 								</div>
 							{/if}
 						</div>

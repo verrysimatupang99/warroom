@@ -160,6 +160,64 @@ def _nilai_vol(p: dict[str, Any]) -> float:
     return _angka((p.get("volume") or {}).get("h24")) or 0.0
 
 
+def mark_pool(alamat: str, rantai: str | None = None) -> dict[str, Any] | None:
+    """Mark satu pool berdasarkan alamat — untuk memantau posisi LP dari waktu ke waktu.
+
+    Berbeda dari `cari_pool` (pencarian nama, sekali lihat): fungsi ini dipanggil
+    berulang untuk pool/token yang SAMA, jadi bentuknya harus stabil supaya bisa
+    disimpan sebagai jejak waktu (harga, V/L, likuiditas) tanpa menebak.
+
+    Urutan coba (penting: alamat di state LP bisa berupa **pair** ATAU **token**, dan
+    pool ber-chain butuh prefix chain agar tidak salah baca):
+      1. ``/pairs/{rantai}/{alamat}`` (bila rantai diketahui)
+      2. ``/pairs/{alamat}``
+      3. ``/tokens/{alamat}`` — token address → semua pair-nya
+
+    Dari semua kandidat, diambil pool dengan **likuiditas terbesar** (pool utama),
+    bukan yang pertama muncul. Mengembalikan ``None`` bila tidak ada; bukan angka kosong.
+    """
+    kandidat: list[dict[str, Any]] = []
+    jalur = []
+    if rantai:
+        jalur.append(f"/latest/dex/pairs/{rantai}/{alamat}")
+    jalur += [f"/latest/dex/pairs/{alamat}", f"/latest/dex/tokens/{alamat}"]
+    for j in jalur:
+        try:
+            hasil = _get(j)
+        except Exception:  # noqa: BLE001 — jaringan/API bebas gagal; pemanggil yang memutuskan
+            continue
+        pairs = (hasil or {}).get("pairs") or []
+        if pairs:
+            kandidat = pairs
+            break
+    if not kandidat:
+        return None
+
+    def _liq(p: dict[str, Any]) -> float:
+        return _angka((p.get("liquidity") or {}).get("usd")) or 0.0
+
+    p = max(kandidat, key=_liq)
+    liq = _angka((p.get("liquidity") or {}).get("usd"))
+    v24 = _angka((p.get("volume") or {}).get("h24"))
+    harga = _angka(p.get("priceUsd"))
+    h24 = _angka((p.get("priceChange") or {}).get("h24"))
+    return {
+        "alamat": p.get("pairAddress") or alamat,
+        "chain": p.get("chainId"),
+        "base": ((p.get("baseToken") or {}).get("symbol")),
+        "quote": ((p.get("quoteToken") or {}).get("symbol")),
+        "dex": p.get("dexId"),
+        "harga_usd": harga,
+        "liq_usd": liq,
+        "vol_24h": v24,
+        # V/L = proksi potensi fee per dolar modal per hari (satuan: turnover).
+        "vl": (v24 / liq) if (liq and v24 and liq > 0) else None,
+        "chg_h24": h24,
+        "n_pool": len(kandidat),
+        "ts": time.time(),
+    }
+
+
 def pilih_pool(
     pairs: list[dict[str, Any]], limit: int = 6, rantai: str | None = None
 ) -> list[dict[str, Any]]:
