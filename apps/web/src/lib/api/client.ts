@@ -10,6 +10,8 @@ import type {
 	AreaPayload,
 	AreasPayload,
 	Aku,
+	DocIsi,
+	DocsPayload,
 	FaktaSatu,
 	HasilGate,
 	Kesehatan,
@@ -147,3 +149,8 @@ export const basisApi = BASE;
 /** Sinyal terbaik per pasar untuk Home (5 Okt 2026). Selalu mengembalikan SEMUA pasar —
  * yang kosong pun, supaya kartu tidak hilang diam-diam. */
 export const getSinyalPerPasar = () => minta<SinyalPayload>('/api/v1/sinyal/per-pasar');
+/** Daftar catatan (docs/belajar) — endpoint membaca berkas markdown langsung. */
+export const getDocs = () => minta<DocsPayload>('/api/v1/docs');
+
+/** Isi satu catatan menurut slug. */
+export const getDoc = (slug: string) => minta<DocIsi>(`/api/v1/docs/${encodeURIComponent(slug)}`);

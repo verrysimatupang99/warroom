@@ -144,6 +144,21 @@ export const AREAS: Area[] = [
 			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda makro: CPI, NFP, FOMC' },
 			{ slug: 'alat', label: 'Alat', kunci: [], catatan: 'Position size, likuidasi, risk/reward' }
 		]
+	},
+	{
+		// Halaman penjelas — mengikuti /learn, /news, /system, /faq algentis.
+		// Isi kita sendiri; berita dari RSS publik.
+		kunci: 'info',
+		label: 'Info',
+		rute: '/catatan',
+		ikon: '▤',
+		kategori: 'riset',
+		anak: [
+			{ slug: 'catatan', label: 'Catatan', kunci: [], catatan: 'Dokumentasi proyek dari repo' },
+			{ slug: 'berita', label: 'Berita', kunci: ['bagian'], catatan: 'RSS publik: Cointelegraph, Decrypt' },
+			{ slug: 'cara-kerja', label: 'Cara kerja', kunci: [], catatan: 'Aliran domain → worker → API → web' },
+			{ slug: 'bantuan', label: 'Bantuan', kunci: [], catatan: 'Tanya-jawab dari perilaku nyata' }
+		]
 	}
 ];
 

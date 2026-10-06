@@ -56,6 +56,7 @@ BAGIAN_WAJIB: frozenset[str] = frozenset(
         "lp",
         "macro",
         "memecoin",
+        "news",
         "overextended",
     }
 )

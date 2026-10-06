@@ -489,6 +489,14 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["bagian"]["macro"] = {"error": f"{type(exc).__name__}: {exc}"}
 
         try:
+            from .collectors import news
+
+            # Berita kripto (RSS publik, tanpa kuota). Judul + tautan saja.
+            snap["bagian"]["news"] = news.snapshot(s)
+        except Exception as exc:  # noqa: BLE001
+            snap["bagian"]["news"] = {"error": f"{type(exc).__name__}: {exc}"}
+
+        try:
             from .collectors import hyperliquid
 
             snap["bagian"]["hyperliquid"] = hyperliquid.snapshot(s, top=5)

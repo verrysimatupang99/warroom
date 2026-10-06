@@ -238,3 +238,18 @@ export interface DesignTokens {
 	token?: Record<string, string>;
 	alasan?: string;
 }
+
+/** `GET /api/v1/docs` — daftar catatan. */
+export interface DocsPayload {
+	ada: boolean;
+	alasan?: string;
+	jumlah?: number;
+	dokumen: { slug: string; judul: string; ukuran: number }[];
+}
+
+/** `GET /api/v1/docs/{slug}` — isi satu catatan (markdown mentah). */
+export interface DocIsi {
+	slug: string;
+	judul: string;
+	isi: string;
+}

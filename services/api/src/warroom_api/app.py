@@ -160,6 +160,17 @@ def _provider_ringkas(s: SASession) -> list[dict[str, Any]]:
     ]
 
 
+def _docs_dir() -> Path | None:
+    """Lokasi docs/belajar — dicari dari beberapa akar supaya tahan cara deploy."""
+    for p in (
+        Path("/home/admin/warroom/docs/belajar"),
+        Path(__file__).resolve().parents[4] / "docs" / "belajar",
+    ):
+        if p.is_dir():
+            return p
+    return None
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="War Room API",
@@ -271,6 +282,46 @@ def create_app() -> FastAPI:
             "jumlah": len(token),
             "token": token,
         }
+
+    @app.get("/api/v1/docs")
+    def docs_daftar(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Daftar catatan (docs/belajar/*.md) — judul dari baris `# ` pertama.
+
+        Catatan hidup di repo sebagai markdown. Alih-alih menyalinnya ke DB (sumber
+        kedua yang bisa menyimpang), endpoint ini MEMBACA berkasnya langsung.
+        """
+        import re
+
+        root = _docs_dir()
+        if root is None:
+            return {"ada": False, "alasan": "docs/belajar tidak ditemukan", "dokumen": []}
+        out = []
+        for p in sorted(root.glob("*.md")):
+            try:
+                teks = p.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            m = re.search(r"^#\s+(.+)$", teks, re.MULTILINE)
+            judul = m.group(1).strip() if m else p.stem
+            out.append({"slug": p.stem, "judul": judul, "ukuran": len(teks)})
+        return {"ada": bool(out), "jumlah": len(out), "dokumen": out}
+
+    @app.get("/api/v1/docs/{slug}")
+    def docs_isi(slug: str, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Isi satu catatan. Slug dibatasi ke nama berkas aman (tanpa `/`, `..`)."""
+        import re
+
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", slug):
+            raise HTTPException(status_code=422, detail="slug tidak sah")
+        root = _docs_dir()
+        if root is None:
+            raise HTTPException(status_code=404, detail="catatan tidak tersedia")
+        p = root / f"{slug}.md"
+        if not p.exists():
+            raise HTTPException(status_code=404, detail="catatan tidak ditemukan")
+        teks = p.read_text(encoding="utf-8")
+        m = re.search(r"^#\s+(.+)$", teks, re.MULTILINE)
+        return {"slug": slug, "judul": (m.group(1).strip() if m else slug), "isi": teks}
 
     @app.get("/api/v1/freshness")
     def freshness(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
