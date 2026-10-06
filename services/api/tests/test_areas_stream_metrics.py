@@ -281,3 +281,33 @@ def test_json_log_satu_baris(capsys) -> None:
     keluar = capsys.readouterr().out.strip().splitlines()[-1]
     data = json.loads(keluar)
     assert data["svc"] == "uji" and data["level"] == "WARNING" and data["msg"] == "halo dunia"
+
+# --- Per-market (6 Okt): sinyal+entry & akurasi wajib terbaca lewat API -----------------
+# Kelas bug yang dicegah: mesin menulis fakta baru, tapi UI tak pernah menerimanya karena
+# kunci tidak ada di AREA_KEYS (fakta terbit di DB, area tetap kosong tanpa error apa pun).
+
+def test_kunci_per_market_terbaca(client, make_user) -> None:
+    _, sid = make_user("baca-pasar", role="viewer")
+    with session_scope() as s:
+        s.add(_fakta("snapshot", "crypto_sinyal", {"tersedia": True, "entries": []}))
+        s.add(_fakta("snapshot", "idx_sinyal", {"tersedia": True, "entries": []}))
+        s.add(_fakta("snapshot", "forex_sinyal", {"tersedia": True, "entries": []}))
+        s.add(_fakta("snapshot", "pasar_akurasi", {"tersedia": True, "pasar": {}}))
+
+    crypto = client.get("/api/v1/crypto", headers=_cookie(sid)).json()
+    assert crypto["data"]["crypto_sinyal"]["tersedia"] is True
+    assert crypto["data"]["pasar_akurasi"]["tersedia"] is True
+    forex = client.get("/api/v1/forex", headers=_cookie(sid)).json()
+    assert "forex_sinyal" in forex["kunci_diminta"]
+    idx = client.get("/api/v1/idx", headers=_cookie(sid)).json()
+    assert "idx_sinyal" in idx["kunci_diminta"]
+    assert "pasar_akurasi" in idx["kunci_diminta"]
+
+def test_whitelist_per_market_lengkap() -> None:
+    """Kalau mesin menambah pasar baru, kunci ini yang harus ikut diperbarui."""
+    for kunci in ("crypto_sinyal", "pasar_akurasi"):
+        assert kunci in AREA_KEYS["crypto"]
+    assert "idx_sinyal" in AREA_KEYS["idx"]
+    assert "forex_sinyal" in AREA_KEYS["forex"]
+    for area in ("gmgn", "polymarket"):
+        assert "pasar_akurasi" in AREA_KEYS[area]

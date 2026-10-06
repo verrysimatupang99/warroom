@@ -23,6 +23,8 @@
 	import DecisionFeed from './DecisionFeed.svelte';
 	import type { DecisionItem } from './DecisionFeed.svelte';
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
+	import AkurasiPasar from './AkurasiPasar.svelte';
+	import SinyalPasar from './SinyalPasar.svelte';
 	import type { Fakta } from '$lib/api/types';
 
 	interface Props {
@@ -205,6 +207,18 @@
 			{@const lpMarkObj = (faktaLpMark?.value as any) ?? null}
 			{@const faktaIdxAkurasi = temukanFakta(data.facts, 'idx_akurasi')}
 			{@const idxAkurasiObj = (faktaIdxAkurasi?.value as any) ?? null}
+			{@const faktaCryptoSinyal = temukanFakta(data.facts, 'crypto_sinyal')}
+			{@const cryptoSinyalObj = (faktaCryptoSinyal?.value as any) ?? null}
+			{@const faktaForexSinyal = temukanFakta(data.facts, 'forex_sinyal')}
+			{@const forexSinyalObj = (faktaForexSinyal?.value as any) ?? null}
+			{@const faktaIdxSinyal = temukanFakta(data.facts, 'idx_sinyal')}
+			{@const idxSinyalObj = (faktaIdxSinyal?.value as any) ?? null}
+			{@const faktaPasarAkurasi = temukanFakta(data.facts, 'pasar_akurasi')}
+			{@const pasarAkurasiObj = (faktaPasarAkurasi?.value as any) ?? null}
+			{@const akurasiCrypto = (pasarAkurasiObj?.pasar?.crypto as any) ?? null}
+			{@const akurasiForex = (pasarAkurasiObj?.pasar?.forex as any) ?? null}
+			{@const akurasiGmgn = (pasarAkurasiObj?.pasar?.gmgn as any) ?? null}
+			{@const akurasiPoly = (pasarAkurasiObj?.pasar?.polymarket as any) ?? null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
 			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
@@ -278,6 +292,16 @@
 								{/if}
 							</div>
 
+							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC -->
+							{#if sub === 'setup' || sub === 'cockpit'}
+								<SinyalPasar
+									pasar="crypto"
+									judul="Sinyal & Entry Setup (Crypto)"
+									subjudul="Verdict gate SMC terakhir — skor = aturan lolos, bukan edge terbukti"
+									data={cryptoSinyalObj}
+								/>
+							{/if}
+
 							<!-- Aliran Keputusan: dari ledger NYATA area ini. -->
 							<DecisionFeed items={feedKeputusan} />
 						</div>
@@ -285,6 +309,15 @@
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols) -->
 						<div class="space-y-4 lg:col-span-5">
 							<RiskMeter risiko={risikoObj} />
+
+							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
+							{#if sub === 'setup' || sub === 'ukur'}
+								<AkurasiPasar
+									judul="Akurasi per Strategi (Crypto)"
+									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
+									data={akurasiCrypto}
+								/>
+							{/if}
 
 							<!-- Status Posisi Terbuka -->
 							<div class="permukaan-2 rounded-card border border-line p-3">
@@ -645,12 +678,25 @@
 					>
 						<DatasetExplorer recorder={datasetRecorder} cakupan={datasetCakupan} />
 					</Block>
-				{:else if sub === 'verdict' || !sub}
+				{/if}
+				{#if sub === 'verdict'}
 					<div class="space-y-4">
+						<!-- Akurasi & PnL per arm (6 Okt): win-rate entri mesin paper, dihitung per arm -->
+						<AkurasiPasar
+							judul="Akurasi & PnL per Arm (Polymarket)"
+							subjudul="Entri menang/kalah mesin paper — fees sudah dibebankan; bukan R, belum lewat split beku"
+							data={akurasiPoly}
+						/>
 						<StatisticalEdgeCard verdict={verdictObj} judul="Polymarket 5m Statistical Verdict" />
 					</div>
-				{:else if sub === 'arm'}
+				{/if}
+				{#if sub === 'arm'}
 					<div class="space-y-4">
+						<AkurasiPasar
+							judul="Akurasi & PnL per Arm (Polymarket)"
+							subjudul="Arm A momentum · B kandidat · C fade · D favorit — dari shadow summary"
+							data={akurasiPoly}
+						/>
 						<div class="permukaan-2 rounded-card border border-line p-4">
 							<div class="flex items-center justify-between mb-3 border-b border-line-soft pb-2">
 								<div>
@@ -984,7 +1030,8 @@
 
 				<!-- Akurasi signal per setup (6 Okt): dari ledger mesin (grader v3).
 				     Hanya baris TUNTAS masuk metrik; belum tuntas & ambigu dipisah.
-				     Pakem = kematangan sampel pada hari independen, bukan jumlah trade. -->
+				     Pakem = kematangan sampel pada hari independen, bukan jumlah trade.
+				     Sengaja TANPA guard sub: ini inti area IDX, wajib tampak di semua tab. -->
 				<div class="permukaan-2 rounded-card border border-line p-3">
 					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 						<div>
@@ -1083,6 +1130,29 @@
 						</p>
 					{/if}
 				</div>
+
+				<!-- Sinyal & entry setup IDX (6 Okt): ARA/BSJP/INTRADAY dari ledger mesin -->
+				{#if sub === 'bsjp'}
+					<SinyalPasar
+						pasar="idx"
+						judul="Sinyal & Entry Setup (IDX)"
+						subjudul="Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R"
+						data={idxSinyalObj}
+					/>
+				{/if}
+				{#if sub === 'screener'}
+					<AkurasiPasar
+						judul="Akurasi per Setup (IDX)"
+						subjudul="Ringkasan dari ledger mesin yang sama dengan tab BSJP"
+						data={{
+							tersedia: idxAkurasiObj?.tersedia,
+							alasan: idxAkurasiObj?.alasan,
+							per_setup: idxAkurasiObj?.per_setup,
+							sumber: idxAkurasiObj?.impor?.sumber,
+							catatan: [`${idxAkurasiObj?.tuntas ?? 0} tuntas`, `${idxAkurasiObj?.belum_tuntas ?? 0} jalan`]
+						}}
+					/>
+				{/if}
 
 				<!-- Tab BSJP: Beli Sore Jual Pagi -->
 				{#if sub === 'bsjp'}
@@ -1429,9 +1499,26 @@
 								Resolusi: {forexObj?.resolution ?? 60}m · Bar dianalisis: {forexObj?.bars ?? 120} bar · Sumber: TVC:GOLD
 							</div>
 						</div>
+
+						<!-- Sinyal & entry setup forex (6 Okt): XAUUSD 4-agen + multi-pair, dari jurnal Tencent -->
+						<SinyalPasar
+							pasar="forex"
+							judul="Sinyal & Entry Setup (Forex)"
+							subjudul="Jurnal mesin XAUUSD (SMC 4-agen) + NAS100/EURUSD (FVG/OB 1H) — zona entry khas SMC"
+							data={forexSinyalObj}
+						/>
+
+						<!-- Akurasi forex: pakem bukti sama; sampel masih kecil, itu ditampilkan apa adanya -->
+						<AkurasiPasar
+							judul="Akurasi per Strategi (Forex)"
+							subjudul="Trade tuntas dari jurnal mesin — NO FILL tidak dihitung sebagai trade"
+							data={akurasiForex}
+						/>
 					</div>
 				{:else if sub === 'sesi'}
 					<div class="space-y-4">
+						<!-- Akurasi juga tampil di tab sesi supaya tak perlu bolak-balik -->
+						<AkurasiPasar judul="Akurasi per Strategi (Forex)" data={akurasiForex} />
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="border-b border-line-soft pb-2 flex items-center justify-between">
 								<div>
@@ -1643,6 +1730,12 @@
 
 				{#if sub === 'lp'}
 					<div class="space-y-4">
+						<!-- Akurasi & PnL LP terukur (6 Okt): hasil dinyatakan P&L (IL+fee), bukan R -->
+						<AkurasiPasar
+							judul="Akurasi & PnL LP Terukur"
+							subjudul="Mark lokal — rekonsiliasi on-chain belum ada (dinyatakan apa adanya)"
+							data={akurasiGmgn}
+						/>
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>

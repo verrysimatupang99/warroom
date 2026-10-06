@@ -36,10 +36,12 @@ export const AREAS: Area[] = [
 		rute: '/',
 		ikon: '⌂',
 		kategori: 'pasar',
-		anak: [
-			{ slug: 'sinyal', label: 'Sinyal', kunci: [], catatan: 'Satu kartu sinyal terbaik per pasar' },
-			{ slug: 'kinerja', label: 'Kinerja', kunci: [], catatan: 'Kurva ekuitas, leaderboard, risiko, kejadian' }
-		]
+		// Tanpa anak: `/` adalah halaman pratinjau arah baru yang dirender mandiri
+		// (routes/+page.svelte), bukan AreaView ber-tab. Dua anak lama (Sinyal,
+		// Kinerja) tidak punya tujuan — tab-nya tak pernah muncul — jadi dihapus
+		// 6 Okt 2026 supaya nav tak menjanjikan tautan mati. Bila arah pratinjau
+		// diputuskan menang, tab ditambahkan lagi bersama isinya.
+		anak: []
 	},
 	{
 		kunci: 'crypto',
@@ -48,13 +50,10 @@ export const AREAS: Area[] = [
 		ikon: '₿',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi'], catatan: 'Pair utama, risiko, posisi' },
-			{ slug: 'setup', label: 'Setup', kunci: ['kandidat'], catatan: 'Kandidat SMC + verdict per aturan' },
-			{ slug: 'ukur', label: 'Ukur', kunci: ['pengukuran'], catatan: 'Forward: lolos vs ditolak' },
-			{ slug: 'lab', label: 'Lab', kunci: ['backtest'], catatan: 'Walk-forward, uji klaster & beda' },
-			{ slug: 'overextended', label: 'Overextended', kunci: ['bagian'], catatan: 'Pump %, OI vs puncak, funding rate' },
-			{ slug: 'eksekusi', label: 'Eksekusi', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, riwayat perintah' },
-			{ slug: 'data', label: 'Data', kunci: ['pod_llm', 'bagian'], catatan: 'Kesehatan jalur & gap' }
+			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Pair utama, risiko, posisi, sinyal & entry setup' },
+			{ slug: 'setup', label: 'Setup', kunci: ['kandidat', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Kandidat SMC + verdict per aturan + entry setup' },
+			{ slug: 'ukur', label: 'Ukur', kunci: ['pengukuran', 'backtest', 'pasar_akurasi'], catatan: 'Forward lolos vs ditolak + lab backtest + akurasi' },
+			{ slug: 'eksekusi', label: 'Eksekusi', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, ledger, overextended' }
 		]
 	},
 	{
@@ -64,13 +63,9 @@ export const AREAS: Area[] = [
 		ikon: '◎',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'verdict', label: 'Verdict', kunci: ['poly_paper', 'bagian'], catatan: 'n vs n dibutuhkan, CI vs BE' },
-			{ slug: 'arm', label: 'Arm', kunci: ['poly_paper'], catatan: 'A/B/C/D + agen' },
-			{ slug: 'agen', label: 'Agen', kunci: ['bagian'], catatan: 'Config, pelajaran, patch' },
-			{ slug: 'dataset', label: 'Dataset', kunci: ['bagian'], catatan: 'Window, label, kualitas' },
-			{ slug: 'replay', label: 'Replay', kunci: ['poly_paper'], catatan: 'Rentang beku' },
-			{ slug: 'parity', label: 'Parity', kunci: ['bagian'], catatan: 'Drift mirror vs eksekutor' },
-			{ slug: 'biaya', label: 'Biaya', kunci: ['lp_paper'], catatan: 'Fee, slippage, kapasitas' },
+			{ slug: 'verdict', label: 'Verdict', kunci: ['poly_paper', 'bagian', 'pasar_akurasi'], catatan: 'n vs n dibutuhkan, CI vs BE, parity' },
+			{ slug: 'arm', label: 'Arm', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'A/B/C/D, agen, biaya & kapasitas' },
+			{ slug: 'dataset', label: 'Dataset', kunci: ['bagian'], catatan: 'Katalog dataset + replay rentang beku' },
 			{ slug: 'live', label: 'Live', kunci: ['equity', 'ledger'], catatan: 'Arming 3-way, dana nyata' }
 		]
 	},
@@ -81,9 +76,9 @@ export const AREAS: Area[] = [
 		ikon: '▦',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'screener', label: 'Screener', kunci: ['bagian'], catatan: 'Arjum × TradingView' },
+			{ slug: 'screener', label: 'Screener', kunci: ['bagian', 'idx_akurasi', 'pasar_akurasi'], catatan: 'Arjum × TradingView + akurasi' },
 			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian'], catatan: 'Broker summary, ATS, aliran asing vs lokal' },
-			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian'], catatan: 'Beli Sore Jual Pagi + ARA Hunter & setup' }
+			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian', 'idx_akurasi', 'idx_sinyal'], catatan: 'Beli Sore Jual Pagi + ARA Hunter & sinyal ledger' }
 		]
 	},
 	{
@@ -93,8 +88,8 @@ export const AREAS: Area[] = [
 		ikon: '⇄',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian'], catatan: 'Bias, EMA, ATR, level kunci' },
-			{ slug: 'sesi', label: 'Sesi', kunci: ['bagian'], catatan: 'Asia/London/NY (WIB)' },
+			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian', 'forex_sinyal', 'pasar_akurasi'], catatan: 'Bias, EMA, ATR + sinyal & entry setup' },
+			{ slug: 'sesi', label: 'Sesi', kunci: ['bagian', 'pasar_akurasi'], catatan: 'Asia/London/NY (WIB) + akurasi' },
 			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda + dampak' },
 			{ slug: 'demo', label: 'Demo', kunci: ['bagian'], catatan: 'OANDA demo (label DEMO)' }
 		]
@@ -107,7 +102,7 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (lokal Webdock)' },
-			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian'], catatan: 'Posisi paper LP, V/L, IL vs hold' },
+			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian', 'pasar_akurasi'], catatan: 'Posisi paper LP, V/L, IL vs hold + akurasi' },
 			{ slug: 'memecoin', label: 'Memecoin', kunci: ['gmgn', 'bagian'], catatan: 'Smart money, whale, pumpfun' }
 		]
 	},

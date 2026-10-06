@@ -662,6 +662,22 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     else:
         snap["radar"] = {"tersedia": False, "error": "offline"}
 
+    # Per-market signal & accuracy engine (6 Okt): sinyal+entry setup khas tiap market,
+    # akurasi+pakem satu standar. Lokal & offline-safe — tetap tampil saat jaringan mati.
+    try:
+        from . import pasar as _pasar
+
+        snap["crypto_sinyal"] = _pasar.ringkas_crypto_sinyal(s.state_dir)
+        snap["forex_sinyal"] = _pasar.ringkas_forex_sinyal(s.state_dir)
+        snap["idx_sinyal"] = _pasar.ringkas_idx_sinyal(s.state_dir)
+        snap["pasar_akurasi"] = _pasar.ringkas_akurasi_pasar(s.state_dir)
+    except Exception as exc:  # noqa: BLE001 — satu panel jangan menjatuhkan snapshot
+        kosong = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+        snap["crypto_sinyal"] = dict(kosong)
+        snap["forex_sinyal"] = dict(kosong)
+        snap["idx_sinyal"] = dict(kosong)
+        snap["pasar_akurasi"] = dict(kosong)
+
     # kandidat & pengukuran (berkas; pengukuran butuh jaringan untuk melacak hasil)
     try:
         from . import measure

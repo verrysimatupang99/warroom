@@ -24,19 +24,27 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
     "crypto": (
         "bagian", "kandidat", "pengukuran", "backtest",
         "equity", "ledger", "risiko", "posisi", "pod_llm",
+        # sinyal+entry setup & akurasi per strategi (mesin pasar.py, 6 Okt)
+        "crypto_sinyal", "pasar_akurasi",
         # kind `signal` diterbitkan job `signal-sync` (bukan bagian snapshot).
         # UI sudah mendeklarasikan topik `signal.` untuk area ini sejak awal.
         "signal",
     ),
-    "idx": ("bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko", "idx_akurasi"),
-    "forex": ("bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko"),
+    "idx": (
+        "bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko",
+        "idx_akurasi", "idx_sinyal", "pasar_akurasi",
+    ),
+    "forex": (
+        "bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko",
+        "forex_sinyal", "pasar_akurasi",
+    ),
     "gmgn": (
         "bagian", "gmgn", "radar", "lp_paper", "lp_mark",
-        "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko",
+        "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko", "pasar_akurasi",
     ),
     "polymarket": (
         "bagian", "poly_paper", "lp_paper", "equity", "ledger",
-        "poly_posisi", "poly_ledger", "poly_equity", "poly_risiko",
+        "poly_posisi", "poly_ledger", "poly_equity", "poly_risiko", "pasar_akurasi",
     ),
 }
 
