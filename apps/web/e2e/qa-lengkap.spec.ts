@@ -30,14 +30,13 @@ const PUNYA = Boolean(AKUN.owner_user && AKUN.owner_pass && AKUN.operator_user &
 
 const AREA: { rute: string; subs: string[] }[] = [
 	{ rute: '/', subs: [] },
-	{ rute: '/crypto', subs: ['Cockpit', 'Setup', 'Ukur', 'Lab', 'Eksekusi', 'Data'] },
-	{ rute: '/idx', subs: ['Screener', 'Bandarmologi', 'Aliran', 'Watchlist'] },
+	{ rute: '/crypto', subs: ['Cockpit', 'Setup', 'Ukur', 'Eksekusi'] },
+	// 7 Okt: "Screener" → "Sinyal"; "Watchlist" → "BSJP"; "Aliran" kembali jadi tab sendiri.
+	{ rute: '/idx', subs: ['Sinyal', 'Bandarmologi', 'BSJP', 'Aliran'] },
 	{ rute: '/forex', subs: ['Struktur', 'Sesi', 'Kalender', 'Demo'] },
-	{
-		rute: '/polymarket',
-		subs: ['Verdict', 'Arm', 'Agen', 'Dataset', 'Replay', 'Parity', 'Biaya', 'Live']
-	},
-	{ rute: '/gmgn', subs: ['Radar', 'LP', 'Token', 'Bot'] },
+	// 7 Okt: fokus Setup B; arm lain dibekukan ke Arsip.
+	{ rute: '/polymarket', subs: ['Setup B', 'Riset', 'Arm Lain (Beku)', 'Live'] },
+	{ rute: '/gmgn', subs: ['Radar', 'LP', 'Memecoin'] },
 	{
 		rute: '/sistem',
 		subs: ['Layanan', 'Kesegaran', 'Biaya', 'Event', 'AI', 'Kebijakan', 'Audit']
@@ -68,6 +67,9 @@ function pantauKonsol(page: Page): string[] {
 test.describe('QA owner', () => {
 	test.skip(!PUNYA, 'butuh accounts.env (owner+operator)');
 	test.describe.configure({ mode: 'serial' });
+	// Tes ini MEMBUKTIKAN login lewat UI — jadi ia harus mulai tanpa sesi. Sesi global
+	// (dari global-setup untuk suite lain) justru membuat /masuk tersedot ke "/".
+	test.use({ storageState: { cookies: [], origins: [] } });
 
 	test('login UI owner + keliling semua rute/sub', async ({ page }) => {
 		const galat = pantauKonsol(page);
@@ -75,20 +77,28 @@ test.describe('QA owner', () => {
 		await expect(page).toHaveURL(/\/$/);
 
 		const temuan: string[] = [];
+		const jejak: string[] = [];
 		for (const area of AREA) {
 			await page.goto(area.rute);
 			await expect(page.locator('h1').first()).toBeVisible();
 			const isi = await page.locator('body').innerText();
 			if (isi.includes('GAGAL MEMUAT')) temuan.push(`${area.rute}: GAGAL MEMUAT`);
 			for (const sub of area.subs) {
-				await page.getByRole('button', { name: sub, exact: true }).click();
+				// SubNav merender `role="tab"` (bukan button) — temuan 7 Okt: tes lama
+				// mencari 'button' dan selalu nol, lalu menggantung sampai timeout.
+				const tombol = page.getByRole('tab', { name: sub, exact: true });
+				if ((await tombol.count()) === 0) {
+					jejak.push(`${area.rute} → ${sub}: TAB TIDAK ADA`);
+					continue;
+				}
+				await tombol.first().click();
 				await page.waitForTimeout(350);
 				const t = await page.locator('body').innerText();
 				if (t.includes('GAGAL MEMUAT')) temuan.push(`${area.rute} → ${sub}: GAGAL MEMUAT`);
 			}
 		}
 		fs.mkdirSync('qa-hasil', { recursive: true });
-		fs.writeFileSync('qa-hasil/temuan-owner.json', JSON.stringify({ temuan, konsol: galat }, null, 1));
+		fs.writeFileSync('qa-hasil/temuan-owner.json', JSON.stringify({ temuan, konsol: galat, jejak }, null, 1));
 		expect(temuan, `temuan: ${temuan.join('; ')}`).toEqual([]);
 		expect(galat, `error konsol: ${galat.slice(0, 5).join(' | ')}`).toEqual([]);
 	});
@@ -96,7 +106,7 @@ test.describe('QA owner', () => {
 	test('owner: tombol terapkan/rollback tampil di Kebijakan', async ({ page }) => {
 		await loginUi(page, AKUN.owner_user, AKUN.owner_pass);
 		await page.goto('/sistem');
-		await page.getByRole('button', { name: 'Kebijakan', exact: true }).click();
+		await page.getByRole('tab', { name: 'Kebijakan', exact: true }).click();
 		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible();
 		// usulan berstatus ditolak → tombol "terapkan" tidak ditampilkan (hanya untuk butuh_manusia)
 		const kartuDitolak = page.locator('[data-testid="proposal-card"]').filter({ hasText: 'DITOLAK' }).first();
@@ -120,7 +130,7 @@ test.describe('QA operator', () => {
 		const galat = pantauKonsol(page);
 		await loginUi(page, AKUN.operator_user, AKUN.operator_pass);
 		await page.goto('/sistem');
-		await page.getByRole('button', { name: 'Kebijakan', exact: true }).click();
+		await page.getByRole('tab', { name: 'Kebijakan', exact: true }).click();
 		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible();
 		// operator tidak boleh melihat tombol aksi owner
 		await expect(page.getByRole('button', { name: 'terapkan' })).toHaveCount(0);

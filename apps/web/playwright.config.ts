@@ -28,11 +28,12 @@ bacaEnvFile();
 
 export default defineConfig({
 	testDir: 'e2e',
+	// Keliling seluruh rute+sub (QA) memang panjang; 45 dtk terlalu ketat di host ini.
+	timeout: 120_000,
 	// Login SEKALI untuk seluruh suite (7 Okt): tiap tes yang login sendiri menghabiskan
 	// jatah rate-limit API (10 login/menit) dan gejalanya menyesatkan — "8 tes lewat,
 	// sisanya gagal", seperti server mati padahal limiter bekerja. Sesi dipakai ulang.
 	globalSetup: './e2e/global-setup.ts',
-	timeout: 45_000,
 	expect: { timeout: 10_000 },
 	fullyParallel: false,
 	// Satu retry: host ini juga menjalankan worker yang menulis DB tiap 30 dtk, jadi sesekali
