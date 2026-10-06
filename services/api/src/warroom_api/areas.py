@@ -28,7 +28,7 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
         # UI sudah mendeklarasikan topik `signal.` untuk area ini sejak awal.
         "signal",
     ),
-    "idx": ("bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko"),
+    "idx": ("bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko", "idx_akurasi"),
     "forex": ("bagian", "forex_posisi", "forex_ledger", "forex_equity", "forex_risiko"),
     "gmgn": (
         "bagian", "gmgn", "radar", "lp_paper", "lp_mark",

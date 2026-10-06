@@ -640,6 +640,23 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     snap["gmgn"] = _gmgn_panel()
     snap["lp_paper"] = _lp_panel()
     snap["poly_paper"] = _poly_panel()
+
+    # Akurasi IDX per setup — dari ledger mesin (impor 6 Okt, beku). Lokal, tanpa jaringan,
+    # jadi tetap tampil saat offline; jejak sumber dibaca dari berkas marker.
+    try:
+        from . import idx_akurasi as _ia
+
+        ak = _ia.ringkas_akurasi(s.state_dir / "idx_ledger.db")
+        marker_p = s.state_dir / "idx_ledger_sumber.json"
+        if marker_p.is_file():
+            try:
+                ak["impor"] = json.loads(marker_p.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                ak["impor"] = None
+        snap["idx_akurasi"] = ak
+    except Exception as exc:  # noqa: BLE001 — satu panel jangan menjatuhkan snapshot
+        snap["idx_akurasi"] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+
     if use_network:
         snap["radar"] = _radar_panel(state_dir=s.state_dir)
     else:

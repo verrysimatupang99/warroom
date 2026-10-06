@@ -203,6 +203,8 @@
 			{@const lpPaperObj = (faktaLpPaper?.value as any) ?? null}
 			{@const faktaLpMark = temukanFakta(data.facts, 'lp_mark')}
 			{@const lpMarkObj = (faktaLpMark?.value as any) ?? null}
+			{@const faktaIdxAkurasi = temukanFakta(data.facts, 'idx_akurasi')}
+			{@const idxAkurasiObj = (faktaIdxAkurasi?.value as any) ?? null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
 			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
@@ -979,6 +981,108 @@
 						</div>
 					</div>
 				{/if}
+
+				<!-- Akurasi signal per setup (6 Okt): dari ledger mesin (grader v3).
+				     Hanya baris TUNTAS masuk metrik; belum tuntas & ambigu dipisah.
+				     Pakem = kematangan sampel pada hari independen, bukan jumlah trade. -->
+				<div class="permukaan-2 rounded-card border border-line p-3">
+					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+						<div>
+							<h3 class="text-14 font-medium text-text">Akurasi Signal per Setup</h3>
+							<p class="text-11 text-text-3">
+								Ledger mesin (grader v3) — hanya baris tuntas yang masuk metrik; kematangan dinilai per hari bursa
+							</p>
+						</div>
+						<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+							{idxAkurasiObj?.tuntas ?? 0} tuntas · {idxAkurasiObj?.belum_tuntas ?? 0} jalan
+						</span>
+					</div>
+
+					{#if !idxAkurasiObj?.tersedia}
+						<div class="py-6 text-center text-text-3 text-12">
+							Ledger akurasi belum tersedia ({idxAkurasiObj?.alasan ?? 'belum diimpor'}).
+						</div>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="w-full text-left text-12 font-mono">
+								<thead class="border-b border-line text-text-3 font-normal text-11">
+									<tr>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">SETUP</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">n</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">HARI</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">WIN%</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">MEAN R</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">TOTAL R</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">PAKEM</th>
+										<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">JALAN</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-line-soft">
+									{#each Object.entries((idxAkurasiObj.per_setup ?? {}) as Record<string, any>) as [nama, s] (nama)}
+										<tr class="hover:bg-surface/50 transition-colors">
+											<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">
+												{s.setup ?? nama}
+												{#if s.grader?.length}
+													<span class="ml-1 text-10 text-text-3">{s.grader.join(',')}</span>
+												{/if}
+											</td>
+											<td class="py-1.5 px-1.5 text-right text-text-2 sm:py-2 sm:px-2.5">{s.n ?? '—'}</td>
+											<td class="py-1.5 px-1.5 text-right text-text-3 sm:py-2 sm:px-2.5">{s.n_hari ?? '—'}</td>
+											<td class="py-1.5 px-1.5 text-right sm:py-2 sm:px-2.5">
+												{s.winrate_pct == null ? '—' : `${s.winrate_pct}%`}
+											</td>
+											<td class="py-1.5 px-1.5 text-right sm:py-2 sm:px-2.5 {s.mean_r == null ? 'text-text-3' : s.mean_r > 0 ? 'text-pos font-bold' : 'text-neg font-bold'}">
+												{s.mean_r == null ? '—' : (s.mean_r > 0 ? '+' : '') + s.mean_r}
+											</td>
+											<td class="py-1.5 px-1.5 text-right text-text-2 sm:py-2 sm:px-2.5">
+												{s.total_r == null ? '—' : (s.total_r > 0 ? '+' : '') + s.total_r}
+											</td>
+											<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
+												<span
+													class="rounded border px-1.5 py-0.5 text-10 font-bold {s.pakem === 'TUNING'
+														? 'border-line text-text'
+														: s.pakem === 'PRELIMINARY'
+															? 'border-warn/40 text-warn bg-warn/10'
+															: s.pakem === 'DIRECTIONAL'
+																? 'border-accent/40 text-accent bg-accent/10'
+																: 'border-neg/40 text-neg bg-neg/10'}"
+												>
+													{s.pakem}
+												</span>
+											</td>
+											<td class="hidden py-1.5 px-1.5 text-right text-text-3 sm:table-cell sm:py-2 sm:px-2.5">{s.belum_tuntas ?? 0}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+
+						{#if idxAkurasiObj.bsjp_gabungan}
+							<p class="mt-3 rounded-card border border-line-soft bg-surface p-2.5 text-11 text-text-2">
+								<span class="font-bold text-text">BSJP gabungan:</span>
+								<span class="font-mono">
+									n={idxAkurasiObj.bsjp_gabungan.n} · hari={idxAkurasiObj.bsjp_gabungan.n_hari} ·
+									WR {idxAkurasiObj.bsjp_gabungan.winrate_pct}% ·
+									mean {idxAkurasiObj.bsjp_gabungan.mean_r > 0 ? '+' : ''}{idxAkurasiObj.bsjp_gabungan.mean_r} R ·
+									total {idxAkurasiObj.bsjp_gabungan.total_r > 0 ? '+' : ''}{idxAkurasiObj.bsjp_gabungan.total_r} R
+								</span>
+								{#if idxAkurasiObj.bsjp_gabungan.alasan?.length}
+									<span class="text-text-3">· {idxAkurasiObj.bsjp_gabungan.alasan[0]}</span>
+								{/if}
+							</p>
+						{/if}
+
+						<p class="mt-2 text-10 text-text-3">
+							Sumber: {idxAkurasiObj.impor?.sumber ?? idxAkurasiObj.sumber ?? 'ledger lokal'}
+							{#if idxAkurasiObj.impor?.diimpor_ts}
+								· diimpor {new Date(idxAkurasiObj.impor.diimpor_ts * 1000).toLocaleDateString('id-ID')}
+							{/if}
+							{#if idxAkurasiObj.impor?.sha256}
+								· sha256 {idxAkurasiObj.impor.sha256.slice(0, 12)}…
+							{/if}
+						</p>
+					{/if}
+				</div>
 
 				<!-- Tab BSJP: Beli Sore Jual Pagi -->
 				{#if sub === 'bsjp'}
