@@ -128,3 +128,72 @@ yang justru sedang kita tegakkan (kuota 6.003/hari).
 
 **Aturan yang berlaku sekarang:** kunci Arjum = **War Room saja**. Jangan pasang MCP/tool
 Hermes apa pun yang memakai kunci itu.
+
+---
+
+## TEMUAN SUSULAN (6 Okt 2026, sore) — 4 tautan yang belum punya putusan
+
+Pemilik mengirim ulang tumpukan tautan dengan arahan: **poin radar = recreate lokal**
+(sudah dikerjakan: `radar-lokal-recreate-2026-10-06.md`). Empat tautan berikut belum
+punya dokumen putusan — ini catatannya:
+
+### 4a. `lparmy.com/academy/indonesian-1-1-intro-dan-definisi` — LP Army Academy ⭐
+
+Kurikulum Meteora berbahasa Indonesia (17% progres pemilik): definisi Volume/TVL/CA,
+liquidity pool, DeFi/LP; lanjut AMM & CLMM. **Padanan langsung** area GMGN → LP War Room
+(paper LP, V/L, IL vs hold) — termasuk pelajaran "**Volume sangat penting untuk fees**"
+yang sudah kita kodekan sebagai aturan di `dexscreen.py` (**urutkan berdasarkan volume,
+bukan likuiditas**; jebakan pool BONK/USDC liq $50 juta volume $0,31/hari).
+
+**Putusan:** pakai sebagai **referensi belajar & bahan halaman Cara kerja/Bantuan**
+(tulis ulang dengan kata sendiri — jangan salin isi). Bukan sumber data, bukan sinyal:
+tidak ada angka yang bisa diuji (sama seperti kelas `youtu.be/eIbL_pQeLnY`). Tidak perlu
+dibangun apa pun di kode.
+
+### 4b. `youtu.be/8ijN8LGljKg` — "3 AI Trading Bots $1.000" (Jev, 209K views)
+
+Pola-nya **mirip War Room** (LLM memutuskan → lapisan risiko → order; sub-akun tanpa
+withdraw; key IP-bound; paper default) — tapi itu pemasaran + affiliate (Hostinger/VPS,
+kode "MAGIC10"). **Tidak ada hasil yang bisa diverifikasi**: video berakhir sebelum
+"30 hari" yang dijanjikan; satu-satunya angka biaya ($3–5/hari, 300 keputusan/menit)
+adalah biaya LLM, bukan P&L.
+
+**Putusan:** sampingkan sebagai sumber klaim. **Yang layak diserap (sudah kita punya):**
+pola sub-akun tanpa izin withdraw + key terikat IP — persis prinsip "live = izin
+eksplisit" dan pemisahan kapabilitas yang sudah berlaku di gate kita.
+
+### 4c. `x.com/meteoraidn` + `youtu.be/eIbL_pQeLnY`
+
+Kanal motivasi/afiliasi (yang kedua sudah dinilai 5 Okt: 1.460 subs + link afiliasi).
+**Putusan:** sampingkan (tanpa perubahan — sudah tercatat di dokumen LP Solana).
+
+### 4d. `instagram/cryptoforgeid` (DeGQQ1ymg7f & Dd-bUiNGj7j) — DryFlip + daftar tools
+
+- **DryFlip** (extension paper-trading memecoin, integrasi GMGN/DexScreener/Jupiter):
+  konsepnya = yang sudah kita bangun (`gmgn-paper`, `lt paper`). **Tidak perlu dipasang** —
+  kita sudah punya paper engine sendiri di jalur keputusan yang sama dengan live.
+- **Daftar tools degen** mengonfirmasi 2 yang sudah dipakai (DEX Screener, GMGN);
+  **Bubblemaps** (distribusi holder) & **RugCheck** (kontrak) = **kandidat** modul risiko
+  memecoin — belum ada di kolektor kita. Dicatat sebagai kandidat, belum dikerjakan
+  (butuh keputusan owner; beri tahu bila mau diprioritaskan).
+
+### 4e. `threads/@ihsgscreener`, `@dzulfaqar.hashim`, `@bayu.pwxyz`, `@harsky.amsyah`, `@napel.trades`, `@gamma.sniper`
+
+Konten umum (screener emiten, tanya skill security, LP "jurus meteroa", copy-trading
+`@copyfomo`, klaim "82% win rate" tanpa R:R/BE/n, MA cross scalping + funnel Google
+Drive). Tidak ada angka/metodologi yang bisa diuji → **sampingkan** (kelas yang sama
+dengan `@stravonlab`; `@napel.trades` persis pelajaran gate kita: win-rate tanpa
+break-even tidak bermakna). Satu benang yang tetap relevan: **LP di Solana + Robinhood
+chain** konsisten dengan probe LP kita (`@zonacryptocoin`, `@bayu.pwxyz`).
+
+## 5. Putusan akhir tumpukan ini
+
+| Tautan | Putusan |
+|---|---|
+| `lparmy.com` | **Referensi belajar** LP (padanan GMGN→LP); tulis ulang, jangan salin |
+| `youtu.be/8ijN8LGljKg` | Sampingkan klaim; pola keamanan sudah kita punya |
+| `x.com/meteoraidn` | Sampingkan (motivasi/afiliasi) |
+| `Bubblemaps`, `RugCheck` | **Kandidat** modul risiko memecoin — tunggu keputusan owner |
+| `DryFlip`, daftar tools | Sudah tercakup / bukan kebutuhan |
+| Radar Azure | **Bukan lagi soal tautan:** sudah direcreate lokal (commit `6c0dfd2`) |
+| Tencent (akar proyek) | Inventaris + rekomendasi: `inventaris-tencent-2026-10-06.md` |
