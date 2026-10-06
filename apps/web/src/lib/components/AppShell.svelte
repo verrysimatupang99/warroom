@@ -1,11 +1,16 @@
 <script lang="ts">
-	// Kerangka aplikasi: rail (desktop) + bottom tab (mobile), SSE dikelola di sini sekali.
+	// Kerangka aplikasi — rombak total (6 Okt 2026).
+	//
+	// Struktur BARU: TopBar tipis (sticky) → NavBar horizontal (sticky) → konten
+	// terpusat (max-width). Rail kiri 240px DIHAPUS: ia memakan lebar untuk 7 tautan
+	// dan memaksa tata letak berbeda antara Home dan halaman area. Bottom-nav mobile
+	// tetap ada (pola ponsel yang benar), tapi kini hanya < md.
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { live } from '$lib/api/live.svelte';
-	import RailNav from './RailNav.svelte';
-	import BottomNav from './BottomNav.svelte';
 	import TopBar from './TopBar.svelte';
+	import NavBar from './NavBar.svelte';
+	import BottomNav from './BottomNav.svelte';
 
 	let { children }: { children: Snippet } = $props();
 	const jalur = $derived(page.url.pathname);
@@ -18,26 +23,27 @@
 
 <a
 	href="#konten"
-	class="sr-only transisi focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-control focus:border focus:border-accent-2 focus:bg-surface focus:px-3 focus:py-2 focus:text-13"
+	class="sr-only transisi focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-control focus:border focus:border-accent focus:bg-surface focus:px-3 focus:py-2 focus:text-13"
 >
 	Lompat ke konten
 </a>
 
-<div class="min-h-screen md:grid md:grid-cols-[15rem_1fr]">
-	<aside
-		class="sticky top-0 hidden h-screen overflow-auto border-r border-line bg-bg-2 md:block"
-	>
-		<div class="border-b border-line p-3">
-			<p class="text-15 text-text font-bold font-display">War Room</p>
-			<p class="label-mikro text-text-3">multi-market · 7 area &amp; riset</p>
-		</div>
-		<RailNav {jalur} />
-	</aside>
+<TopBar />
+<NavBar />
 
-	<div class="min-w-0">
-		<TopBar {jalur} />
-		<main id="konten" class="p-3 pb-28 md:pb-8" tabindex="-1">{@render children()}</main>
-	</div>
-</div>
+<main id="konten" class="konten" tabindex="-1">{@render children()}</main>
 
 <BottomNav {jalur} />
+
+<style>
+	.konten {
+		max-width: 76rem;
+		margin: 0 auto;
+		padding: 1rem 1rem 6rem;
+	}
+	@media (min-width: 768px) {
+		.konten {
+			padding: 1.25rem 1.5rem 3rem;
+		}
+	}
+</style>

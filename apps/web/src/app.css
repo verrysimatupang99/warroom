@@ -30,55 +30,34 @@
    pernah menyentuh hex mentah — yang bisa dicek otomatis (lihat token validator).
    ============================================================================ */
 
-/* ---------- LAPIS 1: PRIMITIVE — nilai mentah, tanpa makna ---------- */
+/* ---------- LAPIS 1: PRIMITIVE — nilai mentah, tanpa makna ----------
+   Palet baru (6 Okt 2026): "Algentis gelap" — warm-dark + SATU aksen mint.
+   Sumber: algentis.xyz (panel gelapnya: --panel #0A0C0B, --panel-ink #F2F0E9,
+   --accent #34E39A). Pemilik memilih arah ini + gelap saja.
+   Setiap nilai diukur kontras AA sebelum dipakai (catatan di laporan 6 Okt). */
 @theme {
-	/* Permukaan gelap (navy berlapis) */
-	--p-ink-950: #060a10;
-	--p-ink-900: #0a1018;
-	--p-ink-800: #0e1620;
-	--p-ink-700: #121c28;
-	--p-ink-600: #182534;
-	--p-ink-500: #21364a;
-	--p-ink-400: #16222f;
-	--p-ink-350: #0b131c;
-	/* Teks */
-	--p-mist-50: #f0f8ff;
-	--p-mist-300: #a8cfe0;
-	--p-mist-500: #7fa8c0;
-	--p-slate-400: #8a9bab;
-	/* Aksen (diukur kontras AA, lihat laporan 6 Okt) */
-	--p-cyan-400: #00c8ff;
-	--p-violet-400: #9d78ff;
-	--p-gold-400: #f5c518;
-	--p-orange-400: #ffb020;
-	--p-green-400: #00e5a0;
-	--p-red-400: #ff3b5c;
-	--p-pink-400: #ff6f8a;
-	--p-ink-on: #04121a;
+	/* Permukaan warm-dark (hitam kehangatan, bukan biru) */
+	--p-ink-950: #0a0c0b;
+	--p-ink-900: #0d100e;
+	--p-ink-800: #111514;
+	--p-ink-700: #161b18;
+	--p-ink-600: #1d2420;
+	--p-ink-500: #2a312c;
+	--p-ink-400: #1f2622;
+	--p-ink-350: #0f1311;
+	/* Teks (krem, bukan putih murni) */
+	--p-mist-50: #f2f0e9;
+	--p-mist-300: #b9bfba;
+	--p-mist-500: #8c918d;
+	--p-slate-400: #9aa09c;
+	/* Aksen — mint tunggal + merah + kuning (permintaan pemilik) */
+	--p-mint-400: #34e39a;
+	--p-amber-400: #f5b83d;
+	--p-red-400: #ff6b6b;
+	--p-red-300: #d97474;
+	--p-ink-on: #0a0c0b;
 
-	/* Permukaan terang */
-	--p-paper-50: #f6f8fa;
-	--p-paper-100: #eef2f6;
-	--p-white: #ffffff;
-	--p-paper-150: #f4f7fa;
-	--p-paper-200: #e6ecf2;
-	--p-paper-line: #d3dde6;
-	--p-paper-line-soft: #e6edf3;
-	--p-char-900: #0a141c;
-	--p-char-600: #3c4a56;
-	--p-char-400: #5c6b78;
-	--p-cyan-700: #066a8c;
-	--p-violet-600: #6d4fd0;
-	--p-gold-700: #7d6100;
-	--p-green-700: #0a7a4d;
-	--p-red-700: #c0263c;
-	--p-orange-700: #8a5a00;
-	--p-violet-500: #5b3fd0;
-	--p-pink-700: #a5305c;
-	--p-char-500: #63616b;
-	--p-on-paper: #ffffff;
-
-	/* Skala tipografi (satu tangga, tanpa lompatan) */
+	/* Skala tipografi — satu tangga, tanpa lompatan */
 	--text-10: 10px;
 	--text-11: 11px;
 	--text-12: 12px;
@@ -88,6 +67,8 @@
 	--text-16: 16px;
 	--text-19: 19px;
 	--text-20: 20px;
+	--text-24: 24px;
+	--text-32: 32px;
 	--text-26: 26px;
 	--text-34: 34px;
 
@@ -97,18 +78,22 @@
 	--radius-track: 999px;
 	--ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-	/* Font: dimuat sungguhan di app.html. Space Grotesk (judul, dari ihsgscreener),
-	   Inter (teks), JetBrains Mono (SEMUA angka — membuat angka terasa dibaca
-	   sebagai data, bukan kalimat). */
+	/* Font: Space Grotesk (judul), Inter (teks), JetBrains Mono (SEMUA angka). */
 	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-/* ---------- LAPIS 2: SEMANTIC — peran; TEMA BERGANTI DI SINI ----------
-   Nama --color-* dan --bg/--surface/--text-* dipertahankan apa adanya supaya
-   tidak memutus ratusan pemakaian yang sudah ada; yang berubah hanya sumber
-   nilainya (kini menunjuk primitive). */
+/* ---------- LAPIS 2: SEMANTIC — peran; tema berganti di sini ----------
+   Nama --color-* dan --bg/--surface/--text-* dipertahankan supaya ratusan
+   pemakaian tidak putus; yang berubah hanya sumber nilainya.
+
+   PEMBAGIAN MAKNA (satu warna satu arti):
+     mint  = aksi, tautan, sorotan, untung     -> --accent & --pos
+     merah = rugi, bahaya, stop                -> --neg
+     kuning= peringatan, target, perhatian     -> --warn
+   Aksen lama (cyan/violet/emas) DIPENSIUNKAN ke mint/merah/kuning supaya tidak
+   ada enam warna bersaing di satu layar — temuan audit 6 Okt. */
 @theme {
 	--color-bg: var(--p-ink-950);
 	--color-bg-2: var(--p-ink-900);
@@ -120,14 +105,14 @@
 	--color-text: var(--p-mist-50);
 	--color-text-2: var(--p-mist-300);
 	--color-text-3: var(--p-mist-500);
-	--color-accent: var(--p-cyan-400); /* cyan: aksi, tautan, sorotan */
-	--color-accent-2: var(--p-violet-400); /* violet: sekunder, riset */
-	--color-premium: var(--p-gold-400); /* emas: premium / status uang */
-	--color-pos: var(--p-green-400);
+	--color-accent: var(--p-mint-400);
+	--color-accent-2: var(--p-mint-400);
+	--color-premium: var(--p-amber-400);
+	--color-pos: var(--p-mint-400);
 	--color-neg: var(--p-red-400);
-	--color-warn: var(--p-orange-400); /* oranye: peringatan — beda dari emas premium */
-	--color-paper: var(--p-violet-400);
-	--color-live: var(--p-pink-400);
+	--color-warn: var(--p-amber-400);
+	--color-paper: var(--p-mist-300);
+	--color-live: var(--p-red-300);
 	--color-inherit: var(--p-slate-400);
 	--color-canvas: var(--p-ink-350);
 	--color-on-accent: var(--p-ink-on);
@@ -156,50 +141,19 @@
 	--inherit: var(--color-inherit);
 	--canvas: var(--color-canvas);
 	--on-accent: var(--color-on-accent);
-	/* Permukaan track untuk bar proporsi (meter/board/prob). */
 	--grid: var(--color-surface-3);
 
-	/* ---------- LAPIS 3: COMPONENT — nilai khas komponen ---------- */
+	/* ---------- LAPIS 3: COMPONENT — nilai khas komponen ----------
+	   Kerapatan mengikuti panduan data-dense (ui-ux-pro-max): padding kartu 12px,
+	   jarak grid 8px, tinggi baris 36px, rail 240px (dulu 320px — terlalu lebar). */
 	--card-bg: var(--color-surface);
 	--card-border: var(--color-line);
 	--card-radius: var(--radius-card);
 	--card-pad: 12px;
-	--rail-w: 20rem;
+	--grid-gap: 8px;
+	--rail-w: 15rem;
 	--row-h: 36px;
 	--focus-ring: 2px solid var(--color-accent);
-}
-
-/* ---------------------------------------------------------------------------
-   TEMA TERANG — hanya LAPIS SEMANTIC yang berubah; primitive tidak disentuh.
-
-   beebots hanya gelap. War Room menyediakan tema terang karena layar di ruang
-   terang matahari membuat tema gelap sulit dibaca. Struktur, radius, tipografi,
-   dan aturan glif tetap identik. Setiap nilai diukur >= 4,5:1.
-   --------------------------------------------------------------------------- */
-html[data-tema='terang'] {
-	--color-bg: var(--p-paper-50);
-	--color-bg-2: var(--p-paper-100);
-	--color-surface: var(--p-white);
-	--color-surface-2: var(--p-paper-150);
-	--color-surface-3: var(--p-paper-200);
-	--color-line: var(--p-paper-line);
-	--color-line-soft: var(--p-paper-line-soft);
-	--color-text: var(--p-char-900);
-	--color-text-2: var(--p-char-600);
-	--color-text-3: var(--p-char-400);
-	--color-accent: var(--p-cyan-700);
-	--color-accent-2: var(--p-violet-600);
-	--color-premium: var(--p-gold-700);
-	--color-pos: var(--p-green-700);
-	--color-neg: var(--p-red-700);
-	--color-warn: var(--p-orange-700);
-	--color-paper: var(--p-violet-500);
-	--color-live: var(--p-pink-700);
-	--color-inherit: var(--p-char-500);
-	--color-canvas: var(--p-paper-100);
-	--color-on-accent: var(--p-on-paper);
-
-	color-scheme: light;
 }
 
 @layer base {
@@ -210,20 +164,17 @@ html[data-tema='terang'] {
 		margin: 0;
 		color: var(--color-text);
 		font-family: var(--font-sans);
-		font-size: 15px;
+		font-size: 14px;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;
-		/* Pendar radial dipindah dari .app ke body (6 Okt 2026): sebelumnya hanya Home
-		   yang dapat kedalaman latar, halaman area polos — padahal keduanya satu produk.
-		   Ditaruh di body, semua rute berbagi latar yang sama tanpa elemen tambahan. */
+		/* Pendar radial mint tipis di latar warm-dark — memberi kedalaman tanpa
+		   elemen tambahan. Aksen tunggal, jadi pendar pun satu warna (dulu dua:
+		   cyan + hijau; itu bagian dari "enam aksen bersaing" temuan audit 6 Okt). */
 		background:
-			radial-gradient(60rem 30rem at 15% -10%, rgba(0, 200, 255, 0.07), transparent 70%),
-			radial-gradient(50rem 30rem at 85% 110%, rgba(0, 229, 160, 0.05), transparent 70%),
+			radial-gradient(60rem 30rem at 12% -10%, rgba(52, 227, 154, 0.06), transparent 70%),
+			radial-gradient(50rem 30rem at 90% 110%, rgba(52, 227, 154, 0.03), transparent 70%),
 			var(--color-bg);
 		background-attachment: fixed;
-		transition:
-			background-color 200ms var(--ease-out),
-			color 200ms var(--ease-out);
 	}
 	h1,
 	h2,
@@ -366,504 +317,16 @@ html[data-tema='terang'] {
 	}
 }
 
+
 /* ============================================================================
-   CANGKANG — dipindah dari beebots (github.com/imikerussell/beebots, MIT),
-   styles.css. Struktur dan proporsinya sengaja dipertahankan supaya terasa
-   seperti produk yang sama; yang berubah hanya nama token (kita pakai
-   --color-* / --surface-* / --accent) dan satu penyesuaian: skala viewport
-   tunggal beebots diganti skala bertingkat supaya terbaca di 390px.
-
-   Di beebots blok-blok ini melayani 3 "bee" yang seragam. Di sini ia melayani
-   SATU kolom pasar yang isinya berganti sesuai pasar terpilih, jadi kelas
-   `.bee*` dipertahankan namanya agar CSS-nya bisa dipindah apa adanya.
+   CANGKANG LAMA DIHAPUS (6 Okt 2026).
+   Blok `.app`, `.top`, `.bee*`, `.cap-banner`, `.rail`, `.board-*`, `.toast*`,
+   dan media query-nya DULU ada di sini. Semua dihapus saat rombak total karena:
+     - `.app`/`.grid`/`.top`/`.bee*`/`.cap-banner` sudah tidak dipakai satu pun
+       komponen (dicek: 0 pemakaian), dan
+     - tata letaknya kini ditangani AppShell + NavBar + halaman (grid 2 kolom),
+       bukan kelas cangkang warisan beebots.
+   Menyisakan CSS mati membuat pembaca berikutnya mengira masih ada yang bergantung
+   padanya. Komponen yang benar-benar dipakai punya <style> sendiri atau memakai
+   token global (--card-*, --rail-w, --grid-gap).
    ============================================================================ */
-@layer components {
-	/* ---------- cangkang aplikasi ---------- */
-	.app {
-		/* Pembungkus layout Home. Padding SENGAJA tidak ada di sini: `main` di AppShell
-		   sudah memberi padding + ruang bawah untuk bottom-nav mobile. Sebelumnya Home
-		   menambah padding lagi di sini sehingga isinya bergeser ~24px dibanding halaman
-		   area — inilah "offset tidak konsisten" yang terlihat antar halaman. Latar
-		   (pendar radial) kini di body, jadi tidak diulang di sini. */
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	/* ---------- header ---------- */
-	.top {
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-		align-items: center;
-		gap: 2rem;
-	}
-	.logo {
-		font-size: 2.2rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		font-family: var(--font-display);
-	}
-	.logo span {
-		color: var(--accent);
-	}
-	.brand-sub {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-		font-size: 0.85rem;
-		margin-top: 0.15rem;
-	}
-	.mode {
-		font-weight: 700;
-		font-size: 0.72rem;
-		letter-spacing: 0.1em;
-		padding: 0.2rem 0.55rem;
-		border-radius: 999px;
-		border: 1px solid currentColor;
-	}
-	.mode-paper {
-		color: var(--paper);
-	}
-	.mode-live {
-		color: var(--live);
-	}
-	.counters {
-		display: flex;
-		justify-content: center;
-		gap: 0.6rem;
-		flex-wrap: wrap;
-	}
-	/* Kartu angka di header beebots. Dipakai untuk ringkasan lintas pasar
-	   (pasar dipantau / ada sinyal / terverifikasi / fakta basi). */
-	.counter {
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		padding: 0.55rem 0.95rem 0.6rem;
-		min-width: 8.6rem;
-	}
-	.counter-value {
-		font-size: 1.5rem;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		margin-top: 0.1rem;
-		font-family: var(--font-mono);
-		font-variant-numeric: tabular-nums;
-	}
-	.counter-sub {
-		font-size: 0.72rem;
-		color: var(--text-3);
-	}
-	.top-right {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 0.45rem;
-	}
-
-	/* Lampu rekonsiliasi / kesegaran. Bentuk + teks, bukan warna saja. */
-	.recon {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		padding: 0.45rem 0.7rem;
-		border-radius: var(--radius-control);
-		background: var(--surface);
-		border: 1px solid var(--line);
-	}
-	.recon-light {
-		width: 0.6rem;
-		height: 0.6rem;
-		border-radius: 50%;
-		flex: none;
-		background: var(--text-3);
-	}
-	.recon-ok .recon-light {
-		background: var(--color-pos);
-	}
-	.recon-bad .recon-light {
-		background: var(--color-neg);
-	}
-	.recon-text {
-		font-size: 0.78rem;
-	}
-
-	/* ---------- grid utama: kolom pasar + rail ---------- */
-	.grid {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 20rem;
-		gap: 1rem;
-		align-items: start;
-		/* `flex: 1` DIHAPUS 6 Okt 2026: itu sisa pola beebots "satu layar penuh"
-		   (body min-height 100vh + flex column + grid melar mengisi sisa tinggi).
-		   Di War Room isi halaman sering lebih pendek dari viewport, jadi flex:1
-		   membuat grid melar (mis. 959px) sementara isinya cuma ~516px — hasilnya
-		   ruang kosong besar di bawah yang terlihat seperti halaman belum termuat.
-		   Tanpa flex:1, tinggi grid = tinggi isi. */
-	}
-
-	/* ---------- kolom pasar (adaptasi .bee beebots) ---------- */
-	.bee {
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		padding: 1rem 1.1rem 1.15rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.85rem;
-		position: relative;
-		/* Aksen per pasar diperlakukan seperti warna per-bee di beebots:
-		   satu variabel yang diwariskan ke seluruh isi kolom. */
-		--bee: var(--accent);
-	}
-	.bee-head {
-		display: flex;
-		align-items: center;
-		gap: 0.9rem;
-	}
-	.bee-id {
-		flex: 1;
-		min-width: 0;
-	}
-	.bee-name {
-		font-family: var(--font-display);
-		font-size: 1.35rem;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.bee-tag {
-		font-size: 0.8rem;
-		color: var(--text-3);
-		margin-top: 0.1rem;
-	}
-	.bee-coins,
-	.bee-style {
-		color: var(--text-3);
-	}
-	.bee-rules {
-		font-size: 0.75rem;
-		color: var(--text-3);
-		margin-top: 0.35rem;
-		overflow: hidden;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-	}
-	.rank {
-		text-align: right;
-		flex: none;
-	}
-	.rank-n {
-		font-size: 0.8rem;
-		font-weight: 700;
-		color: var(--text-3);
-		font-family: var(--font-mono);
-	}
-	.rank-gap {
-		font-size: 0.72rem;
-		color: var(--text-3);
-	}
-
-	/* Nilai utama pasar — padanan "equity" beebots. */
-	.equity {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-	.equity-value {
-		font-size: 3rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 1;
-		font-family: var(--font-mono);
-		font-variant-numeric: tabular-nums;
-		color: var(--text);
-	}
-
-	/* Papan status (padanan .cap-banner beebots): dipakai untuk catatan
-	   kejujuran — "belum terverifikasi" dinyatakan sebagai keadaan, bukan
-	   sebagai catatan kaki kecil. */
-	.cap-banner {
-		padding: 0.6rem 0.85rem;
-		border-radius: var(--radius-control);
-		background: color-mix(in srgb, var(--color-warn) 14%, var(--surface-2));
-		border: 1px solid color-mix(in srgb, var(--color-warn) 55%, transparent);
-	}
-	.cap-banner.aman {
-		background: color-mix(in srgb, var(--color-pos) 12%, var(--surface-2));
-		border-color: color-mix(in srgb, var(--color-pos) 55%, transparent);
-	}
-	.cap-title {
-		font-family: var(--font-mono);
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--color-warn);
-	}
-	.cap-banner.aman .cap-title {
-		color: var(--color-pos);
-	}
-	.cap-detail {
-		font-size: 0.8rem;
-		margin-top: 0.25rem;
-		line-height: 1.5;
-	}
-
-	/* Kotak posisi/sinyal. */
-	.position {
-		background: var(--surface-2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-control);
-		padding: 0.7rem 0.85rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-	.pos-main {
-		display: flex;
-		align-items: baseline;
-		gap: 0.6rem;
-		flex-wrap: wrap;
-	}
-	.side {
-		font-weight: 800;
-		font-size: 0.95rem;
-		letter-spacing: 0.04em;
-		color: var(--text);
-	}
-	.side.long,
-	.side.beli {
-		color: var(--color-pos);
-	}
-	.side.short,
-	.side.keluar {
-		color: var(--color-neg);
-	}
-	.side.flat,
-	.side.tahan {
-		color: var(--text-3);
-	}
-	.pos-coin {
-		font-size: 1.6rem;
-		font-weight: 700;
-		font-family: var(--font-mono);
-		letter-spacing: -0.02em;
-	}
-	.pos-size,
-	.pos-upl {
-		font-size: 0.85rem;
-	}
-	.pos-px {
-		font-size: 0.75rem;
-		color: var(--text-3);
-	}
-
-	/* Meter — dipakai untuk skor dan besaran yang punya maksimum. */
-	.meters {
-		display: flex;
-		gap: 1rem;
-		flex-wrap: wrap;
-	}
-	.meter {
-		flex: 1;
-		min-width: 9rem;
-	}
-	.meter-head {
-		display: flex;
-		justify-content: space-between;
-		font-size: 0.72rem;
-		color: var(--text-3);
-		margin-bottom: 0.3rem;
-	}
-	.meter-head .num {
-		color: var(--text-2);
-	}
-
-	/* Blok "panggilan terakhir" — padanan Jev's last call. */
-	.last {
-		border-top: 1px solid var(--line);
-		padding-top: 0.7rem;
-	}
-	.last-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 0.45rem;
-	}
-	.status {
-		font-size: 0.75rem;
-		color: var(--text-3);
-		margin-top: 0.4rem;
-	}
-
-	/* Biaya & sampel. */
-	.costs {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0.6rem;
-		border-top: 1px solid var(--line);
-		padding-top: 0.7rem;
-	}
-	.costs > div {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		font-size: 0.85rem;
-	}
-
-	/* ---------- rail kanan ---------- */
-	.rail {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-	.rail-card {
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-card);
-		padding: 0.85rem 1rem;
-	}
-	.rail-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 0.6rem;
-		font-size: 0.8rem;
-	}
-	.eyebrow {
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		font-weight: 600;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--text-3);
-	}
-	.dim {
-		color: var(--text-3);
-	}
-	.good {
-		color: var(--color-pos);
-	}
-	.bad {
-		color: var(--color-neg);
-	}
-
-	/* Baris papan pilih-pasar (adaptasi leaderboard beebots). */
-	.board-row {
-		display: grid;
-		grid-template-columns: 1.2rem 1fr 4.5rem;
-		align-items: center;
-		gap: 0.55rem;
-		padding: 0.3rem 0;
-		border: 0;
-		background: none;
-		width: 100%;
-		text-align: left;
-		cursor: pointer;
-		color: var(--text);
-		border-radius: var(--radius-control);
-	}
-	.board-row:hover {
-		background: var(--surface-2);
-	}
-	.board-row[aria-current='true'] {
-		background: color-mix(in srgb, var(--bee, var(--accent)) 14%, transparent);
-	}
-	.board-rank {
-		font-size: 0.75rem;
-		color: var(--text-3);
-		font-family: var(--font-mono);
-	}
-	.board-name {
-		font-size: 0.85rem;
-		font-weight: 600;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.board-eq {
-		font-size: 0.8rem;
-		text-align: right;
-		font-family: var(--font-mono);
-		font-variant-numeric: tabular-nums;
-	}
-	.board-bar {
-		grid-column: 1 / -1;
-		height: 0.35rem;
-		background: var(--surface-3);
-		border-radius: var(--radius-track);
-		overflow: hidden;
-		margin-top: 0.15rem;
-	}
-	.board-bar span {
-		display: block;
-		height: 100%;
-		border-radius: var(--radius-track);
-		background: var(--bee, var(--accent));
-		transform-origin: left center;
-		transition: transform 600ms var(--ease-out);
-	}
-
-	/* Toast — dipindah dari beebots. */
-	.toasts {
-		position: fixed;
-		right: 1rem;
-		bottom: 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		z-index: 40;
-		max-width: 22rem;
-	}
-	.toast {
-		background: var(--surface-2);
-		border: 1px solid var(--line);
-		border-radius: var(--radius-control);
-		padding: 0.6rem 0.8rem;
-	}
-	.toast-title {
-		font-size: 0.78rem;
-		font-weight: 700;
-	}
-	.toast-body {
-		font-size: 0.78rem;
-		color: var(--text-2);
-		margin-top: 0.15rem;
-	}
-
-	/* ---------- responsif: di beebots ini satu skala viewport; di sini bertingkat ---------- */
-	@media (max-width: 1100px) {
-		.grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.rail {
-			order: -1;
-		}
-	}
-	@media (max-width: 700px) {
-		.app {
-			gap: 0.75rem;
-		}
-		.top {
-			grid-template-columns: 1fr auto;
-			gap: 0.75rem;
-		}
-		.counters {
-			grid-column: 1 / -1;
-			justify-content: flex-start;
-		}
-		.counter {
-			min-width: 7.4rem;
-		}
-		.equity-value {
-			font-size: 2.4rem;
-		}
-		.costs {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
-}

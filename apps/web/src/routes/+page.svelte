@@ -1,392 +1,496 @@
 <script lang="ts">
-	// Home — War Room, cangkang beebots (6 Okt 2026).
+	// PRATINJAU arah baru (6 Okt 2026) — "Algentis gelap".
 	//
-	// TATA LETAK: mengikuti App.tsx beebots — header dengan kartu angka, lalu grid
-	// "kolom utama + rail kanan". Bedanya satu hal, dan itu disengaja: beebots
-	// menampilkan 3 kolom karena 3 lebah memang seragam. Di sini ada 6 pasar dengan
-	// BENTUK DATA YANG BERBEDA (crypto punya entry/SL/TP, Polymarket punya win-rate vs
-	// break-even, BSJP punya tier, LP punya IL, forex belum punya sinyal). Memaksakan
-	// enam kolom seragam akan menghapus perbedaan itu — jadi dipakai SATU kolom penuh
-	// yang isinya berganti sesuai pasar terpilih, dan rail kanan jadi pemilihnya.
+	// Arah: algentis.xyz, tapi gelap (permintaan pemilik). Satu aksen MINT (#34E39A)
+	// + merah + kuning. Font dipertahankan (Space Grotesk/Inter/JetBrains Mono).
 	//
-	// ATURAN YANG TIDAK BOLEH HILANG:
-	// - Angka yang belum lewat split beku tampil sebagai klaim eksplorasi, bukan edge.
-	// - Pasar tanpa sinyal tetap tampil dengan alasannya; skor "—", bukan 0.
-	import { getAlerts, getArea, getKesegaran, getKesehatan, getSinyalPerPasar } from '$lib/api/client';
-	import type {
-		AlertsPayload,
-		AreaPayload,
-		Fakta,
-		Kesehatan,
-		KesegaranPayload,
-		SinyalPayload
-	} from '$lib/api/types';
-	import { live } from '$lib/api/live.svelte';
+	// Tujuan 3 detik: "ada peluang atau tidak". Karena itu urutannya:
+	//   1. Ticker pasar (denyut seluruh pasar, satu baris)
+	//   2. SATU verdikt besar + alasan
+	//   3. Baru rincian per pasar
+	//
+	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
+	import { getArea, getSinyalPerPasar } from '$lib/api/client';
+	import type { AreaPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
 	import { umurDetik } from '$lib/format';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { AREAS } from '$lib/nav';
-	import KolomPasar from '$lib/components/KolomPasar.svelte';
-	import SubNav from '$lib/components/SubNav.svelte';
-	import EquityCurve from '$lib/components/EquityCurve.svelte';
-	import RiskMeter from '$lib/components/RiskMeter.svelte';
-	import EventFeed from '$lib/components/EventFeed.svelte';
-	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
-	import StatisticalEdgeCard from '$lib/components/StatisticalEdgeCard.svelte';
-	import ErrorState from '$lib/components/ErrorState.svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
 
 	let sinyal = $state<SinyalPayload | null>(null);
-	let kesegaran = $state<KesegaranPayload | null>(null);
-	let sehat = $state<Kesehatan | null>(null);
-	let alerts = $state<AlertsPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
-	let polymarket = $state<AreaPayload | null>(null);
 	let galat = $state<string | null>(null);
-	let memuat = $state(true);
-
-	// URL = satu-satunya sumber kebenaran (pelajaran 5 Okt: state yang disalin bisa
-	// menyimpang dari URL). Pasar terpilih juga lewat query, supaya bisa di-bookmark
-	// dan tombol Back bekerja.
-	const areaHome = AREAS.find((a) => a.kunci === 'home')!;
-	const sub = $derived.by(() => {
-		const s = page.url.searchParams.get('sub');
-		if (s && areaHome.anak.some((a) => a.slug === s)) return s;
-		return areaHome.anak[0].slug;
-	});
-
-	function pilihSub(s: string) {
-		if (typeof window !== 'undefined') {
-			void goto(`?sub=${s}`, { keepFocus: true, noScroll: true });
-		}
-	}
 
 	async function muat() {
-		const [s, k, h, al, kr, pm] = await Promise.allSettled([
-			getSinyalPerPasar(),
-			getKesegaran(),
-			getKesehatan(),
-			getAlerts(),
-			getArea('crypto'),
-			getArea('polymarket')
-		]);
-		if (s.status === 'fulfilled') {
-			sinyal = s.value;
-			galat = null;
-		} else {
-			galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
-		}
-		if (k.status === 'fulfilled') kesegaran = k.value;
-		if (h.status === 'fulfilled') sehat = h.value;
-		if (al.status === 'fulfilled') alerts = al.value;
-		if (kr.status === 'fulfilled') kripto = kr.value;
-		if (pm.status === 'fulfilled') polymarket = pm.value;
-		memuat = false;
+		const [s, k] = await Promise.allSettled([getSinyalPerPasar(), getArea('crypto')]);
+		if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
+		else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
+		if (k.status === 'fulfilled') kripto = k.value;
 	}
-
 	$effect(() => {
 		void muat();
 		const t = setInterval(() => void muat(), 15000);
 		return () => clearInterval(t);
 	});
 
-	const cariFakta = (koleksi: Fakta[], kunci: string) =>
-		koleksi.find((f) => f.key === kunci)?.value ?? null;
-
-	const faktaKripto = $derived(kripto?.facts ?? []);
-	const faktaPoly = $derived(polymarket?.facts ?? []);
-	const dataEquity = $derived(
-		(cariFakta(faktaKripto, 'equity') as {
-			points?: { i: number; r: number }[];
-			stats?: Record<string, number>;
-		} | null) ?? null
-	);
-	const dataRisiko = $derived((cariFakta(faktaKripto, 'risiko') as Record<string, unknown>) ?? null);
-	const dataVerdict = $derived(
-		(cariFakta(faktaPoly, 'verdict') as {
-			n?: number;
-			win?: number;
-			be?: number;
-			ci?: number;
-			ci95?: [number, number];
-		} | null) ?? null
-	);
-	const dataPolyPaper = $derived(
-		(cariFakta(faktaPoly, 'poly_paper') as {
-			arms?: { nama: string; balance: number; pnl: number; wins: number; losses: number; entries: number; settled: number }[];
-		} | null) ?? null
-	);
-
-	// Papan peringkat strategi — HANYA dari angka nyata (equity crypto + arm Polymarket).
-	// Tidak ada baris contoh; kalau sumbernya kosong, kartunya menyatakan kosong.
-	const strategiNyata = $derived.by(() => {
-		type Baris = {
-			rank: number;
-			id: string;
-			nama: string;
-			venue: string;
-			tipe: 'PAPER' | 'LIVE' | 'SIGNAL-ONLY' | 'RESEARCH';
-			winrate_pct: number | null;
-			total_r: number | null;
-			expectancy_r: number | null;
-			n_samples: number;
-			max_dd_r: number | null;
-			status: 'UNGGUL' | 'PENGUJIAN' | 'FLAG_EXIT' | 'MONITOR';
-			status_detail: string;
-			friksi_est_pct?: number | null;
-		};
-		const out: Baris[] = [];
-
-		// 1) Crypto SMC — dari fakta `equity` (ledger paper nyata).
-		const s = dataEquity?.stats as Record<string, number> | undefined;
-		if (s && typeof s.trades === 'number' && s.trades > 0) {
-			const wr = typeof s.winrate_pct === 'number' ? s.winrate_pct : null;
-			out.push({
-				rank: 0,
-				id: 'crypto-smc',
-				nama: 'Crypto SMC Multi-Timeframe (paper)',
-				venue: 'MEXC / Binance Futures',
-				tipe: 'PAPER',
-				winrate_pct: wr,
-				total_r: typeof s.total_r === 'number' ? s.total_r : null,
-				expectancy_r: typeof s.expectancy_r === 'number' ? s.expectancy_r : null,
-				n_samples: s.trades,
-				max_dd_r: typeof s.max_drawdown_r === 'number' ? s.max_drawdown_r : null,
-				status: 'MONITOR',
-				status_detail: `Sampel ${s.trades} trade — belum cukup & belum split beku. Angka apa adanya dari ledger paper.`
-			});
-		}
-
-		// 2) Arm Polymarket — dari fakta `poly_paper.arms` (ledger paper nyata).
-		for (const a of dataPolyPaper?.arms ?? []) {
-			const n = (a.wins ?? 0) + (a.losses ?? 0);
-			const wr = n > 0 ? ((a.wins ?? 0) / n) * 100 : null;
-			out.push({
-				rank: 0,
-				id: `poly-${a.nama.replace(/\s+/g, '-').toLowerCase()}`,
-				nama: `Polymarket ${a.nama}`,
-				venue: 'Polymarket CLOB 5m',
-				tipe: 'PAPER',
-				winrate_pct: wr,
-				// PnL arm dalam USD, BUKAN R — jangan salah label sebagai R.
-				total_r: null,
-				expectancy_r: null,
-				n_samples: a.settled ?? n,
-				max_dd_r: null,
-				status: (a.pnl ?? 0) > 0 ? 'PENGUJIAN' : (a.pnl ?? 0) < 0 ? 'FLAG_EXIT' : 'MONITOR',
-				status_detail: `PnL ${a.pnl >= 0 ? '+' : ''}$${a.pnl.toFixed(2)} (USD, bukan R) · balance $${a.balance.toFixed(2)} · ${a.settled} settled. Edge belum lolos gate.`
-			});
-		}
-
-		// Urut: yang punya R di atas (urut R), sisanya urut winrate. Kosong di bawah.
-		out.sort((a, b) => {
-			if (a.total_r != null && b.total_r != null) return b.total_r - a.total_r;
-			if (a.total_r != null) return -1;
-			if (b.total_r != null) return 1;
-			return (b.winrate_pct ?? -1) - (a.winrate_pct ?? -1);
-		});
-		out.forEach((r, i) => (r.rank = i + 1));
-		return out;
-	});
-
 	const daftar = $derived(sinyal?.sinyal ?? []);
 
-	// Kartu angka header — semuanya dihitung dari data yang benar-benar ada.
-	const ringkas = $derived([
-		{ n: daftar.length, t: 'Pasar dipantau', sub: 'multi-market', w: 'var(--text-2)' },
-		{
-			n: daftar.filter((r) => r.ada).length,
-			t: 'Ada sinyal',
-			sub: 'dari konfigurasi terukur',
-			w: 'var(--accent)'
-		},
-		{
-			n: daftar.filter((r) => r.ada && r.terverifikasi).length,
-			t: 'Terverifikasi',
-			sub: 'lolos split beku',
-			w: 'var(--color-pos)'
-		},
-		{
-			n: (kesegaran?.facts ?? []).filter((f) => f.status === 'basi').length,
-			t: 'Fakta basi',
-			sub: 'perlu disegarkan',
-			w: 'var(--warn)'
-		}
-	]);
-
-	// Urutan rail: berskor tinggi di atas, yang kosong di bawah. Sama seperti
-	// leaderboard beebots, tapi urutannya berguna untuk memilih.
-	const pasarTerurut = $derived(
-		daftar.slice().sort((a, b) => {
-			if (a.skor == null && b.skor == null) return a.label.localeCompare(b.label);
-			if (a.skor == null) return 1;
-			if (b.skor == null) return -1;
-			return (b.skor ?? 0) - (a.skor ?? 0);
-		})
-	);
-
-	const pasarDipilih = $derived.by(() => {
-		const p = page.url.searchParams.get('pasar');
-		const ada = pasarTerurut.find((r) => r.pasar === p);
-		return ada ?? pasarTerurut[0] ?? null;
+	// Ticker: dari bagian.crypto (pair + harga + chg24h) — angka nyata, bukan contoh.
+	const ticker = $derived.by(() => {
+		const bag = (kripto?.facts.find((f) => f.key === 'bagian')?.value ?? {}) as Record<string, unknown>;
+		const rows = Array.isArray(bag.crypto) ? (bag.crypto as Record<string, unknown>[]) : [];
+		return rows.slice(0, 8).map((r) => ({
+			pair: String(r.pair ?? '—'),
+			harga: typeof r.price === 'number' ? r.price : null,
+			chg: typeof r.chg24h === 'number' ? r.chg24h : null
+		}));
 	});
 
-	function pilihPasar(p: string) {
-		if (typeof window !== 'undefined') {
-			const url = new URL(window.location.href);
-			url.searchParams.set('pasar', p);
-			void goto(url.pathname + url.search, { keepFocus: true, noScroll: true });
-		}
-	}
+	// Verdikt besar: berapa pasar punya peluang, dan berapa yang terverifikasi.
+	const peluang = $derived(daftar.filter((r) => r.ada));
+	const verdikt = $derived.by(() => {
+		if (daftar.length === 0) return { judul: 'BELUM ADA DATA', nada: 'netral', alasan: 'Sumber belum mengirim sinyal.' };
+		if (peluang.length === 0) return { judul: 'TIDAK ADA PELUANG', nada: 'diam', alasan: `Semua ${daftar.length} pasar ditolak gate. Menunggu lebih baik daripada memaksa.` };
+		const teratas = [...peluang].sort((a, b) => (b.skor ?? -1) - (a.skor ?? -1))[0];
+		return {
+			judul: `${peluang.length} PELUANG`,
+			nada: 'ada',
+			alasan: `Teratas: ${teratas.label}${teratas.subjek ? ` · ${teratas.subjek}` : ''}${teratas.skor != null ? ` · skor ${teratas.skor}/100` : ''}. Semua belum terverifikasi — lihat catatan tiap pasar.`
+		};
+	});
 
-	const peringkatTerpilih = $derived(
-		Math.max(1, pasarTerurut.findIndex((r) => r.pasar === pasarDipilih?.pasar) + 1)
-	);
+	const formatHarga = (n: number | null) =>
+		n == null ? '—' : n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 }) : n >= 1 ? n.toFixed(2) : n.toPrecision(4);
+
+	// SETUP ENTRY — ini yang menjawab "masuk di mana". Datanya SUDAH ada di
+	// `detail` tiap pasar; sebelumnya tidak ditampilkan sehingga verdikt "ADA
+	// PELUANG" tak memberi harga masuk. Angka ditampilkan apa adanya; yang tidak
+	// ada tidak dikarang (mis. forex/idx yang belum punya sinyal).
+	type Setup = { label: string; nilai: string; nada?: 'masuk' | 'stop' | 'target' | 'netral' };
+	const setupDari = (s: SinyalPasar): Setup[] => {
+		const d = (s.detail ?? {}) as Record<string, unknown>;
+		const out: Setup[] = [];
+		const num = (v: unknown) => (typeof v === 'number' ? v : null);
+		const f = (v: number | null) => (v == null ? '—' : formatHarga(v));
+
+		if (s.pasar === 'crypto') {
+			const e = num(d.entry), sl = num(d.sl), tp = num(d.tp1);
+			if (e != null) out.push({ label: 'Masuk', nilai: f(e), nada: 'masuk' });
+			if (sl != null) out.push({ label: 'Stop', nilai: f(sl), nada: 'stop' });
+			if (tp != null) out.push({ label: 'Target', nilai: f(tp), nada: 'target' });
+			// jarak stop dalam % — dari angka, bukan taksiran
+			if (e != null && sl != null) out.push({ label: 'Risiko', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
+		} else if (s.pasar === 'polymarket') {
+			const wr = num(d.winRate), be = num(d.breakEven_pct);
+			if (wr != null) out.push({ label: 'Win-rate', nilai: `${wr.toFixed(2)}%` });
+			if (be != null) out.push({ label: 'Break-even', nilai: `${be.toFixed(2)}%` });
+			const n = num(d.n), need = num(d.nNeeded);
+			if (n != null && need != null) out.push({ label: 'Sampel', nilai: `${n}/${need}` });
+		} else if (s.pasar === 'gmgn') {
+			const v = num(d.viable), p = num(d.pools);
+			if (v != null && p != null) out.push({ label: 'Pool layak', nilai: `${v}/${p}` });
+			const vl = num(d.avg_vl);
+			if (vl != null) out.push({ label: 'V/L rata²', nilai: vl.toFixed(1) });
+		} else if (s.pasar === 'lp') {
+			const fee = num(d.fee_hari), umur = num(d.umur_hari);
+			if (fee != null) out.push({ label: 'Fee/hari', nilai: `$${fee.toFixed(2)}` });
+			if (umur != null) out.push({ label: 'Umur', nilai: `${umur.toFixed(1)} hr` });
+		}
+		return out;
+	};
+	const setupTeratas = $derived.by(() => {
+		const ada = daftar.filter((r) => r.ada && r.pasar === 'crypto');
+		const t = ada[0];
+		return t ? setupDari(t) : [];
+	});
+	const subjekTeratas = $derived(daftar.find((r) => r.ada && r.pasar === 'crypto')?.subjek ?? null);
 </script>
 
-<svelte:head><title>Home — War Room</title></svelte:head>
+<svelte:head><title>War Room — satu layar, semua pasar</title></svelte:head>
 
-<div class="app">
-	<!-- ---------- header (mengikuti .top beebots) ---------- -->
-	<header class="top">
-		<div>
-			<h1 class="logo">War<span>Room</span></h1>
-			<div class="brand-sub">
-				<span class="mode mode-paper">PAPER</span>
-				<span class="dim">multi-market · 7 area &amp; riset</span>
-			</div>
-		</div>
+<div class="pratinjau">
+	<!-- 1. TICKER — denyut pasar dalam satu baris -->
+	<div class="ticker" aria-label="Harga pasar">
+		{#each ticker as t (t.pair)}
+			<span class="tick">
+				<span class="tick-pair">{t.pair.replace('USDT', '')}</span>
+				<span class="tick-harga angka">{formatHarga(t.harga)}</span>
+				{#if t.chg != null}
+					<span class="tick-chg angka" class:naik={t.chg >= 0} class:turun={t.chg < 0}>
+						{t.chg >= 0 ? '▲' : '▼'}{Math.abs(t.chg).toFixed(2)}%
+					</span>
+				{/if}
+			</span>
+		{/each}
+		{#if ticker.length === 0}
+			<span class="tick dim">ticker belum tersedia</span>
+		{/if}
+	</div>
 
-		<div class="counters">
-			{#each ringkas as r (r.t)}
-				<div class="counter">
-					<div class="eyebrow">{r.t}</div>
-					<div class="counter-value" style="color:{r.w}">{r.n}</div>
-					<div class="counter-sub">{r.sub}</div>
+	<div class="isi">
+		<header class="kepala">
+			<h1 class="merek">War<span>Room</span></h1>
+			<span class="mode">PAPER</span>
+			<span class="dim">multi-market · {daftar.length} pasar</span>
+			<span class="spacer"></span>
+			<span class="dim angka">{umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu</span>
+		</header>
+
+		<!-- 2. VERDIKT BESAR — jawaban 3 detik -->
+		<section class="verdikt {verdikt.nada}" aria-live="polite">
+			<p class="verdikt-label">Status hari ini</p>
+			<p class="verdikt-judul">{verdikt.judul}</p>
+			<p class="verdikt-alasan">{verdikt.alasan}</p>
+
+			<!-- SETUP ENTRY: jawaban "masuk di mana". Hanya bila datanya ada. -->
+			{#if setupTeratas.length}
+				<div class="setup" aria-label="Setup entry pasar teratas">
+					<span class="setup-judul">
+						Setup entry{subjekTeratas ? ` · ${subjekTeratas}` : ''}
+					</span>
+					<div class="setup-baris">
+						{#each setupTeratas as st (st.label)}
+							<div class="setup-item">
+								<span class="setup-label">{st.label}</span>
+								<span class="setup-nilai angka {st.nada ?? ''}">{st.nilai}</span>
+							</div>
+						{/each}
+					</div>
 				</div>
-			{/each}
-		</div>
-
-		<div class="top-right">
-			<div class="recon recon-{live.status === 'live' ? 'ok' : 'idle'}">
-				<span class="recon-light" aria-hidden="true"></span>
-				<div>
-					<div class="eyebrow">Aliran</div>
-					<div class="recon-text">SSE {live.status}</div>
-				</div>
-			</div>
-			{#if alerts && alerts.terbuka > 0}
-				<a class="eyebrow" href="/sistem" style="text-decoration:none">
-					⚠ {alerts.terbuka} alert butuh perhatian →
-				</a>
 			{/if}
-		</div>
-	</header>
-
-	<!-- Sub-nav Home: URL = SSOT. -->
-	<SubNav area={areaHome} aktif={sub} onpilih={pilihSub} />
-
-	{#if galat}
-		<ErrorState pesan={galat} onulang={() => void muat()} />
-	{:else if memuat}
-		<Skeleton tinggi={84} />
-		<Skeleton tinggi={220} />
-	{:else if sub === 'kinerja'}
-		<!-- ---------- tab Kinerja ---------- -->
-		<section class="grid" aria-label="Kinerja">
-			<h2 class="sr-only">Kinerja</h2>
-			<div class="kolom">
-				<StrategyLeaderboard strategies={strategiNyata} />
-				<EquityCurve points={dataEquity?.points} stats={dataEquity?.stats} />
-				<StatisticalEdgeCard verdict={dataVerdict} judul="Polymarket 5m Statistical Gate" />
-			</div>
-			<aside class="rail">
-				<RiskMeter risiko={dataRisiko} />
-				<section class="rail-card">
-					<div class="rail-head">
-						<span class="eyebrow">Kejadian real-time</span>
-						<span class="dim">{live.status}</span>
-					</div>
-					<EventFeed
-						kejadian={live.kejadian}
-						memuat={live.status === 'menyambung'}
-						galat={live.pesan}
-					/>
-				</section>
-			</aside>
 		</section>
-	{:else}
-		<!-- ---------- tab Sinyal (bawaan) ---------- -->
-		<section class="grid" aria-label="Sinyal per pasar">
-			<h2 class="sr-only">Sinyal per pasar</h2>
-			<!-- Kolom utama: SATU pasar penuh, isinya berganti sesuai pilihan rail. -->
-			<div>
-				{#if pasarDipilih}
-					<KolomPasar s={pasarDipilih} peringkat={peringkatTerpilih} />
-				{:else}
-					<p class="dim">
-						Belum ada pasar yang bisa ditampilkan. Tiap pasar menyebutkan alasannya — sengaja
-						tidak diisi angka 0 supaya tidak terlihat seperti data.
-					</p>
-				{/if}
-			</div>
 
-			<!-- Rail kanan: pemilih pasar + ringkasan. -->
-			<aside class="rail">
-				<section class="rail-card board">
-					<div class="rail-head">
-						<span class="eyebrow">Pasar</span>
-						<span class="dim">skor</span>
+		<!-- 3. RINCIAN per pasar -->
+		<section class="pasar" aria-label="Rincian per pasar">
+			{#each daftar as s (s.pasar)}
+				<article class="baris" class:kosong={!s.ada}>
+					<div class="baris-kiri">
+						<span class="nama">{s.label}</span>
+						{#if s.subjek}<span class="subjek angka">{s.subjek}</span>{/if}
 					</div>
-					{#each pasarTerurut as r, i (r.pasar)}
-						<button
-							class="board-row"
-							aria-current={r.pasar === pasarDipilih?.pasar}
-							style="--bee:{r.ada ? 'var(--accent)' : 'var(--text-3)'}"
-							onclick={() => pilihPasar(r.pasar)}
-						>
-							<span class="board-rank">{i + 1}</span>
-							<span class="board-name">{r.label}</span>
-							<span class="board-eq">{r.skor != null ? r.skor : '—'}</span>
-							<span class="board-bar">
-								<span style="transform:scaleX({r.skor != null ? r.skor / 100 : 0})"></span>
-							</span>
-						</button>
-					{/each}
-				</section>
-
-				<section class="rail-card">
-					<div class="rail-head">
-						<span class="eyebrow">Kesegaran</span>
-						<span class="dim">{sehat?.db ? 'db ok' : 'db —'}</span>
-					</div>
-					<div class="dim text-13">
-						{#if kesegaran?.checked_at}
-							Diperiksa {umurDetik(kesegaran.facts?.[0]?.age_s ?? null)} lalu
+					<div class="baris-kanan">
+						{#if s.skor != null}
+							<span class="skor angka">{s.skor}<span class="dari">/100</span></span>
 						{:else}
-							Belum ada pemeriksaan
+							<span class="skor angka kosong">—</span>
 						{/if}
+						<span class="tanda" class:ada={s.ada} class:belum={!s.ada}>
+							{s.ada ? (s.arah ?? 'ADA') : 'TIDAK ADA'}
+						</span>
 					</div>
-				</section>
-
-				{#if daftar.length > 0 && !sinyal?.ada}
-					<section class="rail-card">
-						<div class="eyebrow">Catatan</div>
-						<p class="dim text-13 mt-1.5">
-							Belum ada pasar yang menghasilkan sinyal. Tiap pasar menyebutkan alasannya —
-							sengaja tidak diisi angka 0 supaya tidak terlihat seperti data.
+					{#if s.catatan_kejujuran}
+						<p class="catatan">{s.catatan_kejujuran}</p>
+					{/if}
+					{#if setupDari(s).length}
+						<p class="setup-mini">
+							{#each setupDari(s) as st, i (st.label)}
+								{#if i > 0}<span class="pisah">·</span>{/if}<span class="setup-mini-label">{st.label}</span>
+								<span class="angka setup-mini-nilai {st.nada ?? ''}">{st.nilai}</span>
+							{/each}
 						</p>
-					</section>
-				{/if}
-			</aside>
+					{/if}
+				</article>
+			{/each}
+			{#if daftar.length === 0}
+				<p class="dim">Belum ada pasar yang bisa ditampilkan{galat ? `: ${galat}` : '.'}</p>
+			{/if}
 		</section>
-	{/if}
+
+		<p class="kaki dim">
+			Pratinjau arah baru. Warna aksen tunggal (mint), ticker di atas, verdikt besar,
+			rincian di bawah. Bandingkan dengan versi sekarang lalu bilang mana yang lebih tepat.
+		</p>
+	</div>
 </div>
 
 <style>
-	.kolom {
+	/* Arah ini SUDAH dipromosikan: nilainya kini token global di app.css
+	   (lapis primitive --p-mint-400 dst), jadi tidak ada nilai mentah di sini. */
+	.pratinjau {
+		--mint: var(--color-accent);
+		--kuning: var(--color-warn);
+		--merah: var(--color-neg);
+		--latar: var(--color-bg);
+		--permukaan: var(--color-surface);
+		--garis: var(--color-line);
+		--tinta: var(--color-text);
+		--redup: var(--color-text-3);
+	}
+
+	.ticker {
+		display: flex;
+		gap: 1.25rem;
+		align-items: center;
+		padding: 0.5rem 1rem;
+		border-bottom: 1px solid var(--garis);
+		background: var(--permukaan);
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+	.tick {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.4rem;
+		font-size: 0.75rem;
+	}
+	.tick-pair {
+		color: var(--redup);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+	}
+	.tick-harga {
+		color: var(--tinta);
+		font-weight: 600;
+	}
+	.tick-chg {
+		font-weight: 600;
+	}
+	.tick-chg.naik {
+		color: var(--mint);
+	}
+	.tick-chg.turun {
+		color: var(--merah);
+	}
+
+	.isi {
+		max-width: 62rem;
+		margin: 0 auto;
+		padding: 1.5rem 1rem 3rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.25rem;
+	}
+
+	.kepala {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.merek {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		margin: 0;
+	}
+	.merek span {
+		color: var(--mint);
+	}
+	.mode {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--mint);
+		color: var(--mint);
+		border-radius: 999px;
+	}
+	.spacer {
+		flex: 1;
+	}
+
+	/* Verdikt: satu blok besar, ini jawaban 3 detik. */
+	.verdikt {
+		border: 1px solid var(--garis);
+		border-radius: 14px;
+		padding: 1.5rem 1.5rem 1.35rem;
+		background: var(--permukaan);
+	}
+	.verdikt.ada {
+		border-color: color-mix(in srgb, var(--mint) 45%, var(--garis));
+		background: linear-gradient(180deg, color-mix(in srgb, var(--mint) 8%, var(--permukaan)), var(--permukaan));
+	}
+	.verdikt.diam {
+		border-color: var(--garis);
+	}
+	.verdikt-label {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--redup);
+		margin: 0 0 0.35rem;
+	}
+	.verdikt-judul {
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 6vw, 3.25rem);
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		margin: 0;
+	}
+	.verdikt.ada .verdikt-judul {
+		color: var(--mint);
+	}
+	.verdikt-alasan {
+		margin: 0.75rem 0 0;
+		font-size: 0.9rem;
+		color: var(--tinta);
+		opacity: 0.85;
+		max-width: 46rem;
+	}
+
+	.pasar {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--garis);
+		border-radius: 14px;
+		overflow: hidden;
+		background: var(--permukaan);
+	}
+	.baris {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.25rem 1rem;
+		padding: 0.85rem 1.1rem;
+		border-bottom: 1px solid var(--garis);
+	}
+	.baris:last-child {
+		border-bottom: 0;
+	}
+	.baris.kosong {
+		background: color-mix(in srgb, var(--latar) 55%, var(--permukaan));
+	}
+	.baris-kiri {
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+	.nama {
+		font-weight: 600;
+	}
+	.subjek {
+		font-size: 0.8rem;
+		color: var(--redup);
+	}
+	.baris-kanan {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+	}
+	.skor {
+		font-size: 1.35rem;
+		font-weight: 700;
+	}
+	.skor.kosong {
+		color: var(--redup);
+	}
+	.dari {
+		font-size: 0.7rem;
+		font-weight: 400;
+		color: var(--redup);
+	}
+	.tanda {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		padding: 0.15rem 0.5rem;
+		border-radius: 999px;
+		border: 1px solid;
+		white-space: nowrap;
+	}
+	.tanda.ada {
+		color: var(--mint);
+		border-color: color-mix(in srgb, var(--mint) 45%, transparent);
+		background: color-mix(in srgb, var(--mint) 10%, transparent);
+	}
+	.tanda.belum {
+		color: var(--redup);
+		border-color: var(--garis);
+	}
+	.catatan {
+		grid-column: 1 / -1;
+		margin: 0.35rem 0 0;
+		font-size: 0.78rem;
+		color: var(--redup);
+		line-height: 1.45;
+	}
+	.kaki {
+		font-size: 0.78rem;
+		line-height: 1.5;
+		margin: 0;
+	}
+
+	/* Setup entry — blok "masuk di mana" di dalam verdikt. */
+	.setup {
+		margin-top: 1.1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--garis);
+	}
+	.setup-judul {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--redup);
+		margin-bottom: 0.6rem;
+	}
+	.setup-baris {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.75rem;
+	}
+	.setup-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.setup-label {
+		font-size: 0.68rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--redup);
+	}
+	.setup-nilai {
+		font-size: 1.15rem;
+		font-weight: 700;
+	}
+	.setup-nilai.masuk {
+		color: var(--mint);
+	}
+	.setup-nilai.stop {
+		color: var(--merah);
+	}
+	.setup-nilai.target {
+		color: var(--kuning);
+	}
+
+	/* Setup ringkas di tiap baris pasar. */
+	.setup-mini {
+		grid-column: 1 / -1;
+		margin: 0.45rem 0 0;
+		font-size: 0.78rem;
+		color: var(--redup);
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		align-items: baseline;
+	}
+	.setup-mini-label {
+		margin-right: 0.25rem;
+	}
+	.pisah {
+		margin: 0 0.35rem;
+		opacity: 0.5;
+	}
+	.setup-mini-nilai {
+		color: var(--tinta);
+		font-weight: 600;
+	}
+	.setup-mini-nilai.masuk {
+		color: var(--mint);
+	}
+	.setup-mini-nilai.stop {
+		color: var(--merah);
+	}
+	.setup-mini-nilai.target {
+		color: var(--kuning);
+	}
+	.dim {
+		color: var(--redup);
+	}
+	.angka {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
 	}
 </style>
