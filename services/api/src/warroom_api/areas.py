@@ -67,6 +67,14 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
     "gmgn": (("ai.brief", "gmgn"),),
 }
 
+# Kind yang SELURUH faktanya milik satu area (banyak kunci, mis. `signal/AAVEUSDT`,
+# `signal/TIAUSDT`, …). Sebelumnya mustahil didaftarkan lewat AREA_EXTRA yang memakai
+# pasangan (kind, key) tetap — akibatnya daftar `AREA_KEYS["crypto"]` memuat "signal"
+# tapi fakta itu TIDAK PERNAH sampai ke UI (temuan audit 7 Okt).
+AREA_KIND: dict[str, tuple[str, ...]] = {
+    "crypto": ("signal",),
+}
+
 
 def _row(f: Fact, now: datetime) -> dict[str, Any]:
     umur = (now - f.observed_at).total_seconds()
@@ -135,6 +143,17 @@ def facts_for_area(
         f = (extra_cache[kind] if extra_cache is not None else latest_facts(s, kind)).get(key)
         if f is not None:
             extra.append(f)
+    # Seluruh fakta per kind (mis. semua `signal/<PAIR>`). Dibatasi yang TTL-nya belum
+    # lewat: kandidat 45 jam dengan TTL 6 jam BUKAN sinyal aktif — menyajikannya sama
+    # dengan berbohong soal kesegaran. Yang basi tetap bisa diperiksa lewat /freshness.
+    for kind in AREA_KIND.get(area, ()):
+        if extra_cache is not None and kind not in extra_cache:
+            extra_cache[kind] = latest_facts(s, kind)
+        semua = extra_cache[kind] if extra_cache is not None else latest_facts(s, kind)
+        for f in semua.values():
+            obs = f.observed_at if f.observed_at.tzinfo else f.observed_at.replace(tzinfo=UTC)
+            if (t - obs).total_seconds() <= f.ttl_s:
+                extra.append(f)
     return {
         "area": area,
         "dikenal": True,

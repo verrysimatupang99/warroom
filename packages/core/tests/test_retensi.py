@@ -136,3 +136,42 @@ def test_events_audit_tidak_dihapus_kecuali_diminta(db) -> None:
     with session_scope() as s:
         hasil = retensi.jalankan(s, events_hari=30, hapus_events=True)
         assert hasil["dihapus"]["events"] == 1
+
+
+# --- Alerts dalam retensi (temuan audit 7 Okt) ------------------------------------------
+# 100 alert menumpuk (75 belum di-ack sejak 2 Okt) karena retensi tidak pernah menyentuh
+# tabel ini. Aturannya: yang SUDAH di-ack dan tua → dibuang; yang BELUM di-ack → tetap
+# (itu pekerjaan manusia, bukan retensi).
+
+def test_alert_sudah_diack_tua_dibuang(db) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from warroom_core.db import Alert, session_scope
+    from warroom_core.retensi import jalankan, rencana
+
+    lama = datetime.now(UTC) - timedelta(days=40)
+    with session_scope() as s:
+        s.add(Alert(severity="info", subject="uji/lama", message="x", ack_at=lama, created_at=lama))
+        s.add(Alert(severity="info", subject="uji/baru", message="y", ack_at=datetime.now(UTC)))
+        s.add(Alert(severity="info", subject="uji/belum", message="z", ack_at=None, created_at=lama))
+    with session_scope() as s:
+        assert rencana(s, alerts_hari=14)["alerts"] == 1
+    with session_scope() as s:
+        rep = jalankan(s, alerts_hari=14)
+        assert rep["dihapus"]["alerts"] == 1
+    with session_scope() as s:
+        sisa = {a.subject for a in s.query(Alert).all()}
+    assert sisa == {"uji/baru", "uji/belum"}, "yang belum di-ack TIDAK boleh dibuang"
+
+
+def test_alert_belum_diack_selamanya_dipertahankan(db) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from warroom_core.db import Alert, session_scope
+    from warroom_core.retensi import rencana
+
+    sangat_lama = datetime.now(UTC) - timedelta(days=365)
+    with session_scope() as s:
+        s.add(Alert(severity="warning", subject="uji/lama", message="x", ack_at=None, created_at=sangat_lama))
+    with session_scope() as s:
+        assert rencana(s, alerts_hari=1)["alerts"] == 0

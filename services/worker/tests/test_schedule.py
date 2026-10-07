@@ -302,3 +302,39 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
     with session_scope() as s:
         jenis = {e.type for e in s.scalars(select(Event)).all()}
     assert {"job.ran", "snapshot.published", "freshness.checked"} <= jenis
+
+def test_freshness_diam_pada_umur_jadwal_normal(db) -> None:
+    """Temuan audit 7 Okt: fakta snapshot berumur 13 mnt dengan TTL 600 s memicu alert
+    'data basi' untuk SEMUA kunci sekaligus — padahal itu umur normal di antara dua
+    penulisan (penulis 15 mnt hanya boleh >= TTL, jadi selalu ada jeda > TTL).
+
+    Aturan baru: basi = umur > max(1,5x TTL, TTL + 15 mnt). 13 mnt < 25 mnt → DIAM.
+    """
+    with session_scope() as s:
+        s.add(_fakta("snapshot", "mode", umur_s=13 * 60, ttl_s=600))  # 13 mnt
+        s.add(_fakta("snapshot", "bagian", umur_s=30 * 60, ttl_s=1800))  # 30 mnt
+    with session_scope() as s:
+        ensure_jobs_done = schedule.ensure_jobs(s)
+        assert ensure_jobs_done
+        job = s.scalar(select(Job).where(Job.name == "freshness"))
+        status, detail = schedule.run_one(s, job)
+    assert status == "ok"
+    assert "basi=0" in detail, detail
+    with session_scope() as s:
+        assert s.query(Alert).count() == 0, "derau jadwal tidak boleh jadi alert"
+
+
+def test_freshness_tetap_nyaring_saat_jadwal_benar_benar_terlewat(db) -> None:
+    """Kebalikannya: kalau penulis benar-benar mati (umur 3 jam dengan TTL 30 mnt), alert
+    HARUS tetap muncul — grace bukan alasan untuk diam."""
+    with session_scope() as s:
+        s.add(_fakta("snapshot", "bagian", umur_s=3 * 3600, ttl_s=1800))
+    with session_scope() as s:
+        ensure_jobs_done = schedule.ensure_jobs(s)
+        assert ensure_jobs_done
+        job = s.scalar(select(Job).where(Job.name == "freshness"))
+        status, detail = schedule.run_one(s, job)
+    assert "basi=1" in detail
+    with session_scope() as s:
+        alerts = s.query(Alert).all()
+        assert len(alerts) == 1 and "grace" in alerts[0].message

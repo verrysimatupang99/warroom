@@ -311,3 +311,28 @@ def test_whitelist_per_market_lengkap() -> None:
     assert "forex_sinyal" in AREA_KEYS["forex"]
     for area in ("gmgn", "polymarket"):
         assert "pasar_akurasi" in AREA_KEYS[area]
+
+
+def test_fakta_signal_per_pair_sampai_ke_ui(client, make_user) -> None:
+    """Temuan audit 7 Okt: daftar AREA_KEYS memuat "signal", tetapi kind `signal` TIDAK
+    pernah sampai ke UI karena AREA_EXTRA hanya menerima pasangan (kind, key) tetap —
+    sedangkan kandidat punya kunci per pair (`signal/AAVEUSDT`, `signal/TIAUSDT`, …)."""
+    _, sid = make_user("baca-signal", role="viewer")
+    with session_scope() as s:
+        s.add(_fakta("signal", "AAVEUSDT", {"pair": "AAVEUSDT", "arah": "SHORT"}, umur_s=60, ttl_s=21600))
+        s.add(_fakta("signal", "TIAUSDT", {"pair": "TIAUSDT", "arah": "SHORT"}, umur_s=120, ttl_s=21600))
+    body = client.get("/api/v1/crypto", headers=_cookie(sid)).json()
+    kunci = {f["key"]: f for f in body["facts"] if f["kind"] == "signal"}
+    assert set(kunci) == {"AAVEUSDT", "TIAUSDT"}
+    assert body["data"]["AAVEUSDT"]["arah"] == "SHORT"
+
+
+def test_signal_basi_tidak_disajikan(client, make_user) -> None:
+    """Kandidat berumur 45 jam dengan TTL 6 jam BUKAN sinyal aktif — jangan disajikan."""
+    _, sid = make_user("baca-signal-basi", role="viewer")
+    with session_scope() as s:
+        s.add(_fakta("signal", "LAMAUSDT", {"pair": "LAMAUSDT"}, umur_s=45 * 3600, ttl_s=21600))
+        s.add(_fakta("signal", "BARUUSDT", {"pair": "BARUUSDT"}, umur_s=300, ttl_s=21600))
+    body = client.get("/api/v1/crypto", headers=_cookie(sid)).json()
+    kunci = {f["key"] for f in body["facts"] if f["kind"] == "signal"}
+    assert kunci == {"BARUUSDT"}, "yang basi tidak boleh tampil"

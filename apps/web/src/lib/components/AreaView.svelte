@@ -234,6 +234,16 @@
 			{@const idxSinyalObj = (faktaIdxSinyal?.value as any) ?? null}
 			{@const faktaLpVerif = temukanFakta(data.facts, 'lp_verifikasi')}
 			{@const lpVerifObj = (faktaLpVerif?.value as any) ?? null}
+			<!-- Kandidat AKTIF (kind `signal`, kunci per pair) — hanya yang belum basi;
+			     sebelumnya fakta ini tidak pernah sampai ke UI (temuan audit 7 Okt). -->
+			{@const sinyalAktif = data.facts.filter((f) => f.kind === 'signal')}
+			{@const hargaAdaptif = (v: unknown): string => {
+				const n = typeof v === 'number' ? v : Number(v);
+				if (!Number.isFinite(n)) return '—';
+				const a = Math.abs(n);
+				const dp = a >= 1 ? 2 : a >= 0.01 ? 4 : 8;
+				return n.toLocaleString('id-ID', { maximumFractionDigits: dp });
+			}}
 			{@const faktaDompet = temukanFakta(data.facts, 'dompet')}
 			{@const dompetObj = (faktaDompet?.value as any) ?? null}
 			{@const faktaBandarSkor = temukanFakta(data.facts, 'bandarmologi_skor')}
@@ -371,6 +381,51 @@
 								{/if}
 							</div>
 			{/if}
+
+							<!-- Kandidat AKTIF dari ledger gate (job signal-sync). Ini daftar "apa yang
+							     sedang hidup" — dibedakan dari tabel riwayat di bawahnya. -->
+							{#if (sub === 'setup' || sub === 'cockpit') && sinyalAktif.length}
+								<div class="permukaan-2 rounded-card border border-line p-3">
+									<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+										<div>
+											<h3 class="text-14 font-medium text-text">Kandidat Aktif (ledger gate)</h3>
+											<p class="text-11 text-text-3">
+												Hanya yang TTL-nya belum lewat — kandidat tua otomatis disembunyikan
+											</p>
+										</div>
+										<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+											{sinyalAktif.length} hidup
+										</span>
+									</div>
+									<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+										{#each sinyalAktif as f (f.key)}
+											{@const s = (f.value as any) ?? {}}
+											<div class="rounded-card border border-line bg-surface p-2.5">
+												<div class="flex items-center justify-between gap-2">
+													<span class="font-mono font-bold text-text">{s.pair ?? f.key}</span>
+													<span class="rounded px-1.5 py-0.5 text-10 font-bold border {String(s.arah).toUpperCase() === 'LONG' ? 'text-pos bg-pos/10 border-pos/20' : 'text-neg bg-neg/10 border-neg/20'}">
+														{s.arah ?? '—'}
+													</span>
+													<span class="rounded bg-canvas border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">{s.tier ?? '—'}</span>
+												</div>
+												<div class="mt-1.5 grid grid-cols-3 gap-1.5 font-mono text-11">
+													<div><div class="text-10 text-text-3">ENTRY</div><div class="text-text">{hargaAdaptif(s.entry)}</div></div>
+													<div><div class="text-10 text-text-3">SL</div><div class="text-neg">{hargaAdaptif(s.sl)}</div></div>
+													<div><div class="text-10 text-text-3">TP1</div><div class="text-pos">{hargaAdaptif(s.tp1)}</div></div>
+												</div>
+												<div class="mt-1 flex items-center justify-between text-10 text-text-3 font-mono">
+													<span>R:R {s.r_r ?? '—'} · risiko {s.risk_pct ?? '—'}%</span>
+													<span>{umurDetik(f.age_s)} lalu</span>
+												</div>
+												{#if s.aturan_gagal?.length}
+													<div class="mt-0.5 text-10 text-warn">aturan gagal: {s.aturan_gagal.join(', ')}</div>
+												{/if}
+												<div class="mt-0.5 text-10 text-text-3">{s.label ?? ''}</div>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
 
 							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC.
 							     HANYA di Setup — supaya Cockpit (ringkasan) tidak berisi tabel panjang. -->

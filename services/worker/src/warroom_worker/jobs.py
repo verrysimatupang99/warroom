@@ -74,10 +74,19 @@ def handler_freshness(s: SASession, job: Job) -> str:
         )
     ).all()
 
+    # Toleransi GRACE (temuan audit 7 Okt): tanpa ini, setiap fakta snapshot WAJIB
+    # melewati TTL-nya tepat sebelum penulisan berikutnya, karena penulisnya (refresh-snapshot
+    # 15 mnt) hanya boleh TIDAK lebih cepat dari TTL. Akibatnya "data basi 13,3 mnt > ttl 600 s"
+    # muncul untuk SEMUA kunci sekaligus — derau, bukan temuan; 32 alert palsu menumpuk.
+    # Aturan: fakta dianggap basi hanya bila umurnya melewati 1,5× TTL (jadwal benar-benar
+    # terlewat), dan toleransi minimum 15 menit supaya TTL pendek tidak berkedip.
+    grace_min_s = float(job.payload_json.get("grace_min_s", 900))
+    grace_faktor = float(job.payload_json.get("grace_faktor", 1.5))
     basi: list[Fact] = []
     for f in rows:
         umur = (now - f.observed_at).total_seconds()
-        if umur > f.ttl_s:
+        ambang = max(f.ttl_s * grace_faktor, f.ttl_s + grace_min_s)
+        if umur > ambang:
             basi.append(f)
 
     dibuat = 0
@@ -88,7 +97,11 @@ def handler_freshness(s: SASession, job: Job) -> str:
             if _alert(
                 s,
                 subject=subjek,
-                message=f"data basi: {subjek} umur {umur_mnt} mnt > ttl {f.ttl_s} s",
+                message=(
+                    f"data basi: {subjek} umur {umur_mnt} mnt — melewati ambang "
+                    f"{round(max(f.ttl_s * grace_faktor, f.ttl_s + grace_min_s) / 60)} mnt "
+                    f"(ttl {f.ttl_s} s + grace)"
+                ),
                 aksi=(
                     f"periksa sumber '{f.source}' (job yang menulisnya), lalu jalankan ulang job terkait"
                 ),
