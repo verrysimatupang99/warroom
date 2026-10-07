@@ -642,8 +642,6 @@
 								/>
 							{/if}
 
-							<!-- Aliran Keputusan: dari ledger NYATA area ini. -->
-							<DecisionFeed items={feedKeputusan} />
 						</div>
 
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols). Di tab Setup, RiskMeter disembunyikan:
@@ -663,6 +661,12 @@
 							{/if}
 
 							{@render panelPosisi(false)}
+
+							<!-- Aliran Keputusan (7 Okt): DIPINDAH dari kolom kiri ke kanan. Ledger yang
+							     sama dipakai blok posisi di atasnya, jadi dua-duanya terbaca berurutan:
+							     "apa yang berjalan" lalu "apa yang sudah terjadi". Ini juga mengisi ruang
+							     kosong kolom kanan (screenshot cockpit: kiri jauh lebih panjang). -->
+							<DecisionFeed items={feedKeputusan} />
 						</div>
 					</div>
 				{/if}
@@ -2404,14 +2408,19 @@
 								<span class="rounded px-1.5 py-0.5 text-10 font-bold border {gmgnPaperObj ? 'text-pos bg-pos/10 border-pos/20' : 'text-text-3 bg-canvas border-line'}">{gmgnPaperObj ? 'PAPER JALAN' : 'BELUM ADA DATA'}</span>
 							</div>
 							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">GMGN / FOMO</b> — pemindaian token baru + safety gate (bundler, dev hold, entrapment).</p>
-							{#if gmgnPaperObj?.isi?.run_config}
-								{@const rc = gmgnPaperObj.isi.run_config}
+							{#if gmgnPaperObj?.isi?.['run_config.json']}
+								{@const rc = gmgnPaperObj.isi['run_config.json']}
 								<p class="mt-1 text-10 text-text-3 font-mono">
 									chains: {(rc.chains ?? []).join(', ') || '—'} · min skor {rc.min_score ?? '—'} ·
 									posisi ${rc.position_usd ?? '—'} · maks {rc.max_open_positions ?? '—'} terbuka
 								</p>
 								<p class="mt-0.5 text-10 text-text-3 font-mono">
 									safety: {(rc.safety_filters ?? []).map((f: any) => f.join(' ')).join(' · ') || '—'}
+								</p>
+								<p class="mt-0.5 text-10 text-text-3 font-mono">
+									profil masuk: {rc.entry_profile ?? '—'} · sumber: {rc.entry_source ?? '—'} ·
+									TP: {(rc.tp_legs ?? []).map((t: any) => `+${t[0]}% jual ${t[1]}%`).join(' / ') || '—'} ·
+									likuiditas min ${Number(rc.min_liquidity ?? 0).toLocaleString('en-US')} · mcap min ${Number(rc.min_marketcap ?? 0).toLocaleString('en-US')}
 								</p>
 							{/if}
 						</div>
