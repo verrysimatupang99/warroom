@@ -803,6 +803,12 @@
 				<!-- Tab Overextended (dipindah dari area /overextended — datanya dari crypto) -->
 				{#if sub === 'overextended' || sub === 'eksekusi'}
 					<div class="space-y-4">
+						<!-- POSISI TERBUKA di tab Eksekusi (temuan 7 Okt: tab ini menjanjikan
+						     "posisi terbuka" di judulnya, tapi tidak menampilkannya sama sekali —
+						     padahal ada 3 posisi berjalan). Detail penuh, bukan ringkas. -->
+						{#if sub === 'eksekusi'}
+							{@render panelPosisi(false)}
+						{/if}
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>

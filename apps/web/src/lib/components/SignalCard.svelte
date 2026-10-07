@@ -1,7 +1,7 @@
 <script lang="ts">
 	// SignalCard: Kartu setup trading modern & actionable.
 	// Menyajikan pair, arah, entry, SL, TP, dan checklist aturan secara visual.
-	import { angka, waktuWIB } from '$lib/format';
+	import { waktuWIB } from '$lib/format';
 
 	interface RuleItem {
 		rule?: string;
@@ -31,6 +31,15 @@
 	let { setup }: Props = $props();
 
 	let expandRules = $state(false);
+
+	// Harga mikro (1000PEPE 0,00414775) TIDAK boleh jadi "0,00" — temuan 7 Okt dari
+	// screenshot tab Setup: seluruh kolom entry nol sehingga kartunya tampak rusak.
+	const harga = (v: number | null | undefined): string => {
+		if (v == null) return '—';
+		const a = Math.abs(v);
+		const dp = a >= 1000 ? 2 : a >= 1 ? 2 : a >= 0.01 ? 4 : 8;
+		return v.toLocaleString('id-ID', { maximumFractionDigits: dp });
+	};
 
 	const rawArah = $derived((setup.direction ?? setup.arah ?? 'LONG').toUpperCase());
 	const isLong = $derived(rawArah === 'LONG');
@@ -98,14 +107,14 @@
 		<div class="rounded bg-surface p-1.5 border border-line-soft">
 			<span class="text-10 uppercase text-text-3 block">Entry</span>
 			<span class="angka text-12 font-bold text-text">
-				{setup.entry != null ? angka(setup.entry) : '—'}
+				{harga(setup.entry)}
 			</span>
 		</div>
 
 		<div class="rounded bg-surface p-1.5 border border-line-soft">
 			<span class="text-10 uppercase text-neg block">Stop Loss</span>
 			<span class="angka text-12 font-bold text-neg">
-				{setup.sl != null ? angka(setup.sl) : '—'}
+				{harga(setup.sl)}
 			</span>
 			{#if slDistancePct}
 				<span class="text-10 text-text-3 block mt-0.5">({slDistancePct}%)</span>
@@ -115,7 +124,7 @@
 		<div class="rounded bg-surface p-1.5 border border-line-soft">
 			<span class="text-10 uppercase text-pos block">Take Profit</span>
 			<span class="angka text-12 font-bold text-pos">
-				{setup.tp1 != null ? angka(setup.tp1) : '—'}
+				{harga(setup.tp1)}
 			</span>
 		</div>
 	</div>
