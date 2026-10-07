@@ -253,6 +253,12 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
         headline = f"{label} — LOLOS SEMUA GATE"
         decision = "boleh dipromosikan ke tahap berikutnya (masih paper)"
 
+    # BRUTO masuk HEADLINE bila biaya belum tercatat — audit putaran 3: status ini tidak
+    # boleh hanya jadi catatan kaki, karena PnL bruto tidak sebanding dengan yang net.
+    biaya = _biaya_pasar(s, pasar)
+    if biaya.get("tercatat") is False and "BRUTO" not in headline:
+        headline = f"{headline} · BRUTO"
+
     return Verdict(
         pasar=pasar,
         label=label,
@@ -268,6 +274,7 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
         validated_edge=bool(sp.terverifikasi),
         promotable_edge=promotable,
         detail={
+            "biaya": _biaya_pasar(s, pasar),
             "sinyal": {
                 "subjek": sp.subjek,
                 "arah": sp.arah,
@@ -281,6 +288,29 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
             "eksekusi": {"catatan": exec_alasan},
         },
     )
+
+
+def _biaya_pasar(s: SASession, pasar: str) -> dict[str, Any]:
+    """Status biaya satu pasar: tercatat (net) atau BRUTO (belum termasuk).
+
+    Audit putaran 3 meminta PAPER/HISTORIS/BRUTO menjadi status visual UTAMA, bukan
+    catatan kaki. Angkanya dibaca dari blok `bukti` yang diterbitkan pasar.py — jadi
+    headline dan halaman bukti tidak bisa berbeda pendapat soal apakah PnL sudah net.
+    """
+    pa = _fakta(s, "pasar_akurasi") or {}
+    blok = (pa.get("pasar") or {}).get(pasar) or {}
+    if pasar == "idx":
+        blok = _fakta(s, "idx_akurasi") or {}
+    bukti = blok.get("bukti") or {}
+    return {
+        "tercatat": bukti.get("biaya_tercatat"),
+        "keterangan": bukti.get("biaya_keterangan") or "",
+        "label": (
+            "net biaya" if bukti.get("biaya_tercatat") is True
+            else "BRUTO" if bukti.get("biaya_tercatat") is False
+            else "biaya tidak diketahui"
+        ),
+    }
 
 
 def verdict_semua_pasar(s: SASession) -> list[Verdict]:

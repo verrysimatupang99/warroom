@@ -53,6 +53,21 @@
 				{/each}
 			</div>
 		</div>
+		<!-- STATUS VISUAL UTAMA (audit putaran 3, prioritas 1): PAPER/HISTORIS/BRUTO
+		     tidak boleh hanya jadi catatan kaki — ia harus terbaca sebelum angka apa pun. -->
+		<div class="mode">
+			<span class="badge badge-mode">
+				{verdict.execution_state === 'frozen' ? 'HISTORIS' : verdict.execution_state.toUpperCase()}
+			</span>
+			{#if (verdict.detail as any)?.biaya?.label}
+				<span class="badge" class:badge-bruto={(verdict.detail as any).biaya.tercatat === false}>
+					{(verdict.detail as any).biaya.label}
+				</span>
+			{/if}
+			{#if verdict.risk_state === 'breach'}
+				<span class="badge badge-breach">MODEL BREACH</span>
+			{/if}
+		</div>
 		<p class="keputusan">{verdict.decision}</p>
 		{#if verdict.blocked_reason}
 			<p class="alasan"><b>Kenapa belum bisa dipromosikan:</b> {verdict.blocked_reason}</p>
@@ -82,6 +97,16 @@
 	.headline { margin: 0; font-size: var(--text-15); letter-spacing: -0.01em; }
 	.keputusan { margin: 0.25rem 0 0; font-size: var(--text-12); color: var(--color-text-2, var(--color-text)); }
 	.alasan { margin: 0.35rem 0 0; font-size: var(--text-11); color: var(--color-text-3); }
+
+	.mode { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+	.badge {
+		font-size: var(--text-10, 0.65rem); font-weight: 800; letter-spacing: 0.06em;
+		border: 1px solid var(--color-line); border-radius: 0.35rem; padding: 0.1rem 0.4rem;
+		text-transform: uppercase;
+	}
+	.badge-mode { color: var(--color-warn); border-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 12%, transparent); }
+	.badge-bruto { color: var(--color-warn); border-color: var(--color-warn); }
+	.badge-breach { color: var(--color-neg); border-color: var(--color-neg); background: color-mix(in srgb, var(--color-neg) 12%, transparent); }
 
 	.state { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 	.chip {
