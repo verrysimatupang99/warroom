@@ -14,7 +14,11 @@
 # tanpa retry, dan tanpa rollback — bad build dilaporkan "web ok".
 set -euo pipefail
 
-WEB_DIR="$(dirname "$0")/../apps/web"
+# Jalur absolut skrip ops — WAJIB dihitung SEBELUM `cd`, karena setelah pindah ke apps/web
+# jalur relatif "ops/..." tidak lagi menunjuk ke tempat yang benar (bug nyata 7 Okt:
+# csp-enforce.sh selalu "gagal dipasang" saat dipanggil dari deploy, padahal jalan manual).
+OPS_DIR="$(cd "$(dirname "$0")" && pwd)"
+WEB_DIR="$OPS_DIR/../apps/web"
 cd "$WEB_DIR"
 
 TIMEOUT_S="${WARROOM_DEPLOY_TIMEOUT:-40}"
@@ -60,7 +64,7 @@ if (( lolos == 1 )); then
 	# Dilakukan setelah health gate supaya HTML yang di-hash memang yang tersaji; kalau
 	# gagal, web tetap hidup dengan CSP report-only dari nginx (fail-safe, bukan fail-open
 	# tanpa kabar — pesannya dicetak).
-	if ! bash "$(dirname "$0")/csp-enforce.sh"; then
+	if ! bash "$OPS_DIR/csp-enforce.sh"; then
 		echo "PERINGATAN: CSP enforce gagal dipasang — masih report-only"
 	fi
 	echo "web ok (build + restart + aset build baru tersaji)"

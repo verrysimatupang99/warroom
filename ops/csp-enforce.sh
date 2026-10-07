@@ -18,7 +18,15 @@ set -euo pipefail
 
 BASE="${WARROOM_CSP_BASE:-http://127.0.0.1:3100}"
 SNIPPET="/etc/nginx/snippets/warroom-csp.conf"
-HTML="$(curl -sf --max-time 5 "$BASE/" || true)"
+# Ambil HTML dengan percobaan ulang: saat dipanggil dari deploy, proses node baru saja
+# restart dan sesekali belum siap pada percobaan pertama (penyebab "gagal dipasang" yang
+# tidak perlu — kejadian 7 Okt).
+HTML=""
+for _ in 1 2 3 4 5; do
+	HTML="$(curl -sf --max-time 5 "$BASE/" || true)"
+	[[ -n "$HTML" ]] && break
+	sleep 2
+done
 
 if [[ -z "$HTML" ]]; then
 	echo "CSP: tidak bisa mengambil HTML dari $BASE — enforce TIDAK dipasang (biarkan report-only)"

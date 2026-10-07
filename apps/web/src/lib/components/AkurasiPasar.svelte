@@ -28,6 +28,10 @@
 		subjudul?: string;
 		/** Nama pasar untuk label populasi (opsional). */
 		market?: string;
+		/** Mode ringkas: hanya 4 kolom (setup · tuntas · ekspektasi · pakem).
+		 *  Dipakai tab Ukur — pembaruan halus 7 Okt: 9 kolom terlalu padat untuk
+		 *  pertanyaan yang sebenarnya cuma "strategi mana yang layak dipercaya?" */
+		ringkas?: boolean;
 		data?: {
 			tersedia?: boolean;
 			alasan?: string | null;
@@ -40,7 +44,7 @@
 		} | null;
 	}
 
-	let { judul, subjudul, data, market }: Props = $props();
+	let { judul, subjudul, data, market, ringkas = false }: Props = $props();
 
 	const baris = $derived(Object.entries(data?.per_setup ?? {}).map(([k, v]) => ({ kunci: k, ...v })));
 
@@ -102,12 +106,16 @@
 						     n=16 untuk "semua sinyal dinilai", di sini n=12 untuk "trade TUNTAS").
 						     Kolom ini SELALU trade tuntas dari ledger; namanya ditulis utuh. -->
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right" title="Jumlah trade TUNTAS (sudah ditutup) di ledger — bukan jumlah sinyal, bukan kandidat aktif">Tuntas<br /><span class="text-9 normal-case">(n)</span></th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Hari</th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Menang%</th>
-						<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">CI90</th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Mean R</th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Total R</th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">PnL</th>
+						{#if !ringkas}
+							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Hari</th>
+							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Menang%</th>
+							<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">CI90</th>
+						{/if}
+						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right" title="Rata-rata hasil per trade (ekspektasi)">Ekspektasi R</th>
+						{#if !ringkas}
+							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Total R</th>
+							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">PnL</th>
+						{/if}
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Pakem</th>
 					</tr>
 				</thead>
@@ -116,22 +124,26 @@
 						<tr class="hover:bg-surface/50 transition-colors">
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{s.nama ?? s.kunci}</td>
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">{s.n ?? '—'}</td>
-							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">{s.n_hari ?? '—'}</td>
-							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {s.winrate_pct != null && s.winrate_pct >= 50 ? 'text-pos' : 'text-text-2'}">
-								{s.winrate_pct != null ? `${angka(s.winrate_pct, 2)}%` : '—'}
-							</td>
-							<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right text-text-3">
-								{s.ci_winrate && s.n ? `${(s.ci_winrate[0] * 100).toFixed(0)}–${(s.ci_winrate[1] * 100).toFixed(0)}%` : '—'}
-							</td>
+							{#if !ringkas}
+								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">{s.n_hari ?? '—'}</td>
+								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {s.winrate_pct != null && s.winrate_pct >= 50 ? 'text-pos' : 'text-text-2'}">
+									{s.winrate_pct != null ? `${angka(s.winrate_pct, 2)}%` : '—'}
+								</td>
+								<td class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right text-text-3">
+									{s.ci_winrate && s.n ? `${(s.ci_winrate[0] * 100).toFixed(0)}–${(s.ci_winrate[1] * 100).toFixed(0)}%` : '—'}
+								</td>
+							{/if}
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {s.mean_r != null && s.mean_r > 0 ? 'text-pos' : s.mean_r != null && s.mean_r < 0 ? 'text-neg' : 'text-text-3'}">
 								{s.mean_r != null ? `${s.mean_r > 0 ? '+' : ''}${angka(s.mean_r)}` : '—'}
 							</td>
-							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {s.total_r != null && s.total_r > 0 ? 'text-pos' : s.total_r != null && s.total_r < 0 ? 'text-neg' : 'text-text-3'}">
-								{s.total_r != null ? `${s.total_r > 0 ? '+' : ''}${angka(s.total_r)}` : '—'}
-							</td>
-							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
-								{rupiah(s.total_pnl_usd ?? s.pnl_usd) === '—' ? '—' : `${rupiah(s.total_pnl_usd ?? s.pnl_usd)} USD`}
-							</td>
+							{#if !ringkas}
+								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right {s.total_r != null && s.total_r > 0 ? 'text-pos' : s.total_r != null && s.total_r < 0 ? 'text-neg' : 'text-text-3'}">
+									{s.total_r != null ? `${s.total_r > 0 ? '+' : ''}${angka(s.total_r)}` : '—'}
+								</td>
+								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
+									{rupiah(s.total_pnl_usd ?? s.pnl_usd) === '—' ? '—' : `${rupiah(s.total_pnl_usd ?? s.pnl_usd)} USD`}
+								</td>
+							{/if}
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
 								<span class="rounded border px-1.5 py-0.5 text-10 font-bold {kelasPakem(s.tingkat)}">{s.tingkat ?? '—'}</span>
 							</td>

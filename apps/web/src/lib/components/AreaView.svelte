@@ -664,6 +664,7 @@
 							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
 							{#if sub === 'setup' || sub === 'ukur'}
 								<AkurasiPasar
+									ringkas={sub === 'ukur'}
 									market="crypto · trade tuntas"
 									judul="Akurasi per Strategi (Crypto)"
 									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
@@ -684,6 +685,26 @@
 
 				{#if sub === 'ukur'}
 					<div class="space-y-4">
+						<!-- RINGKASAN SATU BARIS (pembaruan halus 7 Okt, arah desain "Serene Capital").
+						     Tujuannya sama dengan keluhan pemilik "gw ga ngeh": baca satu kalimat dulu,
+						     baru masuk angka. Kalimatnya DITURUNKAN dari data pengukuran yang ada —
+						     tidak ada angka baru yang dikarang di UI. -->
+						{#if pengukuranObj}
+							{@const pl = pengukuranObj.lolos ?? {}}
+							{@const pd = pengukuranObj.ditolak_bayangan ?? {}}
+							{@const delta = angka((pl.expectancy_r ?? 0) - (pd.expectancy_r ?? 0))}
+							<div class="rounded-card border border-line bg-surface px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+								<span class="text-13 text-text-2">
+									Dari <b class="angka">{pengukuranObj.dinilai ?? 0}</b> kandidat yang dinilai,
+									<b class="angka text-pos">{pl.n ?? 0}</b> lolos gate dan
+									<b class="angka text-neg">{pd.n ?? 0}</b> ditolak.
+									Yang lolos menghasilkan <b class="angka text-pos">+{angka(pl.total_r ?? 0)}R</b>,
+									yang ditolak <b class="angka text-neg">{angka(pd.total_r ?? 0)}R</b>
+									— selisih ekspektasi <b class="angka">{delta}R per trade</b>.
+								</span>
+							</div>
+						{/if}
+
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
@@ -704,24 +725,27 @@
 										</span>
 										<span class="font-mono text-11 text-text-2">{pengukuranObj?.lolos?.n ?? 0} sampel</span>
 									</div>
-									<div class="grid grid-cols-2 gap-2 text-11 font-mono">
+									<!-- Tiga angka BESAR (pembaruan halus 7 Okt): yang dibutuhkan mata lebih dulu,
+									     sisanya jadi catatan kecil satu baris. Dulu keempat angka sama besar
+									     sehingga tidak ada yang menonjol. -->
+									<div class="grid grid-cols-3 gap-3">
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Total Return</span>
-											<span class="text-14 font-bold text-pos">+{angka(pengukuranObj?.lolos?.total_r ?? 0)} R</span>
+											<div class="text-10 uppercase text-text-3">Trade</div>
+											<div class="angka text-24 font-bold text-text">{pengukuranObj?.lolos?.n ?? 0}</div>
 										</div>
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Win Rate</span>
-											<span class="text-14 font-bold text-text">{angka(pengukuranObj?.lolos?.winrate ?? 0)}%</span>
+											<div class="text-10 uppercase text-text-3">Total R</div>
+											<div class="angka text-24 font-bold text-pos">+{angka(pengukuranObj?.lolos?.total_r ?? 0)}</div>
 										</div>
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Expectancy</span>
-											<span class="text-12 font-bold text-pos">+{angka(pengukuranObj?.lolos?.expectancy_r ?? 0)} R/trade</span>
-										</div>
-										<div>
-											<span class="text-text-3 block text-10 uppercase">Distribusi</span>
-											<span class="text-11 text-text-2">{pengukuranObj?.lolos?.tp1 ?? 0} TP1 / {pengukuranObj?.lolos?.sl ?? 0} SL</span>
+											<div class="text-10 uppercase text-text-3">Win rate</div>
+											<div class="angka text-24 font-bold text-text">{angka(pengukuranObj?.lolos?.winrate ?? 0)}%</div>
 										</div>
 									</div>
+									<p class="text-10 text-text-3">
+										ekspektasi <b class="text-pos">+{angka(pengukuranObj?.lolos?.expectancy_r ?? 0)} R/trade</b>
+										· {pengukuranObj?.lolos?.tp1 ?? 0} TP1 / {pengukuranObj?.lolos?.sl ?? 0} SL
+									</p>
 								</div>
 
 								<!-- Setup Ditolak Gate (Shadow) -->
@@ -732,24 +756,24 @@
 										</span>
 										<span class="font-mono text-11 text-text-2">{pengukuranObj?.ditolak_bayangan?.n ?? 0} sampel</span>
 									</div>
-									<div class="grid grid-cols-2 gap-2 text-11 font-mono">
+									<div class="grid grid-cols-3 gap-3">
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Total Return</span>
-											<span class="text-14 font-bold text-neg">{angka(pengukuranObj?.ditolak_bayangan?.total_r ?? 0)} R</span>
+											<div class="text-10 uppercase text-text-3">Trade</div>
+											<div class="angka text-24 font-bold text-text">{pengukuranObj?.ditolak_bayangan?.n ?? 0}</div>
 										</div>
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Win Rate</span>
-											<span class="text-14 font-bold text-text">{angka(pengukuranObj?.ditolak_bayangan?.winrate ?? 0)}%</span>
+											<div class="text-10 uppercase text-text-3">Total R</div>
+											<div class="angka text-24 font-bold text-neg">{angka(pengukuranObj?.ditolak_bayangan?.total_r ?? 0)}</div>
 										</div>
 										<div>
-											<span class="text-text-3 block text-10 uppercase">Expectancy</span>
-											<span class="text-12 font-bold text-neg">{angka(pengukuranObj?.ditolak_bayangan?.expectancy_r ?? 0)} R/trade</span>
-										</div>
-										<div>
-											<span class="text-text-3 block text-10 uppercase">Distribusi</span>
-											<span class="text-11 text-text-2">{pengukuranObj?.ditolak_bayangan?.tp1 ?? 0} TP1 / {pengukuranObj?.ditolak_bayangan?.sl ?? 0} SL</span>
+											<div class="text-10 uppercase text-text-3">Win rate</div>
+											<div class="angka text-24 font-bold text-text">{angka(pengukuranObj?.ditolak_bayangan?.winrate ?? 0)}%</div>
 										</div>
 									</div>
+									<p class="text-10 text-text-3">
+										ekspektasi <b class="text-neg">{angka(pengukuranObj?.ditolak_bayangan?.expectancy_r ?? 0)} R/trade</b>
+										· {pengukuranObj?.ditolak_bayangan?.tp1 ?? 0} TP1 / {pengukuranObj?.ditolak_bayangan?.sl ?? 0} SL
+									</p>
 								</div>
 							</div>
 
@@ -761,6 +785,19 @@
 								</p>
 							</div>
 						</div>
+
+						<!-- Akurasi per strategi dalam mode RINGKAS (pembaruan halus 7 Okt).
+						     Dulu tabel 9 kolom ini tidak pernah muncul di tab Ukur karena kondisi
+						     `sub === 'ukur'` di pemanggilnya berada di dalam grid yang hanya dirender
+						     untuk cockpit/setup — kode mati. Sekarang benar-benar tampil di sini,
+						     dengan 4 kolom: setup · tuntas · ekspektasi · pakem. -->
+						<AkurasiPasar
+							ringkas
+							market="crypto · trade tuntas"
+							judul="Akurasi per Strategi"
+							subjudul="Dari ledger nyata — hanya trade yang sudah tuntas"
+							data={akurasiCrypto}
+						/>
 					</div>
 				{/if}
 
