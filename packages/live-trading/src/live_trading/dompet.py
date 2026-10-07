@@ -492,11 +492,18 @@ def _dompet_polymarket(state_dir: Path, kurs: float | None) -> dict[str, Any]:
 
 
 def _dompet_gmgn(state_dir: Path, kurs: float | None) -> dict[str, Any]:
-    """GMGN/LP: dompet dari mark posisi LP (pnl_usd terukur), diskalakan ke Rp 10 juta.
+    """GMGN/LP: dompet dari posisi LP TERBUKA (mark terakhir per posisi), diskalakan ke Rp 10 juta.
 
-    Catatan kejujuran: jumlah posisi di ledger masih sedikit (5) dan semuanya satu era —
-    saldo ini menggambarkan modal yang berputar, bukan portofolio yang terdiversifikasi.
+    KOREKSI 7 Okt (temuan audit): `lp_ledger.jsonl` adalah ledger **mark** — satu baris
+    per penilaian. Satu posisi UBI menghasilkan 22 baris mark (naik lalu turun mengikuti
+    harga). Versi sebelumnya menjumlahkan SEMUA baris sebagai posisi terpisah:
+    modal terhitung $660 (22 × $30) padahal nyata $30, dan PnL dijumlahkan dari
+    mark-mark di waktu berbeda → angka tak bermakna (dan menakutkan: −3,17%).
+
+    Sekarang: kelompokkan per posisi (symbol + harga_masuk + notional), ambil mark
+    TERAKHIR per grup; itu nilai posisi saat ini. Jumlah posisi = jumlah grup.
     """
+
     p = state_dir / "lp_ledger.jsonl"
     if not p.is_file():
         return {"market": "gmgn", "tersedia": False, "alasan": "lp_ledger.jsonl belum ada"}
@@ -506,11 +513,51 @@ def _dompet_gmgn(state_dir: Path, kurs: float | None) -> dict[str, Any]:
         return {"market": "gmgn", "tersedia": False, "alasan": "belum ada posisi LP dinilai"}
     if kurs is None:
         return {"market": "gmgn", "tersedia": False, "alasan": "kurs USD→IDR tidak tersedia"}
+
+    # Pos = satu posisi LP. Mark terbaru per pos = nilainya SEKARANG.
+    def _kunci(b: dict[str, Any]) -> tuple:
+        return (b.get("symbol"), b.get("harga_masuk"), b.get("notional_usd"))
+
+    def _waktu(b: dict[str, Any]) -> float:
+        """Waktu mark sebagai ANGKA (untuk perbandingan).
+
+        lp_ledger memakai `ts` epoch (float) — membandingkannya sebagai string membuat
+        "999.0" > "1000.0" dan memilih mark yang salah. ISO juga diterima (di-parse).
+        """
+        mentah = b.get("dinilai_pada") or b.get("dicatat") or b.get("ts")
+        if isinstance(mentah, (int, float)):
+            return float(mentah)
+        if isinstance(mentah, str) and mentah:
+            try:
+                from datetime import datetime as _dt
+
+                return _dt.fromisoformat(mentah.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                return 0.0
+        return 0.0
+
+    grup: dict[tuple, dict[str, Any]] = {}
+    for b in dinilai:
+        k = _kunci(b)
+        if k not in grup or _waktu(b) >= _waktu(grup[k]):
+            grup[k] = b
+    posisi: list[dict[str, Any]] = list(grup.values())
+
     unit = WALLET_IDR / kurs
-    modal_ledger = sum(float(b.get("notional_usd") or 0) for b in dinilai)
-    pnl_ledger = sum(float(b.get("pnl_usd") or 0) for b in dinilai)
+    modal_ledger = sum(float(b.get("notional_usd") or 0) for b in posisi)
+    pnl_ledger = sum(float(b.get("pnl_usd") or 0) for b in posisi)
     if modal_ledger <= 0:
         return {"market": "gmgn", "tersedia": False, "alasan": "notional LP tidak tercatat"}
+    pratinjau = [
+        {
+            "i": i,
+            "pair": b.get("symbol"),
+            "pnl_usd": round(float(b.get("pnl_usd") or 0) * unit / modal_ledger, 2),
+            "pnl_pct": b.get("pnl_pct"),
+            "mark_terakhir": _waktu(b),
+        }
+        for i, b in enumerate(posisi, 1)
+    ]
     pnl = unit * (pnl_ledger / modal_ledger)
     return {
         "market": "gmgn",
@@ -524,21 +571,15 @@ def _dompet_gmgn(state_dir: Path, kurs: float | None) -> dict[str, Any]:
         "pnl_usd": round(pnl, 2),
         "pnl_idr": round(pnl * kurs, 0),
         "pnl_pct": round(100 * pnl_ledger / modal_ledger, 3),
-        "trade": len(dinilai),
-        "titik": [
-            {
-                "i": i,
-                "pair": b.get("symbol"),
-                "pnl_usd": round(float(b.get("pnl_usd") or 0) * unit / modal_ledger, 2),
-                "pnl_pct": b.get("pnl_pct"),
-            }
-            for i, b in enumerate(dinilai, 1)
-        ],
+        "trade": len(posisi),
+        "mark_baris": len(dinilai),
+        "titik": pratinjau,
         "biaya_tercatat": True,
         "sumber": "state/lp_ledger.jsonl (mark lokal: IL + fee terkumpul)",
         "catatan": [
             "Pos-fee: fee terkumpul dikurangi IL (perhitungan mark lokal, bukan rekonsiliasi on-chain).",
-            f"Modal berputar di ledger: {modal_ledger:.2f} USD pada {len(dinilai)} posisi — "
-            "diskalakan proporsional ke Rp 10 juta.",
+            f"Modal berputar: {modal_ledger:.2f} USD pada {len(posisi)} posisi "
+            f"({len(dinilai)} baris mark — audit 7 Okt: satu posisi bisa punya puluhan mark; "
+            "yang dipakai hanya mark TERAKHIR per posisi, bukan penjumlahan seluruh baris).",
         ],
     }

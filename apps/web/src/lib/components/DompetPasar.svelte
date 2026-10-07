@@ -51,6 +51,7 @@
 		pnl_usd?: number | null;
 		pnl_pct?: number | null;
 		trade?: number;
+		mark_baris?: number | null;
 		titik?: TitikDompet[];
 		per_setup?: Record<string, SetupDompet>;
 		biaya_tercatat?: boolean;
@@ -137,8 +138,11 @@
 				</div>
 			</div>
 			<div class="rounded bg-surface p-2.5 border border-line">
-				<div class="text-10 text-text-3">TRADE TUNTAS</div>
+				<div class="text-10 text-text-3">{d.mark_baris ? 'POSISI LP' : 'TRADE TUNTAS'}</div>
 				<div class="text-13 font-bold text-text">{d.trade ?? 0}</div>
+				{#if d.mark_baris}
+					<div class="text-10 text-text-3">{d.mark_baris} baris mark (dinilai berkala)</div>
+				{/if}
 			</div>
 		</div>
 

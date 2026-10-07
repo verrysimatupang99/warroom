@@ -46,14 +46,31 @@ setelah posisi ditutup. Terverifikasi: dari 6 kandidat yang dulu akan dibuka ber
 ### 3b. Posisi menggantung (kemarin, sudah diperbaiki)
 OP/LIT "still_open" padahal SL → `rekonsiliasi.py` + job `rekonsiliasi-crypto` (jam-an).
 
+### 3c. GMGN/LP: 22 mark dihitung sebagai 22 posisi (BUG, diperbaiki)
+`lp_ledger.jsonl` adalah ledger **mark** — satu baris per penilaian. Satu posisi UBI
+menghasilkan 22 baris (harga naik-turun). Dompet menjumlahkan semuanya:
+- modal terhitung **$660** (22 × $30) padahal nyata **$30**;
+- PnL = jumlah mark dari waktu berbeda → angka tak bermakna.
+
+Perbaikan: kelompokkan per posisi (symbol+harga_masuk+notional), ambil **mark terakhir**
+sebagai nilai sekarang. Hasil: 1 posisi, PnL −3,512% (dari mark terakhir), dan UI
+menampilkan "1 posisi · 22 baris mark (dinilai berkala)" supaya tidak membingungkan.
+Catatan teknis: `ts` di ledger itu epoch (float) — membandingkan sebagai string bisa
+memilih mark yang salah ("999" > "1000"); sekarang dibandingkan sebagai angka.
+
+### 3d. EURUSD ganda-menit di jurnal Tencent (BUKAN bug kita)
+Dua baris EURUSD 2026-09-23T17:00 = dua ZONA berbeda (bearish FVG & bullish iFVG) yang
+dipantau bersamaan, keduanya CANCELLED. Sumbernya di Tencent (kita baca-saja) → dicatat,
+tidak diubah.
+
 ## 4. Angka setelah koreksi — konsisten
 
 | Market | PnL dompet Rp 10 jt | Trade |
 |---|---|---|
-| Crypto | **+0,844%** | 11 |
+| Crypto | **+1,844%** | 12 |
 | Polymarket (arm B) | +2,631% | 179 |
 | Forex | −1,000% | 4 |
-| GMGN/LP | −3,166% | 22 |
+| GMGN/LP | −3,512% (1 posisi, mark terakhir) | 1 |
 | IDX | −112,102% | 278 |
 
 Ledger crypto: tidak ada lagi pair dengan >1 baris eksekusi berulang (LINK_USDT 2 baris

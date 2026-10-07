@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 from live_trading import dompet as dp
+from live_trading import dompet
 
 
 def _ledger(state: Path, nama: str, baris: list[dict]) -> None:
@@ -83,3 +84,24 @@ def test_biaya_tidak_tercatat_dinyatakan(tmp_path: Path):
     out = dp.ringkas_dompet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
     assert out["biaya_tercatat"] is False
     assert any("bruto" in c for c in out["catatan"])
+
+
+def test_gmgn_mark_terakhir_bukan_penjumlahan(tmp_path: Path):
+    """Temuan audit 7 Okt: satu posisi LP punya 22 baris mark. Dompet tidak boleh
+    menjumlahkan semuanya (dulu: modal $660 & PnL −3,17% dari 1 posisi $30)."""
+    baris = [
+        {"symbol": "UBI", "status": "dinilai", "notional_usd": 30.0, "harga_masuk": 5.8e-06,
+         "pnl_usd": -0.5, "ts": "2026-10-01T00:00:00+00:00"},
+        {"symbol": "UBI", "status": "dinilai", "notional_usd": 30.0, "harga_masuk": 5.8e-06,
+         "pnl_usd": -0.9, "ts": "2026-10-02T00:00:00+00:00"},
+        {"symbol": "UBI", "status": "dinilai", "notional_usd": 30.0, "harga_masuk": 5.8e-06,
+         "pnl_usd": -1.05, "ts": "2026-10-03T00:00:00+00:00"},
+    ]
+    _ledger(tmp_path, "lp_ledger.jsonl", baris)
+    out = dompet.ringkas_semua_dompet(tmp_path)["pasar"]["gmgn"]
+    assert out["tersedia"] is True
+    assert out["trade"] == 1, "tiga mark = SATU posisi"
+    assert out["mark_baris"] == 3
+    # PnL = mark TERAKHIR saja (−1.05), bukan jumlah (−2.45)
+    unit = 10_000_000 / out["kurs_usd_idr"]
+    assert abs(out["pnl_usd"] - unit * (-1.05 / 30.0)) < 0.01
