@@ -14,9 +14,9 @@ fail=0
 step() { printf '\n=== %s ===\n' "$1"; }
 check() { if [ "$1" -eq 0 ]; then echo "  OK   $2"; else echo "  GAGAL $2"; fail=1; fi; }
 
-step "1/4 domain: ruff + pytest (live-trading)"
-( cd "$DOMAIN" && uv run ruff check . && uv run pytest -q )
-check $? "domain ruff + pytest"
+step "1/4 domain: sync --frozen + ruff + pytest (live-trading)"
+( cd "$DOMAIN" && uv sync --frozen --extra dev && uv run ruff check . && uv run pytest -q )
+check $? "domain sync + ruff + pytest"
 
 step "2/4 platform: sync --frozen + ruff + impor domain"
 ( cd "$WARROOM" && uv sync --frozen && uv run ruff check . \
