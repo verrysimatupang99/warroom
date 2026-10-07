@@ -91,6 +91,9 @@ test.describe('QA owner', () => {
 					jejak.push(`${area.rute} → ${sub}: TAB TIDAK ADA`);
 					continue;
 				}
+				// Tunggu tab SIAP diklik (bukan hanya ada) — pelajaran insiden shell:
+				// klik pada elemen yang belum stabil menghasilkan flaky, bukan temuan.
+				await expect(tombol.first()).toBeVisible({ timeout: 15000 });
 				await tombol.first().click();
 				await page.waitForTimeout(350);
 				const t = await page.locator('body').innerText();
