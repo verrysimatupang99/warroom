@@ -127,7 +127,9 @@
 			if (sl != null) out.push({ label: 'Stop', nilai: f(sl), nada: 'stop' });
 			if (tp != null) out.push({ label: 'Target', nilai: f(tp), nada: 'target' });
 			// jarak stop dalam % — dari angka, bukan taksiran
-			if (e != null && sl != null) out.push({ label: 'Risiko', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
+			// QA 7 Okt: ini JARAK STOP, bukan risiko akun. Ukuran posisi menyesuaikan agar
+			// risiko tepat 1% ekuitas (risk.py), jadi jangan diberi label "Risiko".
+			if (e != null && sl != null) out.push({ label: 'Jarak stop', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
 		} else if (s.pasar === 'polymarket') {
 			const wr = num(d.winRate), be = num(d.breakEven_pct);
 			if (wr != null) out.push({ label: 'Win-rate', nilai: `${wr.toFixed(2)}%` });

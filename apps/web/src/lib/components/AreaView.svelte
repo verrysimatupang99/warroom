@@ -618,7 +618,13 @@
 													<div><div class="text-10 text-text-3">TP1</div><div class="text-pos">{hargaAdaptif(s.tp1)}</div></div>
 												</div>
 												<div class="mt-1 flex items-center justify-between text-10 text-text-3 font-mono">
-													<span>R:R {s.r_r ?? '—'} · risiko {s.risk_pct ?? '—'}%</span>
+													<!-- TEMUAN QA 7 Okt (P0): angka ini JARAK STOP, bukan risiko akun.
+													     Ukuran posisi dihitung agar risiko akun tetap 1% (risk.py:
+													     size = risk_usd ÷ jarak-stop). Bukti: 1000PEPE jarak 3,81%
+													     → posisi $25,55 ≈ 1% × $100; SUI jarak 2,01% → $47,28.
+													     Label lama "risiko 3,813%" membuat pembaca (dan QA) wajar
+													     menyimpulkan policy dilanggar. Jangan disingkat lagi. -->
+													<span>R:R {s.r_r ?? '—'} · jarak stop {s.risk_pct ?? '—'}% · risiko akun 1%</span>
 													<span>{umurDetik(f.age_s)} lalu</span>
 												</div>
 												{#if s.aturan_gagal?.length}

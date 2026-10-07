@@ -398,9 +398,64 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
         con2.close()
     except Exception:  # noqa: BLE001 — pecahan opsional; total tetap tampil
         pass
+
+    # --- INVARIANT RISIKO (temuan QA eksternal, 7 Okt 2026) ---------------------------
+    # Keluhan: "satu trade tidak boleh menghasilkan R < -1R kecuali diberi status khusus".
+    # Kenyataannya BISA, dan penyebabnya bukan grader: ARA_HUNTER menahan posisi sampai
+    # open sesi berikutnya, sehingga gap pembukaan bisa 14× risiko yang direncanakan.
+    # Karena itu, bukan angkanya yang kami tutupi — melainkan kami KLASIFIKASIKAN:
+    #   wajar    : R ≥ -1,05 (stop 1R dihormati, toleransi biaya)
+    #   gap      : -1,05 > R ≥ -2   (gap kecil / biaya lebih besar dari perkiraan)
+    #   dalam    : -2 > R ≥ -5      (gap signifikan di luar jam bursa)
+    #   ekstrem  : R < -5           (posisi nyangkut; ARB/gap besar)
+    # `pelanggaran_1r` = jumlah trade di luar kelas wajar. Angka ini WAJIB terbit supaya
+    # halaman tidak pernah menyiratkan "rugi maksimal 1R" pada setup yang tidak begitu.
+    kelas = {"wajar": 0, "gap": 0, "dalam": 0, "ekstrem": 0}
+    pelanggaran = 0
+    terburuk: dict[str, Any] | None = None
+    for event_id, ticker, setup, _status, result, net_r, closed_at in rows:
+        r = float(net_r)
+        if r >= -1.05:
+            kelas["wajar"] += 1
+        else:
+            pelanggaran += 1
+            kelas["gap" if r >= -2 else "dalam" if r >= -5 else "ekstrem"] += 1
+        if terburuk is None or r < float(terburuk["r"]):
+            terburuk = {
+                "signal_id": event_id, "pair": ticker, "setup": setup,
+                "r": round(r, 2), "result": result, "closed_at": closed_at,
+            }
+
+    # Sinyal CREATED yang tak pernah tuntas: mesin IDX dibekukan (cron Tencent pause),
+    # jadi baris ini BUKAN "posisi berjalan" — ia yatim. Menyebutnya berjalan = berbohong.
+    yatim = {"jumlah": 0, "tertua": None}
+    try:
+        con3 = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        jml, tertua = con3.execute(
+            "select count(*), min(created_at) from signals where status = 'CREATED'"
+        ).fetchone()
+        con3.close()
+        yatim = {"jumlah": int(jml or 0), "tertua": tertua}
+    except Exception:  # noqa: BLE001
+        pass
+
     return {
         "market": "idx",
         "tersedia": True,
+        "invariant": {
+            "pelanggaran_1r": pelanggaran,
+            "kelas_loss": kelas,
+            "terburuk": terburuk,
+            "model_breach": pelanggaran > 0,
+            "penjelasan": (
+                f"{pelanggaran} dari {len(rows)} trade tuntas rugi MELEBIHI 1R "
+                "(stop 1R tidak bisa dieksekusi — exit di open sesi berikutnya / gap). "
+                "Artinya: dompet ini TIDAK mengenal rugi maksimal 1R pada setup tersebut."
+                if pelanggaran
+                else "Semua trade tuntas rugi ≤ 1R — asumsi risiko terbatas terpenuhi."
+            ),
+        },
+        "sinyal_yatim": yatim,
         "per_setup": dict(sorted(per_setup.items(), key=lambda kv: kv[1]["pnl_idr"], reverse=True)),
         "saldo_awal_idr": WALLET_IDR,
         "saldo_awal_unit": WALLET_IDR,

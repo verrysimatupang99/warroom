@@ -57,6 +57,17 @@
 		biaya_tercatat?: boolean;
 		sumber?: string;
 		catatan?: string[];
+		/** Invariant risiko (temuan QA 7 Okt): berapa trade tuntas yang rugi > 1R,
+		 *  diklasifikasi gap/dalam/ekstrem, plus trade terburuk. */
+		invariant?: {
+			pelanggaran_1r: number;
+			kelas_loss: { wajar: number; gap: number; dalam: number; ekstrem: number };
+			terburuk?: { signal_id?: string; pair?: string; setup?: string; r: number; result?: string; closed_at?: string } | null;
+			model_breach: boolean;
+			penjelasan: string;
+		} | null;
+		/** Sinyal CREATED yang tak pernah tuntas (mesin beku) — BUKAN posisi berjalan. */
+		sinyal_yatim?: { jumlah: number; tertua: string | null } | null;
 	}
 
 	interface Props {
@@ -198,6 +209,48 @@
 					</table>
 				</div>
 			</div>
+		{/if}
+
+		<!-- MODEL BREACH (temuan QA eksternal 7 Okt, P0). Banner ini menjawab langsung:
+		     "satu trade tidak boleh menghasilkan R < −1R kecuali diberi status khusus".
+		     Kenyataannya BISA (gap di open sesi berikutnya), dan itu bukan alasan untuk
+		     menyembunyikan angka — melainkan alasan untuk MENANDAI. Tampil juga di mode
+		     ringkas: ini peringatan risiko, bukan detail. -->
+		{#if d.invariant?.model_breach}
+			<div class="mt-2 rounded-card border border-neg/50 bg-neg/10 p-2.5" role="alert">
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="rounded border border-neg/50 bg-neg/20 px-1.5 py-0.5 text-10 font-bold text-neg">⚠ MODEL BREACH</span>
+					<span class="text-11 text-text-2">
+						<b>{d.invariant.pelanggaran_1r}</b> dari <b>{d.trade ?? '—'}</b> trade tuntas rugi <b>melebihi 1R</b>
+						{#if d.invariant.terburuk}
+							· terburuk <span class="font-mono text-neg">{d.invariant.terburuk.r}R</span>
+							<span class="font-mono text-text-3">({d.invariant.terburuk.pair ?? '—'} · {d.invariant.terburuk.setup ?? '—'})</span>
+						{/if}
+					</span>
+				</div>
+				<div class="mt-1.5 flex flex-wrap gap-2 text-10 font-mono text-text-3">
+					<span>≤1R: {d.invariant.kelas_loss.wajar}</span>
+					<span>gap 1–2R: {d.invariant.kelas_loss.gap}</span>
+					<span>dalam 2–5R: {d.invariant.kelas_loss.dalam}</span>
+					<span class="text-neg">ekstrem &gt;5R: {d.invariant.kelas_loss.ekstrem}</span>
+				</div>
+				<p class="mt-1.5 text-11 text-text-2">{d.invariant.penjelasan}</p>
+				<p class="mt-1 text-10 text-text-3">
+					Penyebab: posisi ditahan sampai <b>open sesi berikutnya</b> (BSJP/ARA_HUNTER), sehingga gap
+					pembukaan bisa jauh melewati stop yang direncanakan. Kalau setup ini dipakai dengan uang
+					nyata, "rugi maksimal 1R" <b>tidak berlaku</b> — ukuran posisi wajib diperkecil atau setup
+					diperlakukan sebagai berisiko tak terbatas.
+				</p>
+			</div>
+		{/if}
+
+		<!-- Sinyal yatim: CREATED yang tak pernah tuntas karena mesin dibekukan.
+		     Menyebutnya "posisi berjalan" adalah kesalahan yang dilaporkan QA. -->
+		{#if (d.sinyal_yatim?.jumlah ?? 0) > 0}
+			<p class="mt-1.5 text-11 text-text-3">
+				⏳ <b>{d.sinyal_yatim?.jumlah}</b> sinyal berstatus <span class="font-mono">CREATED</span> tidak pernah tuntas
+				(tertua {d.sinyal_yatim?.tertua?.slice(0, 10) ?? '—'}) — mesin dibekukan, jadi ini <b>bukan</b> posisi berjalan.
+			</p>
 		{/if}
 
 		{#if !ringkas}

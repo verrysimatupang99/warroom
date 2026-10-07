@@ -85,13 +85,19 @@
 			</div>
 
 			<div class="rounded border border-line bg-surface p-2">
-				<span class="text-10 uppercase text-text-3 block">Risiko / Trade</span>
+				<span class="text-10 uppercase text-text-3 block">Risiko Akun / Trade</span>
 				<div class="mt-0.5 flex items-baseline gap-1">
 					<span class="angka text-15 font-bold text-text">
 						{risiko?.risiko_per_trade_pct != null ? `${risiko.risiko_per_trade_pct}%` : '1,0%'}
 					</span>
 					<span class="text-10 text-text-3 font-mono">1.0 R</span>
 				</div>
+				<!-- QA 7 Okt (P0): dulu label ini "Risiko / Trade" dan di kartu kandidat tertulis
+				     "risiko 3,813%" (itu JARAK STOP). Pembaca wajar menyimpulkan policy dilanggar.
+				     Sekarang dua istilahnya dipisah tegas: di sini RISIKO AKUN (1% ekuitas, yang
+				     benar-benar dipertaruhkan); di kandidat tertulis JARAK STOP. Ukuran posisi
+				     dihitung agar risiko akun tetap 1% — bukan nominal tetap. -->
+				<div class="mt-0.5 text-10 text-text-3">ukuran posisi = 1% ÷ jarak stop</div>
 			</div>
 		</div>
 	</div>

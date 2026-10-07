@@ -11,6 +11,7 @@ Prinsip yang ditegakkan:
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -88,7 +89,17 @@ def test_biaya_tidak_tercatat_dinyatakan(tmp_path: Path):
 
 def test_gmgn_mark_terakhir_bukan_penjumlahan(tmp_path: Path):
     """Temuan audit 7 Okt: satu posisi LP punya 22 baris mark. Dompet tidak boleh
-    menjumlahkan semuanya (dulu: modal $660 & PnL −3,17% dari 1 posisi $30)."""
+    menjumlahkan semuanya (dulu: modal $660 & PnL −3,17% dari 1 posisi $30).
+
+    Kurs ditulis ke cache lebih dulu: tanpa itu tes ini memanggil jaringan
+    (frankfurter.app) dan hasilnya berubah-ubah antar-run — pernah merah di suite
+    penuh lalu hijau saat dijalankan sendiri (flaky, bukan bug dompet).
+    """
+    (tmp_path / "kurs_usd_idr.json").write_text(
+        json.dumps({"kurs": 17_841.0, "diambil": dt.datetime.now(dt.UTC).isoformat(),
+                    "sumber": "tes"}),
+        encoding="utf-8",
+    )
     baris = [
         {"symbol": "UBI", "status": "dinilai", "notional_usd": 30.0, "harga_masuk": 5.8e-06,
          "pnl_usd": -0.5, "ts": "2026-10-01T00:00:00+00:00"},

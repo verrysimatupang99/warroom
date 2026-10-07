@@ -472,8 +472,10 @@ def _pesan_sinyal(sg: dict[str, Any], label: str) -> str:
     """Format pesan sinyal untuk Telegram — angka apa adanya + label jujur wajib."""
     baris = [f"{sg['pair']} · {sg['arah']} · tier {sg.get('tier')}"]
     harga = f"entry {sg.get('entry')} · SL {sg.get('sl')} · TP1 {sg.get('tp1')}"
+    # QA 7 Okt: yang ditulis mesin adalah JARAK STOP. Ukuran posisi dibuat agar risiko
+    # akun tetap 1% ekuitas; menulis "risiko" di sini menyesatkan (dibaca sebagai pelanggaran).
     if sg.get("risk_pct") is not None:
-        harga += f" · risiko {sg['risk_pct']}%"
+        harga += f" · jarak stop {sg['risk_pct']}%"
     baris.append(harga)
     baris.append(label)
     if sg.get("aturan_gagal"):
