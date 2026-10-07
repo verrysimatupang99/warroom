@@ -26,6 +26,8 @@
 	interface Props {
 		judul: string;
 		subjudul?: string;
+		/** Nama pasar untuk label populasi (opsional). */
+		market?: string;
 		data?: {
 			tersedia?: boolean;
 			alasan?: string | null;
@@ -35,7 +37,7 @@
 		} | null;
 	}
 
-	let { judul, subjudul, data }: Props = $props();
+	let { judul, subjudul, data, market }: Props = $props();
 
 	const baris = $derived(Object.entries(data?.per_setup ?? {}).map(([k, v]) => ({ kunci: k, ...v })));
 
@@ -80,7 +82,10 @@
 				<thead class="border-b border-line text-text-3 text-10 uppercase">
 					<tr>
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Setup</th>
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">n</th>
+						<!-- QA 7 Okt: "n" tanpa nama populasi menyesatkan (halaman lain menulis
+						     n=16 untuk "semua sinyal dinilai", di sini n=12 untuk "trade TUNTAS").
+						     Kolom ini SELALU trade tuntas dari ledger; namanya ditulis utuh. -->
+						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right" title="Jumlah trade TUNTAS (sudah ditutup) di ledger — bukan jumlah sinyal, bukan kandidat aktif">Tuntas<br /><span class="text-9 normal-case">(n)</span></th>
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Hari</th>
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Menang%</th>
 						<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">CI90</th>
@@ -119,6 +124,13 @@
 				</tbody>
 			</table>
 		</div>
+		<p class="mt-2 text-10 text-text-3">
+			<b>Populasi:</b> kolom <span class="font-mono">Tuntas (n)</span> = trade yang sudah DITUTUP di ledger
+			{market ? `(${market})` : ''} — bukan sinyal yang dinilai, bukan kandidat aktif, bukan posisi berjalan.
+			Angka di kartu lain (mis. narasi "n=16") bisa berasal dari populasi BERBEDA: sinyal yang dievaluasi
+			versus trade yang tuntas. Bandingkan hanya populasi yang sama.
+		</p>
+
 
 		{#if data?.sumber}
 			<p class="mt-2 text-10 text-text-3 font-mono truncate">Sumber: {data.sumber}</p>

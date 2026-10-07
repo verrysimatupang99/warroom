@@ -395,6 +395,11 @@ class DaftarSinyal:
     alasan: str = ""
     rute: str = ""              # tautan "lihat semua"
     jumlah: int = 0
+    # QA 7 Okt: pembaca tidak boleh menebak apakah angka ini LIVE, PAPER, atau HISTORIS.
+    # `sumber` = dari mana angka datang; `mode` = tingkat kepercayaan eksekusi.
+    sumber: str = ""
+    mode: str = "PAPER"          # LIVE (belum ada) · PAPER · HISTORIS (beku/tidak diperbarui)
+    catatan_mode: str = ""
     sinyal: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -463,6 +468,8 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
         return DaftarSinyal(
             pasar="crypto", label="Crypto (SMC)", status_data="ada",
             rute=_rute_pasar("crypto"), jumlah=len(hidup), sinyal=sinyal,
+            sumber="MEXC", mode="PAPER",
+            catatan_mode="harga & depth MEXC; eksekusi paper (order tidak dikirim)",
         )
     # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
     dari_verdict = _umur_iso(_verdict_terakhir(s))
@@ -513,11 +520,26 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
     for sp in sinyal_terbaik_per_pasar(s):
         if sp.pasar == "crypto":
             continue
+        sumber_pasar = {
+            "idx": (
+                "Stock Arjum",
+                "HISTORIS",
+                "mesin dibekukan (cron Tencent pause) — angka lama, tidak diperbarui",
+            ),
+            "forex": (
+                "TVC (TradingView)",
+                "PAPER",
+                "bias/struktur dari seri TVC; eksekusi paper, biaya belum tercatat",
+            ),
+            "polymarket": ("Dokumentasi Polymarket", "PAPER", "arm B favorit 0,70–0,95; ledger shadow/paper"),
+            "gmgn": ("GMGN / FOMO", "PAPER", "radar + bot paper; belum ada eksekusi on-chain"),
+            "lp": ("Meteora (Solana)", "PAPER", "posisi LP disimulasikan; belum direkonsiliasi on-chain"),
+        }.get(sp.pasar, ("—", "PAPER", ""))
         if sp.ada:
             keluar.append(
                 DaftarSinyal(
                     pasar=sp.pasar, label=sp.label, status_data="ada", rute=_rute_pasar(sp.pasar),
-                    jumlah=1,
+                    jumlah=1, sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
                     sinyal=[
                         {
                             "pair": sp.subjek,
@@ -541,6 +563,7 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
                 DaftarSinyal(
                     pasar=sp.pasar, label=sp.label, status_data="kosong", rute=_rute_pasar(sp.pasar),
                     alasan=sp.alasan, jumlah=0,
+                    sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
                 )
             )
     keluar.sort(key=lambda x: urutan.get(x.pasar, 99))

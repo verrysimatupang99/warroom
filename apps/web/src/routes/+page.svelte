@@ -262,7 +262,8 @@
 					<table class="tabel-pasar angka">
 						<thead>
 							<tr>
-								<th>Market</th><th>Setup terbesar</th><th class="ka">n</th><th class="ka">Hari</th>
+								<!-- QA 7 Okt: "n" harus menyebut populasi. Di sini = trade TUNTAS per market. -->
+								<th>Market</th><th>Setup terbesar</th><th class="ka" title="Trade TUNTAS (sudah ditutup) — bukan sinyal dinilai, bukan kandidat aktif">Tuntas (n)</th><th class="ka">Hari</th>
 								<th class="ka">WR</th><th class="ka">Mean R</th><th class="ka">P&amp;L</th><th>Pakem</th>
 							</tr>
 						</thead>
@@ -303,6 +304,9 @@
 					<span class="pakem pakem-TUNING">TUNING</span> <span class="dim">≥100 hari — baru boleh tuning</span>
 				</div>
 				<p class="dim kaki-tabel">
+					<b>Populasi:</b> semua kolom di tabel ini dihitung dari <b>trade TUNTAS</b> (sudah ditutup) —
+					bukan sinyal yang dinilai, bukan kandidat aktif, bukan posisi berjalan. Angka "n" di narasi
+					atau halaman lain bisa berasal dari populasi berbeda; bandingkan hanya yang sama.<br />
 					Kolom <b>Setup terbesar</b> = setup dengan trade tuntas terbanyak di market itu (yang lain ada di halaman market).
 					<b>Mean R</b> dirata-rata per trade; <b>R</b> tidak bisa dibandingkan antar-market — pakai dompet Rp 10 juta di halaman Riset.
 				</p>
@@ -335,13 +339,26 @@
 				{#each pasarDaftar as p (p.pasar)}
 					<article class="sinyal-kartu {p.status_data}">
 						<header class="sinyal-kepala">
-							<h3>{p.label}</h3>
+							<div class="sinyal-judul">
+								<h3>{p.label}</h3>
+								<!-- QA 7 Okt: setiap kartu market wajib menyebut LIVE/PAPER/HISTORIS.
+								     Tanpa ini pembaca menebak apakah angka masih hidup; IDX misalnya
+								     HISTORIS karena mesinnya dibekukan. -->
+								{#if p.mode}
+									<span class="mode-badge mode-{p.mode.toLowerCase()}" title={p.catatan_mode ?? ''}>{p.mode}</span>
+								{/if}
+							</div>
 							{#if p.jumlah > MAKS_PER_MARKET}
 								<a class="lihat-semua" href={p.rute}>Lihat semua ({p.jumlah}) →</a>
 							{:else if p.status_data === 'ada'}
 								<a class="lihat-semua" href={p.rute}>Buka {p.label.split(' (')[0]} →</a>
 							{/if}
 						</header>
+						{#if p.sumber}
+							<p class="sinyal-sumber">
+								sumber: {p.sumber}{#if p.sinyal[0]?.umur_s != null} · data {umurDetik(p.sinyal[0].umur_s)} lalu{/if}
+							</p>
+						{/if}
 
 						{#if p.status_data === 'ada'}
 							{#each p.sinyal.slice(0, MAKS_PER_MARKET) as s, i (s.pair ?? i)}
@@ -508,6 +525,16 @@
 	.sinyal-kartu.gagal { border-color: var(--merah); }
 	.sinyal-kepala { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
 	.sinyal-kepala h3 { font-size: 0.85rem; margin: 0; letter-spacing: 0.01em; }
+	.sinyal-judul { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+	.mode-badge {
+		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
+		color: var(--redup);
+	}
+	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); }
+	.mode-badge.mode-historis { color: var(--redup); border-style: dashed; }
+	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); }
+	.sinyal-sumber { font-size: 0.66rem; color: var(--redup); margin: 0 0 0.35rem; }
 	.lihat-semua { font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap; }
 	.lihat-semua:hover { text-decoration: underline; }
 	.sinyal-baris { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-top: 1px dashed var(--garis); align-items: baseline; }

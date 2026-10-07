@@ -250,6 +250,11 @@ export interface DaftarSinyalPasar {
 	alasan: string;
 	rute: string;
 	jumlah: number;
+	/** Dari mana angka ini datang (mis. "MEXC", "Stock Arjum") — QA 7 Okt. */
+	sumber?: string;
+	/** Tingkat kepercayaan eksekusi: LIVE (belum ada) · PAPER · HISTORIS (beku). */
+	mode?: 'LIVE' | 'PAPER' | 'HISTORIS';
+	catatan_mode?: string;
 	sinyal: SinyalItem[];
 }
 

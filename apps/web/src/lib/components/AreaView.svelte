@@ -660,6 +660,7 @@
 							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
 							{#if sub === 'setup' || sub === 'ukur'}
 								<AkurasiPasar
+									market="crypto · trade tuntas"
 									judul="Akurasi per Strategi (Crypto)"
 									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
 									data={akurasiCrypto}
@@ -2176,7 +2177,7 @@
 				{:else if sub === 'sesi'}
 					<div class="space-y-4">
 						<!-- Akurasi juga tampil di tab sesi supaya tak perlu bolak-balik -->
-						<AkurasiPasar judul="Akurasi per Strategi (Forex)" data={akurasiForex} />
+						<AkurasiPasar market="forex · trade tuntas" judul="Akurasi per Strategi (Forex)" data={akurasiForex} />
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="border-b border-line-soft pb-2 flex items-center justify-between">
 								<div>

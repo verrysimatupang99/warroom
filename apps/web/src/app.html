@@ -18,6 +18,47 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">%sveltekit.body%</div>
+		<div style="display: contents">
+			<!-- SHELL SEBELUM HYDRATION (temuan QA eksternal, 7 Okt 2026).
+			     Aplikasi ini sengaja `ssr = false` (rute butuh cookie; 401 → /masuk), jadi
+			     HTML yang tersaji ke peramban/crawler/otomasi HANYA kerangka ini — dulu
+			     benar-benar kosong, sehingga halaman terbaca "blank" sebelum JS selesai.
+			     Shell ini statis (tanpa data), digantikan aplikasi saat hydration. Aman:
+			     tidak ada angka pasar di sini, jadi tidak ada yang bisa basi atau berbohong. -->
+			<div id="shell-muat" aria-hidden="true">
+				<div class="shell-bar">
+					<span class="shell-merek">War<span>Room</span></span>
+					<span class="shell-tag">memuat…</span>
+				</div>
+				<div class="shell-isi">
+					<div class="shell-blok"></div>
+					<div class="shell-blok"></div>
+					<div class="shell-blok pendek"></div>
+				</div>
+			</div>
+			<style>
+				#shell-muat {
+					--shell-bg: #0b0f14; --shell-line: #1e2833; --shell-tinta: #e6edf3;
+					--shell-mint: #34e39a; --shell-redup: #7d8b99;
+					background: var(--shell-bg); color: var(--shell-tinta);
+					font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+					min-height: 100vh; padding: 1.5rem 1rem;
+				}
+				#shell-muat .shell-bar { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 1.25rem; }
+				#shell-muat .shell-merek { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+				#shell-muat .shell-merek span { color: var(--shell-mint); }
+				#shell-muat .shell-tag { font-size: 0.7rem; color: var(--shell-redup); letter-spacing: 0.08em; text-transform: uppercase; }
+				#shell-muat .shell-isi { display: flex; flex-direction: column; gap: 0.75rem; max-width: 62rem; margin: 0 auto; }
+				#shell-muat .shell-blok {
+					height: 5rem; border: 1px solid var(--shell-line); border-radius: 0.9rem;
+					background: linear-gradient(90deg, #121a22 25%, #18222c 50%, #121a22 75%);
+					background-size: 200% 100%; animation: shell-denyut 1.4s ease-in-out infinite;
+				}
+				#shell-muat .shell-blok.pendek { height: 2.5rem; }
+				@keyframes shell-denyut { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+				@media (prefers-reduced-motion: reduce) { #shell-muat .shell-blok { animation: none; } }
+			</style>
+			%sveltekit.body%
+		</div>
 	</body>
 </html>
