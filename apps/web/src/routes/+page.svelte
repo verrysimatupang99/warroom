@@ -10,8 +10,8 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getPasarRingkas, getSinyalPerPasar, getSumber } from '$lib/api/client';
-	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
+	import { getArea, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
+	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload, VerdictPasar } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
 
 	let sinyal = $state<SinyalPayload | null>(null);
@@ -20,6 +20,8 @@
 	let galat = $state<string | null>(null);
 	// Sumber data tiap pasar (revisi pemilik 7 Okt): satu tempat, tidak perlu ditebak.
 	let sumber = $state<{ pasar: string; label: string; sumber: string; keterangan: string }[]>([]);
+	// Verdict kanonik (audit QA 7 Okt) — dipakai agar Home TIDAK menyusun kesimpulan sendiri.
+	let verdictSemua = $state<VerdictPasar[]>([]);
 
 	async function muat() {
 		const [s, k, a, sm] = await Promise.allSettled([
@@ -29,6 +31,11 @@
 			getSumber()
 		]);
 		if (sm.status === 'fulfilled') sumber = sm.value.sumber;
+		try {
+			verdictSemua = (await getVerdict()).verdict;
+		} catch {
+			/* verdict opsional di Home; kalau gagal, judul memakai hitungan lama */
+		}
 		if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
 		else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
 		if (k.status === 'fulfilled') kripto = k.value;
@@ -96,14 +103,26 @@
 			};
 		}
 		const sisaKosong = pasarKosong.length ? ` ${pasarKosong.length} pasar lain tanpa setup cocok.` : '';
+		// PRIORITAS 3 AUDIT: satu angka untuk banyak arti menyesatkan. "6 peluang" dulu
+		// mencampur kandidat, posisi paper, dan hasil yang belum lewat gate — pembaca
+		// menyimpulkan "ada 6 yang layak dieksekusi". Sekarang dipisah tegas:
+		//   KANDIDAT  = ada sesuatu untuk dipantau (belum tentu layak)
+		//   PROMOTABLE= lolos SEMUA gate (angka ini biasanya 0, dan itu JUJUR)
+		const promotable = verdictSemua.filter((v) => v.promotable_edge).length;
+		const judul = promotable
+			? `${promotable} LOLOS GATE · ${pasarAda.length} kandidat`
+			: `${pasarAda.length} KANDIDAT · 0 lolos gate`;
 		return {
-			judul: `${pasarAda.length} PELUANG`,
+			judul,
 			nada: 'ada',
 			waktu: null,
 			alasan:
+				(promotable
+					? `Ada ${promotable} pasar yang lolos seluruh gate. `
+					: 'Kandidat = ada yang dipantau; BELUM ada yang lolos seluruh gate. ') +
 				`Teratas: ${pasarAda[0].label}${pasarAda[0].sinyal[0]?.pair ? ` · ${pasarAda[0].sinyal[0].pair}` : ''}` +
 				`${pasarAda[0].sinyal[0]?.skor != null ? ` · skor ${pasarAda[0].sinyal[0].skor}/100` : ''}.` +
-				sisaKosong + ' Semua belum terverifikasi — lihat catatan tiap pasar.'
+				sisaKosong
 		};
 	});
 
