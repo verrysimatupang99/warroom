@@ -82,6 +82,35 @@ itu SAH — dua setup berbeda: TP2 22 Sep & close manual 26 Sep).
 - **E2E: 19/19 hijau** (perbaikan UX, 5 market, langkah IDX, Home).
 - **pytest: 100% hijau, 0 gagal.** ruff bersih. lint token bersih (52 berkas).
 
+### 3e. Kandidat aktif tidak pernah sampai UI (BUG, diperbaiki)
+`AREA_KEYS["crypto"]` memuat "signal" sejak awal — dan komentarnya sendiri mengakui
+"kind `signal` bukan bagian snapshot" — tetapi kind itu tidak pernah didaftarkan di
+`AREA_EXTRA`, yang hanya menerima pasangan (kind, key) TETAP. Kandidat punya kunci per
+pair (`signal/AAVEUSDT`, …). Hasil: job `signal-sync` menerbitkan fakta tiap siklus,
+API tidak pernah menyajikannya, dashboard tidak pernah menampilkan kandidat yang hidup.
+
+Perbaikan: `AREA_KIND` (kind yang seluruh faktanya milik satu area) + hanya fakta yang
+TTL-nya belum lewat + panel "Kandidat Aktif (ledger gate)" di Cockpit/Setup.
+
+Bug ikutan: harga mikro (1000PEPE 0,0041) dibulatkan jadi "0,00" oleh format 2-desimal.
+Sekarang adaptif (2/4/8 desimal).
+
+### 3f. Freshness berbunyi untuk jadwal NORMAL (32 alert palsu, diperbaiki)
+Fakta snapshot TTL 600 s dengan penulis tiap 15 menit **selalu** melewati TTL sesaat
+sebelum penulisan berikutnya — karena penulis hanya boleh lebih lambat dari TTL. Maka
+alert "data basi 13,3 mnt > ttl 600 s" muncul untuk SEMUA kunci sekaligus: derau.
+
+Perbaikan: grace = max(1,5× TTL, TTL + 15 mnt). Jadwal normal diam; penulis yang
+benar-benar mati (3 jam dengan TTL 30 mnt) tetap nyaring. Bonus: grace langsung
+menemukan kandidat yang benar-benar basi (ENA 45 jam, OP 37 jam, SEI 27 jam, …) —
+sekarang otomatis tidak disajikan ke UI.
+
+### 3g. Tabel alerts tidak pernah dibersihkan (diperbaiki)
+Retensi menyentuh `facts`/`events`/`llm_calls`, tapi tidak `alerts` → 100 alert
+menumpuk (75 belum di-ack sejak 2 Okt). Aturan baru: yang SUDAH di-ack & tua dibuang;
+yang BELUM di-ack **tidak pernah** (itu pekerjaan manusia, bukan retensi).
+74 alert lama dibereskan berjejak; sisa 1 warning sah (lp_mark basi 2 jam).
+
 ## 6. Tindakan lanjutan yang tersisa
 
 1. **IDX −112%** — ARA_HUNTER (−139%, 198 trade) menghabiskan dompet; BSJP positif.
