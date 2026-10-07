@@ -156,3 +156,24 @@ Diuji di 4 halaman termasuk `/masuk`.
 "Kebijakan" ikut rapuh karena klik dilakukan sebelum halaman interaktif (dan sempat
 tertutup shell). Keduanya diperkuat: tunggu tab terlihat, lalu klik, lalu tunggu hasil
 dengan timeout eksplisit.
+
+---
+
+## Pelajaran tes (7 Okt, dari insiden shell → 3 tes usang)
+
+Tiga kesalahan berbeda yang semuanya tampak seperti "fitur rusak", padahal tesnya yang salah:
+
+1. **"Ada" ≠ "terlihat"** — shell pra-hydration menutupi aplikasi; semua tes lolos karena
+   membaca `body.innerText` (elemen tertutup tetap punya textContent). → tes baru
+   `cek_shell_hilang.spec.ts` memakai `elementFromPoint` + tinggi elemen nyata.
+2. **"Terlihat" ≠ "siap diklik"** — elemen bisa terlihat sementara listener Svelte belum
+   terpasang; klik hilang diam-diam. → penanda `data-app-siap` di AppShell + util
+   `tungguSiap(page)`; dipakai tes sebelum berinteraksi.
+3. **Tes bisa usang tanpa ada yang rusak** — sub "Dataset" sudah berganti nama "Riset"
+   (keputusan owner 7 Okt), tetapi tes masih mencari "Dataset" → menunggu 2 menit lalu
+   gagal. Begitu pula `role="button"` vs `role="tab"`. → kedua tes diperbarui; waktu
+   turun dari ~2 menit (flaky) menjadi ~1,4 detik (stabil).
+
+**Aturan yang berlaku sekarang:** setiap tes UI menunggu `tungguSiap()` dulu; setiap
+lapisan penutup (shell/overlay) wajib punya tes yang mengukur hasil render yang terlihat;
+label sub-tab di tes harus merujuk nav.ts (satu sumber), bukan hafalan.
