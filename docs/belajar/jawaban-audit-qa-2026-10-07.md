@@ -320,3 +320,81 @@ diterapkan memakai token War Room (bukan Tailwind, bukan tema navy):
 `/desain/stitch-1.html` (Bloomberg lama).
 Catatan: berkas di `/desain/` dilayani nginx dengan CSP khusus (berkas pihak ketiga, hanya
 untuk dilihat); berkas mandiri sudah menanam CSS-nya sendiri sehingga tampil tanpa CDN.
+
+---
+
+# Audit putaran 3 & 4 — jawaban (7 Okt)
+
+## Putaran 3: Performance & Proof + status visual utama
+
+**Halaman Performance & Proof** (prioritas 3): sub baru **Riset → Bukti** (rute lama
+`/bukti` dialihkan ke situ). Tujuh jawaban berdampingan untuk SEMUA pasar: trade tuntas,
+win rate, total R, PnL, drawdown, biaya, periode + denominator.
+
+Angka-angka itu diterbitkan mesin (`_bukti_pasar()` di `pasar.py`), termasuk
+`BIAYA_PASAR` — satu tempat yang menentukan apakah sebuah pasar net atau bruto:
+
+| Pasar | Biaya | Keterangan |
+|---|---|---|
+| crypto | net | cost_bps terukur per trade (friksi MEXC) |
+| idx | net | grader v3 — net_r sudah termasuk biaya |
+| forex | **BRUTO** | spread/komisi broker belum ada di jurnal |
+| gmgn | net | fee LP + IL dihitung di mark lokal |
+| polymarket | net | fees dibebankan sesuai feeMode poly-pilot |
+
+**Status visual utama** (prioritas 1): PAPER/HISTORIS/BRUTO kini badge di headline verdict
+(bukan catatan kaki). Bukti live: `Forex — KANDIDAT, BELUM BISA DIPROMOSIKAN · BRUTO` dan
+`IDX — BEKU / HISTORIS`.
+
+## Putaran 4: canonical verdict, headline, istilah, density, ikon, QA login
+
+**1. Verdict kanonik** — modul baru `warroom_core/verdict.py` + `/api/v1/verdict`.
+Lima state dipisah karena pertanyaannya berbeda: `signal_state`, `evidence_state`,
+`risk_state`, `execution_state`, `promotion_state`. UI **tidak lagi menyusun verdict
+sendiri** — kelas bug "kartu bilang terbukti, gate bilang belum" jadi mustahil.
+
+Aturan promosi (satu tempat): bukti ≥ PRELIMINARY + tanpa pelanggaran risiko + mesin tidak
+beku + split beku (Polymarket/ADR-003) + **expectancy > 0 dan PnL > 0**.
+
+> Temuan saat menguji: GMGN berlabel PRELIMINARY (sampel matang) dengan win-rate 0% dan
+> PnL −28,46 USD sempat berstatus "LOLOS SEMUA GATE". Pakem mengukur KEMATANGAN SAMPEL,
+> bukan arah hasil — keduanya harus diperiksa. Setelah perbaikan, SEMUA pasar blocked,
+> masing-masing dengan alasan yang bisa dibaca manusia.
+
+**2. Headline keputusan** — komponen `KepalaVerdict.svelte` di paling atas tiap halaman
+pasar: satu kalimat + lima chip state + alasan blokir.
+
+**3. Pemisahan istilah** — Home tidak lagi menulis "6 PELUANG" (mencampur kandidat,
+posisi paper, hasil belum lolos gate) tetapi `6 KANDIDAT · 0 lolos gate`, dengan angka
+promotable diambil dari verdict kanonik.
+
+**4. Density** — Home kini tiga lapisan: keputusan (terbuka) → bukti ringkas (terlipat) →
+audit (terlipat). Tinggi halaman 1.400 px, dua lipatan tertutup saat dibuka. Kepala
+lipatan tetap terlihat ("buka tabel" / "buka untuk audit") dan target sentuhnya 44 px.
+
+**5. Ikon & target** — set SVG sendiri (`Ikon.svelte`: viewBox 24, stroke 1.6,
+currentColor) menggantikan glyph unicode di nav, TopBar, JudulBagian. Target sentuh ≥44 px
+untuk nav atas, TopBar, dan tautan "Lihat semua/Buka ..." (tes menemukan 6 tautan 17 px
+yang tidak terlihat dari kode).
+
+**6. QA login** — akar kegagalan audit sebelumnya: input tidak punya `name` dan hanya
+mengandalkan `bind:value`, sehingga pengisi-otomatis yang menulis ke DOM membuat form
+TERLIHAT terisi tetapi state kosong. Sekarang nilai dibaca dari `FormData`. Tiga tes:
+isi-lewat-DOM, sandi salah, dan guard tanpa sesi.
+
+> Pelajaran tes: tes guard saya sempat "gagal" (mengharap redirect, dapat halaman). Saya
+> TIDAK menganggapnya bug sebelum membuktikan — diagnostik menunjukkan `/auth/me → 200`
+> dan cookie `wr_session` ADA, karena `playwright.config.ts` memasang
+> `storageState: e2e/.auth/sesi.json` sehingga `browser.newContext()` biasa masih membawa
+> sesi. Guard-nya benar; tesnya yang salah asumsi. Diperbaiki dengan
+> `storageState: { cookies: [], origins: [] }`, dan tes kini juga membuktikan guard
+> menguji ke API dulu (`/auth/me → 401`).
+
+## Sisa yang belum dikerjakan (jujur)
+
+- **Alur SCAN → STRUCTURE → CONTEXT → DECISION → SIGNAL/SILENCE** (audit putaran 3
+  prioritas 4) — belum diadopsi sebagai alur bernama di UI.
+- **Contract stabilization** (putaran 4 prioritas 5): types masih manual di beberapa
+  tempat; belum ada generasi otomatis dari OpenAPI.
+- **Rotasi sandi + TOTP** — keputusan pemilik.
+- **Perbaikan strategi ARA_HUNTER** (IDX 94/198 trade melampaui 1R) — keputusan pemilik.
