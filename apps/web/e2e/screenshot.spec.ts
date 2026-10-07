@@ -1,7 +1,7 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { KREDENSIAL, PESAN_SKIP, RUTE, loginLewat } from './util';
+import { KREDENSIAL, PESAN_SKIP, RUTE, loginLewat, tungguSiap } from './util';
 
 /**
  * Screenshot bukti (W8): 7 rute + /masuk, desktop 1440 dan mobile 390, full-page.
@@ -46,16 +46,21 @@ test.describe('screenshot bukti', () => {
 		});
 	}
 
-	// Sub baru P4-T3/P5-T4: dataset (polymarket) & kebijakan (sistem).
+	// Sub P4-T3/P5-T4: riset (polymarket) & kebijakan (sistem).
+	// 7 Okt: sub "Dataset" berganti nama menjadi "Riset" (keputusan owner) — dan SubNav
+	// merender role="tab", bukan "button". Dua hal itu membuat tes lama gagal.
 	const SUB: { rute: string; tombol: string; nama: string }[] = [
-		{ rute: '/polymarket', tombol: 'Dataset', nama: 'polymarket-dataset' },
+		{ rute: '/polymarket', tombol: 'Riset', nama: 'polymarket-riset' },
 		{ rute: '/sistem', tombol: 'Kebijakan', nama: 'sistem-kebijakan' }
 	];
 	for (const s of SUB) {
 		test(`screenshot ${s.nama}`, async ({ page }) => {
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.goto(s.rute);
-			await page.getByRole('button', { name: s.tombol, exact: true }).click();
+			await tungguSiap(page);
+			const tab = page.getByRole('tab', { name: s.tombol, exact: true });
+			await expect(tab).toBeVisible({ timeout: 20000 });
+			await tab.click();
 			await page.waitForTimeout(1200);
 			await page.screenshot({ path: `${BUKTI_DIR}/desktop-${s.nama}.png`, fullPage: true });
 

@@ -112,7 +112,8 @@ test.describe('QA owner', () => {
 		await page.goto('/sistem');
 		// Tab di halaman Sistem memakai role=button (bukan role=tab seperti SubNav).
 		// Tunggu siap dulu — klik sebelum interaktif adalah sumber flaky yang lama.
-		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
+		// Role sebenarnya = 'tab' (bukan 'button') — lihat catatan di sub-baru.spec.ts.
+		const tab = page.getByRole('tab', { name: 'Kebijakan', exact: true });
 		await expect(tab).toBeVisible({ timeout: 20000 });
 		await tab.click();
 		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
@@ -139,7 +140,8 @@ test.describe('QA operator', () => {
 		await loginUi(page, AKUN.operator_user, AKUN.operator_pass);
 		await page.goto('/sistem');
 		await tungguSiap(page);
-		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
+		// Role sebenarnya = 'tab' (bukan 'button') — lihat catatan di sub-baru.spec.ts.
+		const tab = page.getByRole('tab', { name: 'Kebijakan', exact: true });
 		await expect(tab).toBeVisible({ timeout: 20000 });
 		await tab.click();
 		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
