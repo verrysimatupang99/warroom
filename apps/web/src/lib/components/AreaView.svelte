@@ -851,6 +851,26 @@
 				<!-- Tab Overextended (dipindah dari area /overextended — datanya dari crypto) -->
 				{#if sub === 'overextended' || sub === 'eksekusi'}
 					<div class="space-y-4">
+						<!-- RINGKASAN SATU BARIS (pembaruan halus 7 Okt, pasangan dari tab Ukur).
+						     Semua angka DITURUNKAN dari fakta yang sudah ada — tidak ada yang dikarang:
+						     jumlah posisi dari daftar posisi, risiko terpakai dari fakta `risiko`,
+						     jumlah trade dari ledger. -->
+						{#if sub === 'eksekusi'}
+							{@const hr = risikoObj?.hari_ini_r}
+							{@const batas = risikoObj?.batas_rugi_r}
+							<div class="rounded-card border border-line bg-surface px-3 py-2.5">
+								<span class="text-13 text-text-2">
+									Saat ini <b class="angka">{posisiJumlah}</b> posisi terbuka dari
+									<b class="angka">{posisiMaks}</b> slot
+									{#if hr != null && batas != null}
+										· risiko terpakai hari ini <b class="angka">{angka(hr)} R</b> dari batas
+										<b class="angka">{angka(batas)} R</b>
+									{/if}
+									· <b class="angka">{ledgerObj?.trade ?? 0}</b> trade tuntas tercatat di ledger.
+								</span>
+							</div>
+						{/if}
+
 						<!-- POSISI TERBUKA di tab Eksekusi (temuan 7 Okt: tab ini menjanjikan
 						     "posisi terbuka" di judulnya, tapi tidak menampilkannya sama sekali —
 						     padahal ada 3 posisi berjalan). Detail penuh, bukan ringkas. -->
@@ -858,12 +878,20 @@
 							{@render panelPosisi(false)}
 						{/if}
 						<div class="permukaan-2 rounded-card border border-line p-3">
-							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+							<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Overextended &amp; Uji Edge</h3>
+									<h3 class="text-14 font-medium text-text">
+										Overextended
+										<!-- Label ini dulu hanya di catatan KAKI kartu; pembaca bisa melihat
+										     tabelnya lebih dulu dan mengira itu daftar sinyal. Sekarang duduk
+										     di judul — tidak mungkin terlewat (pembaruan halus 7 Okt). -->
+										<span class="ml-1 rounded border border-warn/50 bg-warn/10 px-1.5 py-0.5 text-10 font-bold text-warn align-middle">
+											FAKTA HARGA, BUKAN SINYAL
+										</span>
+									</h3>
 									<p class="text-11 text-text-3">
 										Seberapa jauh pump harga dari dasar, jarak dari puncak, perubahan OI, dan
-										funding rate.
+										funding rate — bahan uji, bukan ajakan masuk.
 									</p>
 								</div>
 								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
