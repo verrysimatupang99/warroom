@@ -12,7 +12,8 @@ test('tab Eksekusi: ringkasan + label bukan-sinyal di judul', async ({ page }) =
 	const ringkas = page.getByText(/posisi terbuka dari/);
 	await expect(ringkas).toBeVisible({ timeout: 25000 });
 	const t = await page.locator('body').innerText();
-	expect(t).toMatch(/risiko terpakai hari ini/i);
+	// istilah dikoreksi 7 Okt: "kuota risiko harian terpakai" (hanya sisi RUGI).
+	expect(t).toMatch(/kuota risiko harian terpakai/i);
 	expect(t).toMatch(/trade tuntas tercatat di ledger/i);
 
 	// label harus berada di kartu Overextended (judul), bukan cuma di catatan kaki

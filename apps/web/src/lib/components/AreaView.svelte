@@ -858,13 +858,18 @@
 						{#if sub === 'eksekusi'}
 							{@const hr = risikoObj?.hari_ini_r}
 							{@const batas = risikoObj?.batas_rugi_r}
+							{@const rugi = hr != null ? Math.max(0, -Number(hr)) : null}
+							{@const profit = hr != null ? Math.max(0, Number(hr)) : null}
 							<div class="rounded-card border border-line bg-surface px-3 py-2.5">
 								<span class="text-13 text-text-2">
 									Saat ini <b class="angka">{posisiJumlah}</b> posisi terbuka dari
 									<b class="angka">{posisiMaks}</b> slot
-									{#if hr != null && batas != null}
-										· risiko terpakai hari ini <b class="angka">{angka(hr)} R</b> dari batas
+									{#if rugi != null && batas != null}
+										· kuota risiko harian terpakai <b class="angka">{angka(rugi)} R</b> dari
 										<b class="angka">{angka(batas)} R</b>
+									{/if}
+									{#if profit != null && profit > 0}
+										· hari ini <b class="angka text-pos">+{angka(profit)} R</b> (profit tidak memakai kuota)
 									{/if}
 									· <b class="angka">{ledgerObj?.trade ?? 0}</b> trade tuntas tercatat di ledger.
 								</span>

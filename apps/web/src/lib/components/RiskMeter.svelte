@@ -1,7 +1,7 @@
 <script lang="ts">
 	// RiskMeter: Pengawas batas risiko real-time & kapasitas trading.
 	// Operator dapat langsung tahu: seberapa aman alokasi risiko hari ini.
-	import { angka, statusRisikoDari } from '$lib/format';
+	import { angka, persenRisikoTerpakai, statusRisikoDari } from '$lib/format';
 
 	interface RisikoData {
 		mode?: string;
@@ -31,10 +31,11 @@
 	const maksPosisi = $derived(risiko?.maks_posisi ?? 3);
 	const posisiTerbuka = $derived(risiko?.posisi_terbuka ?? 0);
 
-	// Persentase risiko harian terpakai
-	const pctTerpakai = $derived(
-		Math.min(100, Math.max(0, (Math.abs(hariIniR) / (batasR || 1)) * 100))
-	);
+	// Kuota risiko harian = HANYA kerugian yang menghabiskannya (perbaikan 7 Okt).
+	// Versi lama memakai Math.abs sehingga hari PROFIT tampil sebagai "limit tercapai".
+	const pctTerpakai = $derived(persenRisikoTerpakai(hariIniR, batasR));
+	const rugiHariIni = $derived(Math.max(0, -hariIniR));
+	const profitHariIni = $derived(Math.max(0, hariIniR));
 
 	// Status dari helper bersama — ambang identik dengan badge di Home (temuan 5 Okt 2026).
 	const statusRisiko = $derived(statusRisikoDari(hariIniR, batasR));
@@ -59,7 +60,7 @@
 			<div class="flex items-center justify-between text-11 mb-1">
 				<span class="text-text-3">Risiko Terpakai Hari Ini</span>
 				<span class="angka text-text-2 font-medium">
-					{angka(Math.abs(hariIniR))} R / <span class="text-text-3">{angka(batasR)} R Max</span>
+					{angka(rugiHariIni)} R / <span class="text-text-3">{angka(batasR)} R Max</span>
 				</span>
 			</div>
 			<div class="h-2 w-full rounded-full bg-surface overflow-hidden border border-line-soft">
@@ -68,6 +69,13 @@
 					style={`width: ${Math.max(4, pctTerpakai)}%`}
 				></div>
 			</div>
+			{#if profitHariIni > 0}
+				<!-- Hari yang PROFIT tidak memakai kuota batas rugi. Dulu angkanya ditampilkan
+				     sebagai "risiko terpakai 4R / 3R" — pembaca menyimpulkan pelanggaran. -->
+				<div class="mt-0.5 text-10 text-pos">
+					+{angka(profitHariIni)} R profit hari ini — tidak memakai kuota batas rugi
+				</div>
+			{/if}
 			<div class="mt-1 flex justify-between text-10 text-text-3">
 				<span>Sisa toleransi: <b class="angka text-text">{angka(sisaR)} R</b></span>
 				<span>{angka(pctTerpakai)}% kuota</span>

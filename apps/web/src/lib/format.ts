@@ -16,6 +16,12 @@ export function ada(v: unknown): boolean {
  * Kenapa dipisah: badge "AMAN" dulu dipatok literal di kartu KPI (temuan 5 Okt 2026),
  * jadi bisa bilang "AMAN" walau data risiko belum ada / sudah lewat batas. Fungsi ini
  * memaksa kedua tempat memakai ambang yang sama persis (90% / 60%).
+ *
+ * PERBAIKAN 7 Okt (temuan saat mengerjakan tab Eksekusi): `hari_ini_r` adalah PnL
+ * HARI INI dalam R — NEGATIF berarti rugi. Versi lama memakai `Math.abs()`, sehingga
+ * hari yang PROFIT (+4R) ditampilkan sebagai "LIMIT TERCAPAI" — pembaca melihat
+ * "risiko terpakai 4R / 3R" padahal itu keuntungan. Sekarang yang dihitung sebagai
+ * risiko hanya kerugian; hari profit selalu AMAN.
  */
 export interface StatusRisiko {
 	label: string;
@@ -26,10 +32,19 @@ export function statusRisikoDari(hariIniR: unknown, batasR: unknown): StatusRisi
 	if (!ada(hariIniR) || !ada(batasR) || Number(batasR) <= 0) {
 		return { label: '—', kelas: 'text-text-3 bg-surface border-line' };
 	}
-	const pct = Math.min(100, Math.max(0, (Math.abs(Number(hariIniR)) / Number(batasR)) * 100));
+	// Risiko = hanya sisi RUGI. Profit tidak memakai kuota batas rugi.
+	const rugiR = Math.max(0, -Number(hariIniR));
+	const pct = Math.min(100, Math.max(0, (rugiR / Number(batasR)) * 100));
 	if (pct >= 90) return { label: 'LIMIT TERCAPAI', kelas: 'text-neg bg-neg/10 border-neg/40' };
 	if (pct >= 60) return { label: 'WASPADA', kelas: 'text-warn bg-warn/10 border-warn/40' };
 	return { label: 'AMAN', kelas: 'text-pos bg-pos/10 border-pos/40' };
+}
+
+/** Kuota risiko harian terpakai (0–100). Hanya kerugian yang menghabiskan kuota. */
+export function persenRisikoTerpakai(hariIniR: unknown, batasR: unknown): number {
+	if (!ada(hariIniR) || !ada(batasR) || Number(batasR) <= 0) return 0;
+	const rugiR = Math.max(0, -Number(hariIniR));
+	return Math.min(100, Math.max(0, (rugiR / Number(batasR)) * 100));
 }
 
 function keAngka(v: unknown): number | null {
