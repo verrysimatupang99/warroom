@@ -30,6 +30,58 @@
 		}
 	];
 
+	const metode = [
+		{
+			pasar: 'Crypto',
+			sumber: 'MEXC',
+			strategi: 'SMC multi-timeframe',
+			isi: 'Scan 1D + 4H + 1H → cari POI (FVG/order block) → tunggu harga kembali ke area → susun entry/SL/TP. Enam aturan gate: mtf_alignment, poi_valid, freshness, sl_distance, atr_min, exposure.',
+			bukti: 'Pengukuran shadow (lolos vs ditolak) + walk-forward backtest + ledger R. Pakem: INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING.'
+		},
+		{
+			pasar: 'Memecoin',
+			sumber: 'GMGN / FOMO',
+			strategi: 'Flow + safety gate',
+			isi: 'Pindai token baru multi-chain (sol, bsc, base, eth, robinhood, arc, stable). Saring: bundler ≤ 0,25 · dev hold ≤ 0,05 · entrapment ≤ 0,95 · likuiditas ≥ $100k · mcap ≥ $500k · skor ≥ 60. Profil masuk "flow", TP +100% jual 50% / +300% jual 100%, posisi $6, maks 8 terbuka.',
+			bukti: 'Bot paper menulis signals.jsonl + positions.json (jujur bila berkas rusak). Profil pembanding: base_tp100/300_sl65, fast_tp50/150_sl35, tight_tp40/sl25.'
+		},
+		{
+			pasar: 'LP Solana',
+			sumber: 'Meteora (DLMM / DAMM v2)',
+			strategi: 'LP terukur — fee vs IL',
+			isi: 'Pilih pool, catat V/L awal, tandai fee/hari, lalu nilai ulang tiap siklus: bila IL tumbuh lebih dalam daripada fee → verdict KELUAR (contoh nyata: IL -5,94% pada V/L 4,83 → 0,76).',
+			bukti: 'Mark lokal per alamat pool (DexScreener) + verifikasi 3 sumber. Rekonsiliasi on-chain BELUM ada — dinyatakan apa adanya.'
+		},
+		{
+			pasar: 'LP Robinhood Chain',
+			sumber: 'Uniswap v2/v3/v4 (L2, chain 4663)',
+			strategi: 'Pantau — belum ada posisi',
+			isi: 'Kumpulkan pool Stock Token + pool aktif, verifikasi harga, siapkan tempat bila kandidat layak. Belum ada posisi paper.',
+			bukti: 'lp_verifikasi (contoh TSLA/WETH: baru 1 sumber, status SEBAGIAN).'
+		},
+		{
+			pasar: 'IDX',
+			sumber: 'Stock Arjum',
+			strategi: 'Bandarmologi + BSJP + ARA Hunter',
+			isi: 'Baca aliran broker (ATS, frekuensi, no-sell) → skor 0–100 per emiten → sinyal BSJP (beli sore, jual pagi) + ARA Hunter. Anak strategi: ARA_HUNTER, BSJP, INTRADAY, MOMENTUM, BREAKOUT, REVERSAL, SWING.',
+			bukti: 'Ledger mesin (616+ trade) dengan grader v3; hanya trade TUNTAS masuk metrik.'
+		},
+		{
+			pasar: 'Forex',
+			sumber: 'TVC (TradingView)',
+			strategi: 'Bias struktur + sesi',
+			isi: 'Bias arah dari EMA/ATR pada seri TradingView, dikaitkan dengan sesi (Asia/London/NY) dan kalender dampak. Entry/SL/TP dari jurnal mesin.',
+			bukti: 'Ledger forex (4 trade) — sampel masih INSUFFICIENT, jadi belum boleh diklaim.'
+		},
+		{
+			pasar: 'Polymarket',
+			sumber: 'Dokumentasi PM',
+			strategi: 'Arm B — favorit 0,70–0,95',
+			isi: 'Beli outcome favorit berharga 0,70–0,95 (menang kecil tapi sering benar). Arm A/C/D dibekukan; bukti tetap disimpan.',
+			bukti: 'Win-rate 81,56% dari 179 kandidat vs break-even 77,0% — TINGKAT TUNING, tetapi split beku belum ada sehingga belum "edge terbukti".'
+		}
+	];
+
 	const prinsip = [
 		{ t: 'Jujur mengalahkan terlihat bagus', d: 'Angka yang belum pasti terlihat belum pasti. "76,25%" yang belum terverifikasi wajib berbeda dari yang terukur.' },
 		{ t: 'Kosong itu jawaban', d: '"Tidak ada sinyal" adalah informasi, bukan kegagalan render. Alasan kosongnya ditampilkan; tidak diisi nol.' },
@@ -75,6 +127,27 @@
 				</div>
 			{/each}
 		</dl>
+	</section>
+
+	<section class="kartu">
+		<h2 class="judul">Metode &amp; strategi per pasar</h2>
+		<p class="catatan">
+			Ini jawaban atas "strategi atau metode yang sudah gw sebutkan": semuanya ditulis dari
+			kode yang benar-benar jalan — bukan daftar cita-cita. Hasilnya ada di halaman tiap pasar.
+		</p>
+		<div class="metode">
+			{#each metode as m (m.pasar)}
+				<article class="m">
+					<header>
+						<h3>{m.pasar}</h3>
+						<span class="sumber">{m.sumber}</span>
+					</header>
+					<p class="strategi">{m.strategi}</p>
+					<p>{m.isi}</p>
+					<p class="bukti"><b>Buktinya:</b> {m.bukti}</p>
+				</article>
+			{/each}
+		</div>
 	</section>
 
 	<section class="kartu">
@@ -159,6 +232,55 @@
 		background: var(--color-canvas);
 		padding: 0.1rem 0.35rem;
 		border-radius: 4px;
+	}
+	.catatan {
+		margin: 0 0 0.7rem;
+		font-size: var(--text-12);
+		color: var(--color-text-3);
+	}
+	.metode {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+		gap: 0.7rem;
+	}
+	.m {
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-control, 0.6rem);
+		padding: 0.7rem 0.8rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		font-size: var(--text-12);
+	}
+	.m header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.m h3 {
+		margin: 0;
+		font-size: var(--text-13);
+	}
+	.m .sumber {
+		font-size: var(--text-10, 0.65rem);
+		color: var(--color-text-3);
+		border: 1px solid var(--color-line);
+		border-radius: 999px;
+		padding: 0 0.45rem;
+		white-space: nowrap;
+	}
+	.m .strategi {
+		margin: 0;
+		font-weight: 600;
+		color: var(--color-accent);
+	}
+	.m p {
+		margin: 0;
+		color: var(--color-text-2, var(--color-text));
+	}
+	.m .bukti {
+		color: var(--color-text-3);
 	}
 	.prinsip {
 		margin: 0;
