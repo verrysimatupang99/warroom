@@ -259,3 +259,64 @@ Suite: 8 tes authorization/IDOR/SSE hijau; pytest penuh hijau; ruff bersih.
 - **Perbaikan strategi ARA_HUNTER** (bukan lagi soal tampilan).
 - **CSP**: bila kelak menambah sumber luar (CDN baru), hash/daftar di `csp-enforce.sh`
   harus ikut diperbarui — kalau tidak, halaman akan memblokirnya sendiri.
+
+---
+
+## Temuan susulan: profit harian dihitung sebagai risiko (7 Okt, saat kerja tab Eksekusi)
+
+**Kelas bug:** angka benar, **label salah** → kesimpulan salah. Persis yang dikritik audit.
+
+`hari_ini_r` di fakta `risiko` adalah **PnL hari ini dalam R** — negatif berarti rugi.
+Dua tempat memakai `Math.abs()` sehingga hari yang **profit** ditampilkan seolah pelanggaran:
+
+| Tempat | Gejala |
+|---|---|
+| `RiskMeter.svelte` | Hari +4,00 R tampil sebagai "Risiko Terpakai 4,00 R / 3,00 R Max" + badge **LIMIT TERCAPAI** |
+| `format.ts` → `statusRisikoDari()` | Ambang 90%/60% dari nilai absolut → profit besar memicu "limit tercapai" |
+
+Artinya: **setiap hari yang profit, sistem menuduh dirinya melanggar batas risikonya sendiri.**
+
+**Perbaikan:**
+- `statusRisikoDari()` + `persenRisikoTerpakai()` baru: hanya sisi RUGI yang memakai kuota.
+- `RiskMeter`: `0,00 R / 3,00 R Max` + baris terpisah `+4,00 R profit hari ini — tidak memakai kuota batas rugi`.
+- Baris ringkasan tab Eksekusi ikut dikoreksi.
+
+**Pelajaran yang dikodifikasi:** untuk besaran yang punya ARAH (PnL, risiko, selisih),
+`Math.abs()` adalah bau bahaya — ia membuang tanda, dan tanda itulah yang membedakan
+"untung" dari "melanggar batas". Setiap kali memakai `abs()` pada besaran berarah,
+tanyakan: apakah pembaca akan menyimpulkan hal yang sama untuk +X dan −X?
+
+**Tes penjaga:** `e2e/cek_semantik_risiko.spec.ts` — bila hari profit, kuota terpakai
+HARUS `0,00 R` dan badge TIDAK boleh "LIMIT TERCAPAI". Mengunci semantik, bukan tampilan.
+
+---
+
+## Pembaruan halus UI (7 Okt, arah desain "Serene Capital" dari Stitch)
+
+Desain Stitch pertama dinilai pemilik "berlebihan" (8+ blok, belasan badge, 4.214 px).
+Digenerate ulang dengan prompt "pembaruan halus" → 1.440 px, 4 blok, 2 label. Tiga idenya
+diterapkan memakai token War Room (bukan Tailwind, bukan tema navy):
+
+**Tab Ukur:**
+1. Baris ringkasan bahasa manusia di atas (diturunkan dari data pengukuran, bukan karangan).
+2. Tiga angka besar per kartu (trade · total R · win rate) — sebelumnya empat angka sama besar.
+3. Tabel akurasi mode ringkas (4 kolom). **Temuan:** tabel ini sebelumnya TIDAK PERNAH
+   tampil di tab Ukur — kondisi `sub === 'ukur'` pada pemanggilnya berada di dalam grid
+   yang hanya dirender untuk cockpit/setup (kode mati).
+
+**Tab Eksekusi:**
+1. Baris ringkasan (posisi terbuka · kuota risiko terpakai · trade tuntas).
+2. Label `FAKTA HARGA, BUKAN SINYAL` dipindah ke JUDUL kartu Overextended — dulu hanya
+   di catatan kaki sehingga tabelnya bisa disalahartikan sebagai daftar sinyal.
+
+**Dua bug infrastruktur yang ikut ketemu:**
+- `deploy-web.sh`: jalur `ops/` dihitung setelah `cd apps/web` → `csp-enforce.sh` selalu
+  "gagal dipasang" saat dipanggil dari deploy (padahal jalan manual).
+- `csp-enforce.sh`: kini retry 5× saat mengambil HTML (node baru restart kadang belum siap).
+
+**Cara melihat desain Stitch (pratinjau, tanpa CSP):**
+`https://0xgunsl1ng3r.xyz/desain/stitch-halus.html` (acuan yang dipakai) ·
+`/desain/stitch-mandiri.html` (yang "berlebihan", pembanding) ·
+`/desain/stitch-1.html` (Bloomberg lama).
+Catatan: berkas di `/desain/` dilayani nginx dengan CSP khusus (berkas pihak ketiga, hanya
+untuk dilihat); berkas mandiri sudah menanam CSS-nya sendiri sehingga tampil tanpa CDN.
