@@ -104,3 +104,29 @@ lewat `AREA_KIND` — itu sumber semua angka memecoin.
 - **LP Robinhood baru "PANTAU"** — belum ada posisi paper; yang ada baru verifikasi harga.
 - **Bot memecoin:** `positions.json` belum ada & `signals.jsonl` rusak → belum ada hasil
   yang bisa dinilai, hanya konfigurasi.
+
+---
+
+## Verifikasi LIVE (bukan lokal)
+
+Diperiksa langsung di situs produksi (`0xgunsl1ng3r.xyz`) lewat peramban sungguhan:
+
+- `/cara-kerja` → **"Metode & strategi per pasar"** tampil: Crypto (SMC, 6 aturan), Memecoin
+  (flow + safety gate + TP legs), LP Solana (fee vs IL), LP Robinhood, IDX, Forex, Polymarket.
+- Halaman login berfungsi; sesi cookie HttpOnly; alur setelah masuk normal.
+
+## Temuan tambahan dari screenshot (dan perbaikannya)
+
+1. **Setup: ENTRY 0,00 untuk 1000PEPE.** `SignalCard` memakai format 2 desimal → seluruh
+   kolom kartu tampak nol/rusak. Kini harga adaptif (2/4/8 desimal). Dijaga tes.
+2. **Tab Eksekusi tidak menampilkan posisi terbuka** padahal judulnya menjanjikan itu.
+   Panel posisi (detail penuh) kini di puncak tab. Dijaga tes.
+3. **Narasi LLM `narrator/1.0.0` tertinggal** — berkas sudah 1.1.0 tetapi tabel `prompts`
+   belum disinkronkan; setelah disinkronkan, produksi memang memakai gaya baru.
+
+## Status LLM (jujur)
+
+Semua penyedia realtime sedang bermasalah di sisi kunci/infra, **bukan kode**:
+`qonek` & `nutaraline` → HTTP 401; `kiyara` → sering `schema_invalid`. `cache` jalan.
+Narasi yang ada sekarang berasal dari cache. Ini **gagal sistem** dan sudah ditulis
+begitu di UI — bukan "tidak ada sinyal".
