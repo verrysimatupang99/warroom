@@ -25,6 +25,7 @@
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import AkurasiPasar from './AkurasiPasar.svelte';
 	import DompetPasar from './DompetPasar.svelte';
+	import JudulBagian from './JudulBagian.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import SinyalPasar from './SinyalPasar.svelte';
@@ -286,6 +287,17 @@
 			<!-- VIEW KHUSUS: CRYPTO                      -->
 			<!-- ========================================== -->
 			{#if kunci === 'crypto'}
+				<!-- 7 Okt: pemilik bertanya "apa pembeda Cockpit vs Setup?". Sekarang dijawab
+				     di kepala halaman; isinya juga dipisah (kandidat tabel hanya di Setup). -->
+				{#if sub === 'cockpit' || !sub}
+					<JudulBagian nomor="1" judul="Ringkasan" tujuan="Uang, risiko, dan sinyal teratas — keadaan hari ini dalam satu pandangan" ikon="◎" />
+				{:else if sub === 'setup'}
+					<JudulBagian nomor="2" judul="Setup Kandidat" tujuan="Daftar lengkap kandidat + alasan lolos/gagal per aturan (kolom 'skor gate')" ikon="◈" />
+				{:else if sub === 'ukur'}
+					<JudulBagian nomor="3" judul="Ukur (validasi)" tujuan="Apakah aturan gate punya nilai? Lolos vs ditolak, dihitung setelah kejadian" ikon="⚖" />
+				{:else if sub === 'eksekusi'}
+					<JudulBagian nomor="4" judul="Eksekusi & Ledger" tujuan="Yang benar-benar terjadi: posisi terbuka, fill, hasil per trade" ikon="⇄" />
+				{/if}
 				{#if sub === 'cockpit' || sub === 'setup' || !sub}
 					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
@@ -301,30 +313,35 @@
 								</p>
 							{/if}
 
-							<div class="permukaan-2 rounded-card border border-line p-3">
-								<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
-									<div>
-										<h3 class="text-14 font-medium text-text">Kandidat Setup SMC Crypto</h3>
-										<p class="text-11 text-text-3">Kandidat trade hasil screening multi-timeframe SMC</p>
+							{#if sub === 'setup'}
+								<!-- Kandidat "layar besar" (SignalCard) HANYA di tab Setup.
+								     Di Cockpit ini duplikat dengan tabel SinyalPasar dan membuat kedua
+								     tab terasa sama (keluhan pemilik 7 Okt: "apa pembedanya?"). -->
+								<div class="permukaan-2 rounded-card border border-line p-3">
+									<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+										<div>
+											<h3 class="text-14 font-medium text-text">Kandidat Setup SMC Crypto</h3>
+											<p class="text-11 text-text-3">Kandidat trade hasil screening multi-timeframe SMC</p>
+										</div>
+										<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+											{kandidatArray.length} setup
+										</span>
 									</div>
-									<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
-										{kandidatArray.length} setup
-									</span>
-								</div>
 
-								{#if kandidatArray.length === 0}
-									<div class="p-6 text-center text-text-3 space-y-1">
-										<p class="text-12 font-medium text-text-2">Tidak ada kandidat setup crypto aktif saat ini.</p>
-										<p class="text-11 text-text-3">Screening SMC 24/7 sedang berjalan. Setup baru akan muncul saat terbentuk struktur POI valid dengan ATR1H ≥ 1.0%.</p>
-									</div>
-								{:else}
-									<div class="space-y-2.5">
-										{#each kandidatArray as s (s.pair + String(s.entry))}
-											<SignalCard setup={s} />
-										{/each}
-									</div>
-								{/if}
-							</div>
+									{#if kandidatArray.length === 0}
+										<div class="p-6 text-center text-text-3 space-y-1">
+											<p class="text-12 font-medium text-text-2">Tidak ada kandidat setup crypto aktif saat ini.</p>
+											<p class="text-11 text-text-3">Screening SMC 24/7 sedang berjalan. Setup baru akan muncul saat terbentuk struktur POI valid dengan ATR1H ≥ 1.0%.</p>
+										</div>
+									{:else}
+										<div class="space-y-2.5">
+											{#each kandidatArray as s (s.pair + String(s.entry))}
+												<SignalCard setup={s} />
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/if}
 
 			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
 			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
@@ -355,8 +372,9 @@
 							</div>
 			{/if}
 
-							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC -->
-							{#if sub === 'setup' || sub === 'cockpit'}
+							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC.
+							     HANYA di Setup — supaya Cockpit (ringkasan) tidak berisi tabel panjang. -->
+							{#if sub === 'setup'}
 								<SinyalPasar
 									pasar="crypto"
 									judul="Sinyal & Entry Setup (Crypto)"
@@ -684,7 +702,9 @@
 					</div>
 				{/if}
 
-				{#if sub === 'data' || sub === 'cockpit'}
+				{#if sub === 'ukur' || sub === 'eksekusi'}
+					<!-- 7 Okt: blok kesehatan jalur = plumbing teknis; dipindah dari Cockpit ke sini
+					     (pemilik menilai Cockpit "sangat membingungkan" karena campuran ini). -->
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -734,6 +754,15 @@
 			<!-- VIEW KHUSUS: POLYMARKET                  -->
 			<!-- ========================================== -->
 			{#if kunci === 'polymarket'}
+				{#if sub === 'setup-b' || !sub}
+					<JudulBagian nomor="1" judul="Favorit 0,70–0,95 (Arm B)" tujuan="Satu-satunya arm yang dipakai: beli outcome favorit yang harganya 0,70–0,95 (menang kecil, sering benar)" ikon="◎" />
+				{:else if sub === 'riset'}
+					<JudulBagian nomor="2" judul="Riset" tujuan="Dataset beku + parity/drift + katalog replay — bahan bukti, bukan keputusan" ikon="⌕" />
+				{:else if sub === 'arsip'}
+					<JudulBagian nomor="3" judul="Arm Lain (Beku)" tujuan="A momentum, C fade, D favorit: disimpan sebagai bukti, bukan dasar keputusan" ikon="❄" />
+				{:else if sub === 'live'}
+					<JudulBagian nomor="4" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
+				{/if}
 			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
 			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
 			{#if narasiObj}
@@ -778,11 +807,19 @@
 				{#if sub === 'setup-b'}
 					<div class="space-y-4">
 						<!-- Keputusan owner 7 Okt: fokus SETUP B KANDIDAT. Arm lain dibekukan (tab Arsip). -->
-						<div class="rounded-card border border-accent/30 bg-accent/5 p-3">
+						<div class="rounded-card border border-accent/30 bg-accent/5 p-3 space-y-1">
 							<div class="flex items-center gap-2">
-								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">FOKUS: SETUP B KANDIDAT</span>
-								<span class="text-11 text-text-3">arm A momentum · C fade · D favorit dibekukan — lihat tab Arsip</span>
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">YANG DIPAKAI: ARM B</span>
+								<span class="text-11 text-text-3">"Arm" = aturan beli yang diuji mesin; huruf A/B/C/D hanya penanda.</span>
 							</div>
+							<p class="text-11 text-text-2">
+								<b>Arm B (kandidat)</b> = beli outcome favorit yang harganya <b>0,70–0,95</b>.
+								Menang kecil (+0,05–0,30) tapi sering benar; kalah besar karena membayar mahal.
+								Arm A momentum · C fade · D favorit dibekukan → tab <b>Arm Lain (Beku)</b>.
+							</p>
+							<p class="text-10 text-text-3">
+								Dompet di bawah = Rp 10 juta × persentase PnL arm (modal asli arm 100 USD) — bukan setoran baru.
+							</p>
 						</div>
 						<!-- Dompet paper Polymarket: arm B (keputusan owner 7 Okt) -->
 						<DompetPasar market="polymarket" dompet={dompetObj} judul="Dompet Paper Polymarket (arm B)" />
@@ -1003,6 +1040,15 @@
 
 			<!-- ========================================== -->
 			{#if kunci === 'idx'}
+				{#if sub === 'sinyal' || !sub}
+					<JudulBagian nomor="1" judul="Sinyal" tujuan="Bandarmologi + BSJP + ARA: siapa yang bergerak, dan sinyal apa yang keluar" ikon="◈" />
+				{:else if sub === 'bandarmologi'}
+					<JudulBagian nomor="2" judul="Bandarmologi" tujuan="Aliran broker per emiten (ATS, frekuensi, no-sell) + skor 0–100" ikon="⚖" />
+				{:else if sub === 'bsjp'}
+					<JudulBagian nomor="3" judul="BSJP" tujuan="Beli Sore Jual Pagi: kandidat tahan semalam, dari walk-forward (bukan karangan)" ikon="☾" />
+				{:else if sub === 'aliran'}
+					<JudulBagian nomor="4" judul="Aliran" tujuan="Peta modal: asing vs lokal, akumulasi senyap, konflik distribusi" ikon="⇄" />
+				{/if}
 				{#if isWeekendWIB}
 					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
@@ -1017,13 +1063,24 @@
 
 				{#if sub === 'sinyal' || !sub}
 					<div class="space-y-4">
-						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya -->
+						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya.
+						     Ini "uang" — selalu di atas, apa pun tabnya. -->
 						<DompetPasar market="idx" dompet={dompetObj} judul="Dompet Paper IDX (Rp 10 juta)" />
+						<!-- ALUR KERJA: (1) Bandarmologi = siapa yang bergerak; (2) BSJP+ARA = sinyal;
+						     (3) Screener Arjum = bahan mentah. Urutan ini menggantikan tumpukan
+						     yang dulu membuat halaman terasa "hancur" (keluhan 7 Okt). -->
+						<div class="rounded-card border border-accent/30 bg-accent/5 p-2.5 text-11 text-text-2">
+							Urutan baca tab ini (dari bahan ke keputusan): <b>1)</b> Screener Arjum =
+							bahan mentah (broker flow + teknikal) → <b>2)</b> Akurasi per setup =
+							mana yang layak dipercaya → <b>3)</b> BSJP &amp; ARA = sinyal yang keluar →
+							<b>4)</b> Bandarmologi = perubahan aliran terbaru.
+							Semua dari ledger mesin yang sama; posisi CREATED ditandai umurnya.
+						</div>
 						<!-- Arjum Screener -->
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Arjum Multi-Factor Stock Screener</h3>
+									<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 1</span>Arjum Multi-Factor Stock Screener</h3>
 									<p class="text-11 text-text-3">Filter kombinasi broker flow, teknikal, dan probabilitas event</p>
 								</div>
 								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
@@ -1185,7 +1242,7 @@
 				<div class="permukaan-2 rounded-card border border-line p-3">
 					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 						<div>
-							<h3 class="text-14 font-medium text-text">Akurasi Signal per Setup</h3>
+							<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 2</span>Akurasi Signal per Setup</h3>
 							<p class="text-11 text-text-3">
 								Ledger mesin (grader v3) — hanya baris tuntas yang masuk metrik; kematangan dinilai per hari bursa
 							</p>
@@ -1282,11 +1339,11 @@
 				</div>
 
 				<!-- Sinyal & entry setup IDX (6 Okt): ARA/BSJP/INTRADAY dari ledger mesin -->
-				{#if sub === 'bsjp'}
+				{#if sub === 'bsjp' || sub === 'sinyal'}
 					<SinyalPasar
 						pasar="idx"
 						judul="Sinyal & Entry Setup (IDX)"
-						subjudul="Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R"
+						subjudul="LANGKAH 3 · Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R"
 						data={idxSinyalObj}
 					/>
 				{/if}
@@ -1485,7 +1542,7 @@
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Bandarmologi & Broker Summary</h3>
+									<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 4</span>Bandarmologi &amp; Broker Summary</h3>
 									<p class="text-11 text-text-3">Analisis akumulator/distributor, Average Transaction Size (ATS), dan status No-Sell</p>
 								</div>
 								{#if idxBandar?.hari}
@@ -1714,6 +1771,15 @@
 			<!-- VIEW KHUSUS: FOREX & KOMODITAS             -->
 			<!-- ========================================== -->
 			{#if kunci === 'forex'}
+				{#if sub === 'struktur' || !sub}
+					<JudulBagian nomor="1" judul="Struktur" tujuan="Cockpit harga (TradingView TVC:GOLD) + sinyal & entry setup dari jurnal mesin" ikon="◈" />
+				{:else if sub === 'sesi'}
+					<JudulBagian nomor="2" judul="Sesi" tujuan="Kapan tiap bursa buka/tutup (OANDA-style), pola volume per sesi" ikon="◷" />
+				{:else if sub === 'kalender'}
+					<JudulBagian nomor="3" judul="Kalender" tujuan="Agenda makro + hitung mundur: apakah aman masuk posisi sekarang" ikon="⌗" />
+				{:else if sub === 'demo'}
+					<JudulBagian nomor="4" judul="Keterbatasan & Demo" tujuan="Apa yang belum ada (akun broker, biaya) — dinyatakan terbuka" ikon="⚠" />
+				{/if}
 				{#if isWeekendWIB}
 					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
@@ -1978,21 +2044,29 @@
 
 							<div class="rounded bg-surface p-3 border border-line text-12 text-text-2 space-y-2">
 								<div class="font-bold text-text">Aturan Transparansi ADR-003</div>
-								<p>Sektor Forex War Room beroperasi eksklusif pada lingkungan DEMO / paper trading. Kami tidak mengalirkan dana riil ke pasar valas dan tidak mengklaim eksekusi live berpenyedia komersial. Data harga XAU/USD dan valuta diambil dari TVC/OANDA untuk riset analisis kuantitatif.</p>
+								<p>Forex War Room beroperasi pada lingkungan DEMO / paper trading: tidak ada dana riil ke pasar valas, dan tidak ada klaim eksekusi live berpenyedia komersial.</p>
+								<p class="text-warn">
+									⚠ Koreksi 7 Okt: halaman ini dulu menulis "Akun Demo OANDA-v20-DEMO — STATUS FEED: TERHUBUNG".
+									Itu <b>tidak benar</b>: proyek ini <b>tidak</b> punya akun OANDA. Harga diambil dari
+									TradingView (TVC:GOLD) — bukan dari broker. Sumber palsu dihapus, bukan dirapikan.
+								</p>
 							</div>
 
 							<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-12">
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<span class="text-10 text-text-3 block">AKUN DEMO</span>
-									<span class="text-14 font-bold text-text">OANDA-v20-DEMO</span>
+									<span class="text-10 text-text-3 block">SUMBER HARGA</span>
+									<span class="text-14 font-bold text-text">TradingView TVC:GOLD</span>
+									<span class="text-10 text-text-3">spot gold CFD, resolusi {forexObj?.resolution ?? 60}m</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<span class="text-10 text-text-3 block">STATUS FEED</span>
-									<span class="text-14 font-bold text-pos">TERHUBUNG</span>
+									<span class="text-10 text-text-3 block">AKUN BROKER</span>
+									<span class="text-14 font-bold text-text">tidak ada</span>
+									<span class="text-10 text-text-3">paper murni — tak ada kredensial broker</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<span class="text-10 text-text-3 block">PAIR AKTIF</span>
-									<span class="text-14 font-bold text-text">XAU/USD, EUR/USD</span>
+									<span class="text-10 text-text-3 block">MESIN SINYAL</span>
+									<span class="text-14 font-bold text-text">Tencent (cron)</span>
+									<span class="text-10 text-text-3">XAUUSD 4-agen + multi-pair</span>
 								</div>
 							</div>
 						</div>
@@ -2063,6 +2137,13 @@
 			<!-- VIEW KHUSUS: GMGN (DEX & MEMECOIN)        -->
 			<!-- ========================================== -->
 			{#if kunci === 'gmgn'}
+				{#if sub === 'radar' || !sub}
+					<JudulBagian nomor="1" judul="Radar" tujuan="Jendela likuiditas per chain + penjelasan Robinhood Chain vs Meteora + verifikasi harga live" ikon="◉" />
+				{:else if sub === 'lp'}
+					<JudulBagian nomor="2" judul="LP" tujuan="Posisi LP nyata (bankroll kecil) + dompet + akurasi P&L" ikon="≋" />
+				{:else if sub === 'memecoin'}
+					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru & smart money — eksplorasi, bukan rekomendasi" ikon="✦" />
+				{/if}
 			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
 			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
 			{#if narasiObj}
@@ -2097,6 +2178,16 @@
 				     Fakta yang membingungkan banyak orang dijelaskan di sini dengan bukti. -->
 				{#if sub === 'radar' || !sub}
 					<div class="space-y-3">
+						<!-- Jawaban satu baris (pertanyaan langsung pemilik 7 Okt): "aslinya kita
+						     Robinhood-Uniswap atau Meteora-Solana?" — dijawab, bukan disuruh baca. -->
+						<div class="rounded-card border border-accent/40 bg-accent/10 p-3">
+							<div class="text-12 font-bold text-text">Jawaban singkat: radar kita memantau <span class="text-accent">KEDUANYA</span> — dua protokol berbeda.</div>
+							<p class="mt-1 text-11 text-text-2">
+								<b>Robinhood Chain</b> = L2 Ethereum (chain ID 4663), LP-nya <b>Uniswap v2/v3/v4</b>.
+								<b>Solana</b> = LP-nya <b>Meteora</b> (DLMM / DAMM v2). Radar menampilkan keduanya
+								per chain — lihat kolom chain di bawah. Yang <b>tidak benar</b>: menyebut "LP Robinhood = Meteora".
+							</p>
+						</div>
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-2 border-b border-line-soft pb-2">
 								<h3 class="text-14 font-medium text-text">LP: "Robinhood Chain" vs Meteora — apa bedanya?</h3>

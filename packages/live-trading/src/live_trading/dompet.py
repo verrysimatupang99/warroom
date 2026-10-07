@@ -378,11 +378,19 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
             if not rs:
                 continue
             kum_s = sum(rs) * risiko
+            terburuk = min(rs)
             per_setup[str(nama)] = {
                 "setup": str(nama),
                 "n": len(rs),
                 "total_r": round(sum(rs), 2),
                 "mean_r": round(sum(rs) / len(rs), 4),
+                "min_r": round(terburuk, 2),
+                "max_r": round(max(rs), 2),
+                # Risiko tak terbatas: satu trade rugi JAUH melebihi 1R (stop tak dihormati).
+                # Temuan 7 Okt: ARA_HUNTER punya trade -13,84R — exit di open sesi berikutnya,
+                # jadi gap bisa 14× risiko yang direncanakan. Dompet "1% per trade" pada setup
+                # seperti ini MENYEMBUNYIKAN risiko nyata; karena itu flag ini wajib ikut terbit.
+                "risiko_tak_terbatas": bool(terburuk <= -3.0),
                 "pnl_idr": round(kum_s, 0),
                 "saldo_idr": round(WALLET_IDR + kum_s, 0),
                 "pnl_pct": round(100 * kum_s / WALLET_IDR, 2),
@@ -411,6 +419,9 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
             "net_r dari mesin sudah memperhitungkan biaya (grader v3).",
             "Posisi berstatus CREATED tidak dihitung — belum tuntas (lihat tab Sinyal).",
             "Risiko per trade = 1% × saldo awal, dalam rupiah langsung.",
+            "PENTING: setup dengan min_r ≤ −3R (mis. ARA_HUNTER, terburuk −13,84R) TIDAK "
+            "menghormati stop 1R — saldo bisa jauh lebih buruk daripada yang terlihat. "
+            "Lihat kolom min_r per setup.",
         ],
     }
 

@@ -28,6 +28,9 @@
 		setup: string;
 		n: number;
 		mean_r: number | null;
+		min_r?: number | null;
+		max_r?: number | null;
+		risiko_tak_terbatas?: boolean;
 		pnl_idr: number;
 		saldo_idr: number;
 		pnl_pct: number;
@@ -117,11 +120,14 @@
 			</div>
 			<div class="rounded bg-surface p-2.5 border border-line">
 				<div class="text-10 text-text-3">SALDO KINI</div>
+				<!-- Satuannya RUPIAH (dompet Rp 10 juta). Angka venue (USD) ditaruh sebagai
+				     konteks, BUKAN sebagai nilai utama — 7 Okt pemilik bingung melihat
+				     "+576.45 USD" di kartu yang PnL-nya rupiah. -->
 				<div class="text-13 font-bold {(d.pnl_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
-					{d.saldo_akhir_idr != null ? rupiah(d.saldo_akhir_idr) : dolar(d.saldo_akhir_usd)}
+					{rupiah(d.saldo_akhir_idr ?? (d.saldo_akhir_usd ?? 0) * (d.kurs_usd_idr ?? 0))}
 				</div>
-				{#if d.saldo_akhir_usd != null && d.saldo_akhir_idr == null}
-					<div class="text-10 text-text-3">≈ {(d.saldo_akhir_usd * (d.kurs_usd_idr ?? 0)).toLocaleString('id-ID', { maximumFractionDigits: 0 })} IDR</div>
+				{#if d.mata_uang !== 'IDR' && d.saldo_akhir_usd != null}
+					<div class="text-10 text-text-3 font-mono">{dolar(d.saldo_akhir_usd)} @ {Math.round(d.kurs_usd_idr ?? 0).toLocaleString('id-ID')}</div>
 				{/if}
 			</div>
 			<div class="rounded bg-surface p-2.5 border border-line">
@@ -142,9 +148,9 @@
 					<path d={skala.jalur} fill="none" class="stroke-accent" stroke-width="1.5" />
 				</svg>
 				<div class="flex justify-between text-10 text-text-3 font-mono">
-					<span>mulai</span>
-					<span>{titik.length} trade</span>
-					<span>{rupiah(d.saldo_akhir_idr ?? (d.saldo_akhir_usd ?? 0))}</span>
+					<span>mulai {rupiah(d.saldo_awal_idr)}</span>
+					<span>{titik.length} trade tuntas</span>
+					<span>kini {rupiah(d.saldo_akhir_idr ?? (d.saldo_akhir_usd ?? 0) * (d.kurs_usd_idr ?? 0))}</span>
 				</div>
 			</div>
 		{/if}
@@ -159,6 +165,7 @@
 								<th class="py-1.5 px-1.5">Setup</th>
 								<th class="py-1.5 px-1.5 text-right">n</th>
 								<th class="py-1.5 px-1.5 text-right">Mean R</th>
+								<th class="py-1.5 px-1.5 text-right">Terburuk</th>
 								<th class="py-1.5 px-1.5 text-right">PnL</th>
 								<th class="py-1.5 px-1.5 text-right">Saldo</th>
 							</tr>
@@ -166,10 +173,18 @@
 						<tbody class="divide-y divide-line-soft">
 							{#each Object.values(d.per_setup) as s (s.setup)}
 								<tr>
-									<td class="py-1.5 px-1.5 font-bold text-text">{s.setup}</td>
+									<td class="py-1.5 px-1.5 font-bold text-text">
+										{s.setup}
+										{#if s.risiko_tak_terbatas}
+											<span class="ml-1 rounded border border-neg/40 bg-neg/10 px-1 py-0.5 text-10 font-bold text-neg" title="Ada trade rugi >3R: stop 1R tidak dihormati (exit di open sesi berikutnya)">⚠ STOP TAK DIHORMATI</span>
+										{/if}
+									</td>
 									<td class="py-1.5 px-1.5 text-right text-text-2">{s.n}</td>
 									<td class="py-1.5 px-1.5 text-right {s.mean_r != null && s.mean_r > 0 ? 'text-pos' : 'text-neg'}">
 										{s.mean_r != null ? `${s.mean_r > 0 ? '+' : ''}${s.mean_r}` : '—'}
+									</td>
+									<td class="py-1.5 px-1.5 text-right {s.min_r != null && s.min_r <= -3 ? 'text-neg font-bold' : 'text-text-3'}">
+										{s.min_r != null ? `${s.min_r}R` : '—'}
 									</td>
 									<td class="py-1.5 px-1.5 text-right font-bold {s.pnl_idr >= 0 ? 'text-pos' : 'text-neg'}">{rupiah(s.pnl_idr)}</td>
 									<td class="py-1.5 px-1.5 text-right {s.saldo_idr >= d.saldo_awal_idr! ? 'text-text' : 'text-neg'}">{rupiah(s.saldo_idr)}</td>

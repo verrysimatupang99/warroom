@@ -153,6 +153,20 @@
 			</p>
 			<p class="verdikt-alasan">{verdikt.alasan}</p>
 
+			<!-- 7 Okt (pertanyaan pemilik): "6 peluang tapi apa saja?" — daftarnya harus
+			     terlihat di sini, bukan hanya dihitung. Tiap chip menuju pasarnya. -->
+			{#if peluang.length}
+				<div class="peluang-daftar" aria-label="Daftar peluang hari ini">
+					{#each peluang as s (s.pasar)}
+						<a class="peluang-chip" href={s.pasar === 'lp' ? '/gmgn?sub=lp' : `/${s.pasar}`}>
+							<span class="chip-nama">{s.label}</span>
+							{#if s.subjek}<span class="chip-subjek angka">{s.subjek}</span>{/if}
+							<span class="chip-arah">{s.arah ?? 'ADA'}</span>
+						</a>
+					{/each}
+				</div>
+			{/if}
+
 			<!-- SETUP ENTRY: jawaban "masuk di mana". Hanya bila datanya ada. -->
 			{#if setupTeratas.length}
 				<div class="setup" aria-label="Setup entry pasar teratas">
@@ -214,7 +228,19 @@
 						</tbody>
 					</table>
 				</div>
-				{#if akurasi.standar}<p class="dim kaki-tabel">{akurasi.standar}</p>{/if}
+				<div class="pakem-legend">
+					<span class="pakem pakem-INSUFFICIENT">INSUFFICIENT</span> <span class="dim">&lt;10 hari — belum boleh diklaim apa pun</span>
+					<span class="pisah">·</span>
+					<span class="pakem pakem-DIRECTIONAL">DIRECTIONAL</span> <span class="dim">&lt;30 hari — arah saja, dilarang klaim profit</span>
+					<span class="pisah">·</span>
+					<span class="pakem pakem-PRELIMINARY">PRELIMINARY</span> <span class="dim">&lt;100 hari — evaluasi awal</span>
+					<span class="pisah">·</span>
+					<span class="pakem pakem-TUNING">TUNING</span> <span class="dim">≥100 hari — baru boleh tuning</span>
+				</div>
+				<p class="dim kaki-tabel">
+					Kolom <b>Setup terbesar</b> = setup dengan trade tuntas terbanyak di market itu (yang lain ada di halaman market).
+					<b>Mean R</b> dirata-rata per trade; <b>R</b> tidak bisa dibandingkan antar-market — pakai dompet Rp 10 juta di halaman Riset.
+				</p>
 			{:else}
 				<p class="dim">Ringkasan akurasi belum tersedia.</p>
 			{/if}
@@ -281,6 +307,20 @@
 		--tinta: var(--color-text);
 		--redup: var(--color-text-3);
 	}
+
+	.peluang-daftar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.25rem; }
+	.peluang-chip {
+		display: inline-flex; align-items: center; gap: 0.4rem;
+		border: 1px solid var(--garis); border-radius: 999px;
+		padding: 0.2rem 0.65rem; font-size: 0.75rem; text-decoration: none;
+		background: var(--permukaan); color: var(--tinta);
+	}
+	.peluang-chip:hover { border-color: var(--mint); }
+	.chip-nama { color: var(--redup); }
+	.chip-subjek { font-weight: 700; }
+	.chip-arah { color: var(--mint); font-weight: 700; font-size: 0.68rem; }
+	.pakem-legend { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.5rem; font-size: 0.7rem; }
+	.pakem-legend .pisah { color: var(--redup); }
 
 	.judul-bagian { margin: 0.5rem 0 0.75rem; }
 	.judul-bagian h2 { font-size: 1.05rem; margin: 0 0 0.15rem; letter-spacing: 0.01em; }

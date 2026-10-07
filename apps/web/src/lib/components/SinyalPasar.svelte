@@ -38,6 +38,7 @@
 		net_r?: number | null;
 		waktu?: string | null;
 		dibuat?: string | null;
+		umur_hari?: number | null;
 		alasan?: string | null;
 		note?: string | null;
 	}

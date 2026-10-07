@@ -65,7 +65,7 @@ export const AREAS: Area[] = [
 		anak: [
 			// Keputusan owner 7 Okt: fokus ke SETUP B KANDIDAT; arm A/C/D dibekukan (diarsipkan,
 			// tidak dihapus — bukti tetap ada, hanya tidak lagi jadi pusat perhatian).
-			{ slug: 'setup-b', label: 'Setup B', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Fokus: kandidat arm B — verdict, akurasi, dompet' },
+			{ slug: 'setup-b', label: 'Favorit 0,70–0,95', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Arm B = beli favorit di band 0,70–0,95 (yang dipakai): dompet, akurasi, verdict' },
 			{ slug: 'riset', label: 'Riset', kunci: ['bagian', 'poly_paper'], catatan: 'Dataset, parity/drift, katalog replay (bekas dataset+verdict)' },
 			{ slug: 'arsip', label: 'Arm Lain (Beku)', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'A momentum · C fade · D favorit — dibekukan, disimpan sebagai bukti' },
 			{ slug: 'live', label: 'Live', kunci: ['equity', 'ledger'], catatan: 'Arming 3-way, dana nyata (status: belum arming)' }
