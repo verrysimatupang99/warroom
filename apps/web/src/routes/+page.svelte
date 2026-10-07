@@ -271,11 +271,16 @@
 
 		<!-- 2b. AKURASI & PnL per market (6 Okt) — sekarang DI DALAM card gabungan.
 		     Sengaja TIDAK menjumlahkan R dan USD — satuannya beda; kolomnya dipisah. -->
-		<div class="pasar akurasi-dalam" aria-label="Akurasi dan PnL per market">
-			<div class="judul-bagian">
-				<h2>Akurasi &amp; PnL per Market</h2>
-				<p class="dim">Dari ledger nyata tiap market. Tingkat pakem: <span class="angka">INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING</span> (n efektif per hari).</p>
-			</div>
+		<!-- Lapisan 2 (bukti ringkas) — tetap di dalam card gabungan, tetapi tabelnya
+		     dilipat: yang dibutuhkan saat memindai adalah JUDUL + kesimpulan; tabel 5 baris
+		     dibuka saat pembaca memang mau membandingkan. -->
+		<details class="pasar akurasi-dalam lipat-akurasi" aria-label="Akurasi dan PnL per market">
+			<summary>
+				<span class="ringkas-judul">Akurasi &amp; PnL per Market</span>
+				<span class="dim">dari ledger nyata · trade tuntas</span>
+				<span class="petunjuk">buka tabel</span>
+			</summary>
+			<div class="isi-lipat">
 			{#if akurasi}
 				<div class="tabel-wrap">
 					<table class="tabel-pasar angka">
@@ -339,7 +344,8 @@
 			{:else}
 				<p class="dim">Ringkasan akurasi belum tersedia.</p>
 			{/if}
-		</div>
+			</div>
+		</details>
 		</section>
 
 		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
@@ -415,10 +421,18 @@
 			</div>
 		</section>
 
-		<!-- 4. STATUS per pasar — murni catatan kejujuran & skor. Daftar sinyalnya ada di
-		     bagian 3; mengulang setup di sini membuat satu halaman memuat dua daftar yang
-		     sama (keluhan pemilik: "card dibawahnya belum tersusun rapi"). -->
-		<section class="pasar" aria-label="Rincian per pasar">
+		<!-- 4. STATUS per pasar — LAPISAN AUDIT (audit QA putaran 4, prioritas 4:
+		     "kurangi density, progressive disclosure"). Daftar sinyalnya sudah ada di
+		     bagian 3; di sini hanya catatan kejujuran per pasar. Karena isinya panjang
+		     tetapi jarang dibutuhkan saat memindai, bagian ini TERLIPAT secara default —
+		     kepala tetap terlihat sehingga pembaca tahu ada apa di dalamnya. -->
+		<details class="pasar lipat-status">
+			<summary>
+				<span class="ringkas-judul">Catatan &amp; skor per pasar</span>
+				<span class="dim angka">{daftar.length} pasar</span>
+				<span class="petunjuk">buka untuk audit</span>
+			</summary>
+			<div class="isi-lipat">
 			{#each daftar as s (s.pasar)}
 				<article class="baris" class:kosong={!s.ada}>
 					<div class="baris-kiri">
@@ -449,7 +463,8 @@
 			{#if daftar.length === 0}
 				<p class="dim">Belum ada pasar yang bisa ditampilkan{galat ? `: ${galat}` : '.'}</p>
 			{/if}
-		</section>
+			</div>
+		</details>
 
 		<p class="kaki dim">
 			Ticker denyut pasar, satu verdikt besar, lalu rincian per pasar. Angka apa adanya
@@ -538,6 +553,34 @@
 	@media (prefers-reduced-motion: reduce) { .ticker-jalur { animation: none; } }
 
 	/* Card gabungan status + akurasi (revisi 7 Okt) */
+	/* Gaya lipatan bersama (details/summary) — dipakai lipat-status & lipat-akurasi. */
+	.lipat-akurasi { border-top: 1px solid var(--garis); }
+	.lipat-akurasi > summary {
+		display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+		min-height: 44px; padding: 0.5rem 0.85rem; cursor: pointer; list-style: none;
+	}
+	.lipat-akurasi > summary::-webkit-details-marker { display: none; }
+	.lipat-akurasi > summary::after { content: '▾'; margin-left: auto; color: var(--redup); }
+	.lipat-akurasi[open] > summary::after { content: '▴'; }
+	.lipat-akurasi .ringkas-judul { font-size: 0.95rem; font-weight: 600; }
+	.lipat-akurasi .petunjuk { font-size: 0.68rem; color: var(--redup); }
+	.lipat-akurasi .isi-lipat { padding: 0 0.85rem 0.75rem; }
+
+	.lipat-status {
+		border: 1px solid var(--garis); border-radius: 1rem; background: var(--permukaan);
+		padding: 0;
+	}
+	.lipat-status > summary {
+		display: flex; align-items: center; gap: 0.6rem;
+		min-height: 44px; padding: 0.5rem 0.85rem; cursor: pointer; list-style: none;
+	}
+	.lipat-status > summary::-webkit-details-marker { display: none; }
+	.lipat-status > summary::after { content: '▾'; margin-left: auto; color: var(--redup); }
+	.lipat-status[open] > summary::after { content: '▴'; }
+	.lipat-status .ringkas-judul { font-size: 0.9rem; font-weight: 600; }
+	.lipat-status .petunjuk { font-size: 0.68rem; color: var(--redup); }
+	.lipat-status .isi-lipat { padding: 0 0.85rem 0.75rem; border-top: 1px solid var(--garis); }
+
 	.kartu-gabung {
 		border: 1px solid var(--garis);
 		border-radius: 1rem;
