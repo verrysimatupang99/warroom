@@ -500,21 +500,13 @@
 					</div>
 				{/if}
 				{#if sub === 'cockpit' || sub === 'setup' || !sub}
-				<!-- Baris KONDISI (7 Okt): dompet · risiko · posisi berdampingan — tiga angka
-				     yang selalu dibaca bersama saat menjawab "boleh masuk lagi atau tidak".
-				     Sebelumnya ketiganya di kolom berbeda dan tersebar. -->
-				{#if sub === 'cockpit' || !sub}
-					<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-						<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
-						<RiskMeter risiko={risikoObj} />
-						{@render panelPosisi(true)}
-					</div>
-				{/if}
-
 					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
+								<!-- Susunan ini SUDAH BENAR menurut pemilik (7 Okt) — jangan diubah tanpa
+								     alasan baru: Dompet dulu, lalu kurva, lalu catatan cara membacanya. -->
+								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
 								<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 								<p class="text-11 text-text-3 -mt-1">
 									Kurva di atas = <b>ledger trade tertutup</b> (satu titik per trade selesai, satuan R), BUKAN kandidat.
@@ -657,15 +649,20 @@
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols). Di tab Setup, RiskMeter disembunyikan:
 						     ia duplikat Cockpit dan membuat kolom terasa kosong saat tak ada posisi. -->
 						<div class="space-y-4 lg:col-span-5">
-							<!-- Cockpit: risiko & posisi sudah di baris kondisi; di sini hanya Setup -->
-							{#if sub === 'setup'}
+							{#if sub === 'cockpit' || !sub}
+								<RiskMeter risiko={risikoObj} />
+							{/if}
+
+							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
+							{#if sub === 'setup' || sub === 'ukur'}
 								<AkurasiPasar
 									judul="Akurasi per Strategi (Crypto)"
 									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
 									data={akurasiCrypto}
 								/>
-								{@render panelPosisi(false)}
 							{/if}
+
+							{@render panelPosisi(false)}
 						</div>
 					</div>
 				{/if}
