@@ -1159,7 +1159,11 @@
 							subjudul="Entri menang/kalah mesin paper — fees sudah dibebankan; bukan R, belum lewat split beku"
 							data={akurasiPoly}
 						/>
-						<StatisticalEdgeCard verdict={verdictObj} judul="Polymarket 5m Statistical Verdict" />
+						<StatisticalEdgeCard
+							verdict={verdictObj}
+							canonical={verdictSemua.find((v) => v.pasar === 'polymarket') ?? null}
+							judul="Polymarket 5m Statistical Verdict"
+						/>
 					</div>
 				{/if}
 				{#if sub === 'arsip'}

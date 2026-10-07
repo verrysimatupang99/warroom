@@ -3,6 +3,7 @@
 	// Menjelaskan secara visual apakah strategi memiliki keunggulan matematis (Edge)
 	// yang terbukti secara statistik (Wilson CI95% > Break-Even).
 	import { angka } from '$lib/format';
+	import type { VerdictPasar } from '$lib/api/types';
 
 	interface VerdictData {
 		n?: number;
@@ -21,10 +22,12 @@
 
 	interface Props {
 		verdict?: VerdictData | null;
+		/** Verdict kanonik backend; bila ada, ini satu-satunya sumber status promosi. */
+		canonical?: VerdictPasar | null;
 		judul?: string;
 	}
 
-	let { verdict = null, judul = 'Statistical Edge Gate' }: Props = $props();
+	let { verdict = null, canonical = null, judul = 'Statistical Edge Gate' }: Props = $props();
 
 	const n = $derived(verdict?.n ?? 0);
 	const win = $derived(verdict?.win ?? 0);
@@ -43,18 +46,23 @@
 	const splitBeku = $derived(typeof verdict?.split === 'string' && verdict.split.startsWith('frozen:'));
 	const ciLolos = $derived(ciLow > bePct);
 	const cukupSampel = $derived(verdict?.nNeeded == null || n >= Number(verdict.nNeeded));
-	const isEdgeProven = $derived(splitBeku && ciLolos && n >= 100 && cukupSampel);
-	/** Alasan paling menentukan kenapa belum bisa dipromosikan — ditulis apa adanya. */
+	// Status promosi berasal dari verdict canonical backend. Fallback lokal sengaja
+	// memblokir bila canonical belum tersedia: angka statistik tanpa verdict policy
+	// tidak boleh terlihat sebagai edge yang sudah terbukti.
+	const isEdgeProven = $derived(canonical?.promotion_state === 'promotable' && canonical.promotable_edge === true);
 	const alasanBelum = $derived(
-		!splitBeku
-			? 'split data belum dibekukan (wajib split=frozen:<id>) — hasil belum boleh dipromosikan'
-			: !ciLolos
-				? 'batas bawah CI95 masih di bawah break-even'
-				: !cukupSampel
-					? `sampel ${n} < kebutuhan ${verdict?.nNeeded}`
-					: n < 100
-						? `sampel ${n} < 100`
-						: ''
+		canonical?.blocked_reason ||
+			(!canonical
+				? 'verdict kanonik belum tersedia — hasil tidak boleh dipromosikan'
+				: !splitBeku
+					? 'split data belum dibekukan (wajib split=frozen:<id>) — hasil belum boleh dipromosikan'
+					: !ciLolos
+						? 'batas bawah CI95 masih di bawah break-even'
+						: !cukupSampel
+							? `sampel ${n} < kebutuhan ${verdict?.nNeeded}`
+							: n < 100
+								? `sampel ${n} < 100`
+								: '')
 	);
 </script>
 
