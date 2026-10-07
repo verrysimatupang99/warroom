@@ -177,3 +177,85 @@ Tiga kesalahan berbeda yang semuanya tampak seperti "fitur rusak", padahal tesny
 **Aturan yang berlaku sekarang:** setiap tes UI menunggu `tungguSiap()` dulu; setiap
 lapisan penutup (shell/overlay) wajib punya tes yang mengukur hasil render yang terlihat;
 label sub-tab di tes harus merujuk nav.ts (satu sumber), bukan hafalan.
+
+---
+
+# Audit QA putaran 2 (7 Okt) — jawaban & bukti
+
+## 1. Polymarket: kontradiksi "EDGE TERBUKTI" vs gate — DIPERBAIKI
+
+**Temuan QA benar dan penting:** halaman menampilkan klaim keunggulan, sementara gate di
+bawahnya menyebut split belum dibekukan. Satu halaman, dua kesimpulan.
+
+**Akar:** `StatisticalEdgeCard` hanya memeriksa `CI95 bawah > BE`, sedangkan gate resmi
+(`gate.py`, ADR-003) **menolak promosi** selama `split` belum `frozen:<id>`. Ditambah lagi
+sumber menerbitkan label mentah `verdict_alat: "EDGE"` yang diteruskan apa adanya ke UI.
+
+**Perbaikan (dua lapis):**
+- Kartu edge tunduk gate yang sama: `splitBeku && ciLolos && sampelCukup && n>=100` → baru
+  "EDGE TERBUKTI"; selain itu **"BELUM DIPROMOSIKAN"** + alasan ditulis apa adanya + baris
+  status split eksplisit.
+- `sinyal.py`: label mentah "EDGE" tidak diteruskan saat split kosong → tier **EKSPLORASI**,
+  arah **TAHAN**.
+
+**Bukti live:** kartu kini menulis "BELUM DIPROMOSIKAN · split data: belum dibekukan ·
+butuh ≈7392 sampel (kini 4133)". Kartu Home: `TAHAN / EKSPLORASI`.
+
+## 2. IDX: breach/gap dipisahkan + saldo negatif berkonteks
+
+- Banner **SALDO NEGATIF** tepat di atas angka saldo + label "modal habis — bukan sekadar
+  rugi" pada angkanya.
+- Klasifikasi **per setup** terbit dan tampil sebagai kolom BREACH:
+  `ARA_HUNTER 94/198 (47,5%)`, `BSJP_ARA 2/19`, `BSJP_STRONG 1/26`, `INTRADAY 0/35`.
+- Total tetap: 97/278 melewati 1R (gap 17 · dalam 43 · ekstrem 37).
+
+**Catatan jujur:** kerugian MODEL-nya belum diperbaiki — ARA_HUNTER masih menahan posisi
+sampai open sesi berikutnya. Yang diperbaiki adalah **keterlihatannya**, bukan strateginya.
+Perbaikan strategi = keputusan pemilik (mis. keluar sore yang sama, atau perlakukan sebagai
+risiko tak terbatas dengan ukuran posisi jauh lebih kecil).
+
+## 3. Kesegaran: "basi" kini bisa dibuka
+
+"N basi" di TopBar adalah tombol → daftar: kunci, umur vs TTL, **sumber**, dan penjelasan
+mengapa sebagian sengaja tetap tampil (mesin beku → ditandai HISTORIS di halaman pasarnya).
+
+## 4. CSP: Report-Only → **ENFORCE**
+
+Temuan QA benar: Report-Only belum proteksi. Investigasi menemukan dua hal:
+1. Report-Only **tanpa `report-uri`** tidak pernah mengumpulkan laporan — "menunggu log
+   bersih" tak akan pernah selesai.
+2. Uji enforce lewat browser membuktikan akan ada pelanggaran: skrip bootstrap inline
+   SvelteKit (hash berubah tiap build), dan `ssr = false` membuat fitur `csp` SvelteKit
+   tidak menyisipkan meta apa pun.
+
+**Solusi:** `ops/csp-enforce.sh` menghitung sha256 skrip inline dari HTML yang **sedang
+tersaji**, menulis snippet nginx, reload — dipanggil otomatis di akhir `deploy-web.sh`
+setelah health gate. Script tidak diberi `unsafe-inline`; hanya style.
+
+**Bukti:** header `Content-Security-Policy` (enforce) terpasang di produksi dengan hash
+benar; UI terverifikasi hidup (shell hilang, konten tampil, E2E hijau).
+
+## 5. Authorization/IDOR/SSE — dan DUA BUG NYATA yang ditemukan
+
+Saat menjawab butir ini, pengujian isolasi SSE menyingkap dua bug lama:
+
+1. **Kelaparan aliran SSE.** `_fetch` mengambil 200 baris terakhir tanpa peduli topik lalu
+   menyaring di Python; `after` hanya maju untuk baris yang cocok. Karena tabel events
+   didominasi `job.ran` (12.000+ baris), klien bertopik membaca 200 baris tak-cocok yang
+   sama selamanya → aliran area tidak pernah sampai ke kejadian relevan.
+   **Perbaikan:** filter topik di SQL + `_fetch` mengembalikan id tertinggi yang DIBACA.
+2. **Backfill tidak menyaring.** Panel Kejadian Area meminta 120 kejadian terakhir tanpa
+   filter → hampir pasti `job.ran` → panel selalu "0 kejadian".
+   **Perbaikan:** `/api/v1/events` menerima daftar prefix; backfill disaring per area.
+
+**Bukti:** panel Kejadian crypto kini "29 kejadian" (mis. DOGEUSDT `trade.opened`).
+Tes baru: event trade ditenggelamkan di antara 300 `job.ran` → tetap ketemu, tidak diulang.
+
+Suite: 8 tes authorization/IDOR/SSE hijau; pytest penuh hijau; ruff bersih.
+
+## Sisa yang butuh pemilik
+
+- **Rotasi sandi + TOTP** (sandi pernah lewat percakapan).
+- **Perbaikan strategi ARA_HUNTER** (bukan lagi soal tampilan).
+- **CSP**: bila kelak menambah sumber luar (CDN baru), hash/daftar di `csp-enforce.sh`
+  harus ikut diperbarui — kalau tidak, halaman akan memblokirnya sendiri.
