@@ -121,3 +121,38 @@ diwakilkan dari kode):
 - **Forex bruto** (spread/komisi broker belum ada di jurnal) — ditandai, belum diperbaiki
   (butuh data dari broker).
 - **LP belum direkonsiliasi on-chain** — dinyatakan apa adanya.
+
+---
+
+## Insiden pasca-QA: "web masih terus memuat" (dilaporkan pemilik, 7 Okt)
+
+**Gejala:** halaman tidak bisa dibuka; yang terlihat skeleton berdenyut selamanya.
+
+**Akar masalah (buatan sendiri):** shell pra-hydration di `app.html` — dipasang untuk
+menghilangkan layar kosong yang dilaporkan QA — **tidak pernah dihapus** setelah aplikasi
+hidup. Skeleton statis menutupi UI yang sebenarnya sudah jalan sempurna (judul benar, DOM
+lengkap, API sehat). Jadi bukan "sedang memuat"; ia menutupi.
+
+**Mengapa tes lolos:** semua tes membaca `body.innerText`/textContent — dan elemen yang
+TERTUTUP lapisan lain tetap punya textContent. Tes mengukur "ada di DOM", bukan "terlihat".
+Kelas bug ini tidak bisa ditangkap tes berbasis teks.
+
+**Perbaikan (dua lapis):**
+1. `+layout.svelte`: `$effect` menghapus `#shell-muat` begitu aplikasi hidup.
+2. `app.html`: `body:has(#konten) #shell-muat { display: none !important }` — pengaman CSS
+   murni; bekerja walau JS utama telat/gagal. Kegagalan ini jadi mustahil, bukan sekadar
+   diperbaiki sekali.
+
+**Tes penjaga baru:** `e2e/cek_shell_hilang.spec.ts` mengukur YANG TERLIHAT:
+- shell tidak tampil (computed style, bukan keberadaan),
+- `document.elementFromPoint` di tengah layar harus milik aplikasi,
+- `#konten` tinggi > 200 px.
+Diuji di 4 halaman termasuk `/masuk`.
+
+**Pelajaran yang dikodifikasi:** untuk UI, "ada" ≠ "terlihat". Setiap lapisan penutup
+(shell, overlay, modal, skeleton) wajib punya tes yang memeriksa hasil render yang terlihat.
+
+**Dampak ke tes flaky:** dua tes kebijakan (`sub-baru`, `qa-lengkap`) yang klik tab
+"Kebijakan" ikut rapuh karena klik dilakukan sebelum halaman interaktif (dan sempat
+tertutup shell). Keduanya diperkuat: tunggu tab terlihat, lalu klik, lalu tunggu hasil
+dengan timeout eksplisit.

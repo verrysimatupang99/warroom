@@ -24,8 +24,12 @@ test.describe('sub dataset & kebijakan', () => {
 
 	test('sistem → kebijakan menampilkan usulan parameter', async ({ page }) => {
 		await page.goto('/sistem');
-		await page.getByRole('button', { name: 'Kebijakan', exact: true }).click();
-		await expect(page.locator('[data-testid="proposal-list"], [data-testid="empty-state"]').first()).toBeVisible();
+		// Tunggu tombol tab SIAP diklik: dulu klik dilakukan sebelum halaman interaktif
+		// (dan sempat tertutup shell pra-hydration) → tes flaky, bukan fitur rusak.
+		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
+		await expect(tab).toBeVisible({ timeout: 20000 });
+		await tab.click();
+		await expect(page.locator('[data-testid="proposal-list"], [data-testid="empty-state"]').first()).toBeVisible({ timeout: 20000 });
 		const isi = await page.locator('body').innerText();
 		expect(isi.toLowerCase()).toContain('usulan parameter');
 		expect(isi).not.toContain('GAGAL MEMUAT');

@@ -106,8 +106,12 @@ test.describe('QA owner', () => {
 	test('owner: tombol terapkan/rollback tampil di Kebijakan', async ({ page }) => {
 		await loginUi(page, AKUN.owner_user, AKUN.owner_pass);
 		await page.goto('/sistem');
-		await page.getByRole('tab', { name: 'Kebijakan', exact: true }).click();
-		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible();
+		// Tab di halaman Sistem memakai role=button (bukan role=tab seperti SubNav).
+		// Tunggu siap dulu — klik sebelum interaktif adalah sumber flaky yang lama.
+		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
+		await expect(tab).toBeVisible({ timeout: 20000 });
+		await tab.click();
+		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
 		// usulan berstatus ditolak → tombol "terapkan" tidak ditampilkan (hanya untuk butuh_manusia)
 		const kartuDitolak = page.locator('[data-testid="proposal-card"]').filter({ hasText: 'DITOLAK' }).first();
 		await expect(kartuDitolak).toBeVisible();
@@ -130,8 +134,10 @@ test.describe('QA operator', () => {
 		const galat = pantauKonsol(page);
 		await loginUi(page, AKUN.operator_user, AKUN.operator_pass);
 		await page.goto('/sistem');
-		await page.getByRole('tab', { name: 'Kebijakan', exact: true }).click();
-		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible();
+		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
+		await expect(tab).toBeVisible({ timeout: 20000 });
+		await tab.click();
+		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
 		// operator tidak boleh melihat tombol aksi owner
 		await expect(page.getByRole('button', { name: 'terapkan' })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: 'rollback' })).toHaveCount(0);
