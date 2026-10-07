@@ -52,6 +52,7 @@
 	const nadaLive = $derived(
 		live.status === 'live' ? 'baik' : live.status === 'polling' ? 'perhatian' : 'buruk'
 	);
+	import Ikon from './Ikon.svelte';
 </script>
 
 <header class="topbar" data-testid="topbar">
@@ -87,14 +88,14 @@
 
 		{#if alert !== null && alert > 0}
 			<a class="stat perhatian" href="/sistem?sub=event" title="alert terbuka">
-				⚠ <b class="angka">{alert}</b> alert
+				<Ikon nama="peringatan" ukuran={13} /> <b class="angka">{alert}</b> alert
 			</a>
 		{/if}
 
 		<span class="stat angka" aria-label="jam WIB">{jam} <span class="wib">WIB</span></span>
 
 		<a class="stat" href="/sistem?sub=event" aria-label="Notifikasi & kejadian" title="Kejadian">
-			🔔
+			<Ikon nama="lonceng" ukuran={15} />
 		</a>
 	</div>
 </header>
@@ -187,6 +188,10 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
+		/* Target sentuh ≥44 px (audit QA 7 Okt: "ikon notifikasi sekitar 15–18 px").
+		   Teks tetap kecil; yang dibesarkan adalah area yang bisa ditekan. */
+		min-height: 44px;
+		padding: 0 0.35rem;
 		color: var(--color-text-2);
 		text-decoration: none;
 		white-space: nowrap;

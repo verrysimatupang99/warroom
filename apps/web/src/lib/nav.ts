@@ -24,6 +24,8 @@ export interface Area {
 	kunci: string;
 	label: string;
 	rute: string;
+	/** Nama ikon SVG (lihat Ikon.svelte) — bukan glyph unicode: glyph tampil beda
+	 *  di tiap platform dan tidak bisa diwarnai konsisten (audit QA 7 Okt). */
 	ikon: string;
 	kategori: 'pasar' | 'riset' | 'sistem';
 	anak: Anak[];
@@ -34,7 +36,7 @@ export const AREAS: Area[] = [
 		kunci: 'home',
 		label: 'Home',
 		rute: '/',
-		ikon: '⌂',
+		ikon: 'home',
 		kategori: 'pasar',
 		// Tanpa anak: `/` adalah halaman pratinjau arah baru yang dirender mandiri
 		// (routes/+page.svelte), bukan AreaView ber-tab. Dua anak lama (Sinyal,
@@ -47,7 +49,7 @@ export const AREAS: Area[] = [
 		kunci: 'crypto',
 		label: 'Crypto',
 		rute: '/crypto',
-		ikon: '₿',
+		ikon: 'crypto',
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Pair utama, risiko, posisi, sinyal & entry setup' },
@@ -60,7 +62,7 @@ export const AREAS: Area[] = [
 		kunci: 'polymarket',
 		label: 'Polymarket',
 		rute: '/polymarket',
-		ikon: '◎',
+		ikon: 'polymarket',
 		kategori: 'pasar',
 		anak: [
 			// Keputusan owner 7 Okt: fokus ke SETUP B KANDIDAT; arm A/C/D dibekukan (diarsipkan,
@@ -75,7 +77,7 @@ export const AREAS: Area[] = [
 		kunci: 'idx',
 		label: 'IDX',
 		rute: '/idx',
-		ikon: '▦',
+		ikon: 'idx',
 		kategori: 'pasar',
 		anak: [
 			// Keputusan owner 7 Okt: "screener" diganti "Sinyal" yang isinya bandarmologi + BSJP.
@@ -91,7 +93,7 @@ export const AREAS: Area[] = [
 		kunci: 'forex',
 		label: 'Forex',
 		rute: '/forex',
-		ikon: '⇄',
+		ikon: 'forex',
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian', 'forex_sinyal', 'pasar_akurasi'], catatan: 'Bias, EMA, ATR + sinyal & entry setup' },
@@ -104,7 +106,7 @@ export const AREAS: Area[] = [
 		kunci: 'gmgn',
 		label: 'GMGN',
 		rute: '/gmgn',
-		ikon: '⚡',
+		ikon: 'gmgn',
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (lokal Webdock)' },
@@ -116,7 +118,7 @@ export const AREAS: Area[] = [
 		kunci: 'sistem',
 		label: 'Sistem',
 		rute: '/sistem',
-		ikon: '⚙',
+		ikon: 'sistem',
 		kategori: 'sistem',
 		anak: [
 			{ slug: 'layanan', label: 'Layanan', kunci: [], catatan: 'Unit lintas host, uptime, restart' },
@@ -135,7 +137,7 @@ export const AREAS: Area[] = [
 		kunci: 'riset',
 		label: 'Riset',
 		rute: '/riset',
-		ikon: '⌁',
+		ikon: 'riset',
 		kategori: 'riset',
 		anak: [
 			{ slug: 'kinerja', label: 'Kinerja', kunci: ['equity', 'ledger'], catatan: 'Statistik, trade terakhir, PnL per pair' },
@@ -152,7 +154,7 @@ export const AREAS: Area[] = [
 		kunci: 'info',
 		label: 'Info',
 		rute: '/catatan',
-		ikon: '▤',
+		ikon: 'info',
 		kategori: 'riset',
 		anak: [
 			{ slug: 'catatan', label: 'Catatan', kunci: [], catatan: 'Dokumentasi proyek dari repo' },

@@ -566,7 +566,12 @@
 	.mode-badge.mode-historis { color: var(--redup); border-style: dashed; }
 	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); }
 	.sinyal-sumber { font-size: 0.66rem; color: var(--redup); margin: 0 0 0.35rem; }
-	.lihat-semua { font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap; }
+	.lihat-semua {
+		font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap;
+		/* Target sentuh ≥44 px (audit QA 7 Okt). Teks tetap kecil; area klik dibesarkan
+		   dengan padding vertikal + inline-flex supaya tidak mengubah tata letak baris. */
+		display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.25rem;
+	}
 	.lihat-semua:hover { text-decoration: underline; }
 	.sinyal-baris { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-top: 1px dashed var(--garis); align-items: baseline; }
 	.sinyal-baris:first-of-type { border-top: none; }

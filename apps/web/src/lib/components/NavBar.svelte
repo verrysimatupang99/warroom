@@ -10,6 +10,7 @@
 	import { AREAS, areaDariJalur } from '$lib/nav';
 
 	const aktif = $derived(areaDariJalur(page.url.pathname));
+	import Ikon from './Ikon.svelte';
 </script>
 
 <nav class="navbar" aria-label="Navigasi area">
@@ -23,7 +24,7 @@
 				aria-current={ini ? 'page' : undefined}
 				title={a.anak.map((x) => x.label).join(' · ')}
 			>
-				<span class="ikon" aria-hidden="true">{a.ikon}</span>
+				<span class="ikon"><Ikon nama={a.ikon} ukuran={15} /></span>
 				<span>{a.label}</span>
 			</a>
 		{/each}
@@ -61,6 +62,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
+		/* Target sentuh ≥44 px (audit QA 7 Okt: "top navigation sekitar 32 px tinggi").
+		   Ikon boleh kecil, AREA KLIK-nya yang harus besar. */
+		min-height: 44px;
 		padding: 0.35rem 0.7rem;
 		border-radius: var(--radius-control);
 		font-size: var(--text-13);

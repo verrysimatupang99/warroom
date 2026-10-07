@@ -10,6 +10,7 @@
 	let lain = $state(false);
 	const lainRute = $derived(AREAS.filter((a) => !TAB_MOBILE.includes(a.rute) && a.rute !== '/'));
 	const aktifLain = $derived(lainRute.some((a) => jalur.startsWith(a.rute)));
+	import Ikon from './Ikon.svelte';
 </script>
 
 <nav
@@ -28,7 +29,7 @@
 						? 'text-accent'
 						: 'text-text-3'}"
 				>
-					<span aria-hidden="true">{a.ikon}</span>{a.label}
+					<span class="ikon-nav"><Ikon nama={a.ikon} ukuran={17} /></span>{a.label}
 				</a>
 			{/each}
 		</div>
@@ -43,7 +44,7 @@
 					: 'text-text-3'}"
 				aria-current={ini ? 'page' : undefined}
 			>
-				<span class="text-15" aria-hidden="true">{a.ikon}</span>
+				<span class="ikon-nav"><Ikon nama={a.ikon} ukuran={17} /></span>
 				<span class="label-mikro">{a.label}</span>
 			</a>
 		{/each}
