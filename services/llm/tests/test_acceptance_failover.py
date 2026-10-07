@@ -57,7 +57,9 @@ def test_failover_http_500_dilayani_provider_kedua(gateway_factory, fakta, bersi
     assert sukses and sukses[0].provider == "qonek"
     assert sukses[0].fallback_from == "nutaraline"
     assert sukses[0].role == "narrator"
-    assert sukses[0].prompt_version == "narrator/1.0.0"
+    # Versi tidak dikunci: prompt berevolusi (narrator/1.1.0, 7 Okt 2026). Yang penting
+    # versinya terisi dan milik peran narrator.
+    assert sukses[0].prompt_version.startswith("narrator/")
     assert sukses[0].result_hash
     assert sukses[0].fact_ids == [fid]
 

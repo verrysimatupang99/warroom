@@ -418,13 +418,24 @@ def create_app() -> FastAPI:
     # lengkap dengan status verifikasi (klaim eksplorasi tidak boleh terlihat seperti edge).
 
     @app.get("/api/v1/sinyal/per-pasar")
-    def sinyal_per_pasar(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        from warroom_core.sinyal import sinyal_terbaik_per_pasar
+    def sinyal_per_pasar(
+        user: Annotated[User, Depends(auth.current_user)],
+        maks: int = Query(3, ge=1, le=20, description="sinyal terbaik per pasar (Home: 3)"),
+    ) -> dict[str, Any]:
+        """Sinyal per pasar untuk Home: maks `maks` terbaik + status jujur per pasar.
+
+        `status_data` tegas: **ada** (ada sinyal) · **kosong** (mesin hidup, tak ada
+        setup yang cocok — ini hasil kerja sistem) · **gagal** (sumber tak terbaca /
+        mesin mati — JANGAN pernah ditulis "tidak ada sinyal").
+        """
+        from warroom_core.sinyal import sinyal_per_pasar, sinyal_terbaik_per_pasar
 
         with session_scope() as s:
+            daftar = sinyal_per_pasar(s, maks=maks)
             rows = sinyal_terbaik_per_pasar(s)
         return {
-            "sinyal": [r.to_dict() for r in rows],
+            "sinyal": [r.to_dict() for r in rows],          # bentuk lama (kompatibel)
+            "pasar": [d.to_dict() for d in daftar],          # bentuk baru (Home)
             "count": len(rows),
             "ada": sum(1 for r in rows if r.ada),
         }
@@ -583,6 +594,57 @@ def create_app() -> FastAPI:
     def areas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         with session_scope() as s:
             return {"areas": areas_summary(s)}
+
+    @app.get("/api/v1/sumber")
+    def sumber_data(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Daftar SUMBER DATA tiap pasar — satu tempat, biar tidak ada tebakan.
+
+        Revisi pemilik 7 Okt: "sumber data: Crypto MEXC; IDX Stock Arjum; Forex TVC;
+        Polymarket Dokumentasi PM; Meme: Meteora=Solana, Robinhood=Uniswap". Daftar ini
+        dipakai UI (halaman market + Sistem) supaya pembaca tahu angka ini datang dari mana.
+        """
+        return {
+            "sumber": [
+                {"pasar": "crypto", "label": "Crypto", "sumber": "MEXC",
+                 "keterangan": (
+                     "Harga & depth dari MEXC (venue paper). "
+                     "Sinyal = SMC multi-timeframe, gate 6 aturan."
+                 )},
+                {"pasar": "idx", "label": "IDX", "sumber": "Stock Arjum",
+                 "keterangan": "Bandarmologi/BSJP dari Stock Arjum + arsip tick; mesin lama (Tencent) beku."},
+                {"pasar": "forex", "label": "Forex", "sumber": "TVC",
+                 "keterangan": "Chart/series TradingView (TVC:) untuk bias & struktur."},
+                {"pasar": "polymarket", "label": "Polymarket", "sumber": "Dokumentasi PM",
+                 "keterangan": "Arm B favorit 0,70–0,95; aturan & contoh dari dokumentasi Polymarket."},
+                {
+                    "pasar": "gmgn",
+                    "label": "Meme / DEX",
+                    "sumber": "GMGN + FOMO",
+                    "keterangan": (
+                        "Memecoin: pemindaian GMGN/FOMO "
+                        "(sol, bsc, base, eth, robinhood, arc, stable)."
+                    ),
+                },
+                {
+                    "pasar": "lp",
+                    "label": "LP",
+                    "sumber": "Meteora (Solana) · Uniswap (Robinhood Chain)",
+                    "keterangan": (
+                        "LP Solana lewat Meteora (DLMM/DAMM v2); LP Robinhood Chain lewat "
+                        "Uniswap v2/v3/v4. Dua protokol BERBEDA."
+                    ),
+                },
+            ],
+            "sumber_atom": [
+                {"nama": "MEXC", "dipakai": "harga & eksekusi paper crypto"},
+                {"nama": "Stock Arjum", "dipakai": "IDX bandarmologi/BSJP"},
+                {"nama": "TVC (TradingView)", "dipakai": "forex (bias/struktur)"},
+                {"nama": "Dokumentasi Polymarket", "dipakai": "aturan & dataset Polymarket"},
+                {"nama": "GMGN / FOMO", "dipakai": "memecoin baru + smart money"},
+                {"nama": "Meteora", "dipakai": "LP Solana (DLMM, DAMM v2)"},
+                {"nama": "Uniswap", "dipakai": "LP Robinhood Chain (v2/v3/v4)"},
+            ],
+        }
 
     @app.get("/api/v1/facts/{kind}/{key}")
     def fact_satu(
@@ -771,6 +833,42 @@ def create_app() -> FastAPI:
         if not ok:
             raise HTTPException(status_code=409, detail="parameter kill switch belum terdaftar")
         return {"ok": True, "kill_switch": aktif, "oleh": user.username}
+
+    @app.get("/api/v1/events")
+    def events_list(
+        user: Annotated[User, Depends(auth.current_user)],
+        limit: int = Query(120, ge=1, le=500),
+        tipe: str | None = Query(None, description="prefix tipe, mis. trade. atau signal."),
+    ) -> dict[str, Any]:
+        """Kejadian terakhir dari tabel `events` (append-only).
+
+        Dipakai panel "Kejadian Area": SSE hanya mengirim kejadian BARU (tanpa
+        Last-Event-ID ia mulai dari sekarang — perilaku yang benar untuk CPU/DB),
+        sehingga panel selalu kosong sampai ada kejadian baru. Backfill lewat
+        endpoint ini; angka & tipe apa adanya dari DB.
+        """
+        from warroom_core.db import Event
+
+        with session_scope() as s:
+            q = select(Event)
+            if tipe:
+                q = q.where(Event.type.like(f"{tipe}%"))
+            rows = s.scalars(q.order_by(Event.id.desc()).limit(limit)).all()
+            return {
+                "events": [
+                    {
+                        "id": e.id,
+                        "type": e.type,
+                        "actor": e.actor,
+                        "severity": e.severity,
+                        "payload": e.payload_json,
+                        "fact_ids": e.fact_ids,
+                        "created_at": e.created_at.isoformat() if e.created_at else None,
+                    }
+                    for e in rows
+                ],
+                "count": len(rows),
+            }
 
     # --- alert & notifier (W5) ------------------------------------------------------------
 

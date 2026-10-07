@@ -42,7 +42,10 @@
 </script>
 
 <div>
-	{#if grup.length}
+	{#if grup.length > 1}
+		<!-- Filter hanya muncul bila ada LEBIH DARI SATU tipe. Sebelumnya selalu dirender;
+		     saat feed cuma memuat satu tipe (umum di panel area), tombolnya tak bisa
+		     mengubah apa pun — pemilik membacanya sebagai "3 tombol tidak berfungsi". -->
 		<div class="mb-2 flex flex-wrap gap-1" role="group" aria-label="Filter tipe kejadian">
 			<button
 				type="button"

@@ -26,10 +26,12 @@
 	import AkurasiPasar from './AkurasiPasar.svelte';
 	import DompetPasar from './DompetPasar.svelte';
 	import JudulBagian from './JudulBagian.svelte';
+	import Penjelasan from './Penjelasan.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import SinyalPasar from './SinyalPasar.svelte';
-	import type { Fakta } from '$lib/api/types';
+	import { getEvents } from '$lib/api/client';
+	import type { Fakta, Kejadian } from '$lib/api/types';
 
 	interface Props {
 		kunci: string;
@@ -92,9 +94,42 @@
 		gmgn: ['gmgn.', 'radar.', 'lp.', 'pumpfun.', 'memecoin.']
 	};
 
+	// Backfill: SSE hanya mengirim kejadian BARU (mulai dari "sekarang"), jadi panel area
+	// selalu kosong sampai ada kejadian berikutnya. Ambil riwayat singkat lewat REST dan
+	// gabung dengan aliran SSE — dedupe per id, urut terbaru dulu. Tanpa ini kepala panel
+	// menjanjikan "aliran SSE terfilter" padahal isinya mustahil terisi (menyesatkan).
+	let kejadianRiw = $state<Kejadian[]>([]);
+	$effect(() => {
+		let batal = false;
+		void (async () => {
+			try {
+				const rows = await getEvents(120);
+				if (!batal) kejadianRiw = rows;
+			} catch {
+				/* gagal backfill bukan alasan mematikan halaman; SSE tetap jalan */
+			}
+		})();
+		return () => {
+			batal = true;
+		};
+	});
+	const kejadianGabung = $derived.by(() => {
+		const seen = new Set<number>();
+		const out: Kejadian[] = [];
+		for (const k of [...live.kejadian, ...kejadianRiw]) {
+			const id = Number(k.id);
+			if (Number.isFinite(id) && id > 0) {
+				if (seen.has(id)) continue;
+				seen.add(id);
+			}
+			out.push(k);
+		}
+		return out.sort((a, b) => Number(b.id ?? 0) - Number(a.id ?? 0));
+	});
+
 	const kejadianArea = $derived.by(() => {
 		const prefiks = topikArea[kunci] ?? [];
-		return live.kejadian.filter((k) => {
+		return kejadianGabung.filter((k) => {
 			const t = k.type.toLowerCase();
 			const subjek = String((k.payload as any)?.subject ?? (k.payload as any)?.subjek ?? '').toLowerCase();
 			const pair = String((k.payload as any)?.pair ?? '').toLowerCase();
@@ -209,6 +244,19 @@
 			{@const faktaGmgn = temukanFakta(data.facts, 'gmgn')}
 			{@const faktaPosisi = temukanFakta(data.facts, kunci === 'crypto' ? 'posisi' : `${kunci}_posisi`) ?? temukanFakta(data.facts, 'posisi')}
 			{@const posisiArray = Array.isArray(faktaPosisi?.value) ? (faktaPosisi.value as any[]) : []}
+			<!-- Sumber jumlah = posisiArray.length, BUKAN risiko.posisi_terbuka: collector kini
+			     menulis `posisi` sebagai array, sedangkan `risiko` tak lagi memuat field itu.
+			     Akibat versi lama: ada 2 posisi nyata (SUIUSDT, 1000PEPE) tapi Cockpit menulis
+			     "Tidak ada posisi terbuka (0/3)" — temuan pemilik 7 Okt. -->
+			{@const posisiJumlah = posisiArray.length}
+			<!-- Pembersih format harga: kripto mikro (1000PEPE 0,0041) tidak boleh jadi "0,00" -->
+			{@const harga = (v: unknown): string => {
+				const n = typeof v === 'number' ? v : Number(v);
+				if (!Number.isFinite(n)) return '—';
+				const a = Math.abs(n);
+				const dp = a >= 1000 ? 2 : a >= 1 ? 4 : 8;
+				return n.toLocaleString('id-ID', { maximumFractionDigits: dp });
+			}}
 
 			{@const bagianObj = (faktaBagian?.value as Record<string, any>) ?? {}}
 			{@const idxArjum = (bagianObj?.idx?.rows as any[]) ?? []}
@@ -258,6 +306,12 @@
 			{@const akurasiGmgn = (pasarAkurasiObj?.pasar?.gmgn as any) ?? null}
 			{@const akurasiPoly = (pasarAkurasiObj?.pasar?.polymarket as any) ?? null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
+			<!-- kind `gmgn` (job gmgn-sync): `paper` = konfigurasi + kesehatan berkas bot,
+			     `radar` = jendela likuiditas per chain. Kini sampai UI (AREA_KIND). -->
+			{@const faktaGmgnPaper = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'paper')}
+			{@const gmgnPaperObj = (faktaGmgnPaper?.value as any) ?? null}
+			{@const faktaGmgnRadarMentah = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'radar')}
+			{@const gmgnRadarMentahObj = (faktaGmgnRadarMentah?.value as any) ?? null}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
 			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
 			{@const pengukuranObj = (faktaPengukuran?.value as any) ?? null}
@@ -289,9 +343,80 @@
 			{@const kandidatArray = Array.isArray(faktaKandidat?.value) ? faktaKandidat.value : []}
 			{@const equityObj = (faktaEquity?.value as { points?: { i: number; r: number }[]; stats?: Record<string, number> }) ?? null}
 			{@const risikoObj = (faktaRisiko?.value as Record<string, unknown>) ?? null}
+			{@const posisiMaks = Number(risikoObj?.maks_posisi ?? 3)}
 			{@const verdictObj = (faktaVerdict?.value as Record<string, unknown>) ?? null}
 			{@const polyPaperObj = (faktaPolyPaper?.value as { arms?: { nama: string; balance: number; pnl: number; wins: number; losses: number }[] }) ?? null}
 			{@const tampilGate = Boolean(faktaVerdict || temukanFakta(data.facts, 'gate'))}
+
+			<!-- Dipecah 7 Okt supaya Cockpit bisa menyusun: baris kondisi (dompet/risiko/posisi)
+			     di atas, lalu kurva, lalu insight. Sebelumnya tiga kartu hidup di kolom yang
+			     berbeda sehingga mata harus melompat (keluhan "card dibawahnya belum rapi"). -->
+			{#snippet panelPosisi(ringkas: boolean)}
+				<div class="permukaan-2 rounded-card border border-line p-3">
+					<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+						<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
+						<span class="text-11 text-text-3 font-mono">{posisiJumlah} / {posisiMaks}</span>
+					</div>
+					{#if posisiJumlah === 0}
+						<div class="py-3 px-1 text-center space-y-1">
+							<div class="text-12 font-medium text-text-2">Tidak ada posisi terbuka (0/{posisiMaks}).</div>
+							<p class="text-11 text-text-3">
+								Keadaan normal, bukan mesin rusak: posisi dibuka hanya bila kandidat lolos semua gerbang
+								dan masih ada ruang risiko.
+							</p>
+						</div>
+					{:else if ringkas}
+						<ul class="space-y-1.5">
+							{#each posisiArray as p (p.signal_id ?? p.pair)}
+								<li class="flex flex-wrap items-center justify-between gap-2 font-mono text-12">
+									<span class="flex items-center gap-1.5">
+										<span class="font-bold text-text">{p.pair}</span>
+										<span class="rounded px-1 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
+									</span>
+									<span class="text-11 text-text-3">e {harga(p.entry)} · SL {harga(p.stop)} · TP {harga(p.tp1)}</span>
+								</li>
+							{/each}
+						</ul>
+						<p class="mt-2 text-10 text-text-3">Detail penuh & ledger ada di tab Eksekusi.</p>
+					{:else}
+						<div class="space-y-2.5">
+							{#each posisiArray as p (p.signal_id ?? p.pair)}
+								<div class="rounded-card border border-line bg-surface p-3 space-y-2 font-mono text-12">
+									<div class="flex items-center justify-between border-b border-line-soft pb-1.5">
+										<div class="flex items-center gap-2">
+											<span class="font-bold text-text text-14">{p.pair}</span>
+											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
+											<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-10 font-bold">{p.status ?? 'OPEN'}</span>
+										</div>
+										<span class="text-10 text-text-3">{p.signal_id ?? ''}</span>
+									</div>
+									<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-11">
+										<div class="rounded bg-canvas/60 p-1.5 border border-line">
+											<div class="text-10 text-text-3 uppercase">Entry</div>
+											<div class="font-bold text-text">${harga(p.entry)}</div>
+										</div>
+										<div class="rounded bg-canvas/60 p-1.5 border border-line">
+											<div class="text-10 text-text-3 uppercase">Stop Loss</div>
+											<div class="font-bold text-neg">${harga(p.stop)}</div>
+										</div>
+										<div class="rounded bg-canvas/60 p-1.5 border border-line">
+											<div class="text-10 text-text-3 uppercase">Target 1</div>
+											<div class="font-bold text-pos">${harga(p.tp1)}</div>
+										</div>
+										<div class="rounded bg-canvas/60 p-1.5 border border-line">
+											<div class="text-10 text-text-3 uppercase">Ukuran (USD)</div>
+											<div class="font-bold text-accent">${angka(p.size_usd)}</div>
+										</div>
+									</div>
+									{#if p.note}
+										<div class="text-10 text-text-3 truncate font-sans">Catatan: {p.note}</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/snippet}
 
 			<!-- ========================================== -->
 			<!-- VIEW KHUSUS: CRYPTO                      -->
@@ -303,18 +428,93 @@
 					<JudulBagian nomor="1" judul="Ringkasan" tujuan="Uang, risiko, dan sinyal teratas — keadaan hari ini dalam satu pandangan" ikon="◎" />
 				{:else if sub === 'setup'}
 					<JudulBagian nomor="2" judul="Setup Kandidat" tujuan="Daftar lengkap kandidat + alasan lolos/gagal per aturan (kolom 'skor gate')" ikon="◈" />
+					<div class="mt-3">
+						<Penjelasan judul="Metode yang dipakai (SMC multi-timeframe) + cara membaca kolomnya">
+							<p>
+								<b>Apa yang diukur:</b> mesin memindai pair crypto (MEXC) di tiga kerangka waktu —
+								<b>1D, 4H, 1H</b> — mencari <i>point of interest</i> (POI) berupa FVG/order block,
+								menunggu harga kembali ke area itu, lalu menyusun entry/SL/TP di sekitarnya.
+								Kolom POI itu sebabnya: entry hanya sah bila harga berada di dalam area.
+							</p>
+							<p><b>Enam aturan gate</b> (semua harus lolos; yang keras tidak bisa ditawar):</p>
+							<ul class="ml-4 list-disc space-y-0.5">
+								<li><span class="font-mono">mtf_alignment</span> — arah 1D/4H/1H searah. Bila 1D melawan, tier diturunkan (maks STANDAR).</li>
+								<li><span class="font-mono">poi_valid</span> (keras) — entry harus di dalam area POI.</li>
+								<li><span class="font-mono">freshness</span> (keras) — harga masih dekat POI, belum lari jauh.</li>
+								<li><span class="font-mono">sl_distance</span> (keras) — jarak stop diukur dari ATR; terlalu lebar = risiko terlalu besar.</li>
+								<li><span class="font-mono">atr_min</span> — volatilitas cukup untuk bergerak (ideal ATR1H ≥ 1,5%; di bawah itu boleh lolos tetapi tercatat).</li>
+								<li><span class="font-mono">exposure</span> (keras) — masih ada slot posisi dan korelasi dengan posisi berjalan aman.</li>
+							</ul>
+							<p>
+								<b>Cara membaca kartu:</b> <b>tier</b> STANDAR = lolos semua aturan; <b>SKIP</b> = ada aturan
+								gagal (alasannya tertulis per baris). <b>Skor</b> hanya menghitung aturan yang lolos — ia
+								<b>bukan</b> bukti profitabilitas. Label "belum-terbukti" berasal dari gate statistik: selama
+								interval kepercayaan win-rate masih menyentuh break-even, kandidat tidak boleh dipromosikan.
+								Waktu di kartu = kapan kandidat <i>digenerate</i>, bukan kapan layar dibuka.
+							</p>
+						</Penjelasan>
+					</div>
 				{:else if sub === 'ukur'}
 					<JudulBagian nomor="3" judul="Ukur (validasi)" tujuan="Apakah aturan gate punya nilai? Lolos vs ditolak, dihitung setelah kejadian" ikon="⚖" />
+					<div class="mt-3">
+						<Penjelasan judul="Apa yang dimaksud 'diukur' di tab ini">
+							<p>
+								Tab ini menjawab satu pertanyaan: <b>apakah aturan gate-nya berguna?</b> Tidak cukup
+								"tradenya untung" — harus terbukti bahwa <i>yang ditolak</i> memang lebih buruk daripada
+								<i>yang diloloskan</i>.
+							</p>
+							<ul class="ml-4 list-disc space-y-0.5">
+								<li><b>Pengukuran Forward (shadow)</b> — tiap kandidat dicatat, lalu dinilai <i>setelah</i> kejadian: yang lolos gate vs yang ditolak. Bila yang ditolak justru lebih baik, gate-nya tidak layak dipakai.</li>
+								<li><b>Laboratorium backtest</b> — menguji ulang aturan pada data historis, dengan walk-forward supaya aturan tidak dinilai memakai data yang dipakai menyusunnya.</li>
+								<li><b>Akurasi per strategi</b> — hasil nyata dari ledger (trade tuntas), dilaporkan bersama <i>pakem</i>.</li>
+							</ul>
+							<p>
+								<b>Pakem (satu standar bukti):</b> <span class="font-mono">INSUFFICIENT</span> (&lt;10 hari — belum boleh diklaim apa pun) →
+								<span class="font-mono">DIRECTIONAL</span> (&lt;30 hari — hanya arah) →
+								<span class="font-mono">PRELIMINARY</span> (&lt;100 hari — evaluasi awal) →
+								<span class="font-mono">TUNING</span> (≥100 hari — baru boleh menyetel ulang).
+								Selama INSUFFICIENT, win-rate ditampilkan apa adanya tetapi <b>tidak boleh</b> dipakai mengambil keputusan.
+							</p>
+						</Penjelasan>
+					</div>
 				{:else if sub === 'eksekusi'}
 					<JudulBagian nomor="4" judul="Eksekusi & Ledger" tujuan="Yang benar-benar terjadi: posisi terbuka, fill, hasil per trade" ikon="⇄" />
+					<div class="mt-3">
+						<Penjelasan judul="Cara membaca Eksekusi & Ledger (jalur paper)">
+							<p>
+								<b>Paper</b> berarti order disimulasikan, bukan dikirim ke bursa. Yang penting: jalur
+								keputusannya <b>sama</b> dengan yang nanti dipakai live — yang berbeda hanya sakelar
+								eksekusinya. Jadi catatan di sini adalah bukti perilaku mesin, bukan hasil uang nyata.
+							</p>
+							<ul class="ml-4 list-disc space-y-0.5">
+								<li><b>Posisi terbuka</b> — apa yang sedang berjalan: pair, arah, entry, stop, target, ukuran. Jumlah <span class="font-mono">n / maks</span> berasal dari daftar posisi itu sendiri.</li>
+								<li><b>Ledger &amp; R</b> — tiap trade tuntas dinilai dengan <b>R</b>: (harga keluar − masuk) ÷ jarak stop. Menang TP1 = +2 R bila R:R 1:2. R dipakai karena satuannya sama di semua pair; ia tidak bisa dibandingkan langsung dengan P&amp;L dolar.</li>
+								<li><b>overextended</b> — fakta harga (jarak dari puncak/dasar), <b>bukan sinyal</b>. Puncak hanya diketahui setelah terjadi.</li>
+							</ul>
+							<p>
+								Yang <b>tidak</b> akan terlihat: posisi yang dibuka paksa, angka yang dibulatkan menjadi
+								bagus, atau trade yang dihilangkan. Bila tidak ada posisi, artinya (a) tidak ada kandidat yang
+								lolos semua gerbang, atau (b) biaya depth membuat R bersih terlalu kecil.
+							</p>
+						</Penjelasan>
+					</div>
 				{/if}
 				{#if sub === 'cockpit' || sub === 'setup' || !sub}
+				<!-- Baris KONDISI (7 Okt): dompet · risiko · posisi berdampingan — tiga angka
+				     yang selalu dibaca bersama saat menjawab "boleh masuk lagi atau tidak".
+				     Sebelumnya ketiganya di kolom berbeda dan tersebar. -->
+				{#if sub === 'cockpit' || !sub}
+					<div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+						<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
+						<RiskMeter risiko={risikoObj} />
+						{@render panelPosisi(true)}
+					</div>
+				{/if}
+
 					<div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
-								<!-- Dompet paper Rp 10 juta — ukuran yang bisa dibandingkan antar-market -->
-								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
 								<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 								<p class="text-11 text-text-3 -mt-1">
 									Kurva di atas = <b>ledger trade tertutup</b> (satu titik per trade selesai, satuan R), BUKAN kandidat.
@@ -353,31 +553,43 @@
 								</div>
 							{/if}
 
-			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
-			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
+			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
+			     narasi hanya menjelaskan — tidak pernah menggantikan bukti.
+			     Revisi pemilik 7 Okt: "harusnya bisa kayak narrativelabs" — mereka
+			     menonjolkan KESIMPULAN sebagai kalimat pembuka besar, bukti menyusul,
+			     dan mesinnya (provider/ms) tidak dipajang di muka. Hierarki di bawah ini
+			     mengikuti itu; grounding `fact_ids` tetap terlihat sebagai janji bukti. -->
 			{#if narasiObj}
-							<div class="mb-4 rounded-card border border-line bg-surface p-3">
-								<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-									<div class="flex items-center gap-2">
-										<span class="text-12 font-bold text-accent-2">✳ Narasi LLM</span>
-										<span class="rounded bg-surface border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">
-														{narasiObj.provider ?? '—'} · {narasiObj.prompt_version ?? '—'}
-														{#if narasiObj.latency_ms}· {narasiObj.latency_ms} ms{/if}
-										</span>
-									</div>
-									<span class="text-10 text-text-3 font-mono">{narasiObj.fact_ids?.length ?? 0} fakta dirujuk</span>
+							<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
+								<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
+									<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
+									<span class="text-10 text-text-3 font-mono">
+										{narasiObj.fact_ids?.length ?? 0} fakta dirujuk
+										{#if narasiObj.output?.nada}· nada {narasiObj.output.nada}{/if}
+									</span>
 								</div>
 								{#if narasiObj.status !== 'ok'}
-									<div class="text-11 text-warn">status: {narasiObj.status ?? '—'} {narasiObj.error_code ? `(${narasiObj.error_code})` : ''} — narasi tidak tersedia, fakta tetap sah.</div>
+									<p class="px-3 py-2 text-11 text-warn">
+										Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
+										angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
+									</p>
 								{:else if narasiObj.output?.kalimat?.length}
-									<ul class="space-y-1">
-										{#each narasiObj.output.kalimat as k}
-														<li class="text-12 text-text-2">· {k.teks}</li>
-										{/each}
-									</ul>
-									{#if narasiObj.output.nada}
-										<p class="mt-1 text-10 text-text-3">Nada: {narasiObj.output.nada}. Narasi ini deskriptif, bukan rekomendasi.</p>
-									{/if}
+									<div class="px-3 py-2.5">
+										<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
+										{#if narasiObj.output.kalimat.length > 1}
+											<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
+												{#each narasiObj.output.kalimat.slice(1) as k}
+													<p class="text-12 text-text-2">{k.teks}</p>
+												{/each}
+											</div>
+										{/if}
+										<p class="mt-2 text-10 text-text-3">
+											Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
+											{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
+										</p>
+									</div>
+								{:else}
+									<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
 								{/if}
 							</div>
 			{/if}
@@ -445,78 +657,15 @@
 						<!-- Kolom Kanan: Risiko & Posisi (5 cols). Di tab Setup, RiskMeter disembunyikan:
 						     ia duplikat Cockpit dan membuat kolom terasa kosong saat tak ada posisi. -->
 						<div class="space-y-4 lg:col-span-5">
-							{#if sub === 'cockpit' || !sub}
-								<RiskMeter risiko={risikoObj} />
-							{/if}
-
-							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
-							{#if sub === 'setup' || sub === 'ukur'}
+							<!-- Cockpit: risiko & posisi sudah di baris kondisi; di sini hanya Setup -->
+							{#if sub === 'setup'}
 								<AkurasiPasar
 									judul="Akurasi per Strategi (Crypto)"
 									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
 									data={akurasiCrypto}
 								/>
+								{@render panelPosisi(false)}
 							{/if}
-
-							<!-- Status Posisi Terbuka -->
-							<div class="permukaan-2 rounded-card border border-line p-3">
-								<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
-									<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
-									<span class="text-11 text-text-3 font-mono">
-										{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
-									</span>
-								</div>
-								{#if Number(risikoObj?.posisi_terbuka ?? 0) === 0}
-									<div class="py-4 px-2 text-center space-y-1.5">
-										<div class="text-12 font-medium text-text-2">Tidak ada posisi terbuka saat ini (0/3).</div>
-										<p class="text-11 text-text-3">
-											Mode Paper Bounded Autonomy: Menunggu sinyal yang lolos 5 gerbang quant ketat. Di fase konsolidasi atau akhir pekan dengan volatilitas rendah, engine menahan diri untuk melindungi modal.
-										</p>
-									</div>
-								{:else}
-									<div class="space-y-2.5">
-										{#each posisiArray as p (p.signal_id ?? p.pair)}
-											<div class="rounded-card border border-line bg-surface p-3 space-y-2 font-mono text-12">
-												<div class="flex items-center justify-between border-b border-line-soft pb-1.5">
-													<div class="flex items-center gap-2">
-														<span class="font-bold text-text text-14">{p.pair}</span>
-														<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
-															{p.direction}
-														</span>
-														<span class="rounded bg-accent/10 text-accent border border-accent/20 px-1.5 py-0.5 text-10 font-bold">
-															{p.status ?? 'OPEN'}
-														</span>
-													</div>
-													<span class="text-10 text-text-3">{p.signal_id ?? ''}</span>
-												</div>
-												<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-11">
-													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-10 text-text-3 uppercase">Entry</div>
-														<div class="font-bold text-text">${angka(p.entry)}</div>
-													</div>
-													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-10 text-text-3 uppercase">Stop Loss</div>
-														<div class="font-bold text-neg">${angka(p.stop)}</div>
-													</div>
-													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-10 text-text-3 uppercase">Target 1</div>
-														<div class="font-bold text-pos">${angka(p.tp1)}</div>
-													</div>
-													<div class="rounded bg-canvas/60 p-1.5 border border-line">
-														<div class="text-10 text-text-3 uppercase">Ukuran (USD)</div>
-														<div class="font-bold text-accent">${angka(p.size_usd)}</div>
-													</div>
-												</div>
-												{#if p.note}
-													<div class="text-10 text-text-3 truncate font-sans">
-														Catatan: {p.note}
-													</div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{/if}
-							</div>
 						</div>
 					</div>
 				{/if}
@@ -818,31 +967,40 @@
 				{:else if sub === 'live'}
 					<JudulBagian nomor="4" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
 				{/if}
-			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
-			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
+			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
+			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
+			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
 			{#if narasiObj}
-				<div class="mb-4 rounded-card border border-line bg-surface p-3">
-					<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-						<div class="flex items-center gap-2">
-							<span class="text-12 font-bold text-accent-2">✳ Narasi LLM</span>
-							<span class="rounded bg-surface border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">
-								{narasiObj.provider ?? '—'} · {narasiObj.prompt_version ?? '—'}
-								{#if narasiObj.latency_ms}· {narasiObj.latency_ms} ms{/if}
-							</span>
-						</div>
-						<span class="text-10 text-text-3 font-mono">{narasiObj.fact_ids?.length ?? 0} fakta dirujuk</span>
+				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
+					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
+						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
+						<span class="text-10 text-text-3 font-mono">
+							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
+						</span>
 					</div>
 					{#if narasiObj.status !== 'ok'}
-						<div class="text-11 text-warn">status: {narasiObj.status ?? '—'} {narasiObj.error_code ? `(${narasiObj.error_code})` : ''} — narasi tidak tersedia, fakta tetap sah.</div>
+						<p class="px-3 py-2 text-11 text-warn">
+							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
+							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
+							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
+						</p>
 					{:else if narasiObj.output?.kalimat?.length}
-						<ul class="space-y-1">
-							{#each narasiObj.output.kalimat as k}
-								<li class="text-12 text-text-2">· {k.teks}</li>
-							{/each}
-						</ul>
-						{#if narasiObj.output.nada}
-							<p class="mt-1 text-10 text-text-3">Nada: {narasiObj.output.nada}. Narasi ini deskriptif, bukan rekomendasi.</p>
-						{/if}
+						<div class="px-3 py-2.5">
+							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
+							{#if narasiObj.output.kalimat.length > 1}
+								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
+									{#each narasiObj.output.kalimat.slice(1) as k}
+										<p class="text-12 text-text-2">{k.teks}</p>
+									{/each}
+								</div>
+							{/if}
+							<p class="mt-2 text-10 text-text-3">
+								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
+								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
+							</p>
+						</div>
+					{:else}
+						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
 					{/if}
 				</div>
 			{/if}
@@ -1272,31 +1430,39 @@
 					</div>
 				{/if}
 
-			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
-			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
+			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
+			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
+			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
 			{#if narasiObj}
-			<div class="mb-4 rounded-card border border-line bg-surface p-3">
-				<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-					<div class="flex items-center gap-2">
-						<span class="text-12 font-bold text-accent-2">✳ Narasi LLM</span>
-						<span class="rounded bg-surface border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">
-						{narasiObj.provider ?? '—'} · {narasiObj.prompt_version ?? '—'}
-						{#if narasiObj.latency_ms}· {narasiObj.latency_ms} ms{/if}
-						</span>
-					</div>
-					<span class="text-10 text-text-3 font-mono">{narasiObj.fact_ids?.length ?? 0} fakta dirujuk</span>
+			<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
+				<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
+					<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
+					<span class="text-10 text-text-3 font-mono">
+						{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
+					</span>
 				</div>
 				{#if narasiObj.status !== 'ok'}
-					<div class="text-11 text-warn">status: {narasiObj.status ?? '—'} {narasiObj.error_code ? `(${narasiObj.error_code})` : ''} — narasi tidak tersedia, fakta tetap sah.</div>
+					<p class="px-3 py-2 text-11 text-warn">
+						Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
+						angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
+					</p>
 				{:else if narasiObj.output?.kalimat?.length}
-					<ul class="space-y-1">
-						{#each narasiObj.output.kalimat as k}
-						<li class="text-12 text-text-2">· {k.teks}</li>
-						{/each}
-					</ul>
-					{#if narasiObj.output.nada}
-						<p class="mt-1 text-10 text-text-3">Nada: {narasiObj.output.nada}. Narasi ini deskriptif, bukan rekomendasi.</p>
-					{/if}
+					<div class="px-3 py-2.5">
+						<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
+						{#if narasiObj.output.kalimat.length > 1}
+							<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
+								{#each narasiObj.output.kalimat.slice(1) as k}
+									<p class="text-12 text-text-2">{k.teks}</p>
+								{/each}
+							</div>
+						{/if}
+						<p class="mt-2 text-10 text-text-3">
+							Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
+							{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
+						</p>
+					</div>
+				{:else}
+					<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
 				{/if}
 			</div>
 			{/if}
@@ -1788,9 +1954,7 @@
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
 							<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
-							<span class="text-11 text-text-3 font-mono">
-								{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
-							</span>
+							<span class="text-11 text-text-3 font-mono">{posisiJumlah} / {posisiMaks}</span>
 						</div>
 						{#if posisiArray.length === 0}
 							<div class="py-4 px-2 text-center text-12 text-text-3">
@@ -1804,7 +1968,9 @@
 											<span class="font-bold text-text">{p.pair}</span>
 											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
 										</div>
-										<span class="text-11 text-text-3">entry {angka(p.entry)} · SL {angka(p.stop)} · TP {angka(p.tp1)}</span>
+										<span class="text-11 text-text-3"
+											>entry {harga(p.entry)} · SL {harga(p.stop)} · TP {harga(p.tp1)}</span
+										>
 									</div>
 								{/each}
 							</div>
@@ -1901,31 +2067,40 @@
 							</div>
 						</div>
 
-			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
-			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
+			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
+			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
+			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
 			{#if narasiObj}
-				<div class="mb-4 rounded-card border border-line bg-surface p-3">
-					<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-						<div class="flex items-center gap-2">
-							<span class="text-12 font-bold text-accent-2">✳ Narasi LLM</span>
-							<span class="rounded bg-surface border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">
-								{narasiObj.provider ?? '—'} · {narasiObj.prompt_version ?? '—'}
-								{#if narasiObj.latency_ms}· {narasiObj.latency_ms} ms{/if}
-							</span>
-						</div>
-						<span class="text-10 text-text-3 font-mono">{narasiObj.fact_ids?.length ?? 0} fakta dirujuk</span>
+				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
+					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
+						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
+						<span class="text-10 text-text-3 font-mono">
+							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
+						</span>
 					</div>
 					{#if narasiObj.status !== 'ok'}
-						<div class="text-11 text-warn">status: {narasiObj.status ?? '—'} {narasiObj.error_code ? `(${narasiObj.error_code})` : ''} — narasi tidak tersedia, fakta tetap sah.</div>
+						<p class="px-3 py-2 text-11 text-warn">
+							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
+							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
+							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
+						</p>
 					{:else if narasiObj.output?.kalimat?.length}
-						<ul class="space-y-1">
-							{#each narasiObj.output.kalimat as k}
-								<li class="text-12 text-text-2">· {k.teks}</li>
-							{/each}
-						</ul>
-						{#if narasiObj.output.nada}
-							<p class="mt-1 text-10 text-text-3">Nada: {narasiObj.output.nada}. Narasi ini deskriptif, bukan rekomendasi.</p>
-						{/if}
+						<div class="px-3 py-2.5">
+							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
+							{#if narasiObj.output.kalimat.length > 1}
+								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
+									{#each narasiObj.output.kalimat.slice(1) as k}
+										<p class="text-12 text-text-2">{k.teks}</p>
+									{/each}
+								</div>
+							{/if}
+							<p class="mt-2 text-10 text-text-3">
+								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
+								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
+							</p>
+						</div>
+					{:else}
+						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
 					{/if}
 				</div>
 			{/if}
@@ -2154,9 +2329,7 @@
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
 							<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
-							<span class="text-11 text-text-3 font-mono">
-								{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
-							</span>
+							<span class="text-11 text-text-3 font-mono">{posisiJumlah} / {posisiMaks}</span>
 						</div>
 						{#if posisiArray.length === 0}
 							<div class="py-4 px-2 text-center text-12 text-text-3">
@@ -2170,7 +2343,9 @@
 											<span class="font-bold text-text">{p.pair}</span>
 											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
 										</div>
-										<span class="text-11 text-text-3">entry {angka(p.entry)} · SL {angka(p.stop)} · TP {angka(p.tp1)}</span>
+										<span class="text-11 text-text-3"
+											>entry {harga(p.entry)} · SL {harga(p.stop)} · TP {harga(p.tp1)}</span
+										>
 									</div>
 								{/each}
 							</div>
@@ -2212,35 +2387,91 @@
 				{#if sub === 'radar' || !sub}
 					<JudulBagian nomor="1" judul="Radar" tujuan="Jendela likuiditas per chain + penjelasan Robinhood Chain vs Meteora + verifikasi harga live" ikon="◉" />
 				{:else if sub === 'lp'}
-					<JudulBagian nomor="2" judul="LP" tujuan="Posisi LP nyata (bankroll kecil) + dompet + akurasi P&L" ikon="≋" />
+					<JudulBagian nomor="2" judul="LP" tujuan="LP di dua tempat: Solana (Meteora) &amp; Robinhood Chain (Uniswap) — fee, IL, vs hold" ikon="≋" />
 				{:else if sub === 'memecoin'}
-					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru & smart money — eksplorasi, bukan rekomendasi" ikon="✦" />
+					<JudulBagian nomor="3" judul="Memecoin" tujuan="Memecoin GMGN/FOMO: bot paper, safety gate, smart money — eksplorasi, bukan rekomendasi" ikon="✦" />
 				{/if}
-			<!-- Narasi LLM per market (6 Okt): dari job llm-brief-<market>. Angka tetap dari
-			     fakta; narasi hanya menjelaskan — tidak pernah menggantikan bukti. -->
-			{#if narasiObj}
+
+				<!-- PETA TARGET (revisi pemilik 7 Okt): tiga tujuan yang disebut eksplisit —
+				     memecoin di GMGN/FOMO, LP Uniswap di Robinhood Chain, LP Solana/Meteora —
+				     dan siapa mengerjakan apa. Ditulis dari data yang benar-benar ada. -->
 				<div class="mb-4 rounded-card border border-line bg-surface p-3">
-					<div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-						<div class="flex items-center gap-2">
-							<span class="text-12 font-bold text-accent-2">✳ Narasi LLM</span>
-							<span class="rounded bg-surface border border-line px-1.5 py-0.5 text-10 font-mono text-text-3">
-								{narasiObj.provider ?? '—'} · {narasiObj.prompt_version ?? '—'}
-								{#if narasiObj.latency_ms}· {narasiObj.latency_ms} ms{/if}
-							</span>
+					<div class="mb-2 border-b border-line-soft pb-2">
+						<h3 class="text-13 font-medium text-text">Tiga target &amp; sumbernya</h3>
+						<p class="text-11 text-text-3">Satu baris per tujuan — mana yang sudah jalan (paper), mana yang belum.</p>
+					</div>
+					<div class="grid grid-cols-1 gap-2 md:grid-cols-3">
+						<div class="rounded-card border border-line bg-canvas/40 p-2.5">
+							<div class="mb-1 flex items-center justify-between">
+								<span class="text-12 font-bold text-text">Memecoin</span>
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border {gmgnPaperObj ? 'text-pos bg-pos/10 border-pos/20' : 'text-text-3 bg-canvas border-line'}">{gmgnPaperObj ? 'PAPER JALAN' : 'BELUM ADA DATA'}</span>
+							</div>
+							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">GMGN / FOMO</b> — pemindaian token baru + safety gate (bundler, dev hold, entrapment).</p>
+							{#if gmgnPaperObj?.isi?.run_config}
+								{@const rc = gmgnPaperObj.isi.run_config}
+								<p class="mt-1 text-10 text-text-3 font-mono">
+									chains: {(rc.chains ?? []).join(', ') || '—'} · min skor {rc.min_score ?? '—'} ·
+									posisi ${rc.position_usd ?? '—'} · maks {rc.max_open_positions ?? '—'} terbuka
+								</p>
+								<p class="mt-0.5 text-10 text-text-3 font-mono">
+									safety: {(rc.safety_filters ?? []).map((f: any) => f.join(' ')).join(' · ') || '—'}
+								</p>
+							{/if}
 						</div>
-						<span class="text-10 text-text-3 font-mono">{narasiObj.fact_ids?.length ?? 0} fakta dirujuk</span>
+						<div class="rounded-card border border-line bg-canvas/40 p-2.5">
+							<div class="mb-1 flex items-center justify-between">
+								<span class="text-12 font-bold text-text">LP Robinhood Chain</span>
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-line text-text-3 bg-canvas">PANTAU</span>
+							</div>
+							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">Uniswap v2/v3/v4</b> di L2 Robinhood (chain ID 4663) — diindeks DexScreener sebagai chain <span class="font-mono">robinhood</span>.</p>
+							<p class="mt-1 text-10 text-text-3">Posisi paper di sana belum dibuka; yang ada baru verifikasi harga pool.</p>
+						</div>
+						<div class="rounded-card border border-line bg-canvas/40 p-2.5">
+							<div class="mb-1 flex items-center justify-between">
+								<span class="text-12 font-bold text-text">LP Solana (Meteora)</span>
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border {lpPaperObj ? 'text-pos bg-pos/10 border-pos/20' : 'text-text-3 bg-canvas border-line'}">{lpPaperObj ? 'PAPER JALAN' : 'BELUM ADA DATA'}</span>
+							</div>
+							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">Meteora</b> (DLMM / DAMM v2) — posisi adalah NFT Token-2022, fee dinamis.</p>
+							{#if lpPaperObj?.mark_terakhir}
+								<p class="mt-1 text-10 text-text-3 font-mono">mark terakhir · {lpPaperObj.mark_terakhir}</p>
+							{/if}
+						</div>
+					</div>
+				</div>
+			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
+			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
+			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
+			{#if narasiObj}
+				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
+					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
+						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
+						<span class="text-10 text-text-3 font-mono">
+							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
+						</span>
 					</div>
 					{#if narasiObj.status !== 'ok'}
-						<div class="text-11 text-warn">status: {narasiObj.status ?? '—'} {narasiObj.error_code ? `(${narasiObj.error_code})` : ''} — narasi tidak tersedia, fakta tetap sah.</div>
+						<p class="px-3 py-2 text-11 text-warn">
+							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
+							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
+							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
+						</p>
 					{:else if narasiObj.output?.kalimat?.length}
-						<ul class="space-y-1">
-							{#each narasiObj.output.kalimat as k}
-								<li class="text-12 text-text-2">· {k.teks}</li>
-							{/each}
-						</ul>
-						{#if narasiObj.output.nada}
-							<p class="mt-1 text-10 text-text-3">Nada: {narasiObj.output.nada}. Narasi ini deskriptif, bukan rekomendasi.</p>
-						{/if}
+						<div class="px-3 py-2.5">
+							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
+							{#if narasiObj.output.kalimat.length > 1}
+								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
+									{#each narasiObj.output.kalimat.slice(1) as k}
+										<p class="text-12 text-text-2">{k.teks}</p>
+									{/each}
+								</div>
+							{/if}
+							<p class="mt-2 text-10 text-text-3">
+								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
+								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
+							</p>
+						</div>
+					{:else}
+						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
 					{/if}
 				</div>
 			{/if}
@@ -2535,6 +2766,47 @@
 				{#if sub === 'token' || sub === 'memecoin'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
+							<!-- Bot paper memecoin (kind `gmgn`, key `paper`) — konfigurasi & kesehatan
+							     pembacaan folder. Angka apa adanya: berkas rusak ditulis "rusak". -->
+							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
+								<div>
+									<h3 class="text-14 font-medium text-text">Bot Paper Memecoin (GMGN/FOMO)</h3>
+									<p class="text-11 text-text-3">
+										Konfigurasi nyata dari folder state bot + kesehatan berkas yang dibaca job
+									</p>
+								</div>
+								{#if faktaGmgnPaper}
+									<FreshnessBadge status={faktaGmgnPaper.status} age_s={faktaGmgnPaper.age_s} source={faktaGmgnPaper.source} ringkas />
+								{/if}
+							</div>
+							{#if !gmgnPaperObj}
+								<div class="py-4 text-center text-12 text-text-3">Data bot paper belum tersedia.</div>
+							{:else}
+								<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									<div class="rounded-card border border-line bg-surface p-3 space-y-1.5 text-11">
+										<div class="flex justify-between"><span class="text-text-3">Folder state</span><span class="font-mono text-text-2">{gmgnPaperObj.dir ?? '—'}</span></div>
+										<div class="flex justify-between"><span class="text-text-3">Jumlah berkas</span><span class="font-mono">{gmgnPaperObj.files ?? '—'}</span></div>
+										<div class="flex justify-between"><span class="text-text-3">Total byte</span><span class="font-mono">{Number(gmgnPaperObj.bytes ?? 0).toLocaleString('en-US')}</span></div>
+									</div>
+									<div class="rounded-card border border-line bg-surface p-3 space-y-1.5 text-11">
+										{#each Object.entries(gmgnPaperObj.isi ?? {}) as [nama, info]}
+											{@const st = (info as any)?.status}
+											<div class="flex justify-between gap-2">
+												<span class="font-mono text-text-3">{nama}</span>
+												<span class="font-mono {st === 'rusak' ? 'text-neg' : st === 'tidak-ada' ? 'text-text-3' : 'text-pos'}">{st ?? 'ok'}</span>
+											</div>
+										{/each}
+									</div>
+								</div>
+								{#if gmgnPaperObj.isi?.signals?.status === 'rusak'}
+									<p class="mt-2 text-11 text-warn">
+										⚠ <span class="font-mono">signals.jsonl</span> terbaca <b>rusak</b> — bot paper belum punya
+										catatan sinyal yang bisa dinilai. Yang tampil di bawah hanya konfigurasi, bukan hasil.
+									</p>
+								{/if}
+							{/if}
+						</div>
+						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
 									<h3 class="text-14 font-medium text-text">GMGN Smart Money & Whale Signals</h3>
@@ -2655,9 +2927,7 @@
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
 							<h3 class="text-13 font-medium text-text">Posisi Terbuka</h3>
-							<span class="text-11 text-text-3 font-mono">
-								{Number(risikoObj?.posisi_terbuka ?? 0)} / {Number(risikoObj?.maks_posisi ?? 3)}
-							</span>
+							<span class="text-11 text-text-3 font-mono">{posisiJumlah} / {posisiMaks}</span>
 						</div>
 						{#if posisiArray.length === 0}
 							<div class="py-4 px-2 text-center text-12 text-text-3">
@@ -2671,7 +2941,9 @@
 											<span class="font-bold text-text">{p.pair}</span>
 											<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {p.direction === 'LONG' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">{p.direction}</span>
 										</div>
-										<span class="text-11 text-text-3">entry {angka(p.entry)} · SL {angka(p.stop)} · TP {angka(p.tp1)}</span>
+										<span class="text-11 text-text-3"
+											>entry {harga(p.entry)} · SL {harga(p.stop)} · TP {harga(p.tp1)}</span
+										>
 									</div>
 								{/each}
 							</div>
@@ -2757,8 +3029,21 @@
 				</div>
 			{/if}
 
-			<!-- Aliran Kejadian SSE untuk Area ini -->
-			<Block judul="Kejadian Area" deskripsi="Aliran SSE terfilter topik area.">
+			<!-- Aliran Kejadian SSE untuk Area ini.
+			     Revisi pemilik 7 Okt: "kejadian area cardnya di collaps aja toh itu 3 tombolnya
+			     ga berfungsi juga". Dua hal yang diperbaiki:
+			     (1) blok ini TERLIPAT secara default — bukan karena isinya rusak, tapi karena
+			         ia feed diagnosis, bukan keputusan trading; kepala tetap tampil.
+			     (2) tiga tombol filter lama (semua/tipe) MEMANG terasa mati: karena feed area
+			         biasanya cuma memuat satu tipe, menyaring tidak mengubah apa pun. Sekarang
+			         filter di EventFeed hanya dirender bila ada LEBIH DARI SATU tipe kejadian —
+			         tombol yang tidak mungkin mengubah apa pun tidak lagi dipajang. -->
+			<Block
+				judul="Kejadian Area"
+				deskripsi={`Aliran SSE terfilter topik area · ${kejadianArea.length} kejadian`}
+				lipat
+				lipatAwal
+			>
 				<EventFeed
 					kejadian={kejadianArea}
 					memuat={live.status === 'menyambung'}

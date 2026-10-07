@@ -29,7 +29,8 @@ def test_setiap_panggilan_tercatat_lengkap(gateway_factory, fakta, bersih_llm, j
     assert row.role == "narrator"
     assert row.provider == "nutaraline"
     assert row.model == "mimo-v2.6-flash"
-    assert row.prompt_version == "narrator/1.0.0"
+    # Versi tidak dikunci di tes (prompt berevolusi); cukup prefix peran.
+    assert row.prompt_version.startswith("narrator/")
     assert row.tokens_in == 123 and row.tokens_out == 45
     assert row.cost_usd is not None and float(row.cost_usd) > 0
     assert row.latency_ms is not None and row.latency_ms >= 0

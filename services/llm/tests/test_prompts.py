@@ -24,7 +24,10 @@ def test_load_prompts_tiga_peran_dan_skema_cocok() -> None:
 def test_registry_get_dan_roles() -> None:
     reg = PromptRegistry.from_dir(PROMPTS_DIR)
     assert reg.roles() == ["anomaly", "narrator", "verifier"]
-    assert reg.get("narrator").version == "narrator/1.0.0"
+    # Versi TIDAK dikunci di tes: prompt memang berevolusi (narrator 1.0.0 → 1.1.0,
+    # 7 Okt 2026 — gaya "kesimpulan dulu"). Yang WAJIB benar adalah prefix peran,
+    # supaya versi boleh naik tanpa membuat tes berbohong soal niatnya.
+    assert reg.get("narrator").version.startswith("narrator/")
 
 
 def test_sync_idempoten_dan_versi_baru_menonaktifkan_lama(db, bersih_llm) -> None:
@@ -34,12 +37,17 @@ def test_sync_idempoten_dan_versi_baru_menonaktifkan_lama(db, bersih_llm) -> Non
     with session_scope() as s:
         assert sync_prompts(s, prompts) == 0  # idempoten
 
-    baru = PromptSpec(role="narrator", version="narrator/1.0.1", body="versi baru", schema_json={})
+    lama_berkas = PromptRegistry.from_dir(PROMPTS_DIR).get("narrator")
+    v_lama = lama_berkas.version
+    # Versi yang lebih tinggi dari berkas saat ini, dihitung dari nomor patch.
+    kepala, _, patch = v_lama.rpartition(".")
+    v_baru = f"{kepala}.{int(patch) + 1}"
+    baru = PromptSpec(role="narrator", version=v_baru, body="versi baru", schema_json={})
     with session_scope() as s:
         assert sync_prompts(s, {"narrator": baru}) == 1
         aktif = active_prompt(s, "narrator")
-        assert aktif is not None and aktif.version == "narrator/1.0.1"
-        lama = s.scalars(select(Prompt).where(Prompt.version == "narrator/1.0.0")).one()
+        assert aktif is not None and aktif.version == v_baru
+        lama = s.scalars(select(Prompt).where(Prompt.version == v_lama)).one()
         assert lama.active is False
         # append-only: baris lama tetap ada
         jumlah = len(s.scalars(select(Prompt).where(Prompt.role == "narrator")).all())

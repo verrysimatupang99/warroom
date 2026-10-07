@@ -10,7 +10,7 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getPasarRingkas, getSinyalPerPasar } from '$lib/api/client';
+	import { getArea, getPasarRingkas, getSinyalPerPasar, getSumber } from '$lib/api/client';
 	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
 
@@ -18,9 +18,17 @@
 	let kripto = $state<AreaPayload | null>(null);
 	let akurasi = $state<PasarRingkasPayload | null>(null);
 	let galat = $state<string | null>(null);
+	// Sumber data tiap pasar (revisi pemilik 7 Okt): satu tempat, tidak perlu ditebak.
+	let sumber = $state<{ pasar: string; label: string; sumber: string; keterangan: string }[]>([]);
 
 	async function muat() {
-		const [s, k, a] = await Promise.allSettled([getSinyalPerPasar(), getArea('crypto'), getPasarRingkas()]);
+		const [s, k, a, sm] = await Promise.allSettled([
+			getSinyalPerPasar(),
+			getArea('crypto'),
+			getPasarRingkas(),
+			getSumber()
+		]);
+		if (sm.status === 'fulfilled') sumber = sm.value.sumber;
 		if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
 		else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
 		if (k.status === 'fulfilled') kripto = k.value;
@@ -33,6 +41,11 @@
 	});
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
+	// Sinyal PER MARKET (revisi pemilik 7 Okt): maks 3 terbaik per pasar + tautan
+	// "lihat semua" ke halaman pasar. Status dipisah tegas supaya "tidak ada sinyal"
+	// (mesin hidup, tak ada setup cocok) TIDAK pernah tertukar dengan "sistem gagal".
+	const pasarDaftar = $derived(sinyal?.pasar ?? []);
+	const MAKS_PER_MARKET = 3;
 
 	// Ticker: dari bagian.crypto (pair + harga + chg24h) — angka nyata, bukan contoh.
 	const ticker = $derived.by(() => {
@@ -45,21 +58,52 @@
 		}));
 	});
 
-	// Verdikt besar: berapa pasar punya peluang, dan berapa yang terverifikasi.
+	// Verdikt besar: berapa pasar punya peluang.
+	//
+	// Revisi pemilik 7 Okt: "Jika tidak ada sinyal, sebut no signal, bukan malah jurnal
+	// mesin mati atau bla bla bla, karena itu artinya system failure, bukan gagal
+	// generate sinyal akibat tidak match dengan strategi." — Justru karena pemilik
+	// menegaskan yang pertama BUKAN kegagalan, keduanya tidak boleh disamarkan:
+	//   - "kosong"  -> TIDAK ADA SINYAL (mesin hidup, tak ada setup cocok). Tenang.
+	//   - "gagal"   -> GAGAL SISTEM (sumber/job tak terbaca). Harus berbunyi, karena
+	//                  itulah failure yang sesungguhnya.
 	const peluang = $derived(daftar.filter((r) => r.ada));
+	const pasarAda = $derived(pasarDaftar.filter((p) => p.status_data === 'ada'));
+	const pasarKosong = $derived(pasarDaftar.filter((p) => p.status_data === 'kosong'));
+	const pasarGagal = $derived(pasarDaftar.filter((p) => p.status_data === 'gagal'));
 	const verdikt = $derived.by(() => {
-		if (daftar.length === 0) return { judul: 'BELUM ADA DATA', nada: 'netral', waktu: null, alasan: 'Sumber belum mengirim sinyal.' };
-		if (peluang.length === 0) return { judul: 'TIDAK ADA PELUANG', nada: 'diam', waktu: null, alasan: `Semua ${daftar.length} pasar ditolak gate. Menunggu lebih baik daripada memaksa.` };
-		const teratas = [...peluang].sort((a, b) => (b.skor ?? -1) - (a.skor ?? -1))[0];
-		// Kapan sinyal teratas DIGENERATE — pertanyaan inti: apakah ini masih segar?
-		const waktu = teratas.dibuat_pada
-			? `${waktuWIB(teratas.dibuat_pada)}${teratas.umur_sinyal_s != null ? ` (${umurDetik(teratas.umur_sinyal_s)} lalu)` : ''}`
-			: 'waktu sinyal tidak tercatat di sumber';
+		if (pasarDaftar.length === 0 && daftar.length === 0)
+			return { judul: 'BELUM ADA DATA', nada: 'netral', waktu: null, alasan: 'Sumber belum mengirim sinyal.' };
+
+		if (pasarGagal.length) {
+			return {
+				judul: 'GAGAL SISTEM',
+				nada: 'gagal',
+				waktu: null,
+				alasan:
+					`${pasarGagal.length} pasar tidak bisa dibaca: ${pasarGagal.map((p) => p.label).join(', ')}. ` +
+					'Ini bukan "tidak ada sinyal" — periksa job pengumpul di halaman Sistem.'
+			};
+		}
+		if (pasarAda.length === 0) {
+			return {
+				judul: 'TIDAK ADA SINYAL',
+				nada: 'diam',
+				waktu: null,
+				alasan:
+					`Mesin berjalan (${pasarKosong.length} pasar dipindai) tetapi tidak ada setup yang ` +
+					'lolos strategi saat ini. Itu hasil kerja sistem, bukan kegagalan — menunggu lebih baik daripada memaksa.'
+			};
+		}
+		const sisaKosong = pasarKosong.length ? ` ${pasarKosong.length} pasar lain tanpa setup cocok.` : '';
 		return {
-			judul: `${peluang.length} PELUANG`,
+			judul: `${pasarAda.length} PELUANG`,
 			nada: 'ada',
-			waktu,
-			alasan: `Teratas: ${teratas.label}${teratas.subjek ? ` · ${teratas.subjek}` : ''}${teratas.skor != null ? ` · skor ${teratas.skor}/100` : ''} · sinyal ${waktu}. Semua belum terverifikasi — lihat catatan tiap pasar.`
+			waktu: null,
+			alasan:
+				`Teratas: ${pasarAda[0].label}${pasarAda[0].sinyal[0]?.pair ? ` · ${pasarAda[0].sinyal[0].pair}` : ''}` +
+				`${pasarAda[0].sinyal[0]?.skor != null ? ` · skor ${pasarAda[0].sinyal[0].skor}/100` : ''}.` +
+				sisaKosong + ' Semua belum terverifikasi — lihat catatan tiap pasar.'
 		};
 	});
 
@@ -113,25 +157,54 @@
 <svelte:head><title>War Room — satu layar, semua pasar</title></svelte:head>
 
 <div class="pratinjau">
-	<!-- 1. TICKER — denyut pasar dalam satu baris -->
-	<div class="ticker" aria-label="Harga pasar">
-		{#each ticker as t (t.pair)}
-			<span class="tick">
-				<span class="tick-pair">{t.pair.replace('USDT', '')}</span>
-				<span class="tick-harga angka">{formatHarga(t.harga)}</span>
-				{#if t.chg != null}
-					<span class="tick-chg angka" class:naik={t.chg >= 0} class:turun={t.chg < 0}>
-						{t.chg >= 0 ? '▲' : '▼'}{Math.abs(t.chg).toFixed(2)}%
-					</span>
-				{/if}
-			</span>
-		{/each}
-		{#if ticker.length === 0}
-			<span class="tick dim">ticker belum tersedia</span>
-		{/if}
+	<!-- 1. TICKER — DENYUT PASAR, BERJALAN (revisi pemilik 7 Okt: "kalo bisa jalan
+	     dan realtime"). Dua hal yang membuatnya benar:
+	     (a) BERJALAN — daftar yang sama digambar DUA KALI di dalam satu jalur yang
+	         digeser animasi ke kiri; saat salinan pertama habis, salinan kedua sudah
+	         tepat di belakangnya -> mulus tanpa lompat. Saat kursor/fokus di atasnya,
+	         animasi berhenti (orang butuh membaca angka diam).
+	     (b) REALTIME — data di-refresh tiap 15 s dari `bagian.crypto` (harga & chg24h
+	         nyata dari MEXC, bukan contoh). Umur data ditulis apa adanya di ekornya. -->
+	<div class="ticker" aria-label="Harga pasar (berjalan)">
+		<div class="ticker-jalur" class:sepi={ticker.length === 0}>
+			{#if ticker.length === 0}
+				<span class="tick dim">ticker belum tersedia</span>
+			{:else}
+				{#each [0, 1] as salinan (salinan)}
+					<div class="ticker-set" aria-hidden={salinan === 1}>
+						{#each ticker as t (t.pair + '-' + salinan)}
+							<span class="tick">
+								<span class="tick-pair">{t.pair.replace('USDT', '')}</span>
+								<span class="tick-harga angka">{formatHarga(t.harga)}</span>
+								{#if t.chg != null}
+									<span class="tick-chg angka" class:naik={t.chg >= 0} class:turun={t.chg < 0}>
+										{t.chg >= 0 ? '▲' : '▼'}{Math.abs(t.chg).toFixed(2)}%
+									</span>
+								{/if}
+							</span>
+						{/each}
+					</div>
+				{/each}
+			{/if}
+		</div>
 	</div>
 
 	<div class="isi">
+		{#if sumber.length}
+			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto MEXC, IDX Stock Arjum,
+			     Forex TVC, Polymarket Dokumentasi PM, Meme GMGN/FOMO, LP Meteora & Uniswap) —
+			     sekarang tertulis di halaman, bukan tersembunyi di kepala orang. -->
+			<div class="sumber-strip" aria-label="Sumber data tiap pasar">
+				<span class="sumber-judul">Sumber data</span>
+				{#each sumber as s (s.pasar)}
+					<span class="sumber-chip" title={s.keterangan}>
+						<span class="sumber-pasar">{s.label}</span>
+						<span class="sumber-nama">{s.sumber}</span>
+					</span>
+				{/each}
+			</div>
+		{/if}
+
 		<header class="kepala">
 			<h1 class="merek">War<span>Room</span></h1>
 			<span class="mode">PAPER</span>
@@ -140,32 +213,22 @@
 			<span class="dim angka">{umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu</span>
 		</header>
 
-		<!-- 2. VERDIKT BESAR — jawaban 3 detik -->
-		<section class="verdikt {verdikt.nada}" aria-live="polite">
+		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
+		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:
+		     dua-duanya menjawab pertanyaan yang sama — "hari ini bagaimana?" — dan
+		     memisahkannya memaksa mata melompat. Sinyalnya dipindah KE BAWAH card ini
+		     (bagian 3 di bawah), bukan hilang. -->
+		<section class="kartu-gabung" aria-label="Status hari ini dan akurasi pasar">
+		<div class="verdikt {verdikt.nada}" aria-live="polite">
 			<p class="verdikt-label">Status hari ini</p>
 			<p class="verdikt-judul">{verdikt.judul}</p>
-			<p class="verdikt-waktu angka">
-				{#if verdikt.waktu}
-					Sinyal digenerate: {verdikt.waktu}
-				{:else}
-					Waktu sinyal tidak tercatat
-				{/if}
-			</p>
+			{#if verdikt.waktu}
+				<p class="verdikt-waktu angka">Sinyal digenerate: {verdikt.waktu}</p>
+			{/if}
 			<p class="verdikt-alasan">{verdikt.alasan}</p>
 
-			<!-- 7 Okt (pertanyaan pemilik): "6 peluang tapi apa saja?" — daftarnya harus
-			     terlihat di sini, bukan hanya dihitung. Tiap chip menuju pasarnya. -->
-			{#if peluang.length}
-				<div class="peluang-daftar" aria-label="Daftar peluang hari ini">
-					{#each peluang as s (s.pasar)}
-						<a class="peluang-chip" href={s.pasar === 'lp' ? '/gmgn?sub=lp' : `/${s.pasar}`}>
-							<span class="chip-nama">{s.label}</span>
-							{#if s.subjek}<span class="chip-subjek angka">{s.subjek}</span>{/if}
-							<span class="chip-arah">{s.arah ?? 'ADA'}</span>
-						</a>
-					{/each}
-				</div>
-			{/if}
+			<!-- Sinyalnya kini di bagian 3 ("Sinyal per Market") — di sini hanya jumlah
+			     dan alasan, supaya card tetap menjawab dalam 3 detik. -->
 
 			<!-- SETUP ENTRY: jawaban "masuk di mana". Hanya bila datanya ada. -->
 			{#if setupTeratas.length}
@@ -183,11 +246,11 @@
 					</div>
 				</div>
 			{/if}
-		</section>
+		</div>
 
-		<!-- 2b. AKURASI & PnL per market (6 Okt): angka dari mesin pasar.py, satu standar bukti.
+		<!-- 2b. AKURASI & PnL per market (6 Okt) — sekarang DI DALAM card gabungan.
 		     Sengaja TIDAK menjumlahkan R dan USD — satuannya beda; kolomnya dipisah. -->
-		<section class="pasar" aria-label="Akurasi dan PnL per market">
+		<div class="pasar akurasi-dalam" aria-label="Akurasi dan PnL per market">
 			<div class="judul-bagian">
 				<h2>Akurasi &amp; PnL per Market</h2>
 				<p class="dim">Dari ledger nyata tiap market. Tingkat pakem: <span class="angka">INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING</span> (n efektif per hari).</p>
@@ -244,9 +307,72 @@
 			{:else}
 				<p class="dim">Ringkasan akurasi belum tersedia.</p>
 			{/if}
+		</div>
 		</section>
 
-		<!-- 3. RINCIAN per pasar -->
+		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
+		     Aturan yang dikodekan di sini, kata per kata dari pemilik:
+		       - "hanya ditampilkan 3 terbaik per market" -> slice(MAKS_PER_MARKET)
+		       - "jika sinyal harian lebih dari 3 ada tombol klik lainnya yang mengarah
+		         ke halaman tiap market" -> tombol "Lihat semua (N)" muncul HANYA bila
+		         jumlahnya benar-benar lebih dari 3.
+		       - "jika tidak ada sinyal, sebut no signal, bukan jurnal mesin mati" ->
+		         "kosong" (mesin hidup) ditulis "tidak ada sinyal · alasan yang bisa
+		         dibaca manusia"; "gagal" (mesin mati) TETAP berbunyi sebagai kegagalan
+		         sistem, karena itu memang failure — dua hal ini tidak boleh seragam. -->
+		<section class="pasar" aria-label="Sinyal per market">
+			<div class="judul-bagian">
+				<h2>Sinyal per Market</h2>
+				<p class="dim">
+					Maks {MAKS_PER_MARKET} terbaik per market, urut skor aturan. Tanda
+					<b>tidak ada sinyal</b> = mesin hidup tetapi tidak ada setup yang cocok;
+					<b class="neg">gagal sistem</b> = sumber/job tak terbaca — dua hal berbeda.
+				</p>
+			</div>
+			<div class="sinyal-grid">
+				{#each pasarDaftar as p (p.pasar)}
+					<article class="sinyal-kartu {p.status_data}">
+						<header class="sinyal-kepala">
+							<h3>{p.label}</h3>
+							{#if p.jumlah > MAKS_PER_MARKET}
+								<a class="lihat-semua" href={p.rute}>Lihat semua ({p.jumlah}) →</a>
+							{:else if p.status_data === 'ada'}
+								<a class="lihat-semua" href={p.rute}>Buka {p.label.split(' (')[0]} →</a>
+							{/if}
+						</header>
+
+						{#if p.status_data === 'ada'}
+							{#each p.sinyal.slice(0, MAKS_PER_MARKET) as s, i (s.pair ?? i)}
+								<div class="sinyal-baris">
+									<div class="sinyal-kiri">
+										<span class="sinyal-pair angka">{s.pair ?? '—'}</span>
+										{#if s.arah}<span class="sinyal-arah {s.arah === 'LONG' || s.arah === 'BELI' ? 'pos' : 'neg'}">{s.arah}</span>{/if}
+										{#if s.tier}<span class="sinyal-tier">{s.tier}</span>{/if}
+									</div>
+									<div class="sinyal-kanan angka dim">
+										{#if s.entry != null}<span>e {formatHarga(typeof s.entry === 'number' ? s.entry : Number(s.entry))}</span>{/if}
+										{#if s.sl != null}<span>s {formatHarga(typeof s.sl === 'number' ? s.sl : Number(s.sl))}</span>{/if}
+										{#if s.tp1 != null}<span>t {formatHarga(typeof s.tp1 === 'number' ? s.tp1 : Number(s.tp1))}</span>{/if}
+										{#if s.umur_s != null}<span class="umur">{umurDetik(s.umur_s)} lalu</span>{/if}
+									</div>
+								</div>
+							{/each}
+						{:else if p.status_data === 'kosong'}
+							<p class="sinyal-kosong">Tidak ada sinyal. {p.alasan}</p>
+						{:else}
+							<p class="sinyal-gagal">⚠ {p.alasan}</p>
+						{/if}
+					</article>
+				{/each}
+				{#if pasarDaftar.length === 0}
+					<p class="dim">Daftar sinyal per market belum tersedia{galat ? `: ${galat}` : '.'}</p>
+				{/if}
+			</div>
+		</section>
+
+		<!-- 4. STATUS per pasar — murni catatan kejujuran & skor. Daftar sinyalnya ada di
+		     bagian 3; mengulang setup di sini membuat satu halaman memuat dua daftar yang
+		     sama (keluhan pemilik: "card dibawahnya belum tersusun rapi"). -->
 		<section class="pasar" aria-label="Rincian per pasar">
 			{#each daftar as s (s.pasar)}
 				<article class="baris" class:kosong={!s.ada}>
@@ -272,14 +398,7 @@
 					{#if s.catatan_kejujuran}
 						<p class="catatan">{s.catatan_kejujuran}</p>
 					{/if}
-					{#if setupDari(s).length}
-						<p class="setup-mini">
-							{#each setupDari(s) as st, i (st.label)}
-								{#if i > 0}<span class="pisah">·</span>{/if}<span class="setup-mini-label">{st.label}</span>
-								<span class="angka setup-mini-nilai {st.nada ?? ''}">{st.nilai}</span>
-							{/each}
-						</p>
-					{/if}
+
 				</article>
 			{/each}
 			{#if daftar.length === 0}
@@ -345,16 +464,61 @@
 	.verdikt-waktu { font-size: 0.78rem; color: var(--redup); margin: 0.1rem 0 0.35rem; }
 	.mini-waktu { font-size: 0.72rem; color: var(--redup); margin: 0.2rem 0 0; }
 
+	/* Ticker BERJALAN: dua salinan identik di dalam satu jalur; jalur digeser -50%
+	   (tepat selebar satu salinan) sehingga terlihat mulus tanpa lompat. */
 	.ticker {
 		display: flex;
-		gap: 1.25rem;
 		align-items: center;
-		padding: 0.5rem 1rem;
+		padding: 0.5rem 0;
 		border-bottom: 1px solid var(--garis);
 		background: var(--permukaan);
-		overflow-x: auto;
+		overflow: hidden;
 		white-space: nowrap;
 	}
+	.ticker-jalur {
+		display: flex;
+		flex-shrink: 0;
+		width: max-content;
+		animation: geser-ticker 45s linear infinite;
+	}
+	.ticker-jalur.sepi { animation: none; padding: 0 1rem; width: auto; }
+	.ticker:hover .ticker-jalur, .ticker:focus-within .ticker-jalur { animation-play-state: paused; }
+	.ticker-set { display: flex; gap: 1.75rem; padding-right: 1.75rem; flex-shrink: 0; }
+	@keyframes geser-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+	@media (prefers-reduced-motion: reduce) { .ticker-jalur { animation: none; } }
+
+	/* Card gabungan status + akurasi (revisi 7 Okt) */
+	.kartu-gabung {
+		border: 1px solid var(--garis);
+		border-radius: 1rem;
+		background: var(--permukaan);
+		overflow: hidden;
+	}
+	.akurasi-dalam { border-top: 1px solid var(--garis); padding: 1rem; margin: 0; }
+	.verdikt { border-radius: 0; border: none; }
+
+	/* Sinyal per market */
+	.sinyal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.75rem; }
+	.sinyal-kartu {
+		border: 1px solid var(--garis); border-radius: 0.75rem;
+		background: var(--permukaan); padding: 0.75rem 0.85rem;
+	}
+	.sinyal-kartu.gagal { border-color: var(--merah); }
+	.sinyal-kepala { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
+	.sinyal-kepala h3 { font-size: 0.85rem; margin: 0; letter-spacing: 0.01em; }
+	.lihat-semua { font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap; }
+	.lihat-semua:hover { text-decoration: underline; }
+	.sinyal-baris { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-top: 1px dashed var(--garis); align-items: baseline; }
+	.sinyal-baris:first-of-type { border-top: none; }
+	.sinyal-kiri { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+	.sinyal-pair { font-weight: 700; font-size: 0.82rem; }
+	.sinyal-arah { font-weight: 700; font-size: 0.68rem; letter-spacing: 0.03em; }
+	.sinyal-tier { font-size: 0.62rem; color: var(--redup); border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0 0.3rem; }
+	.sinyal-kanan { font-size: 0.7rem; display: inline-flex; gap: 0.5rem; }
+	.sinyal-kanan .umur { color: var(--redup); }
+	.sinyal-kosong { font-size: 0.74rem; color: var(--redup); margin: 0.2rem 0 0; }
+	.sinyal-gagal { font-size: 0.74rem; color: var(--merah); margin: 0.2rem 0 0; }
+	.verdikt.gagal { border-left: 3px solid var(--merah); }
 	.tick {
 		display: inline-flex;
 		align-items: baseline;
@@ -388,6 +552,16 @@
 		flex-direction: column;
 		gap: 1.25rem;
 	}
+
+	.sumber-strip { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+	.sumber-judul { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--redup); }
+	.sumber-chip {
+		display: inline-flex; align-items: baseline; gap: 0.35rem;
+		border: 1px solid var(--garis); border-radius: 999px; padding: 0.15rem 0.6rem;
+		font-size: 0.7rem; background: var(--permukaan);
+	}
+	.sumber-pasar { color: var(--redup); }
+	.sumber-nama { font-weight: 600; color: var(--tinta); }
 
 	.kepala {
 		display: flex;

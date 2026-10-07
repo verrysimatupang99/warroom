@@ -14,6 +14,7 @@ import type {
 	DocsPayload,
 	FaktaSatu,
 	HasilGate,
+	Kejadian,
 	Kesehatan,
 	KesegaranPayload,
 	MasukanGate,
@@ -157,3 +158,26 @@ export const getDocs = () => minta<DocsPayload>('/api/v1/docs');
 
 /** Isi satu catatan menurut slug. */
 export const getDoc = (slug: string) => minta<DocIsi>(`/api/v1/docs/${encodeURIComponent(slug)}`);
+
+/** Kejadian terakhir (backfill panel Kejadian Area). SSE hanya mengirim yang BARU. */
+export async function getEvents(limit = 120, tipe?: string): Promise<Kejadian[]> {
+	const q = new URLSearchParams({ limit: String(limit) });
+	if (tipe) q.set('tipe', tipe);
+	const res = await fetch(urlApi(`/api/v1/events?${q}`), { credentials: 'include' });
+	if (!res.ok) throw new Error(`events HTTP ${res.status}`);
+	const j = (await res.json()) as { events: Kejadian[] };
+	return j.events ?? [];
+}
+
+/** Sumber data tiap pasar (satu tempat: MEXC, Stock Arjum, TVC, PM, GMGN/FOMO, Meteora/Uniswap). */
+export async function getSumber(): Promise<{
+	sumber: { pasar: string; label: string; sumber: string; keterangan: string }[];
+	sumber_atom: { nama: string; dipakai: string }[];
+}> {
+	const res = await fetch(urlApi('/api/v1/sumber'), { credentials: 'include' });
+	if (!res.ok) throw new Error(`sumber HTTP ${res.status}`);
+	return (await res.json()) as {
+		sumber: { pasar: string; label: string; sumber: string; keterangan: string }[];
+		sumber_atom: { nama: string; dipakai: string }[];
+	};
+}

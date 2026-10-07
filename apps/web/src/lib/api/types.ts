@@ -219,11 +219,43 @@ export interface SinyalPasar {
 	/** Kapan sinyal DIGENERATE (ISO apa adanya dari mesin) + umurnya saat ini (detik). */
 	dibuat_pada: string | null;
 	umur_sinyal_s: number | null;
+	/** Status ketersediaan (revisi 7 Okt): "ada" · "kosong" (mesin hidup, tak ada setup
+	 *  cocok) · "gagal" (sumber tak terbaca / mesin mati). Dua yang terakhir TIDAK sama. */
+	status_data: 'ada' | 'kosong' | 'gagal';
 	detail: Record<string, unknown>;
+}
+
+export interface SinyalItem {
+	pair: string | null;
+	arah: string | null;
+	tier: string | null;
+	entry: unknown;
+	sl: unknown;
+	tp1: unknown;
+	r_r: unknown;
+	risk_pct: unknown;
+	aturan_gagal: string[];
+	label: string | null;
+	umur_s: number | null;
+	skor: number | null;
+}
+
+/** Sinyal satu pasar untuk Home: maks 3 + status jujur (ada/kosong/gagal). */
+export interface DaftarSinyalPasar {
+	pasar: string;
+	label: string;
+	/** "ada" = ada sinyal · "kosong" = mesin hidup tapi tak ada setup cocok ·
+	 *  "gagal" = sumber tak terbaca/mesin mati (JANGAN ditulis "tidak ada sinyal"). */
+	status_data: 'ada' | 'kosong' | 'gagal';
+	alasan: string;
+	rute: string;
+	jumlah: number;
+	sinyal: SinyalItem[];
 }
 
 export interface SinyalPayload {
 	sinyal: SinyalPasar[];
+	pasar?: DaftarSinyalPasar[];
 	count: number;
 	ada: number;
 }

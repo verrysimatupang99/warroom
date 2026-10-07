@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session as SASession
 
 from warroom_core.db import Fact
 
-__all__ = ["SinyalPasar", "sinyal_terbaik_per_pasar", "PASAR"]
+__all__ = ["DaftarSinyal", "SinyalPasar", "sinyal_per_pasar", "sinyal_terbaik_per_pasar", "PASAR"]
 
 # Urutan + label pasar yang ditampilkan di Home. Satu sumber supaya UI dan API tidak
 # berbeda definisi (pelajaran yang sama dengan nav.ts).
@@ -66,6 +66,13 @@ class SinyalPasar:
     # X peluang itu ada timestamp kapan sinyal itu digenerate ya".
     dibuat_pada: str | None = None
     umur_sinyal_s: float | None = None
+    # Status ketersediaan dipisah tegas (revisi owner 7 Okt):
+    #   "ada"      — ada sinyal, disajikan
+    #   "kosong"   — mesin HIDUP tapi tidak ada setup yang cocok dengan strategi. Ini
+    #                hasil kerja sistem, bukan kegagalan. Ditulis "tidak ada sinyal".
+    #   "gagal"    — sumber data tidak terbaca / mesin mati. INI failure yang harus
+    #                berbunyi — jangan pernah disamarkan sebagai "tidak ada sinyal".
+    status_data: str = "ada"
     detail: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -90,6 +97,11 @@ def _umur(observed: datetime | None) -> float | None:
     if observed.tzinfo is None:
         observed = observed.replace(tzinfo=UTC)
     return round((datetime.now(UTC) - observed).total_seconds(), 1)
+
+
+def _ke_utc(t: datetime) -> datetime:
+    """Pastikan datetime punya tzinfo (DB bisa mengembalikan naive)."""
+    return t if t.tzinfo else t.replace(tzinfo=UTC)
 
 
 def _umur_iso(iso: str | None) -> float | None:
@@ -371,6 +383,168 @@ def _kosong(pasar: str, label: str, sumber: str, s: SASession, alasan: str) -> S
         alasan=alasan,
         catatan_kejujuran="Pasar ini belum punya sinyal — ditampilkan apa adanya, bukan angka 0.",
     )
+
+
+@dataclass
+class DaftarSinyal:
+    """Kumpulan sinyal SATU pasar untuk Home (maks 3 ditampilkan + tautan ke halaman)."""
+
+    pasar: str
+    label: str
+    status_data: str            # ada | kosong | gagal
+    alasan: str = ""
+    rute: str = ""              # tautan "lihat semua"
+    jumlah: int = 0
+    sinyal: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def _rute_pasar(pasar: str) -> str:
+    return {
+        "crypto": "/crypto?sub=setup",
+        "polymarket": "/polymarket?sub=setup-b",
+        "gmgn": "/gmgn?sub=memecoin",
+        "lp": "/gmgn?sub=lp",
+        "idx": "/idx?sub=sinyal",
+        "forex": "/forex?sub=struktur",
+    }.get(pasar, f"/{pasar}")
+
+
+def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
+    """Sinyal crypto AKTIF dari fakta `signal/*` (kind signal) — urut skor aturan.
+
+    Dipisah tegas: tidak ada fakta sama sekali BISA berarti (a) mesin baru selesai dan
+    memang tak ada setup, atau (b) mesin mati. Kita cek jejak `verdicts` terakhir:
+    kalau ada verdict baru (< 6 jam), berarti mesin hidup → "kosong"; kalau tidak,
+    → "gagal" (jangan pernah disebut "tidak ada sinyal").
+    """
+    rows = s.scalars(
+        select(Fact).where(Fact.kind == "signal").order_by(Fact.observed_at.desc())
+    ).all()
+    now = datetime.now(UTC)
+    # `facts` menyimpan SATU BARIS PER PENGAMATAN (ADR-005) — jadi satu pair bisa punya
+    # puluhan baris. Ambil yang TERBARU per pair saja; kalau tidak, 6 kandidat terbaca
+    # sebagai 53 (bug yang langsung terlihat di hitungan Home).
+    terbaru: dict[str, Fact] = {}
+    for f in rows:
+        if f.key not in terbaru:
+            terbaru[f.key] = f
+    hidup: list[Fact] = []
+    for f in terbaru.values():
+        obs = _ke_utc(f.observed_at)
+        if (now - obs).total_seconds() <= f.ttl_s:
+            hidup.append(f)
+    hidup.sort(key=lambda f: str((f.value_json or {}).get("tier", "")))
+    sinyal = []
+    for f in hidup[:maks]:
+        v = f.value_json or {}
+        rules = v.get("aturan_gagal") or []
+        sinyal.append(
+            {
+                "pair": v.get("pair") or f.key,
+                "arah": v.get("arah"),
+                "tier": v.get("tier"),
+                "entry": v.get("entry"),
+                "sl": v.get("sl"),
+                "tp1": v.get("tp1"),
+                "r_r": v.get("r_r"),
+                "risk_pct": v.get("risk_pct"),
+                "aturan_gagal": rules,
+                "label": v.get("label"),
+                "umur_s": _umur_iso(None) if False else round(
+                    (now - _ke_utc(f.observed_at)).total_seconds(), 1
+                ),
+                "skor": round(100 * (1 - len(rules) / max(1, len(rules) + 3))) if rules else 100,
+            }
+        )
+    if sinyal:
+        return DaftarSinyal(
+            pasar="crypto", label="Crypto (SMC)", status_data="ada",
+            rute=_rute_pasar("crypto"), jumlah=len(hidup), sinyal=sinyal,
+        )
+    # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
+    dari_verdict = _umur_iso(_verdict_terakhir(s))
+    if dari_verdict is not None and dari_verdict <= 6 * 3600:
+        return DaftarSinyal(
+            pasar="crypto", label="Crypto (SMC)", status_data="kosong", rute=_rute_pasar("crypto"),
+            alasan=(
+                f"Pemindaian berjalan (verdict terakhir {int(dari_verdict / 60)} menit lalu) "
+                "tetapi tidak ada setup yang cocok dengan strategi saat ini."
+            ),
+        )
+    return DaftarSinyal(
+        pasar="crypto", label="Crypto (SMC)", status_data="gagal", rute=_rute_pasar("crypto"),
+        alasan=(
+            "GAGAL SISTEM: tidak ada jejak pemindaian terbaru di ledger gate — "
+            "periksa job `collect`/`signal-sync`. Ini bukan 'tidak ada sinyal'."
+        ),
+    )
+
+
+def _verdict_terakhir(s: SASession) -> str | None:
+    """Waktu verdict crypto terakhir dari fakta snapshot/kandidat (kalau ada)."""
+    f = s.scalars(
+        select(Fact)
+        .where(Fact.kind == "snapshot", Fact.key == "kandidat")
+        .order_by(Fact.observed_at.desc())
+        .limit(1)
+    ).first()
+    if f is None or not isinstance(f.value_json, list) or not f.value_json:
+        return None
+    return str((f.value_json[-1] or {}).get("ts") or "") or None
+
+
+def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
+    """Untuk tiap pasar: daftar sinyal (maks `maks` ditampilkan) + status jujur.
+
+    Home hanya butuh 3 terbaik per pasar + tautan ke halaman pasar — bukan seluruh
+    riwayat. Pasar yang sinyalnya lebih dari `maks` mengembalikan `jumlah` penuh supaya
+    UI bisa menulis "lihat semua (N)".
+    """
+    keluar: list[DaftarSinyal] = []
+    urutan = {k: i for i, (k, _l, _s) in enumerate(PASAR)}
+    crypto = _kandidat_crypto(s, maks=maks)
+    keluar.append(crypto)
+
+    # Pasar lain: pakai sinyal terbaik (bentuk lama) sebagai satu kartu, plus penanda
+    # "kosong/gagal" yang sama tegasnya.
+    for sp in sinyal_terbaik_per_pasar(s):
+        if sp.pasar == "crypto":
+            continue
+        if sp.ada:
+            keluar.append(
+                DaftarSinyal(
+                    pasar=sp.pasar, label=sp.label, status_data="ada", rute=_rute_pasar(sp.pasar),
+                    jumlah=1,
+                    sinyal=[
+                        {
+                            "pair": sp.subjek,
+                            "arah": sp.arah,
+                            "tier": sp.tier,
+                            "entry": (sp.detail or {}).get("entry"),
+                            "sl": (sp.detail or {}).get("sl"),
+                            "tp1": (sp.detail or {}).get("tp1"),
+                            "r_r": (sp.detail or {}).get("rr"),
+                            "risk_pct": None,
+                            "aturan_gagal": [],
+                            "label": sp.catatan_kejujuran,
+                            "umur_s": sp.umur_sinyal_s or sp.umur_s,
+                            "skor": sp.skor,
+                        }
+                    ],
+                )
+            )
+        else:
+            keluar.append(
+                DaftarSinyal(
+                    pasar=sp.pasar, label=sp.label, status_data="kosong", rute=_rute_pasar(sp.pasar),
+                    alasan=sp.alasan, jumlah=0,
+                )
+            )
+    keluar.sort(key=lambda x: urutan.get(x.pasar, 99))
+    return keluar
 
 
 def sinyal_terbaik_per_pasar(s: SASession) -> list[SinyalPasar]:

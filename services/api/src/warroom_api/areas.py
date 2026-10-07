@@ -73,6 +73,11 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
 # tapi fakta itu TIDAK PERNAH sampai ke UI (temuan audit 7 Okt).
 AREA_KIND: dict[str, tuple[str, ...]] = {
     "crypto": ("signal",),
+    # kind `gmgn` = pembacaan folder /home/admin/gmgn-paper/state (job gmgn-sync):
+    # kunci `paper` = konfigurasi & kesehatan berkas, `radar` = jendela likuiditas
+    # per chain. Sebelumnya kind ini TIDAK sampai ke UI (hanya dibaca kind snapshot),
+    # padahal semua angka memecoin/FOMO berasal dari sini (temuan tim, 7 Okt).
+    "gmgn": ("gmgn",),
 }
 
 
