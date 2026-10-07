@@ -101,9 +101,13 @@
 	let kejadianRiw = $state<Kejadian[]>([]);
 	$effect(() => {
 		let batal = false;
+		// Backfill DISARING ke prefiks area. Tanpa filter, 120 kejadian terakhir hampir
+		// pasti didominasi `job.ran` (12.000+ baris) sehingga panel area selalu kosong —
+		// temuan QA putaran 2 saat memeriksa isolasi SSE.
+		const prefiks = (topikArea[kunci] ?? []).join(',');
 		void (async () => {
 			try {
-				const rows = await getEvents(120);
+				const rows = await getEvents(120, prefiks || undefined);
 				if (!batal) kejadianRiw = rows;
 			} catch {
 				/* gagal backfill bukan alasan mematikan halaman; SSE tetap jalan */

@@ -165,3 +165,37 @@ def test_proposal_tidak_bisa_dilihat_tanpa_sesi(client, make_user) -> None:
     # viewer boleh membaca (transparansi) — tetapi hanya dengan sesi
     r = client.get("/api/v1/proposals", headers=_cookie(sid))
     assert r.status_code == 200
+
+
+def test_sse_isolasi_topik_dan_tidak_kelaparan(client, make_user) -> None:
+    """Isolasi SSE + anti-kelaparan (audit QA putaran 2).
+
+    Dua hal yang dibuktikan sekaligus:
+    1. ISOLASI — klien yang meminta topik "trades" TIDAK menerima tipe lain.
+    2. ANTI-KELAPARAN — versi lama mengambil 200 baris terakhir tanpa peduli topik lalu
+       menyaring di Python; dengan tabel yang didominasi `job.ran`, klien bertopik bisa
+       membaca 200 baris tak-cocok yang SAMA selamanya dan tidak pernah maju. Diuji dengan
+       menenggelamkan satu event `trade.opened` di antara 300 event `job.ran`.
+    """
+    from warroom_api import stream
+    from warroom_core.db import Event
+
+    with session_scope() as s:
+        for i in range(300):
+            s.add(Event(type="job.ran", actor="uji", severity="info", payload_json={"i": i}))
+        s.add(Event(type="trade.opened", actor="uji", severity="info", payload_json={"pair": "AAAUSDT"}))
+        s.add(Event(type="alert.sent", actor="uji", severity="warn", payload_json={"x": 1}))
+
+    # 1) isolasi: hanya tipe ber-prefix trade./order. yang cocok
+    rows, _ = stream._fetch(0, ["trades"], limit=500)
+    assert rows, "harus menemukan trade.opened walau ditenggelamkan 300 job.ran"
+    assert all(e.type.startswith(("trade.", "order.")) for e in rows), "topik bocor"
+    assert any(e.type == "trade.opened" for e in rows)
+
+    # 2) anti-kelaparan: id yang dibaca SELALU maju, jadi baris tak-cocok dilewati sekali
+    rows1, id1 = stream._fetch(0, ["trades"], limit=50)
+    assert id1 > 0, "id terbaca harus maju walau tidak semua baris cocok"
+    # panggilan berikutnya mulai dari id1 dan tidak mengulang baris yang sama
+    rows2, id2 = stream._fetch(id1, ["trades"], limit=50)
+    assert id2 >= id1
+    assert not ({e.id for e in rows1} & {e.id for e in rows2}), "baris dibaca ulang"

@@ -838,7 +838,14 @@ def create_app() -> FastAPI:
     def events_list(
         user: Annotated[User, Depends(auth.current_user)],
         limit: int = Query(120, ge=1, le=500),
-        tipe: str | None = Query(None, description="prefix tipe, mis. trade. atau signal."),
+        tipe: str | None = Query(
+            None,
+            description=(
+                "prefix tipe, boleh daftar dipisah koma (mis. 'trade.,signal.,verdict.'). "
+                "Dipakai panel Kejadian Area: tanpa filter, 120 baris terakhir hampir pasti "
+                "didominasi job.ran sehingga kejadian area tak pernah terlihat."
+            ),
+        ),
     ) -> dict[str, Any]:
         """Kejadian terakhir dari tabel `events` (append-only).
 
@@ -852,7 +859,10 @@ def create_app() -> FastAPI:
         with session_scope() as s:
             q = select(Event)
             if tipe:
-                q = q.where(Event.type.like(f"{tipe}%"))
+                from sqlalchemy import or_
+
+                prefiks = [t.strip() for t in tipe.split(",") if t.strip()]
+                q = q.where(or_(*[Event.type.like(f"{p}%") for p in prefiks]))
             rows = s.scalars(q.order_by(Event.id.desc()).limit(limit)).all()
             return {
                 "events": [

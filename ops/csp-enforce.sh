@@ -25,9 +25,14 @@ if [[ -z "$HTML" ]]; then
 	exit 1
 fi
 
-HASHES="$(printf '%s' "$HTML" | python3 - <<'PY'
+# CATATAN: HTML ditulis ke berkas sementara, BUKAN dialirkan lewat pipa ke python3
+# yang skripnya datang dari heredoc — heredoc menimpa stdin, sehingga pipa HTML hilang
+# dan skrip selalu melapor "tidak menemukan skrip bootstrap" (bug nyata 7 Okt).
+HTML_TMP="$(mktemp)"
+printf '%s' "$HTML" > "$HTML_TMP"
+HASHES="$(python3 - "$HTML_TMP" <<'PY'
 import base64, hashlib, re, sys
-html = sys.stdin.read()
+html = open(sys.argv[1], encoding="utf-8").read()
 out = []
 for m in re.finditer(r"<script\s*>(.*?)</script>", html, re.S):
     h = base64.b64encode(hashlib.sha256(m.group(1).encode("utf-8")).digest()).decode()
@@ -35,6 +40,7 @@ for m in re.finditer(r"<script\s*>(.*?)</script>", html, re.S):
 print(" ".join(out))
 PY
 )"
+rm -f "$HTML_TMP"
 
 if [[ -z "$HASHES" ]]; then
 	echo "CSP: tidak menemukan skrip bootstrap inline — enforce TIDAK dipasang (akan memblokir halaman)"

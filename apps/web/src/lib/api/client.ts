@@ -161,6 +161,7 @@ export const getDoc = (slug: string) => minta<DocIsi>(`/api/v1/docs/${encodeURIC
 
 /** Kejadian terakhir (backfill panel Kejadian Area). SSE hanya mengirim yang BARU. */
 export async function getEvents(limit = 120, tipe?: string): Promise<Kejadian[]> {
+	// `tipe` boleh daftar dipisah koma (mis. 'trade.,signal.,verdict.').
 	const q = new URLSearchParams({ limit: String(limit) });
 	if (tipe) q.set('tipe', tipe);
 	const res = await fetch(urlApi(`/api/v1/events?${q}`), { credentials: 'include' });

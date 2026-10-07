@@ -14,7 +14,7 @@ import json
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from warroom_core.db import Event, session_scope
 
 __all__ = ["event_stream", "parse_last_event_id", "topic_matches"]
@@ -64,25 +64,47 @@ def _sse(id_: int | None, event: str, data: dict) -> str:
     return "\n".join(baris) + "\n\n"
 
 
-def _fetch(after_id: int, topics: list[str] | None, limit: int = 200) -> list[Event]:
+def _fetch(after_id: int, topics: list[str] | None, limit: int = 200) -> tuple[list[Event], int]:
+    """Ambil event setelah ``after_id`` yang COCOK topik.
+
+    Mengembalikan ``(baris_cocok, id_tertinggi_yang_dibaca)``.
+
+    Temuan QA putaran 2 (isolasi SSE) yang sekaligus menemukan BUG NYATA di sini:
+    versi lama mengambil 200 baris TERAKHIR tanpa peduli topik, menyaring di Python,
+    dan hanya memajukan ``after`` untuk baris yang cocok. Dengan tabel events yang
+    didominasi ``job.ran`` (12.000+ baris), klien bertopik "trades" terus membaca
+    200 baris ``job.ran`` yang sama, tidak pernah ada yang cocok, dan ``after`` tak
+    pernah maju → **stream kelaparan selamanya** (panel Kejadian Area kosong).
+    Sekarang: filter topik diterapkan di SQL, dan ``after`` SELALU maju ke id tertinggi
+    yang dibaca — baris yang tidak cocok dilewati sekali, bukan dibaca berulang.
+    """
     with session_scope() as s:
-        rows = (
-            s.scalars(select(Event).where(Event.id > after_id).order_by(Event.id.asc()).limit(limit))
-        ).all()
+        q = select(Event).where(Event.id > after_id).order_by(Event.id.asc()).limit(limit)
+        if topics:
+            pola: list[str] = []
+            for t in topics:
+                pola.extend(TOPICS.get(t, ("\0tidak-ada-topik-ini",)))
+            q = q.where(or_(*[Event.type.startswith(p.rstrip(".")) for p in pola]))
+        rows = s.scalars(q).all()
+        id_tertinggi = after_id
+        if rows:
+            id_tertinggi = max(id_tertinggi, rows[-1].id)
         # Salin ke objek sederhana supaya sesi boleh ditutup (tidak ada lazy-load setelah commit).
-        return [
-            Event(
-                id=e.id,
-                type=e.type,
-                actor=e.actor,
-                payload_json=e.payload_json,
-                fact_ids=e.fact_ids,
-                severity=e.severity,
-                created_at=e.created_at,
-            )
-            for e in rows
-            if topic_matches(e.type, topics)
-        ]
+        return (
+            [
+                Event(
+                    id=e.id,
+                    type=e.type,
+                    actor=e.actor,
+                    payload_json=e.payload_json,
+                    fact_ids=e.fact_ids,
+                    severity=e.severity,
+                    created_at=e.created_at,
+                )
+                for e in rows
+            ],
+            id_tertinggi,
+        )
 
 
 def _last_id() -> int:
@@ -116,9 +138,12 @@ async def event_stream(
         if disconnect is not None and callable(disconnect) and disconnect():  # type: ignore[operator]
             return
 
-        rows = await asyncio.to_thread(_fetch, after, topics)
+        rows, id_terbaca = await asyncio.to_thread(_fetch, after, topics)
+        # `after` maju mengikuti apa yang DIBACA (bukan hanya yang dikirim) — kalau tidak,
+        # baris di luar topik akan dibaca ulang selamanya dan stream tak pernah sampai
+        # ke kejadian yang cocok (bug kelaparan di atas).
+        after = max(after, id_terbaca)
         for e in rows:
-            after = max(after, e.id)
             yield _sse(
                 e.id,
                 e.type,
