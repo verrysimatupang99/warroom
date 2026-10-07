@@ -31,6 +31,10 @@
 		min_r?: number | null;
 		max_r?: number | null;
 		risiko_tak_terbatas?: boolean;
+		/** Berapa trade di setup ini yang rugi melebihi 1R (breach/gap). */
+		lewat_1r?: number;
+		lewat_1r_pct?: number;
+		rugi_ekstrem_5r?: number;
 		pnl_idr: number;
 		saldo_idr: number;
 		pnl_pct: number;
@@ -81,6 +85,16 @@
 
 	const d = $derived(dompet?.pasar?.[market] ?? null);
 	const titik = $derived((d?.titik ?? []).filter((t) => t.i > 0));
+	// Saldo NEGATIF bukan angka biasa: ia konsekuensi langsung dari trade yang rugi
+	// melebihi 1R (temuan QA putaran 2). Kalau disajikan telanjang, pembaca bisa
+	// menyangka "batas rugi 1% per trade" masih berlaku — padahal tidak.
+	const saldoNegatif = $derived(
+		(d?.saldo_akhir_idr ?? null) != null && Number(d?.saldo_akhir_idr) < 0
+	);
+	const saldoUsdNegatif = $derived(
+		(d?.saldo_akhir_usd ?? null) != null && Number(d?.saldo_akhir_usd) < 0
+	);
+	const saldoMinus = $derived(saldoNegatif || saldoUsdNegatif);
 
 	const rupiah = (v: number | null | undefined) =>
 		v === null || v === undefined
@@ -125,6 +139,22 @@
 			Dompet belum bisa dihitung ({d?.alasan ?? '—'})
 		</div>
 	{:else}
+		{#if saldoMinus}
+			<!-- Temuan QA putaran 2: "saldo negatif tetap berbahaya bila disalahartikan
+			     sebagai batas rugi". Peringatan ini duduk TEPAT di atas angka saldo, bukan
+			     di catatan kaki — supaya tidak mungkin terbaca tanpa konteksnya. -->
+			<div class="mb-2 rounded-card border border-neg/60 bg-neg/10 p-2.5" role="alert">
+				<div class="flex flex-wrap items-center gap-2">
+					<span class="rounded border border-neg/60 bg-neg/20 px-1.5 py-0.5 text-10 font-bold text-neg">SALDO NEGATIF</span>
+					<span class="text-11 text-text-2">
+						Dompet paper ini <b>habis melewati nol</b> — akibat langsung dari trade yang rugi
+						melebihi 1R (lihat MODEL BREACH). Dengan uang nyata, posisi seperti ini sudah
+						<b>tidak bisa dibuka lagi</b>: tidak ada sisa modal untuk mempertaruhkan 1% berikutnya.
+					</span>
+				</div>
+			</div>
+		{/if}
+
 		<div class="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4 font-mono">
 			<div class="rounded bg-surface p-2.5 border border-line">
 				<div class="text-10 text-text-3">SALDO AWAL</div>
@@ -137,6 +167,9 @@
 				     "+576.45 USD" di kartu yang PnL-nya rupiah. -->
 				<div class="text-13 font-bold {(d.pnl_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 					{rupiah(d.saldo_akhir_idr ?? (d.saldo_akhir_usd ?? 0) * (d.kurs_usd_idr ?? 0))}
+					{#if saldoMinus}
+						<div class="text-10 font-normal text-neg">modal habis — bukan sekadar rugi</div>
+					{/if}
 				</div>
 				{#if d.mata_uang !== 'IDR' && d.saldo_akhir_usd != null}
 					<div class="text-10 text-text-3 font-mono">{dolar(d.saldo_akhir_usd)} @ {Math.round(d.kurs_usd_idr ?? 0).toLocaleString('id-ID')}</div>
@@ -180,6 +213,7 @@
 								<th class="py-1.5 px-1.5">Setup</th>
 								<th class="py-1.5 px-1.5 text-right">n</th>
 								<th class="py-1.5 px-1.5 text-right">Mean R</th>
+								<th class="py-1.5 px-1.5 text-right" title="Jumlah trade rugi melebihi 1R (breach/gap) di setup ini">Breach</th>
 								<th class="py-1.5 px-1.5 text-right">Terburuk</th>
 								<th class="py-1.5 px-1.5 text-right">PnL</th>
 								<th class="py-1.5 px-1.5 text-right">Saldo</th>
@@ -197,6 +231,10 @@
 									<td class="py-1.5 px-1.5 text-right text-text-2">{s.n}</td>
 									<td class="py-1.5 px-1.5 text-right {s.mean_r != null && s.mean_r > 0 ? 'text-pos' : 'text-neg'}">
 										{s.mean_r != null ? `${s.mean_r > 0 ? '+' : ''}${s.mean_r}` : '—'}
+									</td>
+									<td class="py-1.5 px-1.5 text-right {s.lewat_1r ? 'text-neg font-bold' : 'text-text-3'}"
+										title={s.rugi_ekstrem_5r ? `termasuk ${s.rugi_ekstrem_5r} trade rugi >5R` : ''}>
+										{s.lewat_1r ? `${s.lewat_1r}/${s.n} (${s.lewat_1r_pct}%)` : '0'}
 									</td>
 									<td class="py-1.5 px-1.5 text-right {s.min_r != null && s.min_r <= -3 ? 'text-neg font-bold' : 'text-text-3'}">
 										{s.min_r != null ? `${s.min_r}R` : '—'}

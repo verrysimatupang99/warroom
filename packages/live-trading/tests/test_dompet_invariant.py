@@ -62,6 +62,13 @@ def test_invariant_terbit_dan_mengklasifikasi(tmp_path: Path) -> None:
     assert d["trade"] == 5
     assert d["sinyal_yatim"]["jumlah"] == 1
     assert d["sinyal_yatim"]["tertua"].startswith("2026-09-24")
+    # Klasifikasi PER SETUP (QA putaran 2: "pisahkan breach/gap loss"):
+    # ARA_HUNTER punya 3 trade breach (gap+dalam+ekstrem) dari 5, 1 di antaranya >5R.
+    ara = d["per_setup"]["ARA_HUNTER"]
+    assert ara["lewat_1r"] == 3
+    assert ara["lewat_1r_pct"] == 60.0
+    assert ara["rugi_ekstrem_5r"] == 1
+    assert ara["risiko_tak_terbatas"] is True
 
 
 def test_invariant_tenang_bila_semua_wajar(tmp_path: Path) -> None:

@@ -11,6 +11,12 @@
 		ci?: number;
 		ci95?: [number, number];
 		alat?: string;
+		/** "frozen:<id>" bila split data sudah dibekukan. null = belum (ADR-003). */
+		split?: string | null;
+		/** Jumlah sampel yang masih dibutuhkan (dari gate, bukan taksiran UI). */
+		nNeeded?: number | null;
+		/** min_n dari aturan gate. */
+		min_n?: number;
 	}
 
 	interface Props {
@@ -27,7 +33,29 @@
 	const ciLow = $derived(verdict?.ci95?.[0] ?? winrate * 0.98);
 	const ciHigh = $derived(verdict?.ci95?.[1] ?? winrate * 1.02);
 
-	const isEdgeProven = $derived(ciLow > bePct && n >= 100);
+	// KONTRADIKSI YANG DIPERBAIKI (audit QA eksternal putaran 2, 7 Okt):
+	// kartu ini dulu menulis "EDGE TERBUKTI" hanya dari CI95 bawah > BE, padahal gate
+	// resmi proyek (gate.py) MENOLAK promosi selama `split` belum "frozen:<id>"
+	// (ADR-003: split harus dibekukan SEBELUM melihat hasil). Akibatnya satu halaman
+	// memuat dua kesimpulan yang bertentangan: "EDGE TERBUKTI" di atas, "belum lolos
+	// gate — split belum dibekukan" di bawah. Sekarang kartu ini TUNDUK pada gate yang
+	// sama: tanpa split beku → status "BELUM BISA DIPROMOSIKAN", bukan "terbukti".
+	const splitBeku = $derived(typeof verdict?.split === 'string' && verdict.split.startsWith('frozen:'));
+	const ciLolos = $derived(ciLow > bePct);
+	const cukupSampel = $derived(verdict?.nNeeded == null || n >= Number(verdict.nNeeded));
+	const isEdgeProven = $derived(splitBeku && ciLolos && n >= 100 && cukupSampel);
+	/** Alasan paling menentukan kenapa belum bisa dipromosikan — ditulis apa adanya. */
+	const alasanBelum = $derived(
+		!splitBeku
+			? 'split data belum dibekukan (wajib split=frozen:<id>) — hasil belum boleh dipromosikan'
+			: !ciLolos
+				? 'batas bawah CI95 masih di bawah break-even'
+				: !cukupSampel
+					? `sampel ${n} < kebutuhan ${verdict?.nNeeded}`
+					: n < 100
+						? `sampel ${n} < 100`
+						: ''
+	);
 </script>
 
 <div class="permukaan-2 rounded-card border border-line p-3">
@@ -42,8 +70,9 @@
 				class="rounded px-2 py-0.5 text-10 font-bold uppercase tracking-wider border {isEdgeProven
 					? 'bg-pos/15 text-pos border-pos/40'
 					: 'bg-warn/15 text-warn border-warn/40'}"
+				title={alasanBelum || 'gate lolos: CI bawah > BE, sampel cukup, split beku'}
 			>
-				{isEdgeProven ? 'EDGE TERBUKTI' : 'BELUM LOLOS GATE'}
+				{isEdgeProven ? 'EDGE TERBUKTI' : 'BELUM DIPROMOSIKAN'}
 			</span>
 		{/if}
 	</div>
@@ -76,6 +105,21 @@
 				</div>
 			</div>
 
+			<!-- Status split ditampilkan EKSPLISIT: inilah satu-satunya alasan yang membuat
+			     angka di atas belum boleh disebut "terbukti" (ADR-003). -->
+			<div class="flex flex-wrap items-center gap-2 text-11">
+				<span class="text-text-3">split data:</span>
+				{#if splitBeku}
+					<span class="rounded border border-pos/40 bg-pos/10 px-1.5 py-0.5 font-mono text-10 text-pos">{verdict?.split}</span>
+				{:else}
+					<span class="rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 font-mono text-10 text-warn">belum dibekukan</span>
+					<span class="text-text-3">→ promosi hasil dilarang sampai dibekukan (ADR-003)</span>
+				{/if}
+				{#if verdict?.nNeeded != null && !cukupSampel}
+					<span class="text-text-3">· butuh ≈{verdict.nNeeded} sampel (kini {n})</span>
+				{/if}
+			</div>
+
 			<!-- Visual Scale Indicator -->
 			<div>
 				<div class="flex justify-between text-10 text-text-3 mb-1">
@@ -97,9 +141,15 @@
 				</div>
 				<p class="mt-1.5 text-11 text-text-3">
 					{#if isEdgeProven}
-						<span class="text-pos font-medium">✓ Lolos:</span> Batas bawah keyakinan 95% ({angka(ciLow)}%) berada di atas Break-Even ({angka(bePct)}%). Strategi memiliki keunggulan statistik riil.
+						<span class="text-pos font-medium">✓ Lolos gate:</span> batas bawah keyakinan 95% ({angka(ciLow)}%) di atas
+						Break-Even ({angka(bePct)}%), sampel cukup, dan split data sudah dibekukan. Baru pada keadaan ini
+						angka boleh disebut keunggulan.
 					{:else}
-						<span class="text-warn font-medium">⚠ Perhatian:</span> Data belum cukup atau batas bawah CI belum melampaui break-even. Eksekusi live dibatasi.
+						<span class="text-warn font-medium">⚠ Belum bisa dipromosikan:</span> {alasanBelum}.
+						{#if ciLolos}
+							Angka mentahnya memang di atas break-even, tetapi <b>gate resmi belum lolos</b> — halaman ini
+							menampilkannya sebagai bukti berjalan, bukan kesimpulan.
+						{/if}
 					{/if}
 				</p>
 			</div>

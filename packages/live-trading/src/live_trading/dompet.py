@@ -379,6 +379,11 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
                 continue
             kum_s = sum(rs) * risiko
             terburuk = min(rs)
+            # Klasifikasi per setup (QA putaran 2): "pisahkan breach/gap loss" — supaya
+            # pembaca tahu BERAPA BANYAK dan SEBERAPA DALAM pelanggaran 1R di setup itu,
+            # bukan hanya "ada yang ekstrem". Hitungan ini juga yang membuat dompet bisa
+            # negatif; tanpa ini saldo negatif tampak seperti kejadian tak terjelaskan.
+            lewat = [r for r in rs if r < -1.05]
             per_setup[str(nama)] = {
                 "setup": str(nama),
                 "n": len(rs),
@@ -386,6 +391,9 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
                 "mean_r": round(sum(rs) / len(rs), 4),
                 "min_r": round(terburuk, 2),
                 "max_r": round(max(rs), 2),
+                "lewat_1r": len(lewat),
+                "lewat_1r_pct": round(100 * len(lewat) / len(rs), 1) if rs else 0.0,
+                "rugi_ekstrem_5r": len([r for r in rs if r < -5]),
                 # Risiko tak terbatas: satu trade rugi JAUH melebihi 1R (stop tak dihormati).
                 # Temuan 7 Okt: ARA_HUNTER punya trade -13,84R — exit di open sesi berikutnya,
                 # jadi gap bisa 14× risiko yang direncanakan. Dompet "1% per trade" pada setup

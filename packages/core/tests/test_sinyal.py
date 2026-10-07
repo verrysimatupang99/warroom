@@ -63,6 +63,10 @@ def test_polymarket_klaim_tanpa_split_tidak_terverifikasi(db) -> None:
     assert p.terverifikasi is False
     assert "BELUM TERVERIFIKASI" in p.catatan_kejujuran
     assert p.skor == 78
+    # Temuan audit putaran 2: label mentah sumber "EDGE" TIDAK boleh diteruskan ke UI
+    # selama split belum beku — kalau diteruskan, kartu Home bertentangan dengan gate.
+    assert p.tier == "EKSPLORASI", f"tier tanpa split beku harus EKSPLORASI, bukan {p.tier}"
+    assert p.arah == "TAHAN", "tanpa split beku, arah tidak boleh BELI (gate belum lolos)"
 
 
 def test_polymarket_dengan_split_terverifikasi(db) -> None:

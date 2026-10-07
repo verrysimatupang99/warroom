@@ -56,6 +56,13 @@ while (( elapsed < TIMEOUT_S )); do
 done
 
 if (( lolos == 1 )); then
+	# 2b) Pasang CSP ENFORCE dengan hash skrip bootstrap build BARU (audit QA putaran 2).
+	# Dilakukan setelah health gate supaya HTML yang di-hash memang yang tersaji; kalau
+	# gagal, web tetap hidup dengan CSP report-only dari nginx (fail-safe, bukan fail-open
+	# tanpa kabar — pesannya dicetak).
+	if ! bash "$(dirname "$0")/csp-enforce.sh"; then
+		echo "PERINGATAN: CSP enforce gagal dipasang — masih report-only"
+	fi
 	echo "web ok (build + restart + aset build baru tersaji)"
 	exit 0
 fi

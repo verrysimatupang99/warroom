@@ -194,12 +194,19 @@ def _polymarket(s: SASession) -> SinyalPasar:
     terverifikasi = bool(split)
     win = v.get("winRate")
     be = v.get("breakEven_pct")
+    # KONTRADIKSI YANG DIPERBAIKI (audit QA putaran 2, 7 Okt): `verdict_alat` dari sumber
+    # berbunyi "EDGE" walau gate proyek MENOLAK promosi tanpa split beku (ADR-003).
+    # Kalau label mentah itu diteruskan apa adanya, Home menampilkan "EDGE" di kartu
+    # sementara bagian gate di bawah menulis "belum lolos" — satu halaman, dua kesimpulan.
+    # Aturan yang dikodekan: tanpa split beku, alat TIDAK boleh berstatus EDGE di UI.
+    alat_mentah = str(v.get("verdict_alat") or "")
+    alat = alat_mentah if terverifikasi else ("EKSPLORASI" if alat_mentah else alat_mentah)
     return SinyalPasar(
         pasar="polymarket", label="Polymarket (favorit 5m)", ada=True,
-        arah="BELI" if str(v.get("verdict_alat")) == "EDGE" else "TAHAN",
+        arah="BELI" if alat == "EDGE" else "TAHAN",
         subjek=str(v.get("rule") or "favorit"),
         skor=round(float(win)) if isinstance(win, (int, float)) else None,
-        tier=str(v.get("verdict_alat") or ""),
+        tier=alat,
         alasan=(
             f"win-rate {win}% vs break-even {be}% "
             f"(CI95 {v.get('ci95')}); butuh n≈{v.get('nNeeded')}"
