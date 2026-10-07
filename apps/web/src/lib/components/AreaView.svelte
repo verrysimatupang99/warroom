@@ -1070,17 +1070,28 @@
 						     (3) Screener Arjum = bahan mentah. Urutan ini menggantikan tumpukan
 						     yang dulu membuat halaman terasa "hancur" (keluhan 7 Okt). -->
 						<div class="rounded-card border border-accent/30 bg-accent/5 p-2.5 text-11 text-text-2">
-							Urutan baca tab ini (dari bahan ke keputusan): <b>1)</b> Screener Arjum =
-							bahan mentah (broker flow + teknikal) → <b>2)</b> Akurasi per setup =
-							mana yang layak dipercaya → <b>3)</b> BSJP &amp; ARA = sinyal yang keluar →
-							<b>4)</b> Bandarmologi = perubahan aliran terbaru.
-							Semua dari ledger mesin yang sama; posisi CREATED ditandai umurnya.
+							Halaman ini dibaca dari ATAS ke BAWAH sebagai satu alur: dari <b>bahan mentah</b>
+							sampai <b>keputusan</b>. Tiap blok berlabel LANGKAH — inilah artinya:
+							<div class="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
+								<div><b class="font-mono text-accent">1 · Screener</b> — bahan mentah: 3 emiten yang lolos filter broker+teknikal. Belum keputusan.</div>
+								<div><b class="font-mono text-accent">2 · Akurasi</b> — mana SETUP yang layak dipercaya (ARA vs BSJP vs INTRADAY) + tingkat pakem.</div>
+								<div><b class="font-mono text-accent">3 · Sinyal</b> — ledger mesin: 24 sinyal terakhir, entry/SL/TP + umur (CREATED berhari-hari = nyangkut).</div>
+								<div><b class="font-mono text-accent">4 · BSJP</b> — kandidat tahan semalam (beli sore, jual pagi) dari walk-forward.</div>
+								<div><b class="font-mono text-accent">5 · Bandarmologi</b> — skor 0–100 per emiten dari ATS/frekuensi/no-sell, komponennya diaudit.</div>
+								<div><b class="font-mono text-accent">6 · ARA Hunter</b> — watchlist breakout auto-rejection (bagian paling berisiko: lihat min R).</div>
+							</div>
+							<p class="mt-1.5">
+								Semua dari <b>ledger mesin yang sama</b>; yang membuat berbeda hanya pertanyaan yang dijawab.
+								Ketika tab lain dibuka (Bandarmologi/BSJP/Aliran), label nomor disembunyikan — isinya sama, konteksnya berbeda.
+							</p>
 						</div>
 						<!-- Arjum Screener -->
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 1</span>Arjum Multi-Factor Stock Screener</h3>
+									<h3 class="text-14 font-medium text-text">
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 1</span>{/if}Arjum Multi-Factor Stock Screener
+									</h3>
 									<p class="text-11 text-text-3">Filter kombinasi broker flow, teknikal, dan probabilitas event</p>
 								</div>
 								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
@@ -1242,7 +1253,9 @@
 				<div class="permukaan-2 rounded-card border border-line p-3">
 					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 						<div>
-							<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 2</span>Akurasi Signal per Setup</h3>
+							<h3 class="text-14 font-medium text-text">
+								{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 2</span>{/if}Akurasi Signal per Setup
+							</h3>
 							<p class="text-11 text-text-3">
 								Ledger mesin (grader v3) — hanya baris tuntas yang masuk metrik; kematangan dinilai per hari bursa
 							</p>
@@ -1343,7 +1356,7 @@
 					<SinyalPasar
 						pasar="idx"
 						judul="Sinyal & Entry Setup (IDX)"
-						subjudul="LANGKAH 3 · Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R"
+						subjudul={(sub === 'sinyal' || !sub ? 'LANGKAH 3 · ' : '') + 'Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R'}
 						data={idxSinyalObj}
 					/>
 				{/if}
@@ -1367,7 +1380,9 @@
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">BSJP — Beli Sore, Jual Pagi</h3>
+									<h3 class="text-14 font-medium text-text">
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 4</span>{/if}BSJP — Beli Sore, Jual Pagi
+									</h3>
 									<p class="text-11 text-text-3">
 										Peringkat kandidat tahan semalam: beli menjelang tutup, jual di pembukaan
 										sesi berikutnya.
@@ -1542,7 +1557,7 @@
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text"><span class="text-accent font-mono text-11 mr-1">LANGKAH 4</span>Bandarmologi &amp; Broker Summary</h3>
+									<h3 class="text-14 font-medium text-text">{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 5</span>{/if}Bandarmologi &amp; Broker Summary</h3>
 									<p class="text-11 text-text-3">Analisis akumulator/distributor, Average Transaction Size (ATS), dan status No-Sell</p>
 								</div>
 								{#if idxBandar?.hari}
@@ -1654,7 +1669,9 @@
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Watchlist Sinyal ARA Hunter (IDX616)</h3>
+									<h3 class="text-14 font-medium text-text">
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 6</span>{/if}Watchlist Sinyal ARA Hunter (IDX616)
+									</h3>
 									<p class="text-11 text-text-3">Setup breakout auto-rejection atas terdaftar dari ledger</p>
 								</div>
 								<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
