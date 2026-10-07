@@ -894,6 +894,45 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
     return f"eval_posisi={total_eval} ditutup={total_closed} detail={', '.join(hasil_detail) or 'nihil'}"
 
 
+def _pair_sudah_dipakai(stg: Any, *, jam: float = 12.0) -> set[str]:
+    """Pair yang TIDAK boleh dibuka lagi: sedang terbuka, atau baru ditutup dalam `jam`.
+
+    Temuan 7 Okt: AAVEUSDT punya 7 sinyal `allowed` berulang (3× dalam 1,5 jam pada 5 Okt)
+    dan `paper-scan` membuka posisi SETIAP kali — hasilnya 4 posisi identik dengan 4 baris
+    ledger. Dedup `_kandidat_terbaru_dari_ledger` hanya mencegah duplikat DALAM SATU
+    pemindaian; ia tidak melihat posisi yang sudah ada. Akibatnya satu setup dihitung
+    4× dan dompet/akurasi jadi salah.
+    """
+    import json as _json
+    from datetime import UTC as _UTC
+    from datetime import datetime as _dt
+
+    dipakai: set[str] = set()
+    # (a) posisi terbuka
+    try:
+        raw = _json.loads((stg.state_dir / "paper_positions.json").read_text(encoding="utf-8"))
+        dipakai |= {str(p.get("pair")) for p in raw.get("positions", []) if p.get("pair")}
+    except (OSError, ValueError, _json.JSONDecodeError):
+        pass
+    # (b) posisi yang baru ditutup → beri jeda supaya tidak langsung re-entry di pair sama
+    batas = _dt.now(_UTC).timestamp() - jam * 3600
+    try:
+        for ln in (stg.state_dir / "crypto_equity.jsonl").read_text(encoding="utf-8").splitlines():
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                row = _json.loads(ln)
+                ts = _dt.fromisoformat(str(row.get("closed_at") or "").replace("Z", "+00:00")).timestamp()
+            except (ValueError, TypeError, _json.JSONDecodeError):
+                continue
+            if ts >= batas and row.get("pair"):
+                dipakai.add(str(row["pair"]))
+    except OSError:
+        pass
+    return dipakai
+
+
 def _kandidat_terbaru_dari_ledger(stg: Any, *, jam_terakhir: float = 6.0) -> list[dict[str, Any]]:
     """Kandidat lolos TERBARU dari `verdicts.jsonl` — sumber yang sama dengan dashboard.
 
@@ -955,9 +994,16 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     # Ledger adalah sumber yang sudah lolos gerbang & sudah ditampilkan UI — eksekusi
     # harus mengikuti sumber yang sama, bukan pemindaian kedua yang berbeda hasilnya.
     rows = _kandidat_terbaru_dari_ledger(stg, jam_terakhir=float(job.payload_json.get("jam_terakhir", 6)))
+    # Satu pair = satu posisi pada satu waktu (dan jeda 12 jam setelah ditutup).
+    # Tanpa ini, sinyal berulang membuat posisi identik bertumpuk (bukti: AAVE 4×, 7 Okt).
+    sudah = _pair_sudah_dipakai(stg, jam=float(job.payload_json.get("jeda_pair_jam", 12)))
     dibuka: list[str] = []
+    dilewati: list[str] = []
 
     for r in rows:
+        if r.get("pair") in sudah:
+            dilewati.append(str(r.get("pair")))
+            continue
         if r.get("allowed") and len(b_crypto.positions()) < stg.max_concurrent_positions:
             pair = r["pair"]
             direction = r["direction"]
@@ -1058,7 +1104,8 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
         kirim_tertunda(s, limit=5)
 
     detail = ", ".join(dibuka) or "tidak ada yang lolos gate"
-    return f"kandidat={len(rows)} dibuka={len(dibuka)} detail={detail}"
+    lewat = f" dilewati={','.join(sorted(set(dilewati)))}" if dilewati else ""
+    return f"kandidat={len(rows)} dibuka={len(dibuka)}{lewat} detail={detail}"
 
 
 def handler_retensi(s: SASession, job: Job) -> str:

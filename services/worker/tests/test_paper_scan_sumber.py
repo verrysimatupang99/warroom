@@ -79,3 +79,46 @@ def test_baris_rusak_dan_ts_kacau_dilewati(tmp_path: Path):
 
 def test_ledger_tidak_ada_mengembalikan_kosong(tmp_path: Path):
     assert _kandidat_terbaru_dari_ledger(_Stg(tmp_path), jam_terakhir=6) == []
+
+
+# --- Guard "satu pair = satu posisi" (temuan 7 Okt) -----------------------------------
+# Kelas bug yang dicegah: sinyal `allowed` berulang untuk pair yang sama (AAVE 7×) membuat
+# `paper-scan` membuka posisi identik 4×, sehingga satu setup dihitung 4× di dompet/akurasi.
+
+def test_pair_sudah_dipakai_terbuka(tmp_path: Path):
+    from warroom_worker.jobs import _pair_sudah_dipakai
+
+    (tmp_path / "paper_positions.json").write_text(
+        json.dumps({"positions": [{"pair": "AAVEUSDT", "signal_id": "#S1"}]}), encoding="utf-8"
+    )
+    assert "AAVEUSDT" in _pair_sudah_dipakai(_Stg(tmp_path))
+
+
+def test_pair_baru_ditutup_masih_dijeda(tmp_path: Path):
+    from warroom_worker.jobs import _pair_sudah_dipakai
+
+    ts = datetime.now(UTC) - timedelta(hours=2)
+    (tmp_path / "crypto_equity.jsonl").write_text(
+        json.dumps({"pair": "WIFUSDT", "closed_at": ts.isoformat(), "r": 1.0}) + "\n",
+        encoding="utf-8",
+    )
+    assert "WIFUSDT" in _pair_sudah_dipakai(_Stg(tmp_path), jam=12)
+
+
+def test_pair_lama_boleh_dibuka_lagi(tmp_path: Path):
+    from warroom_worker.jobs import _pair_sudah_dipakai
+
+    ts = datetime.now(UTC) - timedelta(hours=30)
+    (tmp_path / "crypto_equity.jsonl").write_text(
+        json.dumps({"pair": "INJUSDT", "closed_at": ts.isoformat(), "r": -1.0}) + "\n",
+        encoding="utf-8",
+    )
+    assert "INJUSDT" not in _pair_sudah_dipakai(_Stg(tmp_path), jam=12)
+
+
+def test_berkas_rusak_tidak_mematikan(tmp_path: Path):
+    from warroom_worker.jobs import _pair_sudah_dipakai
+
+    (tmp_path / "paper_positions.json").write_text("{rusak", encoding="utf-8")
+    (tmp_path / "crypto_equity.jsonl").write_text("bukan json\n", encoding="utf-8")
+    assert _pair_sudah_dipakai(_Stg(tmp_path)) == set()
