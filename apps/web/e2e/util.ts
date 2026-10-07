@@ -22,3 +22,22 @@ export async function loginLewat(page: Page): Promise<boolean> {
 }
 
 export const RUTE = ['/', '/crypto', '/idx', '/forex', '/polymarket', '/gmgn', '/sistem'] as const;
+
+/**
+ * Tunggu aplikasi SIAP menerima interaksi.
+ *
+ * Pelajaran insiden 7 Okt ("web masih terus memuat"): elemen bisa sudah terlihat di DOM
+ * tetapi listener Svelte belum terpasang (hydration belum selesai). Klik pada elemen
+ * seperti itu hilang diam-diam → tes flaky yang sulit dilacak. Penanda `data-app-siap`
+ * dipasang layout setelah aplikasi hidup, jadi menunggunya = menunggu hydration selesai.
+ */
+export async function tungguSiap(page: Page): Promise<void> {
+	await page.waitForFunction(
+		() =>
+			!!document.querySelector('[data-app-siap]') ||
+			// /masuk tidak memakai AppShell — di sana cukup menunggu form terlihat
+			!!document.querySelector('form input[name="username"]'),
+		undefined,
+		{ timeout: 20000 }
+	);
+}

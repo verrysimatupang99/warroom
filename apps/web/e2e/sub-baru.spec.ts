@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { KREDENSIAL, PESAN_SKIP, loginLewat } from './util';
+import { KREDENSIAL, PESAN_SKIP, loginLewat, tungguSiap } from './util';
 
 /**
  * E2E sub baru (P4-T3/P5-T4): sub "dataset" di /polymarket menampilkan DatasetExplorer,
@@ -24,6 +24,7 @@ test.describe('sub dataset & kebijakan', () => {
 
 	test('sistem → kebijakan menampilkan usulan parameter', async ({ page }) => {
 		await page.goto('/sistem');
+		await tungguSiap(page);
 		// Tunggu tombol tab SIAP diklik: dulu klik dilakukan sebelum halaman interaktif
 		// (dan sempat tertutup shell pra-hydration) → tes flaky, bukan fitur rusak.
 		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });

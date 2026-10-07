@@ -31,7 +31,10 @@
 <TopBar />
 <NavBar />
 
-<main id="konten" class="konten" tabindex="-1">{@render children()}</main>
+<!-- data-app-siap: penanda bahwa aplikasi HIDUP (hydration selesai). Dipakai e2e untuk
+     menunggu interaksi benar-benar siap — insiden 7 Okt: klik sebelum listener terpasang
+     hilang diam-diam sehingga tes flaky (dan shell sempat menutupi halaman). -->
+<main id="konten" class="konten" data-app-siap tabindex="-1">{@render children()}</main>
 
 <BottomNav {jalur} />
 

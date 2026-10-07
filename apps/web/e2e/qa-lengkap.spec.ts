@@ -11,6 +11,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { tungguSiap } from './util';
 
 function bacaEnv(p: string): Record<string, string> {
 	const out: Record<string, string> = {};
@@ -137,6 +138,7 @@ test.describe('QA operator', () => {
 		const galat = pantauKonsol(page);
 		await loginUi(page, AKUN.operator_user, AKUN.operator_pass);
 		await page.goto('/sistem');
+		await tungguSiap(page);
 		const tab = page.getByRole('button', { name: 'Kebijakan', exact: true });
 		await expect(tab).toBeVisible({ timeout: 20000 });
 		await tab.click();
