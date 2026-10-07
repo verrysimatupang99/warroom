@@ -270,7 +270,14 @@
 						<tbody>
 							{#each Object.values(akurasi.pasar) as r (r.pasar)}
 								<tr class:kosong={!r.tersedia}>
-									<td class="nama-pasar">{r.label ?? r.pasar}</td>
+									<td class="nama-pasar">
+										{r.label ?? r.pasar}
+										<!-- QA 7 Okt: Forex belum cost-adjusted (spread/komisi broker tak ada
+										     di jurnal). Ditandai agar tidak dibandingkan langsung dengan yang net. -->
+										{#if r.pasar === 'forex' || r.pasar === 'lp'}
+											<span class="tanda-biaya" title="Angka bruto — biaya broker/on-chain belum tercatat">BRUTO</span>
+										{/if}
+									</td>
 									<td class="dim">{r.setup ?? '—'} <span class="dim">({r.jumlah_setup} setup)</span></td>
 									<td class="ka">{r.n ?? '—'}</td>
 									<td class="ka">{r.n_hari ?? '—'}</td>
@@ -457,6 +464,11 @@
 	.chip-nama { color: var(--redup); }
 	.chip-subjek { font-weight: 700; }
 	.chip-arah { color: var(--mint); font-weight: 700; font-size: 0.68rem; }
+	.tanda-biaya {
+		margin-left: 0.3rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+		border: 1px solid var(--kuning); color: var(--kuning); border-radius: 0.35rem;
+		padding: 0 0.25rem; vertical-align: middle;
+	}
 	.pakem-legend { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.5rem; font-size: 0.7rem; }
 	.pakem-legend .pisah { color: var(--redup); }
 

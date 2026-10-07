@@ -647,7 +647,14 @@ def ringkas_forex_sinyal(state_dir: Path) -> dict[str, Any]:
             "NO FILL tidak dihitung sebagai trade (order tak pernah terisi) — dilaporkan terpisah.",
             "Jurnal berisi trade yang diambil; cron yang menolak tidak meninggalkan "
             "baris trade (lihat scan_log).",
+            "BIAYA BELUM TERCATAT: spread/komisi broker tidak ada di jurnal, jadi semua "
+            "angka di sini BRUTO. Jangan dibandingkan langsung dengan pasar yang net "
+            "(crypto: cost_bps terukur; IDX: grader v3 sudah termasuk biaya).",
         ],
+        # QA eksternal 7 Okt: "Home harus menampilkan flag NOT COST-ADJUSTED dan jangan
+        # menaruhnya berdampingan dengan PnL net tanpa penanda". Flag ini yang dipakai UI.
+        "biaya_tercatat": False,
+        "biaya_label": "NOT COST-ADJUSTED",
     }
 
 

@@ -34,6 +34,9 @@
 			per_setup?: Record<string, BarisAkurasi>;
 			sumber?: string | null;
 			catatan?: string[] | null;
+			/** False = angka BRUTO (biaya broker belum ada). QA 7 Okt: wajib ditandai. */
+			biaya_tercatat?: boolean | null;
+			biaya_label?: string | null;
 		} | null;
 	}
 
@@ -67,9 +70,22 @@
 				<p class="text-11 text-text-3">{subjudul}</p>
 			{/if}
 		</div>
-		<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
-			{baris.length} setup
-		</span>
+		<div class="flex items-center gap-2">
+			{#if data?.biaya_tercatat === false}
+				<!-- QA 7 Okt: angka bruto tidak boleh berdiri setara dengan angka net. -->
+				<span
+					class="rounded border border-warn/50 bg-warn/10 px-1.5 py-0.5 text-10 font-bold text-warn"
+					title="Spread/komisi broker belum ada di jurnal — semua angka di kartu ini bruto"
+				>
+					⚠ {data.biaya_label ?? 'NOT COST-ADJUSTED'}
+				</span>
+			{:else if data?.biaya_tercatat}
+				<span class="rounded border border-line px-1.5 py-0.5 text-10 text-text-3" title="Biaya (fee/slippage) sudah termasuk">net biaya</span>
+			{/if}
+			<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-accent border border-line">
+				{baris.length} setup
+			</span>
+		</div>
 	</div>
 
 	{#if !data?.tersedia}

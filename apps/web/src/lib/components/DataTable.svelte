@@ -116,9 +116,15 @@
 								aria-sort={ariaUrut(k.kunci)}
 								class="sticky top-0 z-10 border-b border-line bg-surface-2 p-0 text-left"
 							>
+								<!-- Temuan pemindai aksesibilitas (QA 7 Okt): kolom berlabel "#" membuat
+								     nama aksesibel tombol hanya "# ↕" — pembaca layar tidak tahu ini
+								     tombol URUT. aria-label menyebut fungsi + keadaan + kolomnya. -->
 								<button
 									type="button"
 									class="label-mikro transisi flex min-h-[44px] w-full items-center gap-1 px-2 hover:text-text"
+									aria-label={`urutkan berdasarkan ${k.label || k.kunci}${
+										urut === k.kunci ? (naik ? ' (menaik)' : ' (menurun)') : ''
+									}`}
 									onclick={() => toggel(k.kunci)}
 								>
 									{k.label}
