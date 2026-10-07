@@ -13,6 +13,7 @@ import type {
 	DocIsi,
 	DocsPayload,
 	FaktaSatu,
+	VerdictPasar,
 	HasilGate,
 	Kejadian,
 	Kesehatan,
@@ -181,4 +182,11 @@ export async function getSumber(): Promise<{
 		sumber: { pasar: string; label: string; sumber: string; keterangan: string }[];
 		sumber_atom: { nama: string; dipakai: string }[];
 	};
+}
+
+/** Verdict kanonik semua pasar — satu sumber keputusan (audit QA 7 Okt). */
+export async function getVerdict(): Promise<{ verdict: VerdictPasar[]; aturan: Record<string, unknown> }> {
+	const res = await fetch(urlApi('/api/v1/verdict'), { credentials: 'include' });
+	if (!res.ok) throw new Error(`verdict HTTP ${res.status}`);
+	return (await res.json()) as { verdict: VerdictPasar[]; aturan: Record<string, unknown> };
 }

@@ -139,6 +139,9 @@ export const AREAS: Area[] = [
 		kategori: 'riset',
 		anak: [
 			{ slug: 'kinerja', label: 'Kinerja', kunci: ['equity', 'ledger'], catatan: 'Statistik, trade terakhir, PnL per pair' },
+			// Halaman Kinerja & Bukti (audit QA putaran 3): tujuh jawaban berdampingan untuk
+			// SEMUA pasar — trade tuntas, WR, total R, PnL, drawdown, biaya, periode + denominator.
+			{ slug: 'bukti', label: 'Bukti', kunci: [], catatan: 'Semua pasar berdampingan: trade tuntas, biaya, periode, denominator' },
 			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda makro: CPI, NFP, FOMC' },
 			{ slug: 'alat', label: 'Alat', kunci: [], catatan: 'Position size, likuidasi, risk/reward' }
 		]
@@ -168,7 +171,8 @@ export const PENGALIHAN: Record<string, string> = {
 	'/bandar': '/idx?sub=bandarmologi',
 	'/lp': '/gmgn?sub=lp',
 	'/overextended': '/crypto?sub=overextended',
-	'/bukti': '/sistem?sub=kesegaran'
+	// 7 Okt: /bukti dialihkan ke sub Bukti (Riset) — halaman performance & proof.
+	'/bukti': '/riset?sub=bukti'
 };
 
 /** Bottom tab mobile: 5 utama */

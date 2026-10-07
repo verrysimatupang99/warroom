@@ -280,6 +280,23 @@ export interface BarisPasarRingkas {
 	tingkat: string | null;
 	setup: string | null;
 	jumlah_setup: number;
+	/** Blok BUKTI (audit QA putaran 3) — tujuh jawaban untuk halaman Kinerja & Bukti.
+	 *  `null` bila mesin belum menghitungnya; UI wajib menulis "—", bukan 0. */
+	bukti?: {
+		closed_trades?: number | null;
+		win_rate_pct?: number | null;
+		mean_r?: number | null;
+		total_r?: number | null;
+		pnl_usd?: number | null;
+		max_drawdown_r?: number | null;
+		biaya_tercatat?: boolean | null;
+		biaya_keterangan?: string;
+		periode?: { dari?: string | null; sampai?: string | null };
+		denominator?: string;
+		n_hari?: number | null;
+		tingkat?: string | null;
+		sumber?: string | null;
+	} | null;
 }
 
 export interface PasarRingkasPayload {
@@ -322,4 +339,22 @@ export interface DocIsi {
 	slug: string;
 	judul: string;
 	isi: string;
+}
+
+/** Verdict KANONIK per pasar (audit QA 7 Okt) — backend yang memutuskan, UI merender. */
+export interface VerdictPasar {
+	pasar: string;
+	label: string;
+	signal_state: 'none' | 'candidate' | 'confirmed';
+	evidence_state: string;
+	risk_state: 'unknown' | 'ok' | 'warning' | 'breach';
+	execution_state: 'unknown' | 'paper' | 'frozen' | 'live';
+	promotion_state: 'blocked' | 'promotable';
+	headline: string;
+	decision: string;
+	blocked_reason: string | null;
+	observed_edge: boolean;
+	validated_edge: boolean;
+	promotable_edge: boolean;
+	detail: Record<string, unknown>;
 }

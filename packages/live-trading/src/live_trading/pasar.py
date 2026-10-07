@@ -797,6 +797,16 @@ def ringkas_akurasi_pasar(state_dir: Path) -> dict[str, Any]:
             pasar[nama] = fn(state_dir)
         except Exception as exc:  # noqa: BLE001 — satu pasar jangan menjatuhkan yang lain
             pasar[nama] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+    # BUKTI per pasar (temuan audit QA putaran 3): halaman Performance & Proof harus
+    # menjawab tujuh hal untuk TIAP pasar — closed trades, PnL, win rate, drawdown,
+    # biaya, periode, dan DENOMINATOR (populasi mana yang dihitung). Sebelumnya angka
+    # ini tersebar dan pembaca harus menebak; beberapa pasar bahkan tidak punya
+    # keterangan biaya sama sekali.
+    #
+    # Aturan yang dikodekan: kalau sebuah angka TIDAK diketahui, tulis None — jangan 0,
+    # dan jangan dikosongkan tanpa alasan.
+    for nama, blok in pasar.items():
+        blok["bukti"] = _bukti_pasar(nama, blok)
     return {
         "tersedia": any(v.get("tersedia") for v in pasar.values()),
         "pasar": pasar,
@@ -805,4 +815,63 @@ def ringkas_akurasi_pasar(state_dir: Path) -> dict[str, Any]:
             "PRELIMINARY <100, TUNING ≥100"
         ),
         "dibuat": datetime.now(UTC).isoformat(),
+    }
+
+
+# Biaya per pasar: True = sudah termasuk, False = BRUTO (belum termasuk), None = tidak diketahui.
+# Ditulis di satu tempat supaya halaman bukti dan halaman pasar tidak bisa berbeda pendapat.
+BIAYA_PASAR: dict[str, tuple[bool | None, str]] = {
+    "crypto": (True, "cost_bps terukur per trade (friksi MEXC)"),
+    "idx": (True, "grader v3 — net_r sudah termasuk biaya"),
+    "forex": (False, "spread/komisi broker belum ada di jurnal"),
+    "gmgn": (True, "fee LP + IL dihitung di mark lokal"),
+    "polymarket": (True, "fees dibebankan sesuai feeMode poly-pilot"),
+}
+
+
+def _bukti_pasar(nama: str, blok: dict[str, Any]) -> dict[str, Any]:
+    """Tujuh jawaban bukti untuk satu pasar — angka apa adanya, None bila tidak diketahui."""
+    biaya, biaya_ket = BIAYA_PASAR.get(nama, (None, "status biaya tidak diketahui"))
+
+    # Denominasi: pakai seri total bila ada (per_setup "SMC..." / "B forex..." / dst.),
+    # kalau tidak jumlahkan per_setup yang tersedia. N = trade TUNTAS (bukan sinyal).
+    seri = blok.get("seri") or {}
+    per_setup = blok.get("per_setup") or {}
+    if not seri and per_setup:
+        nilai = [v for v in per_setup.values() if isinstance(v, dict)]
+        n = sum(int(v.get("n") or 0) for v in nilai)
+        if n:
+            seri = {
+                "n": n,
+                "n_hari": max((int(v.get("n_hari") or 0) for v in nilai), default=0) or None,
+                "winrate_pct": None,
+                "mean_r": None,
+                "total_r": None,
+                "tingkat": None,
+            }
+
+    # Periode: rentang tanggal trade tuntas (dari per_hari bila ada) — bukan tanggal hari ini.
+    hari = [h.get("tanggal") for h in (blok.get("per_hari") or []) if h.get("tanggal")]
+    periode = {"dari": min(hari) if hari else None, "sampai": max(hari) if hari else None}
+
+    return {
+        "closed_trades": seri.get("n"),
+        "win_rate_pct": seri.get("winrate_pct"),
+        "mean_r": seri.get("mean_r"),
+        "total_r": seri.get("total_r"),
+        "pnl_usd": seri.get("total_pnl_usd") or seri.get("pnl_usd") or blok.get("total_pnl"),
+        "max_drawdown_r": (
+            seri.get("ringkas", {}).get("max_drawdown_r")
+            if isinstance(seri.get("ringkas"), dict)
+            else None
+        ),
+        "biaya_tercatat": biaya,
+        "biaya_keterangan": biaya_ket,
+        "periode": periode,
+        "denominator": (
+            "trade TUNTAS di ledger (baris 'expired'/tanpa hasil tidak dihitung)"
+        ),
+        "n_hari": seri.get("n_hari"),
+        "tingkat": seri.get("tingkat"),
+        "sumber": blok.get("sumber"),
     }

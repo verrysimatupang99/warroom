@@ -440,6 +440,28 @@ def create_app() -> FastAPI:
             "ada": sum(1 for r in rows if r.ada),
         }
 
+    @app.get("/api/v1/verdict")
+    def verdict_semua(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        """Verdict KANONIK per pasar — satu sumber keputusan untuk seluruh UI.
+
+        Audit QA 7 Okt: UI tidak boleh menyusun verdict sendiri dari beberapa angka
+        (kartu bilang "EDGE TERBUKTI", gate bilang "split belum beku"). Backend
+        mengeluarkan lima state + headline + alasan blokir; UI hanya merender.
+        """
+        from warroom_core.verdict import verdict_semua_pasar
+
+        with session_scope() as s:
+            rows = verdict_semua_pasar(s)
+        return {
+            "verdict": [v.to_dict() for v in rows],
+            "dibuat": datetime.now(UTC).isoformat(),
+            "aturan": {
+                "promosi_min_bukti": "PRELIMINARY",
+                "wajib_split_beku": ["polymarket"],
+                "syarat_tambahan": "expectancy > 0 dan PnL kumulatif > 0",
+            },
+        }
+
     @app.get("/api/v1/pasar/ringkas")
     def pasar_ringkas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         """Ringkas akurasi+PnL per market untuk Home (angka apa adanya, tanpa hitung ulang).
@@ -485,6 +507,11 @@ def create_app() -> FastAPI:
                 "tingkat": seri.get("tingkat") or seri.get("pakem"),
                 "setup": seri.get("nama") or kunci_seri,
                 "jumlah_setup": len(per_setup),
+                # Blok BUKTI (audit QA putaran 3): tujuh jawaban untuk halaman
+                # Performance & Proof — closed trades, WR, total R, PnL, drawdown,
+                # biaya, periode + denominator. Diterbitkan mesin (pasar.py), API hanya
+                # meneruskan; kalau mesin belum menghitungnya, jangan dikarang di sini.
+                "bukti": (v or {}).get("bukti"),
             }
 
         pa = (pasar_akurasi.value_json if pasar_akurasi else {}) or {}

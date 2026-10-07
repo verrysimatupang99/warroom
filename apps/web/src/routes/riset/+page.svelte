@@ -9,8 +9,8 @@
 	// bukan 0. Kalkulator menandai asumsinya terang-terangan (fee, leverage).
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getArea } from '$lib/api/client';
-	import type { AreaPayload, Fakta } from '$lib/api/types';
+	import { getArea, getPasarRingkas } from '$lib/api/client';
+	import type { AreaPayload, Fakta, PasarRingkasPayload } from '$lib/api/types';
 	import { AREAS } from '$lib/nav';
 	import { umurDetik, angka, waktuWIB } from '$lib/format';
 	import SubNav from '$lib/components/SubNav.svelte';
@@ -18,8 +18,21 @@
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import DompetLintasMarket from '$lib/components/DompetLintasMarket.svelte';
+	import KinerjaBukti from '$lib/components/KinerjaBukti.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
+	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
+	let pasarRingkas = $state<PasarRingkasPayload | null>(null);
+	async function muatBukti() {
+		try {
+			pasarRingkas = await getPasarRingkas();
+		} catch {
+			/* halaman induk sudah punya penanganan galat sendiri */
+		}
+	}
+	$effect(() => {
+		void muatBukti();
+	});
 	const sub = $derived.by(() => {
 		const s = page.url.searchParams.get('sub');
 		if (s && area.anak.some((a) => a.slug === s)) return s;
@@ -187,6 +200,11 @@
 				<EmptyState judul="Belum ada pasangan" pesan="Titik equity belum memuat nama pair." ringkas />
 			{/if}
 		</section>
+	{:else if sub === 'bukti'}
+		<!-- ============ BUKTI (audit QA putaran 3) ============ -->
+		<!-- Tujuh jawaban berdampingan untuk semua pasar: trade tuntas, WR, total R, PnL,
+		     drawdown, biaya, periode + denominator. -->
+		<KinerjaBukti akurasi={pasarRingkas} />
 	{:else if sub === 'kalender'}
 		<!-- ============ KALENDER (padanan /calendar algentis) ============ -->
 		<section class="kartu" aria-label="Agenda makro">

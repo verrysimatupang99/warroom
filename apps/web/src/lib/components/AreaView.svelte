@@ -26,12 +26,13 @@
 	import AkurasiPasar from './AkurasiPasar.svelte';
 	import DompetPasar from './DompetPasar.svelte';
 	import JudulBagian from './JudulBagian.svelte';
+	import KepalaVerdict from './KepalaVerdict.svelte';
 	import Penjelasan from './Penjelasan.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import SinyalPasar from './SinyalPasar.svelte';
-	import { getEvents } from '$lib/api/client';
-	import type { Fakta, Kejadian } from '$lib/api/types';
+	import { getEvents, getVerdict } from '$lib/api/client';
+	import type { Fakta, Kejadian, VerdictPasar } from '$lib/api/types';
 
 	interface Props {
 		kunci: string;
@@ -98,6 +99,25 @@
 	// selalu kosong sampai ada kejadian berikutnya. Ambil riwayat singkat lewat REST dan
 	// gabung dengan aliran SSE — dedupe per id, urut terbaru dulu. Tanpa ini kepala panel
 	// menjanjikan "aliran SSE terfilter" padahal isinya mustahil terisi (menyesatkan).
+	// Verdict KANONIK (audit QA 7 Okt): headline keputusan per pasar datang dari backend,
+	// bukan disusun UI dari beberapa angka. Satu panggilan, dipakai semua area.
+	let verdictSemua = $state<VerdictPasar[]>([]);
+	$effect(() => {
+		let batal = false;
+		void (async () => {
+			try {
+				const r = await getVerdict();
+				if (!batal) verdictSemua = r.verdict;
+			} catch {
+				/* verdict gagal bukan alasan mematikan halaman */
+			}
+		})();
+		return () => {
+			batal = true;
+		};
+	});
+	const verdictArea = $derived(verdictSemua.find((v) => v.pasar === kunci) ?? null);
+
 	let kejadianRiw = $state<Kejadian[]>([]);
 	$effect(() => {
 		let batal = false;
@@ -230,6 +250,15 @@
 	<!-- Sub-navigasi Tabs -->
 	{#if area?.anak?.length}
 		<SubNav {area} aktif={sub} onpilih={pilihSub} />
+	{/if}
+
+	<!-- Headline keputusan (prioritas 2 audit): SATU kalimat di paling atas halaman pasar.
+	     Dihilangkan untuk area non-pasar (sistem/riset/info) karena verdict hanya ada
+	     untuk pasar. -->
+	{#if verdictArea}
+		<div class="mb-3">
+			<KepalaVerdict verdict={verdictArea} />
+		</div>
 	{/if}
 
 	<AreaLoader area={kunci}>
