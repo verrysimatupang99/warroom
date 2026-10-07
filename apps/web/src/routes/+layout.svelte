@@ -11,6 +11,16 @@
 
 	let { children }: { children: Snippet } = $props();
 
+	// HAPUS SHELL PRA-HYDRATION (perbaikan 7 Okt, keluhan pemilik: "web masih terus
+	// memuat, ga bisa kebuka"). Shell di app.html HANYA kerangka statis; aplikasi hidup
+	// dirender di belakangnya. Tanpa baris ini shell menutupi seluruh halaman selamanya —
+	// judul & DOM sudah benar, tetapi yang terlihat tetap skeleton. Ini bug yang saya
+	// sendiri buat, dan tes lama tidak menangkapnya karena membaca textContent (yang
+	// tetap berisi konten aplikasi), bukan yang benar-benar TERLIHAT.
+	$effect(() => {
+		document.getElementById('shell-muat')?.remove();
+	});
+
 	$effect(() => {
 		if (page.url.pathname === '/masuk') return;
 		let aktif = true;

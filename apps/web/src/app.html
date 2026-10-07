@@ -37,6 +37,12 @@
 				</div>
 			</div>
 			<style>
+				/* PENGAMAN KEDUA (7 Okt): begitu aplikasi hidup ada di DOM, shell TIDAK BISA
+				   lagi menutupi halaman — bahkan bila JS utama telat/gagal menghapusnya.
+				   Keluhan pemilik "web masih terus memuat" terjadi karena shell menutupi UI
+				   yang sebenarnya sudah jalan; aturan :has() ini membuat kegagalan itu
+				   mustahil, bukan sekadar diperbaiki sekali. */
+				body:has(#konten) #shell-muat { display: none !important; }
 				#shell-muat {
 					--shell-bg: #0b0f14; --shell-line: #1e2833; --shell-tinta: #e6edf3;
 					--shell-mint: #34e39a; --shell-redup: #7d8b99;
