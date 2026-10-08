@@ -251,6 +251,22 @@ def create_app() -> FastAPI:
             "user": user.username,
         }
 
+    @app.get("/api/v1/ready")
+    def ready(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        db_ok = True
+        try:
+            with session_scope() as s:
+                s.execute(select(1))
+        except Exception:  # noqa: BLE001 — readiness reports dependency state
+            db_ok = False
+        return {
+            "status": "ready" if db_ok else "not_ready",
+            "db": db_ok,
+            "checks": {"database": "ok" if db_ok else "failed"},
+            "time": datetime.now(UTC).isoformat(),
+            "user": user.username,
+        }
+
     @app.get("/api/v1/design/tokens")
     def design_tokens(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         """Token desain dari SATU sumber: blok `@theme` di apps/web/src/app.css.

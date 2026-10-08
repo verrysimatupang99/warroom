@@ -71,7 +71,17 @@ def test_research_read_only_missing_run_does_not_leak_or_fallback(client, make_u
     assert r.json()["error"]["code"] == "not_found"
 
 
-# --- login & sesi ---------------------------------------------------------------------
+def test_ready_melaporkan_kesiapan_database(client, make_user) -> None:
+    _, sid = make_user("ready-check", role="viewer")
+    r = client.get("/api/v1/ready", headers=_cookie(sid))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "ready"
+    assert body["db"] is True
+    assert body["checks"]["database"] == "ok"
+
+
+
 
 
 def test_login_sandi_benar_lalu_me(client, make_user) -> None:
