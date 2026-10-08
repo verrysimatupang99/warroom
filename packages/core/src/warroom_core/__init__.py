@@ -16,11 +16,14 @@ from pathlib import Path
 import live_trading
 from live_trading import config as domain_config
 
+from warroom_core.adapters import Adapter, normalize_market_data
 from warroom_core.research import ResearchValidationError, build_research_run_preview
 from warroom_core.signal import Decision, MarketData, RiskPolicy, Signal, evaluate_risk
 from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
+from warroom_core.strategy import Strategy
 
 __all__ = [
+    "Adapter",
     "DOMAIN_VERSION",
     "Decision",
     "ExecutionSpec",
@@ -28,6 +31,8 @@ __all__ = [
     "MarketData",
     "RiskPolicy",
     "Signal",
+    "Strategy",
+    "normalize_market_data",
     "evaluate_risk",
     "SPEC_SCHEMA_VERSION",
     "SpecError",
