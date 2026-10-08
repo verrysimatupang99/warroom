@@ -7,10 +7,29 @@ research-only: it never writes the production ledger or emits a trading signal.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sqlite3
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+# Keep the research CLI runnable from the repository checkout as well as uv/systemd.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_CORE_SRC = _REPO_ROOT / "packages" / "core" / "src"
+_DOMAIN_SRC = _REPO_ROOT / "packages" / "live-trading" / "src"
+for _src in (_DOMAIN_SRC, _CORE_SRC):
+    if str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
+
+_SPECS_PATH = _CORE_SRC / "warroom_core" / "specs.py"
+_specs_loader = importlib.util.spec_from_file_location("warroom_research_specs", _SPECS_PATH)
+assert _specs_loader and _specs_loader.loader
+_specs_module = importlib.util.module_from_spec(_specs_loader)
+sys.modules[_specs_loader.name] = _specs_module
+_specs_loader.loader.exec_module(_specs_module)
+ExecutionSpec = _specs_module.ExecutionSpec
+HypothesisSpec = _specs_module.HypothesisSpec
 
 
 @dataclass(frozen=True)
@@ -66,7 +85,12 @@ def inspect_sqlite(path: Path) -> DatasetInfo:
     return DatasetInfo(str(path), True, tables, tuple(sorted(columns)), count)
 
 
-def evaluate(dataset: DatasetInfo) -> list[RuleResult]:
+def evaluate(
+    dataset: DatasetInfo,
+    *,
+    hypothesis: HypothesisSpec | None = None,
+    execution: ExecutionSpec | None = None,
+) -> list[RuleResult]:
     fields = set(dataset.columns)
     results: list[RuleResult] = []
     for spec in RULES:
@@ -79,13 +103,21 @@ def evaluate(dataset: DatasetInfo) -> list[RuleResult]:
                 missing,
                 "dataset lokal tidak menyediakan semua input formula; tidak menghitung proxy",
             ))
+        elif hypothesis is None or execution is None:
+            results.append(RuleResult(
+                spec.name,
+                spec.timeframe,
+                "blocked_contract",
+                (),
+                "HypothesisSpec dan ExecutionSpec wajib sebelum evaluasi eligible",
+            ))
         else:
             results.append(RuleResult(
                 spec.name,
                 spec.timeframe,
                 "ready_for_frozen_split",
                 (),
-                "input shape tersedia; frozen split dan replay policy masih wajib",
+                "input shape dan contracts tersedia; frozen split dan replay policy masih wajib",
             ))
     return results
 
