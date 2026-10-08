@@ -17,6 +17,7 @@ import live_trading
 from live_trading import config as domain_config
 
 from warroom_core.adapters import Adapter, normalize_market_data
+from warroom_core.paper import PaperExecutor, PaperRecord
 from warroom_core.research import ResearchValidationError, build_research_run_preview
 from warroom_core.signal import Decision, MarketData, RiskPolicy, Signal, evaluate_risk
 from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
@@ -29,6 +30,8 @@ __all__ = [
     "ExecutionSpec",
     "HypothesisSpec",
     "MarketData",
+    "PaperExecutor",
+    "PaperRecord",
     "RiskPolicy",
     "Signal",
     "Strategy",
