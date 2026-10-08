@@ -15,7 +15,7 @@
 	 * bukan 0. Populasi (denominator) WAJIB disebut di tiap baris — pelajaran dari
 	 * temuan "n=12 vs n=16" pada audit sebelumnya.
 	 */
-	import type { PasarRingkasPayload } from '$lib/api/types';
+	import type { PasarRingkasPayload, ResearchRunSummary } from '$lib/api/types';
 	import { angka, umurDetik } from '$lib/format';
 
 	interface Props {
@@ -23,8 +23,10 @@
 		akurasi?: PasarRingkasPayload | null;
 		/** Umur data (detik) untuk keterangan kesegaran; null = tidak diketahui. */
 		umurData?: number | null;
+		/** Latest immutable research registrations, if available. */
+		risetRuns?: ResearchRunSummary[];
 	}
-	let { akurasi = null, umurData = null }: Props = $props();
+	let { akurasi = null, umurData = null, risetRuns = [] }: Props = $props();
 
 	interface Bukti {
 		closed_trades?: number | null;
@@ -150,6 +152,22 @@
 		</table>
 	</div>
 
+	<div class="riset-contracts">
+		<h2>Research registrations</h2>
+		<p class="dim">Contract fingerprint, status, dan provenance. Ini registrasi riset—bukan bukti profit atau signal live.</p>
+		{#if risetRuns.length}
+			{#each risetRuns as run (run.id)}
+				<article class="riset-run">
+					<div class="run-head"><b>{run.research_key}</b><span class="pakem">{run.status}</span></div>
+					<div class="run-meta"><span>hypothesis <code>{run.hypothesis_hash.slice(0, 12)}…</code></span><span>execution <code>{run.execution_hash.slice(0, 12)}…</code></span></div>
+					<div class="run-meta dim"><span>dataset/artifact: buka detail run</span><span>{run.created_at ?? '—'}</span></div>
+				</article>
+			{/each}
+		{:else}
+			<p class="dim">Belum ada research registration yang tercatat.</p>
+		{/if}
+	</div>
+
 	<div class="catatan">
 		<h2>Yang harus dibaca sebelum menyimpulkan</h2>
 		<ul>
@@ -226,6 +244,17 @@
 	.biaya.ok { color: var(--color-accent); border-color: var(--color-accent); }
 	.biaya.brutto { color: var(--color-warn); border-color: var(--color-warn); }
 	.biaya.tidak { color: var(--color-text-3); border-style: dashed; }
+
+	.riset-contracts {
+		margin-top: 1rem; border: 1px solid var(--color-line); border-radius: var(--radius-card);
+		background: var(--color-surface); padding: 0.8rem 0.9rem;
+	}
+	.riset-contracts h2 { margin: 0; font-size: var(--text-13); }
+	.riset-contracts > p { margin: 0.3rem 0 0.7rem; font-size: var(--text-12); }
+	.riset-run { border-top: 1px solid var(--color-line); padding: 0.55rem 0; }
+	.run-head, .run-meta { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+	.run-meta { margin-top: 0.25rem; font-size: var(--text-11); }
+	.run-meta code { font-family: var(--font-mono); }
 
 	.catatan {
 		margin-top: 1rem; border: 1px solid var(--color-line); border-radius: var(--radius-card);

@@ -302,6 +302,45 @@ export interface BarisPasarRingkas {
 	} | null;
 }
 
+export interface ResearchRunSummary {
+	id: string;
+	research_key: string;
+	hypothesis_id: string;
+	hypothesis_version: string;
+	hypothesis_hash: string;
+	execution_hash: string;
+	status: string;
+	created_at: string | null;
+	completed_at: string | null;
+}
+
+export interface ResearchRunsPayload {
+	runs: ResearchRunSummary[];
+	count: number;
+}
+
+export interface ResearchRecord {
+	id: string;
+	kind: string;
+	uri: string;
+	sha256: string;
+	status: string;
+	provenance: Record<string, unknown>;
+	observed_at: string | null;
+	created_at: string | null;
+}
+
+export interface ResearchRunDetail extends ResearchRunSummary {
+	hypothesis: Record<string, unknown>;
+	execution: Record<string, unknown>;
+	provenance: Record<string, unknown>;
+}
+
+export interface ResearchRecordsPayload {
+	records: ResearchRecord[];
+	count: number;
+}
+
 export interface PasarRingkasPayload {
 	pasar: Record<string, BarisPasarRingkas>;
 	standar: string | null;

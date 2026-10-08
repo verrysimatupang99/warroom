@@ -9,8 +9,8 @@
 	// bukan 0. Kalkulator menandai asumsinya terang-terangan (fee, leverage).
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getArea, getPasarRingkas } from '$lib/api/client';
-	import type { AreaPayload, Fakta, PasarRingkasPayload } from '$lib/api/types';
+	import { getArea, getPasarRingkas, getResearchRuns } from '$lib/api/client';
+	import type { AreaPayload, Fakta, PasarRingkasPayload, ResearchRunSummary } from '$lib/api/types';
 	import { AREAS } from '$lib/nav';
 	import { umurDetik, angka, waktuWIB } from '$lib/format';
 	import SubNav from '$lib/components/SubNav.svelte';
@@ -23,12 +23,11 @@
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
 	let pasarRingkas = $state<PasarRingkasPayload | null>(null);
+	let risetRuns = $state<ResearchRunSummary[]>([]);
 	async function muatBukti() {
-		try {
-			pasarRingkas = await getPasarRingkas();
-		} catch {
-			/* halaman induk sudah punya penanganan galat sendiri */
-		}
+		const [ringkas, runs] = await Promise.allSettled([getPasarRingkas(), getResearchRuns()]);
+		if (ringkas.status === 'fulfilled') pasarRingkas = ringkas.value;
+		if (runs.status === 'fulfilled') risetRuns = runs.value.runs;
 	}
 	$effect(() => {
 		void muatBukti();
@@ -206,7 +205,7 @@
 		<!-- ============ BUKTI (audit QA putaran 3) ============ -->
 		<!-- Tujuh jawaban berdampingan untuk semua pasar: trade tuntas, WR, total R, PnL,
 		     drawdown, biaya, periode + denominator. -->
-		<KinerjaBukti akurasi={pasarRingkas} />
+		<KinerjaBukti akurasi={pasarRingkas} risetRuns={risetRuns} />
 	{:else if sub === 'kalender'}
 		<!-- ============ KALENDER (padanan /calendar algentis) ============ -->
 		<section class="kartu" aria-label="Agenda makro">

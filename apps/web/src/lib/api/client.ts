@@ -20,6 +20,9 @@ import type {
 	KesegaranPayload,
 	MasukanGate,
 	PasarRingkasPayload,
+	ResearchRecordsPayload,
+	ResearchRunDetail,
+	ResearchRunsPayload,
 	ProposalsPayload,
 	SinyalPayload
 } from './types';
@@ -154,7 +157,12 @@ export const basisApi = BASE;
 export const getSinyalPerPasar = () => minta<SinyalPayload>('/api/v1/sinyal/per-pasar');
 /** Ringkas akurasi+PnL per market untuk Home — dari fakta pasar_akurasi/idx_akurasi. */
 export const getPasarRingkas = () => minta<PasarRingkasPayload>('/api/v1/pasar/ringkas');
-/** Daftar catatan (docs/belajar) — endpoint membaca berkas markdown langsung. */
+/** Read-only research catalog and immutable provenance. */
+export const getResearchRuns = (researchKey?: string) =>
+	minta<ResearchRunsPayload>(`/api/v1/research/runs${researchKey ? `?research_key=${encodeURIComponent(researchKey)}` : ''}`);
+export const getResearchRun = (id: string) => minta<ResearchRunDetail>(`/api/v1/research/runs/${encodeURIComponent(id)}`);
+export const getResearchRecords = (id: string) => minta<ResearchRecordsPayload>(`/api/v1/research/runs/${encodeURIComponent(id)}/records`);
+
 export const getDocs = () => minta<DocsPayload>('/api/v1/docs');
 
 /** Isi satu catatan menurut slug. */
