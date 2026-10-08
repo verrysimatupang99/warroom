@@ -144,13 +144,15 @@
 					{ kunci: 'area', label: 'area' },
 					{ kunci: 'fakta', label: 'fakta', numerik: true },
 					{ kunci: 'hilang', label: 'hilang', numerik: true },
-					{ kunci: 'basi', label: 'basi', numerik: true }
+					{ kunci: 'basi', label: 'basi', numerik: true },
+					{ kunci: 'source_state', label: 'sumber' }
 				]}
 				baris={(areas?.areas ?? []).map((a) => ({
 					area: a.area,
 					fakta: a.fakta,
 					hilang: a.hilang,
-					basi: a.basi
+					basi: a.basi,
+					source_state: a.source_state
 				}))}
 				cari="cari area…"
 				ekspor="sistem-area.csv"

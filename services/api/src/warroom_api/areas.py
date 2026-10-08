@@ -20,6 +20,19 @@ from warroom_core.db import Fact
 
 __all__ = ["AREA_KEYS", "areas_summary", "facts_for_area", "latest_facts"]
 
+SOURCE_STATES = {"fresh", "stale", "degraded", "unknown"}
+
+
+def _source_state(rows: list[dict[str, Any]]) -> str:
+    """Classify only what facts prove; paused/frozen are not inferred from age."""
+    if not rows:
+        return "unknown"
+    fresh = any(row["status"] == "segar" for row in rows)
+    stale = any(row["status"] == "basi" for row in rows)
+    if fresh and stale:
+        return "degraded"
+    return "fresh" if fresh else "stale"
+
 AREA_KEYS: dict[str, tuple[str, ...]] = {
     "crypto": (
         "bagian", "kandidat", "pengukuran", "backtest",
@@ -162,9 +175,10 @@ def facts_for_area(
     return {
         "area": area,
         "dikenal": True,
+        "source_state": _source_state(rows := [_row(f, t) for f in [*dipakai, *extra]]),
         "kunci_diminta": list(kunci_area),
         "kunci_hilang": [k for k in kunci_area if k not in terbaru],
-        "facts": [_row(f, t) for f in [*dipakai, *extra]],
+        "facts": rows,
         "data": {f.key: f.value_json for f in [*dipakai, *extra]},
     }
 
@@ -189,6 +203,7 @@ def areas_summary(s: SASession, now: datetime | None = None) -> list[dict[str, A
                 "fakta": len(info["facts"]),
                 "hilang": len(info["kunci_hilang"]),
                 "basi": basi,
+                "source_state": _source_state(info["facts"]),
                 "observed_at_terakhir": terakhir,
             }
         )

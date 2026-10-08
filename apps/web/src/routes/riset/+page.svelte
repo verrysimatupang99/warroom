@@ -62,6 +62,7 @@
 
 	const fakta = (p: AreaPayload | null, key: string) =>
 		p?.facts.find((f) => f.key === key) ?? null;
+	const sourceState = $derived(kripto?.source_state ?? 'unknown');
 
 	// Dompet lintas-market: fakta yang sama dengan tiap halaman area (satu sumber angka).
 	const dompetObj = $derived(
@@ -132,6 +133,7 @@
 <div class="riset">
 	<header class="kepala">
 		<h1>Riset</h1>
+		<span class="badge-sumber badge-{sourceState}">{sourceState}</span>
 		<p class="dim">Bukti dari ledger, agenda makro, dan kalkulator. Semua angka dari data nyata.</p>
 	</header>
 
@@ -282,6 +284,20 @@
 		font-weight: 700;
 		letter-spacing: -0.02em;
 	}
+	.badge-sumber {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-control);
+		padding: 0.15rem 0.45rem;
+		font-size: var(--text-10);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.badge-fresh { color: var(--color-pos); }
+	.badge-stale, .badge-degraded { color: var(--color-warn); }
+	.badge-unknown { color: var(--color-text-3); }
 	.kepala p {
 		margin: 0.15rem 0 0;
 		font-size: var(--text-13);

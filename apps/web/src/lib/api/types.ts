@@ -5,6 +5,7 @@
  */
 
 export type StatusKesegaran = 'segar' | 'basi';
+export type SourceState = 'fresh' | 'stale' | 'degraded' | 'unknown';
 export type Peran = 'viewer' | 'operator' | 'owner';
 
 export interface Fakta {
@@ -24,9 +25,10 @@ export interface Fakta {
 export interface AreaPayload {
 	area: string;
 	dikenal: boolean;
+	source_state?: SourceState;
 	kunci_diminta?: string[];
 	kunci_hilang?: string[];
-	/** hanya muncul bila area tidak dikenal */
+	/** only emitted by the area endpoint when facts exist */
 	areas?: string[];
 	facts: Fakta[];
 	data: Record<string, unknown>;
@@ -53,6 +55,7 @@ export interface RingkasArea {
 	fakta: number;
 	hilang: number;
 	basi: number;
+	source_state: SourceState;
 	observed_at_terakhir: string | null;
 }
 

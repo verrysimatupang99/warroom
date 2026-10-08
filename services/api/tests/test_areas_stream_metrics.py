@@ -50,6 +50,7 @@ def test_area_mengembalikan_fakta_dengan_metadata(client, make_user) -> None:
     body = r.json()
     assert body["area"] == "crypto" and body["dikenal"] is True
     assert body["data"]["bagian"] == {"crypto": "ok"}
+    assert body["source_state"] == "fresh"
     for f in body["facts"]:
         assert {"fact_id", "source", "observed_at", "ttl_s", "status", "value"} <= set(f)
 
@@ -64,7 +65,28 @@ def test_area_kosong_melaporkan_hilang_bukan_nol(client, make_user) -> None:
     _, sid = make_user("baca-kosong", role="viewer")
     body = client.get("/api/v1/forex", headers=_cookie(sid)).json()
     assert body["data"] == {}
+    assert body["source_state"] == "unknown"
     assert "bagian" in body["kunci_hilang"], "kunci tanpa fakta harus dilaporkan hilang, bukan diisi 0"
+
+
+def test_source_state_degraded_bila_fakta_segar_dan_basi(client, make_user) -> None:
+    _, sid = make_user("baca-degraded", role="viewer")
+    with session_scope() as s:
+        s.add(_fakta("snapshot", "bagian", {"ok": True}, umur_s=5, ttl_s=1800))
+        s.add(_fakta("snapshot", "kandidat", [], umur_s=7200, ttl_s=60))
+    body = client.get("/api/v1/crypto", headers=_cookie(sid)).json()
+    assert body["source_state"] == "degraded"
+    body_areas = client.get("/api/v1/areas", headers=_cookie(sid)).json()
+    crypto = next(a for a in body_areas["areas"] if a["area"] == "crypto")
+    assert crypto["source_state"] == "degraded"
+
+
+def test_source_state_unknown_bukan_diklaim_frozen(client, make_user) -> None:
+    _, sid = make_user("baca-unknown", role="viewer")
+    body = client.get("/api/v1/idx", headers=_cookie(sid)).json()
+    assert body["source_state"] == "unknown"
+    assert body["source_state"] not in {"paused", "frozen"}
+
 
 
 def test_fakta_satu_404_bila_belum_ada(client, make_user) -> None:
@@ -90,6 +112,7 @@ def test_ringkasan_area_menandai_basi(client, make_user) -> None:
     body = client.get("/api/v1/areas", headers=_cookie(sid)).json()
     crypto = next(a for a in body["areas"] if a["area"] == "crypto")
     assert crypto["basi"] >= 1
+    assert crypto["source_state"] == "stale"
 
 
 # --- P1-T7: SSE -------------------------------------------------------------------------
