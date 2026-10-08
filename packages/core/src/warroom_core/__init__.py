@@ -16,7 +16,18 @@ from pathlib import Path
 import live_trading
 from live_trading import config as domain_config
 
-__all__ = ["DOMAIN_VERSION", "domain_version", "paths", "prompts_dir", "repo_root"]
+from warroom_core.specs import ExecutionSpec, HypothesisSpec, SpecError
+
+__all__ = [
+    "DOMAIN_VERSION",
+    "ExecutionSpec",
+    "HypothesisSpec",
+    "SpecError",
+    "domain_version",
+    "paths",
+    "prompts_dir",
+    "repo_root",
+]
 
 DOMAIN_VERSION: str = live_trading.__version__
 
