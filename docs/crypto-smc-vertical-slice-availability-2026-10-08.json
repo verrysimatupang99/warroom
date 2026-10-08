@@ -1,0 +1,55 @@
+{
+  "artifact": "crypto-smc-vertical-slice-availability-audit",
+  "schema_version": "1",
+  "generated_at": "2026-10-08T00:00:00Z",
+  "scope": "crypto_smc_paper_research",
+  "status": "blocked_evidence",
+  "research_only": true,
+  "raw_historical_fields_available": false,
+  "outcomes_available": "partial_unjoinable",
+  "replay": "blocked",
+  "promotion": "blocked",
+  "live": "NO-GO",
+  "evidence": {
+    "journal": {
+      "path": "packages/live-trading/crypto/journal/crypto_journal.xlsx",
+      "rows": 40,
+      "signal_rows": 33,
+      "no_trade_rows": 7,
+      "date_range": ["2026-08-25", "2026-09-27"],
+      "outcome_rows": 8,
+      "missing_outcome_rows": 32,
+      "structured_fields": ["Tanggal", "Jam WIB", "Status", "Pair", "Arah", "Entry Est.", "SL Est.", "TP1 Est.", "TP2 Est.", "Funding %", "Alasan / Bias MTF", "Hasil", "P/L %", "Skor Disiplin"],
+      "missing_raw_fields": ["candle_ts", "open", "high", "low", "close", "volume", "candidate_id", "quote_ts", "bid", "ask", "depth", "fee", "slippage", "fill_status"]
+    },
+    "outcome_ledger": {
+      "path": "packages/live-trading/crypto/state/crypto_equity.jsonl",
+      "rows": 30,
+      "date_range": ["2026-09-22T01:00:00+07:00", "2026-10-09T00:21:42+00:00"],
+      "rows_with_r": 28,
+      "rows_missing_r": 2,
+      "fields": ["signal_id", "pair", "direction", "closed_at", "status", "r", "note", "source", "logged_at"],
+      "missing_join_fields": ["journal_row", "candidate_id", "decision_ts", "entry", "stop", "tp1", "tp2", "smc_features", "quote", "fee", "slippage", "baseline"]
+    },
+    "implementation": {
+      "smc_module": "packages/live-trading/src/live_trading/signals/smc.py",
+      "candle_shape": ["t", "o", "h", "l", "c", "v"],
+      "features": ["swing_points", "bias", "structural_bias", "order_blocks", "fair_value_gaps", "liquidity_sweeps", "candidate_pois"]
+    }
+  },
+  "blockers": [
+    "No persisted raw historical OHLCV series keyed to candidates",
+    "No structured SMC feature snapshots per candidate",
+    "No deterministic join between journal candidates and outcome ledger",
+    "Outcome coverage is partial and ledger outcomes are unjoinable",
+    "No executable quote, fill, fee, slippage, or latency evidence",
+    "No frozen manifest, hashes, cutoff, or split membership",
+    "No row-level baseline inputs"
+  ],
+  "next_gate": {
+    "type": "frozen_read_only_crypto_smc_export",
+    "required_artifacts": ["manifest.json", "crypto_smc_candidates.jsonl", "crypto_smc_candles.jsonl"],
+    "required_candidate_fields": ["candidate_id", "signal_id", "pair", "venue", "decision_ts", "candle_cutoff_ts", "partition", "direction", "status", "entry", "stop", "tp1", "tp2", "smc_bias_1d", "smc_bias_4h", "smc_bias_1h", "poi_kind", "poi_low", "poi_high", "poi_fresh", "price_at_decision", "bid", "ask", "depth", "quote_ts", "fill_status", "fee_rate", "fee_usd", "slippage_bps", "outcome", "outcome_ts", "baseline_net_r", "source_file", "source_row", "parser_version"],
+    "required_candle_fields": ["pair", "venue", "timeframe", "candle_ts", "open", "high", "low", "close", "volume", "source_file", "source_row", "parser_version"]
+  }
+}
