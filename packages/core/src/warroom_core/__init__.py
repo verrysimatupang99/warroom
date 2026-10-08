@@ -16,6 +16,7 @@ from pathlib import Path
 import live_trading
 from live_trading import config as domain_config
 
+from warroom_core.research import ResearchValidationError, build_research_run_preview
 from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
 
 __all__ = [
@@ -24,6 +25,8 @@ __all__ = [
     "HypothesisSpec",
     "SPEC_SCHEMA_VERSION",
     "SpecError",
+    "ResearchValidationError",
+    "build_research_run_preview",
     "domain_version",
     "paths",
     "prompts_dir",

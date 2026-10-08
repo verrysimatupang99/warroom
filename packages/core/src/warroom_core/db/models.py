@@ -22,6 +22,7 @@ from typing import Any
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
@@ -38,7 +39,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 __all__ = ["Base", "Fact", "Event", "Verdict", "Trade", "Strategy", "Parameter", "Proposal",
            "LLMCall", "Prompt", "Alert", "Service", "Heartbeat", "User", "Session", "AuditLog",
-           "Dataset"]
+           "Dataset", "ResearchRun", "ResearchRecord"]
 
 Money = Numeric(20, 8)
 
@@ -359,6 +360,68 @@ class Dataset(Base):
     observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ResearchRun(Base):
+    """Versioned, research-only snapshot of both canonical contracts."""
+
+    __tablename__ = "research_runs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    research_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    hypothesis_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    hypothesis_version: Mapped[str] = mapped_column(String(80), nullable=False)
+    hypothesis_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    hypothesis_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    execution_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    execution_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="draft", server_default="draft")
+    provenance_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (
+        UniqueConstraint(
+            "research_key", "hypothesis_hash", "execution_hash", name="uq_research_runs_version"
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'running', 'completed', 'failed', 'invalid')",
+            name="ck_research_runs_status",
+        ),
+        CheckConstraint(
+            "execution_json ->> 'mode' IN ('paper', 'shadow')",
+            name="ck_research_runs_research_only",
+        ),
+        Index("ix_research_runs_key_created", "research_key", "created_at"),
+    )
+
+
+class ResearchRecord(Base):
+    """Immutable provenance record for an artifact attached to a research run."""
+
+    __tablename__ = "research_records"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    research_run_id: Mapped[str] = mapped_column(ForeignKey("research_runs.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    uri: Mapped[str] = mapped_column(String(400), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(24), nullable=False, default="observed", server_default="observed"
+    )
+    provenance_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint("research_run_id", "uri", "sha256", name="uq_research_records_artifact"),
+        CheckConstraint("status IN ('observed', 'validated', 'rejected')", name="ck_research_records_status"),
+        Index("ix_research_records_run_created", "research_run_id", "created_at"),
     )
 
 
