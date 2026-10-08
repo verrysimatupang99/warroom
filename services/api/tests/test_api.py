@@ -31,6 +31,46 @@ def test_gate_endpoint_tanpa_login_401(client) -> None:
     assert r.status_code == 401
 
 
+def test_research_read_only_viewer_can_list_and_read_run_records(client, make_user) -> None:
+    from warroom_core.db import ResearchRecord, ResearchRun, session_scope
+
+    _, sid = make_user("research-viewer", role="viewer")
+    with session_scope() as s:
+        s.add(ResearchRun(
+            id="run-test-1", research_key="kos-proxy", hypothesis_id="h-1",
+            hypothesis_version="v1", hypothesis_json={"baseline": "buy_hold"},
+            hypothesis_hash="a" * 64, execution_json={"mode": "paper"},
+            execution_hash="b" * 64, status="draft", provenance_json={"source": "test"},
+        ))
+        s.flush()
+        s.add(ResearchRecord(
+            id="record-test-1", research_run_id="run-test-1", kind="dataset",
+            uri="file:///tmp/dataset.json", sha256="c" * 64, status="observed",
+            provenance_json={"source": "test"},
+        ))
+
+    runs = client.get("/api/v1/research/runs", headers=_cookie(sid))
+    assert runs.status_code == 200
+    assert runs.json()["runs"][0]["id"] == "run-test-1"
+    detail = client.get("/api/v1/research/runs/run-test-1", headers=_cookie(sid))
+    assert detail.status_code == 200
+    assert detail.json()["hypothesis_hash"] == "a" * 64
+    records = client.get("/api/v1/research/runs/run-test-1/records", headers=_cookie(sid))
+    assert records.status_code == 200
+    assert records.json()["records"][0]["sha256"] == "c" * 64
+
+
+def test_research_read_only_requires_auth_and_missing_run_is_404(client) -> None:
+    assert client.get("/api/v1/research/runs").status_code == 401
+
+
+def test_research_read_only_missing_run_does_not_leak_or_fallback(client, make_user) -> None:
+    _, sid = make_user("research-missing", role="viewer")
+    r = client.get("/api/v1/research/runs/does-not-exist", headers=_cookie(sid))
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "not_found"
+
+
 # --- login & sesi ---------------------------------------------------------------------
 
 
