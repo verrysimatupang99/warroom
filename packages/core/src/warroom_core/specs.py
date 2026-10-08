@@ -7,15 +7,55 @@ required fields or silently turn absent values into defaults.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import asdict, dataclass
-from datetime import datetime
-from typing import Literal
+from datetime import UTC, datetime
+from typing import ClassVar, Literal
 
-__all__ = ["ExecutionSpec", "HypothesisSpec", "SpecError"]
+__all__ = ["ExecutionSpec", "HypothesisSpec", "SPEC_SCHEMA_VERSION", "SpecError"]
 
 
 class SpecError(ValueError):
     """Raised when a research or execution contract is incomplete or unsafe."""
+
+
+SPEC_SCHEMA_VERSION = "1"
+
+
+def _json_ready(value: object) -> object:
+    """Convert contract values to deterministic, JSON-compatible values."""
+    if isinstance(value, datetime):
+        return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    if isinstance(value, tuple):
+        return [_json_ready(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _json_ready(item) for key, item in value.items()}
+    return value
+
+
+class _CanonicalSpec:
+    schema_version: ClassVar[str] = SPEC_SCHEMA_VERSION
+
+    def to_dict(self) -> dict[str, object]:
+        raise NotImplementedError
+
+    def _canonical_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "spec_type": type(self).__name__,
+            "spec": _json_ready(self.to_dict()),
+        }
+
+    def to_json(self) -> str:
+        """Return the stable wire representation used for artifact identity."""
+        return json.dumps(
+            self._canonical_payload(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+
+    def fingerprint(self) -> str:
+        """Return the SHA-256 identity of schema version and contract contents."""
+        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()
 
 
 _REQUIRED_HYPOTHESIS = (
@@ -26,7 +66,7 @@ _REQUIRED_HYPOTHESIS = (
 
 
 @dataclass(frozen=True, slots=True)
-class HypothesisSpec:
+class HypothesisSpec(_CanonicalSpec):
     """Falsifiable, market-neutral research contract."""
 
     hypothesis_id: str
@@ -62,7 +102,7 @@ class HypothesisSpec:
 
 
 @dataclass(frozen=True, slots=True)
-class ExecutionSpec:
+class ExecutionSpec(_CanonicalSpec):
     """Executable-price and risk contract for paper or future gated live paths."""
 
     entry_price_rule: str

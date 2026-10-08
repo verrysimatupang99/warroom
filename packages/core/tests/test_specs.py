@@ -1,7 +1,8 @@
+import json
 from datetime import UTC, datetime
 
 import pytest
-from warroom_core.specs import ExecutionSpec, HypothesisSpec, SpecError
+from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
 
 
 def test_hypothesis_spec_requires_falsifiable_research_contract() -> None:
@@ -68,3 +69,34 @@ def test_execution_spec_rejects_live_without_explicit_grant() -> None:
             size_rule="risk", no_trade_conditions=("stale",), venue="x",
             mode="live", as_of=datetime.now(UTC),
         )
+
+
+def test_specs_have_canonical_json_and_stable_fingerprint() -> None:
+    spec = HypothesisSpec(
+        hypothesis_id="h1", market="idx", instrument_or_pool="BBCA",
+        rule_version="v1", input_fields=("close", "volume"),
+        lookahead_policy="t<=decision", cost_policy="all-in", session_timezone="Asia/Jakarta",
+        entry_rule="breakout", exit_rule="reversal", stop_rule="1R",
+        position_sizing="risk", baseline="buy_hold", split="frozen",
+        population="all", invalidation="negative expectancy",
+    )
+
+    payload = json.loads(spec.to_json())
+    assert payload["schema_version"] == SPEC_SCHEMA_VERSION
+    assert payload["spec_type"] == "HypothesisSpec"
+    assert payload["spec"]["input_fields"] == ["close", "volume"]
+    assert spec.fingerprint() == spec.fingerprint()
+    assert len(spec.fingerprint()) == 64
+
+
+def test_execution_json_normalizes_timezone_aware_datetime() -> None:
+    spec = ExecutionSpec(
+        entry_price_rule="ask", exit_price_rule="bid", stop_rule="stop", time_stop="none",
+        fee_policy="known", slippage_policy="known", latency_policy="known", fill_policy="known",
+        risk_budget="1%", size_rule="risk", no_trade_conditions=("stale",), venue="x",
+        mode="paper", as_of=datetime(2026, 10, 8, 1, 2, 3, 456000, tzinfo=UTC),
+    )
+
+    payload = json.loads(spec.to_json())
+    assert payload["spec"]["as_of"] == "2026-10-08T01:02:03.456000Z"
+    assert json.dumps(payload, sort_keys=True, separators=(",", ":")) == spec.to_json()

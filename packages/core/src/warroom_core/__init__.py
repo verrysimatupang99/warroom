@@ -16,12 +16,13 @@ from pathlib import Path
 import live_trading
 from live_trading import config as domain_config
 
-from warroom_core.specs import ExecutionSpec, HypothesisSpec, SpecError
+from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
 
 __all__ = [
     "DOMAIN_VERSION",
     "ExecutionSpec",
     "HypothesisSpec",
+    "SPEC_SCHEMA_VERSION",
     "SpecError",
     "domain_version",
     "paths",
