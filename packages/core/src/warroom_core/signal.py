@@ -73,6 +73,8 @@ class RiskPolicy:
     max_correlated_exposure_usd: float | None = None
     correlated_exposure_usd: float = 0.0
     max_position_usd: float | None = None
+    fee_bps: float = 5.0
+    slippage_bps: float = 5.0
 
 
 @dataclass(frozen=True, slots=True)
