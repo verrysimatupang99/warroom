@@ -15,7 +15,8 @@
 	 * bukan 0. Populasi (denominator) WAJIB disebut di tiap baris — pelajaran dari
 	 * temuan "n=12 vs n=16" pada audit sebelumnya.
 	 */
-	import type { PasarRingkasPayload, ResearchRunSummary } from '$lib/api/types';
+	import type { PasarRingkasPayload, ResearchRunDetail, ResearchRunSummary } from '$lib/api/types';
+	import { getResearchRun } from '$lib/api/client';
 	import { angka, umurDetik } from '$lib/format';
 
 	interface Props {
@@ -27,6 +28,22 @@
 		risetRuns?: ResearchRunSummary[];
 	}
 	let { akurasi = null, umurData = null, risetRuns = [] }: Props = $props();
+	let detail = $state<ResearchRunDetail | null>(null);
+	let detailLoading = $state(false);
+	let detailError = $state<string | null>(null);
+
+	async function bukaDetail(id: string) {
+		detailLoading = true;
+		detailError = null;
+		try {
+			detail = await getResearchRun(id);
+		} catch (err) {
+			detail = null;
+			detailError = err instanceof Error ? err.message : String(err);
+		} finally {
+			detailLoading = false;
+		}
+	}
 
 	interface Bukti {
 		closed_trades?: number | null;
@@ -160,11 +177,38 @@
 				<article class="riset-run">
 					<div class="run-head"><b>{run.research_key}</b><span class="pakem">{run.status}</span></div>
 					<div class="run-meta"><span>hypothesis <code>{run.hypothesis_hash.slice(0, 12)}…</code></span><span>execution <code>{run.execution_hash.slice(0, 12)}…</code></span></div>
-					<div class="run-meta dim"><span>dataset/artifact: buka detail run</span><span>{run.created_at ?? '—'}</span></div>
+					<div class="run-meta dim"><span>{run.created_at ?? '—'}</span><button type="button" class="detail-button" onclick={() => void bukaDetail(run.id)}>lihat evidence detail</button></div>
 				</article>
 			{/each}
 		{:else}
 			<p class="dim">Belum ada research registration yang tercatat.</p>
+		{/if}
+
+		{#if detailLoading}
+			<div class="evidence-detail" aria-live="polite">Memuat evidence detail…</div>
+		{:else if detailError}
+			<div class="evidence-detail blocked" role="alert">Evidence detail tidak dapat dimuat: {detailError}</div>
+		{:else if detail}
+			<section class="evidence-detail" aria-label="Evidence detail">
+				<div class="run-head"><h3>{detail.research_key}</h3><span class="pakem">{detail.status}</span></div>
+				<div class="fingerprints">
+					<span>hypothesis <code>{detail.hypothesis_hash}</code></span>
+					<span>execution <code>{detail.execution_hash}</code></span>
+				</div>
+				<p class:blocked={detail.evidence_status === 'blocked'}>
+					Evidence: <b>{detail.evidence_status}</b>{#if detail.blocked_reason} — {detail.blocked_reason}{/if}
+				</p>
+				<p class="dim">Provenance run: <code>{JSON.stringify(detail.provenance)}</code></p>
+				{#if detail.artifacts.length}
+					<ul class="artifact-list">
+						{#each detail.artifacts as artifact (artifact.id)}
+							<li><b>{artifact.kind}</b> <code>{artifact.sha256}</code><span class="dim">{artifact.status} · {artifact.uri}</span><small>provenance: {JSON.stringify(artifact.provenance)}</small></li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="blocked">No artifact records. This run is not evidence-backed.</p>
+				{/if}
+			</section>
 		{/if}
 	</div>
 
@@ -255,6 +299,15 @@
 	.run-head, .run-meta { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 	.run-meta { margin-top: 0.25rem; font-size: var(--text-11); }
 	.run-meta code { font-family: var(--font-mono); }
+
+	.riset-run { border-top: 1px solid var(--color-line); padding: 0.65rem 0; }
+	.detail-button { border: 1px solid var(--color-line); border-radius: 0.35rem; background: var(--color-surface); color: var(--color-text); padding: 0.25rem 0.45rem; cursor: pointer; }
+	.evidence-detail { margin-top: 0.8rem; border: 1px solid var(--color-line); border-radius: var(--radius-card); padding: 0.8rem; background: var(--color-surface); }
+	.evidence-detail h3 { margin: 0; }
+	.fingerprints { display: grid; gap: 0.35rem; margin: 0.6rem 0; overflow-wrap: anywhere; }
+	.artifact-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+	.artifact-list li { display: grid; gap: 0.15rem; border-top: 1px solid var(--color-line); padding-top: 0.5rem; overflow-wrap: anywhere; }
+	.blocked { color: var(--color-warn); }
 
 	.catatan {
 		margin-top: 1rem; border: 1px solid var(--color-line); border-radius: var(--radius-card);

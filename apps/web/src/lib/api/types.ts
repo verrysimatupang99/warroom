@@ -334,6 +334,10 @@ export interface ResearchRunDetail extends ResearchRunSummary {
 	hypothesis: Record<string, unknown>;
 	execution: Record<string, unknown>;
 	provenance: Record<string, unknown>;
+	artifacts: ResearchRecord[];
+	artifact_count: number;
+	evidence_status: 'available' | 'blocked';
+	blocked_reason: string | null;
 }
 
 export interface ResearchRecordsPayload {

@@ -58,6 +58,47 @@ def test_research_read_only_viewer_can_list_and_read_run_records(client, make_us
     records = client.get("/api/v1/research/runs/run-test-1/records", headers=_cookie(sid))
     assert records.status_code == 200
     assert records.json()["records"][0]["sha256"] == "c" * 64
+    assert detail.json()["evidence_status"] == "available"
+    assert detail.json()["blocked_reason"] is None
+    assert detail.json()["artifacts"][0]["provenance"] == {"source": "test"}
+
+
+def test_research_run_detail_explicitly_blocks_when_artifacts_absent(client, make_user) -> None:
+    from warroom_core.db import ResearchRun, session_scope
+
+    _, sid = make_user("research-empty", role="viewer")
+    with session_scope() as s:
+        s.add(ResearchRun(
+            id="run-empty-1", research_key="kos-proxy", hypothesis_id="h-empty",
+            hypothesis_version="v1", hypothesis_json={"baseline": "buy_hold"},
+            hypothesis_hash="d" * 64, execution_json={"mode": "paper"},
+            execution_hash="e" * 64, status="completed", provenance_json={"source": "test"},
+        ))
+
+    detail = client.get("/api/v1/research/runs/run-empty-1", headers=_cookie(sid))
+    assert detail.status_code == 200
+    body = detail.json()
+    assert body["artifacts"] == []
+    assert body["evidence_status"] == "blocked"
+    assert body["blocked_reason"] == "no_artifact_records"
+
+
+def test_research_run_detail_is_read_only_and_does_not_cross_id(client, make_user) -> None:
+    from warroom_core.db import ResearchRun, session_scope
+
+    _, sid = make_user("research-idor", role="viewer")
+    with session_scope() as s:
+        s.add(ResearchRun(
+            id="run-owned-1", research_key="kos-proxy", hypothesis_id="h-owned",
+            hypothesis_version="v1", hypothesis_json={}, hypothesis_hash="f" * 64,
+            execution_json={"mode": "paper"}, execution_hash="0" * 64,
+            status="draft", provenance_json={"source": "test"},
+        ))
+
+    missing = client.get("/api/v1/research/runs/run-not-owned", headers=_cookie(sid))
+    assert missing.status_code == 404
+    assert missing.json()["error"]["code"] == "not_found"
+    assert client.post("/api/v1/research/runs/run-owned-1", headers=_cookie(sid)).status_code == 405
 
 
 def test_research_read_only_requires_auth_and_missing_run_is_404(client) -> None:
@@ -72,13 +113,39 @@ def test_research_read_only_missing_run_does_not_leak_or_fallback(client, make_u
 
 
 def test_ready_melaporkan_kesiapan_database(client, make_user) -> None:
+    from warroom_core.db import Fact, Heartbeat, session_scope
+
     _, sid = make_user("ready-check", role="viewer")
+    with session_scope() as s:
+        s.query(Fact).delete()
+        s.query(Heartbeat).delete()
     r = client.get("/api/v1/ready", headers=_cookie(sid))
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ready"
     assert body["db"] is True
     assert body["checks"]["database"] == "ok"
+
+
+def test_ready_melaporkan_worker_stale_dan_fakta_dengan_provenance(client, make_user) -> None:
+    from warroom_core.db import Fact, Heartbeat, session_scope
+
+    _, sid = make_user("ready-worker", role="viewer")
+    now = datetime.now(UTC)
+    with session_scope() as s:
+        s.query(Fact).delete()
+        s.query(Heartbeat).delete()
+        s.add(Heartbeat(host="worker-1", unit="collector", beat_at=now - timedelta(seconds=301)))
+        s.add(Fact(
+            kind="snapshot", key="mode", value_json="paper", source="test-source",
+            observed_at=now - timedelta(seconds=120), ttl_s=60, hash="h",
+        ))
+    r = client.get("/api/v1/ready", headers=_cookie(sid))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "not_ready"
+    assert body["checks"]["worker_heartbeats"]["status"] == "stale"
+    assert body["checks"]["stale_facts"]["items"][0]["source"] == "test-source"
 
 
 

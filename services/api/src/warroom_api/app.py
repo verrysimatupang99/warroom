@@ -27,7 +27,7 @@ from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 from warroom_api import auth, limits, live
 from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area, latest_facts
 from warroom_api.errors import install_error_handlers
-from warroom_api.metrics import collect_metrics, render_prometheus
+from warroom_api.metrics import collect_metrics, collect_readiness, render_prometheus
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
@@ -253,16 +253,26 @@ def create_app() -> FastAPI:
 
     @app.get("/api/v1/ready")
     def ready(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        db_ok = True
+        checks: dict[str, Any] = {"database": "failed"}
+        db_ok = False
         try:
             with session_scope() as s:
                 s.execute(select(1))
+                checks = collect_readiness(s)
+                db_ok = True
         except Exception:  # noqa: BLE001 — readiness reports dependency state
-            db_ok = False
+            pass
+        worker = checks.get("worker_heartbeats", {})
+        stale = checks.get("stale_facts", {})
+        blocking = (
+            not db_ok
+            or worker.get("status") == "stale"
+            or stale.get("status") == "stale"
+        )
         return {
-            "status": "ready" if db_ok else "not_ready",
+            "status": "ready" if not blocking else "not_ready",
             "db": db_ok,
-            "checks": {"database": "ok" if db_ok else "failed"},
+            "checks": checks,
             "time": datetime.now(UTC).isoformat(),
             "user": user.username,
         }
@@ -659,6 +669,24 @@ def create_app() -> FastAPI:
                     status_code=404,
                     detail={"code": "not_found", "message": "research run tidak ditemukan"},
                 )
+            records = s.scalars(
+                select(ResearchRecord)
+                .where(ResearchRecord.research_run_id == run_id)
+                .order_by(ResearchRecord.created_at.asc())
+            ).all()
+            artifacts = [
+                {
+                    "id": r.id,
+                    "kind": r.kind,
+                    "uri": r.uri,
+                    "sha256": r.sha256,
+                    "status": r.status,
+                    "provenance": r.provenance_json,
+                    "observed_at": r.observed_at.isoformat() if r.observed_at else None,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                }
+                for r in records
+            ]
             return {
                 "id": row.id,
                 "research_key": row.research_key,
@@ -670,6 +698,10 @@ def create_app() -> FastAPI:
                 "execution": row.execution_json,
                 "status": row.status,
                 "provenance": row.provenance_json,
+                "artifacts": artifacts,
+                "artifact_count": len(artifacts),
+                "evidence_status": "available" if artifacts else "blocked",
+                "blocked_reason": None if artifacts else "no_artifact_records",
                 "created_at": row.created_at.isoformat() if row.created_at else None,
                 "completed_at": row.completed_at.isoformat() if row.completed_at else None,
             }
