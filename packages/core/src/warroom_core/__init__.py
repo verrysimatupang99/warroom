@@ -17,6 +17,7 @@ import live_trading
 from live_trading import config as domain_config
 
 from warroom_core.adapters import Adapter, normalize_market_data
+from warroom_core.forward import ForwardLedger, ForwardRecord, outcome_summary
 from warroom_core.paper import PaperExecutor, PaperRecord
 from warroom_core.research import ResearchValidationError, build_research_run_preview
 from warroom_core.signal import Decision, MarketData, RiskPolicy, Signal, evaluate_risk
@@ -28,6 +29,8 @@ __all__ = [
     "DOMAIN_VERSION",
     "Decision",
     "ExecutionSpec",
+    "ForwardLedger",
+    "ForwardRecord",
     "HypothesisSpec",
     "MarketData",
     "PaperExecutor",
@@ -36,6 +39,7 @@ __all__ = [
     "Signal",
     "Strategy",
     "normalize_market_data",
+    "outcome_summary",
     "evaluate_risk",
     "SPEC_SCHEMA_VERSION",
     "SpecError",
