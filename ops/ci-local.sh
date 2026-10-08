@@ -20,7 +20,8 @@ check $? "domain sync + ruff + pytest"
 
 step "2/4 platform: sync --frozen + ruff + impor domain"
 ( cd "$WARROOM" && uv sync --frozen && uv run ruff check . \
-  && uv run python -c "import live_trading, warroom_core; print('domain', live_trading.__version__, '| core ok')" )
+ && uv run python -c "import live_trading, warroom_core; print('domain', live_trading.__version__, '| core ok')" \
+ && uv run python ops/check-openapi-contract.py )
 check $? "platform sync + ruff + import"
 
 step "3/4 secrets: gitleaks (git history, dua repo)"

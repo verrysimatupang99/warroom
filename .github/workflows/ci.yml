@@ -57,6 +57,9 @@ jobs:
       - name: bukti domain bisa diimpor dari platform
         working-directory: warroom
         run: uv run python -c "import live_trading, warroom_core; print(live_trading.__version__, warroom_core.paths())"
+      - name: OpenAPI contract tidak drift
+        working-directory: warroom
+        run: uv run python ops/check-openapi-contract.py
 
   # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
   secrets:
