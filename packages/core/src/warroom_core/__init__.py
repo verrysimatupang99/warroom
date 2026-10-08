@@ -17,12 +17,18 @@ import live_trading
 from live_trading import config as domain_config
 
 from warroom_core.research import ResearchValidationError, build_research_run_preview
+from warroom_core.signal import Decision, MarketData, RiskPolicy, Signal, evaluate_risk
 from warroom_core.specs import SPEC_SCHEMA_VERSION, ExecutionSpec, HypothesisSpec, SpecError
 
 __all__ = [
     "DOMAIN_VERSION",
+    "Decision",
     "ExecutionSpec",
     "HypothesisSpec",
+    "MarketData",
+    "RiskPolicy",
+    "Signal",
+    "evaluate_risk",
     "SPEC_SCHEMA_VERSION",
     "SpecError",
     "ResearchValidationError",
