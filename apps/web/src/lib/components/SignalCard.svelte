@@ -19,6 +19,8 @@
 		sl?: number;
 		tp1?: number;
 		risk_pct?: number;
+		strategy?: string | null;
+		mode?: 'PAPER' | 'LIVE' | 'HISTORIS' | null;
 		ts?: string;
 		rules?: RuleItem[];
 		aturan_gagal?: string[];
@@ -89,6 +91,11 @@
 		</div>
 
 		<div class="flex items-center gap-1.5 text-11">
+			{#if setup.mode || setup.strategy}
+				<span class="rounded bg-accent/10 px-1.5 py-0.5 font-mono text-10 text-accent border border-accent/20">
+					{setup.mode ?? 'PAPER'}{setup.strategy ? ` · ${setup.strategy}` : ''}
+				</span>
+			{/if}
 			{#if setup.tier}
 				<span class="rounded bg-surface px-1.5 py-0.5 font-mono text-text-3 border border-line">
 					{setup.tier}

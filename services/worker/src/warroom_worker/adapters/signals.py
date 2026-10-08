@@ -76,6 +76,9 @@ def sinyal_terakhir(
             "tp1": r.get("tp1"),
             "risk_pct": r.get("risk_pct"),
             "r_r": 2.0,
+            "strategy": r.get("strategy"),
+            "mode": r.get("mode", "PAPER"),
+            "detail": r.get("detail") or {},
             "aturan_gagal": [str(v.get("rule")) for v in rules if isinstance(v, dict) and not v.get("ok")],
         }
     sinyal = sorted(per_kunci.values(), key=lambda x: x["ts"], reverse=True)[:max_n]

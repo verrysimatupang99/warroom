@@ -237,6 +237,9 @@ export interface SinyalItem {
 	tp1: unknown;
 	r_r: unknown;
 	risk_pct: unknown;
+	strategy?: string | null;
+	mode?: 'PAPER' | 'LIVE' | 'HISTORIS' | null;
+	detail?: Record<string, unknown>;
 	aturan_gagal: string[];
 	label: string | null;
 	umur_s: number | null;

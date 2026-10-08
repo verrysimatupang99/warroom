@@ -62,6 +62,8 @@ def test_hanya_yang_lolos_dan_dalam_jendela(tmp_path) -> None:
     h = sig.sinyal_terakhir(d, jam_terakhir=6, sekarang=NOW)
     assert h["status"] == "ok"
     assert [s["pair"] for s in h["sinyal"]] == ["BTCUSDT"]
+    assert h["sinyal"][0]["mode"] == "PAPER"
+    assert h["sinyal"][0]["strategy"] is None
 
 
 def test_unik_per_pair_dan_arah_terbaru_menang(tmp_path) -> None:

@@ -62,4 +62,16 @@ describe('SignalCard', () => {
 		// SL distance = (10 / 100) * 100 = 10.00%
 		expect(screen.getByText('(10.00%)')).toBeTruthy();
 	});
+
+	it('menampilkan mode dan strategi tanpa mengklaim live', () => {
+		render(SignalCard, {
+			props: {
+				setup: {
+					pair: 'BTCUSDT', direction: 'LONG', entry: 100, sl: 90, tp1: 120,
+					mode: 'PAPER', strategy: 'smc-fibonacci-smart-golden-pullback-v1'
+				}
+			}
+		});
+		expect(screen.getByText(/PAPER · smc-fibonacci-smart-golden-pullback-v1/)).toBeTruthy();
+	});
 });
