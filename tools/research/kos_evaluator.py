@@ -7,6 +7,7 @@ research-only: it never writes the production ledger or emits a trading signal.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import sqlite3
@@ -120,6 +121,35 @@ def evaluate(
                 "input shape dan contracts tersedia; frozen split dan replay policy masih wajib",
             ))
     return results
+
+
+def build_research_preview(
+    dataset_path: Path,
+    hypothesis: HypothesisSpec,
+    execution: ExecutionSpec,
+) -> dict[str, object]:
+    """Build a research-only persistence preview and hash the exact dataset artifact."""
+    if not dataset_path.is_file():
+        raise ValueError("dataset artifact tidak ditemukan")
+    if execution.mode == "live":
+        raise ValueError("research preview menolak mode live")
+    digest = hashlib.sha256(dataset_path.read_bytes()).hexdigest()
+    return {
+        "research_key": hypothesis.hypothesis_id,
+        "status": "draft",
+        "hypothesis_id": hypothesis.hypothesis_id,
+        "hypothesis_version": hypothesis.rule_version,
+        "hypothesis": hypothesis.to_dict(),
+        "hypothesis_hash": hypothesis.fingerprint(),
+        "execution": execution.to_dict(),
+        "execution_hash": execution.fingerprint(),
+        "provenance": {
+            "source": "kos_evaluator",
+            "dataset_path": str(dataset_path),
+            "dataset_sha256": digest,
+        },
+        "artifacts": [{"kind": "dataset", "uri": str(dataset_path), "sha256": digest}],
+    }
 
 
 def main() -> int:

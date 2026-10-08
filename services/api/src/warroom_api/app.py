@@ -603,30 +603,6 @@ def create_app() -> FastAPI:
                 "count": len(rows),
             }
 
-    @app.get("/api/v1/research/runs/{run_id}")
-    def research_run(run_id: str, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        with session_scope() as s:
-            row = s.get(ResearchRun, run_id)
-            if row is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail={"code": "not_found", "message": "research run tidak ditemukan"},
-                )
-            return {
-                "id": row.id,
-                "research_key": row.research_key,
-                "hypothesis_id": row.hypothesis_id,
-                "hypothesis_version": row.hypothesis_version,
-                "hypothesis_hash": row.hypothesis_hash,
-                "hypothesis": row.hypothesis_json,
-                "execution_hash": row.execution_hash,
-                "execution": row.execution_json,
-                "status": row.status,
-                "provenance": row.provenance_json,
-                "created_at": row.created_at.isoformat() if row.created_at else None,
-                "completed_at": row.completed_at.isoformat() if row.completed_at else None,
-            }
-
     @app.get("/api/v1/research/runs/{run_id}/records")
     def research_records(run_id: str, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         with session_scope() as s:
@@ -656,6 +632,30 @@ def create_app() -> FastAPI:
                     for r in rows
                 ],
                 "count": len(rows),
+            }
+
+    @app.get("/api/v1/research/runs/{run_id}")
+    def research_run(run_id: str, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+        with session_scope() as s:
+            row = s.get(ResearchRun, run_id)
+            if row is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"code": "not_found", "message": "research run tidak ditemukan"},
+                )
+            return {
+                "id": row.id,
+                "research_key": row.research_key,
+                "hypothesis_id": row.hypothesis_id,
+                "hypothesis_version": row.hypothesis_version,
+                "hypothesis_hash": row.hypothesis_hash,
+                "hypothesis": row.hypothesis_json,
+                "execution_hash": row.execution_hash,
+                "execution": row.execution_json,
+                "status": row.status,
+                "provenance": row.provenance_json,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "completed_at": row.completed_at.isoformat() if row.completed_at else None,
             }
 
     # --- penulis fakta (operator) -------------------------------------------------------
