@@ -66,6 +66,13 @@ class RiskPolicy:
     min_liquidity_usd: float = 0.0
     risk_usd: float = 50.0
     kill_switch: bool = False
+    max_daily_loss_usd: float | None = None
+    daily_loss_usd: float = 0.0
+    max_open_exposure_usd: float | None = None
+    open_exposure_usd: float = 0.0
+    max_correlated_exposure_usd: float | None = None
+    correlated_exposure_usd: float = 0.0
+    max_position_usd: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +93,11 @@ def evaluate_risk(
     t = now or datetime.now(UTC)
     if policy.kill_switch:
         return Decision(False, "kill_switch")
+    if (
+        policy.max_daily_loss_usd is not None
+        and policy.daily_loss_usd >= policy.max_daily_loss_usd
+    ):
+        return Decision(False, "daily_loss_limit")
     if signal.mode != "paper":
         return Decision(False, "live_mode_blocked")
     if data.market != signal.market or data.instrument != signal.instrument:
@@ -98,4 +110,16 @@ def evaluate_risk(
         return Decision(False, "spread_too_wide")
     if data.liquidity_usd is not None and data.liquidity_usd < policy.min_liquidity_usd:
         return Decision(False, "liquidity_too_low")
+    if (
+        policy.max_open_exposure_usd is not None
+        and policy.open_exposure_usd + policy.risk_usd > policy.max_open_exposure_usd
+    ):
+        return Decision(False, "open_exposure_limit")
+    if (
+        policy.max_correlated_exposure_usd is not None
+        and policy.correlated_exposure_usd + policy.risk_usd > policy.max_correlated_exposure_usd
+    ):
+        return Decision(False, "correlated_exposure_limit")
+    if policy.max_position_usd is not None and policy.risk_usd > policy.max_position_usd:
+        return Decision(False, "position_size_limit")
     return Decision(True, "allowed", policy.risk_usd)
