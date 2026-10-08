@@ -11,7 +11,7 @@ from warroom_api import auth
 from warroom_api.areas import AREA_KEYS
 from warroom_api.metrics import collect_metrics, render_prometheus
 from warroom_api.stream import event_stream, parse_last_event_id, topic_matches
-from warroom_core.db import Alert, Event, Fact, Job, session_scope
+from warroom_core.db import Alert, Event, Fact, Heartbeat, Job, session_scope
 
 
 @pytest.fixture(autouse=True)
@@ -236,6 +236,46 @@ def test_collect_metrics_tanpa_data_tidak_mengarang(db) -> None:
     assert m["facts_basi"] == 0
     assert m["alerts_terbuka"] == 0
     assert "warroom_facts_total 0" in render_prometheus(m)
+
+
+def test_metrics_mengeluarkan_kesiapan_dan_heartbeat_worker(db) -> None:
+    with session_scope() as s:
+        s.add(Heartbeat(
+            host="worker-1", unit="collector", beat_at=datetime.now(UTC) - timedelta(seconds=5),
+            payload_json={"source": "worker"},
+        ))
+        m = collect_metrics(s, now=datetime.now(UTC))
+    assert m["readiness"]["database"] == "ok"
+    assert m["readiness"]["worker_heartbeats"]["status"] == "ok"
+    assert m["readiness"]["worker_heartbeats"]["count"] == 1
+    teks = render_prometheus(m)
+    assert "warroom_readiness{check=\"database\"} 1" in teks
+    assert "warroom_worker_heartbeats 1" in teks
+
+
+def test_heartbeat_stale_dan_fakta_basi_tidak_diklaim_segar(db) -> None:
+    with session_scope() as s:
+        s.query(Heartbeat).delete()
+        s.add(Heartbeat(
+            host="worker-1", unit="collector", beat_at=datetime.now(UTC) - timedelta(seconds=301),
+            payload_json={"source": "worker"},
+        ))
+        s.add(_fakta("snapshot", "mode", "paper", umur_s=120, ttl_s=60, source="test-source"))
+        m = collect_metrics(s, now=datetime.now(UTC))
+    assert m["readiness"]["worker_heartbeats"]["status"] == "stale"
+    assert m["readiness"]["stale_facts"]["count"] == 1
+    assert m["readiness"]["stale_facts"]["items"][0]["source"] == "test-source"
+    assert 'warroom_readiness{check="worker_heartbeats"} 0' in render_prometheus(m)
+
+
+def test_prometheus_label_tidak_tak_terbatas(db) -> None:
+    with session_scope() as s:
+        for i in range(60):
+            s.add(Event(type=f"untrusted-{i}", actor="uji", payload_json={}, fact_ids=[]))
+        m = collect_metrics(s)
+    teks = render_prometheus(m)
+    assert teks.count("warroom_events_total{type=") <= 51  # 50 + bounded overflow
+    assert 'type="other"' in teks
 
 
 def test_metrik_basi_menghitung_per_kind_dan_key(db) -> None:
