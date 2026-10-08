@@ -15,7 +15,10 @@
 		children: Snippet;
 	}
 	let { judul = 'Cara membaca tab ini', bukaAwal = false, children }: Props = $props();
-	let terbuka = $state(bukaAwal);
+	let terbuka = $state(false);
+	$effect(() => {
+		terbuka = bukaAwal;
+	});
 </script>
 
 <div class="rounded-card border border-line-soft bg-surface-2/40">

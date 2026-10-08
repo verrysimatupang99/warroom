@@ -43,7 +43,10 @@
 		children
 	}: Props = $props();
 
-	let terbuka = $state(!lipatAwal || !lipat);
+	let terbuka = $state(false);
+	$effect(() => {
+		terbuka = !lipatAwal || !lipat;
+	});
 </script>
 
 <section class="kartu p-3" aria-label={judul} data-testid="blok">
