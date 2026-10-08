@@ -67,6 +67,7 @@ class CryptoCollector:
         snap["price"] = float(tick.get("lastPrice") or 0)
         snap["chg24h"] = round(float(tick.get("priceChangePercent") or 0), 2)
         snap["quote_vol"] = round(float(tick.get("quoteVolume") or 0) / 1e6, 1)
+        snap["observed_at_ms"] = int(tick.get("closeTime") or 0)
 
         kl = self._get(fapi, "/fapi/v1/klines", {"symbol": pair, "interval": "1h", "limit": klines})
         snap["taker"] = taker_ratio(kl)

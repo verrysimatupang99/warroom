@@ -8,7 +8,7 @@ from live_trading.adapters.crypto import CryptoAdapter
 class StubCollector:
     def pair_snapshot(self, pair: str) -> dict[str, object]:
         assert pair == "BTCUSDT"
-        return {"pair": pair, "price": 100.0, "funding": 0.01, "oi": 12.0}
+        return {"pair": pair, "price": 100.0, "funding": 0.01, "oi": 12.0, "observed_at_ms": 1760000000000}
 
 
 def test_crypto_adapter_normalizes_collector_snapshot_without_inventing_liquidity():
@@ -21,4 +21,5 @@ def test_crypto_adapter_normalizes_collector_snapshot_without_inventing_liquidit
     assert data.spread_bps is None
     assert data.liquidity_usd is None
     assert data.observed_at.tzinfo == UTC
+    assert data.observed_at.timestamp() == 1760000000
     assert data.payload["funding"] == 0.01

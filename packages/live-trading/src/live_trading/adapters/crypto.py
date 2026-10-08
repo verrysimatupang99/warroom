@@ -23,12 +23,18 @@ class CryptoAdapter(Adapter):
         self.collector = collector
 
     def fetch(self, instrument: str) -> MarketData:
-        observed_at = datetime.now(UTC)
         snapshot = self.collector.pair_snapshot(instrument)
         try:
             price = float(snapshot["price"])
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(f"crypto snapshot price invalid for {instrument}") from exc
+        observed_ms = snapshot.get("observed_at_ms")
+        try:
+            if observed_ms is None:
+                raise ValueError("source timestamp missing")
+            observed_at = datetime.fromtimestamp(float(observed_ms) / 1000, tz=UTC)
+        except (TypeError, ValueError, OSError, OverflowError) as exc:
+            raise ValueError(f"crypto source timestamp invalid for {instrument}") from exc
         return normalize_market_data(
             self.market,
             self.venue,
