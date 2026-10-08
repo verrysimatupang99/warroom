@@ -16,7 +16,7 @@ import httpx
 
 from ..collectors import make_client
 from ..config import Settings
-from . import gates, smc
+from . import gates, golden_pullback, smc
 
 TIMEFRAMES = {"1h": 200, "4h": 200, "1d": 120}
 
@@ -230,6 +230,59 @@ def propose(st: Structure, direction: str) -> dict[str, Any] | None:
     }
 
 
+def _propose_golden_smc_gated(st: Structure, direction: str) -> dict[str, Any] | None:
+    """Deterministic SMC + Fibonacci Smart Golden Pullback proposal."""
+    if direction.lower() not in {"long", "short"} or not st.candles_1h:
+        return None
+    sweeps = smc.liquidity_sweeps(st.candles_1h)
+    kind = "sweep_low" if direction.lower() == "long" else "sweep_high"
+    candidates = [row for row in sweeps if row["kind"] == kind]
+    if not candidates:
+        return None
+    latest = candidates[-1]
+    candle = st.candles_1h[latest["idx"]]
+    confirmation = (
+        candle["c"] > candle["o"] and candle["c"] > latest["level"]
+        if direction.lower() == "long"
+        else candle["c"] < candle["o"] and candle["c"] < latest["level"]
+    )
+    anchor_low = st.swing_low if direction.lower() == "long" else latest["level"]
+    anchor_high = latest["level"] if direction.lower() == "long" else st.swing_high
+    if anchor_low is None or anchor_high is None:
+        return None
+    d = "long" if direction.lower() == "long" else "short"
+    setup = golden_pullback.build_pullback_setup(
+        direction=d,
+        swing_low=min(float(anchor_low), float(anchor_high)),
+        swing_high=max(float(anchor_low), float(anchor_high)),
+        current_price=st.price,
+        structure_bias=st.bias.get("1h", "netral"),
+        liquidity_swept=True,
+        confirmation=confirmation,
+    )
+    if setup is None:
+        return None
+    return {
+        "pair": st.pair,
+        "direction": direction.upper(),
+        "entry": round(float(setup["entry"]), 8),
+        "sl": round(float(setup["stop"]), 8),
+        "tp1": round(float(setup["target"]), 8),
+        "tp2": round(float(setup["target"]), 8),
+        "poi": {
+            "kind": "golden_pullback",
+            "low": setup["zone_low"],
+            "high": setup["zone_high"],
+            "mid": setup["entry"],
+        },
+        "risk_pct": round(abs(float(setup["entry"]) - float(setup["stop"])) / float(setup["entry"]) * 100, 3),
+        "sl_anchor_ok": True,
+        "rr": float(setup["risk_reward"]),
+        "strategy": golden_pullback.GoldenPullbackStrategy.name,
+        "mode": "PAPER",
+    }
+
+
 def _record_verdict(
     settings: Settings,
     pair: str,
@@ -257,6 +310,10 @@ def _record_verdict(
             "ts": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
             "pair": pair,
             "direction": direction.upper(),
+            "strategy": golden_pullback.GoldenPullbackStrategy.name
+            if prop and prop.get("strategy")
+            else "legacy-smc",
+            "mode": (prop or {}).get("mode", "PAPER"),
             "allowed": assessment.allowed,
             "tier": assessment.tier,
             "entry": (prop or {}).get("entry"),
@@ -589,7 +646,7 @@ def evaluate(
 ) -> tuple[Structure, dict[str, Any] | None, gates.Assessment]:
     """Analisis + usulan + verdict. Entry/SL/TP bisa ditimpa kalau mau menguji setup sendiri."""
     st = analyze(settings, pair, client)
-    prop = propose(st, direction)
+    prop = _propose_golden_smc_gated(st, direction) or propose(st, direction)
     base = prop or {}
     e = entry if entry is not None else base.get("entry")
     s = sl if sl is not None else base.get("sl")
