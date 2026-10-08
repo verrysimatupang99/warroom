@@ -1,0 +1,74 @@
+{
+  "audit_date_utc": "2026-10-08",
+  "mode": "research_only",
+  "writes_production": false,
+  "credentials": {
+    "sanctioned_runtime": "Tencent VM read-only SSH via /etc/warroom/tencent_ed25519",
+    "api_key_available": true,
+    "api_key_value_recorded": false,
+    "api_key_path": "/home/ubuntu/.hermes/scripts/.arjum_api_key",
+    "api_key_metadata": "mode 600, owner ubuntu; value intentionally not exposed"
+  },
+  "client": {
+    "path": "/home/ubuntu/.hermes/scripts/arjum_client.py",
+    "endpoint": "/api/broker-accumulation/<CODE>",
+    "method": "broker_accumulation(code, days=None)",
+    "probe_write_suppression": true,
+    "note": "Client quota-state writers were monkeypatched to no-op for the probes; no remote cache/state write was authorized."
+  },
+  "probes": [
+    {
+      "code": "BBRI",
+      "days_requested": 30,
+      "ok": true,
+      "top_level_keys": ["code", "end_date", "series", "start_date", "top_buyers", "top_sellers"],
+      "series_count": 6,
+      "point_count_total": 477,
+      "distinct_point_dates": 80,
+      "coverage": {
+        "start_date": "2026-06-17",
+        "end_date": "2026-10-08",
+        "point_keys": ["bavg", "cum_nval", "date", "nval", "nvol", "savg"]
+      },
+      "observation": "days=30 returned 80 distinct trading dates; parameter semantics are not assumed to be a strict row-count bound."
+    },
+    {
+      "code": "BBCA",
+      "days_requested": 30,
+      "ok": true,
+      "top_level_keys": ["code", "end_date", "series", "start_date", "top_buyers", "top_sellers"],
+      "series_shape": {
+        "series_type": "list",
+        "rows_key_absent": true,
+        "series_point_shape_not_repeated": true
+      },
+      "observation": "Endpoint returned a structured response; detailed nested coverage was not re-fetched to stay within the minimal probe budget."
+    }
+  ],
+  "quota": {
+    "remaining_verified": false,
+    "reason": "The sanctioned client exposes quota state through response headers/local state, but the read-only probe suppressed state writes and did not print credential-bearing request details.",
+    "claim": "No KOS quota headroom claim is made."
+  },
+  "kos_readiness": {
+    "status": "blocked_spec",
+    "claim": "Broker-accumulation availability is proven; KOS readiness is not.",
+    "local_evaluator": {
+      "dataset": "/home/admin/live-trading/state/idx_ledger.db",
+      "exists": true,
+      "row_count": 628,
+      "rules_evaluated": 10,
+      "rules_blocked_spec": 10,
+      "metrics_emitted": false,
+      "missing_core_field": "top_broker_hist",
+      "note": "The local dataset lacks required raw inputs and no frozen split/replay metrics were emitted."
+    }
+  },
+  "safety": {
+    "remote_mutations": false,
+    "live_orders": false,
+    "production_changes": false,
+    "credentials_exposed": false,
+    "readiness_overclaim": false
+  }
+}
