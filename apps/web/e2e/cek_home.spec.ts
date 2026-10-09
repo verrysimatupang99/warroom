@@ -5,10 +5,26 @@
  */
 import { expect, test } from '@playwright/test';
 
+/** Buka semua <details> agar isi lipatan ikut ter-render (innerText detail tertutup tidak memuatnya). */
+async function bukaSemuaLipatan(page: import('@playwright/test').Page) {
+  const n = await page.locator('details').count();
+  for (let i = 0; i < n; i++) {
+    await page.locator('details').nth(i).evaluate((el) => {
+      (el as HTMLDetailsElement).open = true;
+    });
+  }
+  await page.waitForTimeout(300);
+}
+
 test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
   // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
   await page.goto('/');
   await expect(page.getByText('Akurasi & PnL per Market').first()).toBeVisible({ timeout: 25000 });
+  // Tabel akurasi ada DI DALAM <details> yang terlipat (revisi owner 7 Okt: progressive
+  // disclosure). innerText elemen <details> tertutup TIDAK memuat isinya, jadi tes harus
+  // membukanya dulu — kalau tidak, label pakem tidak pernah terlihat dan tes gagal
+  // walaupun datanya ada (temuan R1, 9 Okt).
+  await bukaSemuaLipatan(page);
   const t = await page.locator('body').innerText();
   const i = t.indexOf('Akurasi & PnL per Market');
   console.log('--- HOME AKURASI ---');
@@ -30,6 +46,7 @@ test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
   await expect(page.getByText(/Sinyal per Market|STATUS HARI INI/).first()).toBeVisible({ timeout: 25000 });
   // Tunggu DATA (bukan hanya judul) — jadi tidak flaky saat API lebih lambat dari DOM.
   await expect(page.getByText(/lalu$/).first()).toBeVisible({ timeout: 25000 });
+  await bukaSemuaLipatan(page);
   const t = await page.locator('body').innerText();
   // Revisi pemilik 7 Okt: sinyal per market MENGGANTIKAN blok "Sinyal digenerate" di card
   // status (card itu sekarang gabungan status+akurasi). Yang tetap WAJIB: pembaca bisa

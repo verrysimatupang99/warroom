@@ -24,7 +24,7 @@ const target: [string, RegExp, string][] = [
   ['/gmgn?sub=radar', /Robinhood Chain" vs Meteora/, 'gmgn-robinhood'],
   ['/gmgn?sub=radar', /Verifikasi Harga vs API Publik/, 'gmgn-verifikasi'],
   ['/polymarket?sub=setup-b', /Dompet Paper Polymarket/, 'poly-setupb'],
-  ['/polymarket?sub=setup-b', /FOKUS: SETUP B KANDIDAT/, 'poly-fokus'],
+  ['/polymarket?sub=setup-b', /YANG DIPAKAI: ARM B/, 'poly-fokus'],
   ['/polymarket?sub=arsip', /Arm beku \(bukti disimpan\)/, 'poly-arsip']
 ];
 
