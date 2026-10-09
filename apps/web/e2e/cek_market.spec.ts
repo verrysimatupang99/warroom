@@ -14,7 +14,7 @@ async function login(_page: import('@playwright/test').Page) {
 const target = [
   ['/crypto?sub=setup', /Sinyal & Entry Setup \(Crypto\)/, /Akurasi per Strategi \(Crypto\)/],
   ['/forex?sub=struktur', /Sinyal & Entry Setup \(Forex\)/, /Akurasi per Strategi \(Forex\)/],
-  ['/idx?sub=bsjp', /Sinyal & Entry Setup \(IDX\)/, /Akurasi Signal per Setup/],
+  ['/idx?sub=bsjp', /Sinyal & Entry Setup \(IDX\)/, /Layak Dipercaya\? — Akurasi per Aturan/],
   ['/polymarket?sub=arm', /Akurasi & PnL per Arm \(Polymarket\)/, /B kandidat/],
   ['/gmgn?sub=lp', /Akurasi & PnL LP Terukur/, /LP Terukur/]
 ];

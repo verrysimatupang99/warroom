@@ -21,6 +21,10 @@
 		tingkat?: string | null;
 		ci_winrate?: number[] | null;
 		alasan?: string[] | null;
+		/** True = setup ini RUGI dalam data uji (n>=30, mean R<0 / PnL<=0) dan dikarantina
+		 *  dari "wajah" pasar. Tetap DITAMPILKAN (jejak audit utuh), hanya ditandai. */
+		dikarantina?: boolean;
+		alasan_karantina?: string | null;
 	}
 
 	interface Props {
@@ -121,8 +125,16 @@
 				</thead>
 				<tbody class="divide-y divide-line-soft">
 					{#each baris as s (s.kunci)}
-						<tr class="hover:bg-surface/50 transition-colors">
-							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">{s.nama ?? s.kunci}</td>
+						<tr class="transition-colors {s.dikarantina ? 'bg-neg/5 hover:bg-neg/10' : 'hover:bg-surface/50'}">
+							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">
+								{s.nama ?? s.kunci}
+								{#if s.dikarantina}
+									<span
+										class="ml-1.5 rounded border border-neg/40 bg-neg/10 px-1.5 py-0.5 text-10 font-bold text-neg align-middle whitespace-nowrap"
+										title={s.alasan_karantina ?? 'Rugi dalam data uji — diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
+									>DIARSIPKAN</span>
+								{/if}
+							</td>
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">{s.n ?? '—'}</td>
 							{#if !ringkas}
 								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">{s.n_hari ?? '—'}</td>

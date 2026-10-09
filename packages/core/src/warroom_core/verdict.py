@@ -51,6 +51,20 @@ _MIN_PROMOSI = "PRELIMINARY"
 # Pasar yang mewajibkan split beku sebelum hasilnya boleh dipromosikan (ADR-003).
 _WAJIB_SPLIT = {"polymarket"}
 
+# --- Karantina setup yang RUGI dalam data uji (keputusan owner 9 Okt 2026) -----------------
+#
+# MASALAH: verdict memilih setup dengan sampel TERBANYAK sebagai "wajah" pasar. Akibatnya,
+# setup yang sedang RUGI tapi ber-sampel besar (ARA_HUNTER −0,702R n=198; B kandidat −12,33
+# USD n=203) mendominasi angka pasar — walau ada setup yang UNTUNG (BSJP_STRONG +0,789R).
+#
+# ATURAN (bukan ambang gate — ini keputusan penyajian, hak owner):
+#   dikarantina bila  n >= _KARANTINA_MIN_N  DAN  (mean_r < 0  ATAU  pnl_usd <= 0).
+#
+# Data TIDAK dihapus: setup karantina tetap tampil di `detail`, ditandai `dikarantina: True`
+# + alasan. Yang berubah hanya: (a) ia tidak lagi dipilih jadi "wajah" pasar bila ada setup
+# lain yang tidak dikarantina; (b) ia tidak bisa jadi dasar promosi.
+_KARANTINA_MIN_N = 30
+
 
 @dataclass
 class Verdict:
@@ -113,12 +127,20 @@ def _evidence_state(s: SASession, pasar: str) -> tuple[str, dict[str, Any]]:
         blok = (pa.get("pasar") or {}).get(pasar) or {}
 
     per_setup = blok.get("per_setup") or {}
-    # Ambil setup dengan sampel terbanyak — sama dengan yang ditampilkan halaman pasar.
-    kunci, seri = max(
-        per_setup.items(), key=lambda kv: (kv[1].get("n") or 0), default=(None, None)
-    )
+
+    # Pilih "wajah" pasar: setup dengan sampel terbanyak yang TIDAK dikarantina. Bila semua
+    # dikarantina (atau tidak ada yang rugi), jatuh kembali ke sampel terbanyak apa adanya —
+    # supaya pasar tetap punya wajah dan tak pernah tampil kosong hanya karena karantina.
+    def _sampel(kv: tuple[str, Any]) -> int:
+        return int(kv[1].get("n") or 0)
+
+    hidup = [(k, v) for k, v in per_setup.items() if not _karantina_setup(v)[0]]
+    kandidat = hidup or list(per_setup.items())
+    kunci, seri = max(kandidat, key=_sampel, default=(None, None))
     seri = seri or {}
     tingkat = str(seri.get("tingkat") or seri.get("pakem") or "").upper() or "UNKNOWN"
+
+    karantina, alasan_karantina = _karantina_setup(seri)
 
     detail["setup"] = seri.get("nama") or kunci
     detail["n"] = seri.get("n")
@@ -127,7 +149,47 @@ def _evidence_state(s: SASession, pasar: str) -> tuple[str, dict[str, Any]]:
     detail["mean_r"] = seri.get("mean_r")
     detail["total_r"] = seri.get("total_r")
     detail["populasi"] = "trade tuntas di ledger"
+    detail["dikarantina"] = karantina
+    if alasan_karantina:
+        detail["alasan_karantina"] = alasan_karantina
+
+    # Audit: setup yang DIKARANTINA tetap dilaporkan apa adanya (jangan disembunyikan).
+    terkarantina = {
+        (v.get("nama") or k): {
+            "n": v.get("n"),
+            "mean_r": v.get("mean_r"),
+            "winrate_pct": v.get("winrate_pct"),
+            "pnl_usd": v.get("total_pnl_usd", v.get("pnl_usd")),
+            "alasan": _karantina_setup(v)[1],
+        }
+        for k, v in per_setup.items()
+        if _karantina_setup(v)[0]
+    }
+    if terkarantina:
+        detail["setup_dikarantina"] = terkarantina
+
     return tingkat, detail
+
+
+def _karantina_setup(seri: dict[str, Any]) -> tuple[bool, str | None]:
+    """Apakah satu setup masuk karantina (rugi dalam data uji)? → (ya/tidak, alasan).
+
+    Aturan owner (9 Okt 2026): n >= 30 DAN (mean_r < 0 ATAU pnl_usd <= 0). Ini keputusan
+    PENYAJIAN (setup mana jadi wajah pasar), bukan ambang gate — gate tak disentuh.
+    """
+    n = seri.get("n")
+    if not isinstance(n, (int, float)) or n < _KARANTINA_MIN_N:
+        return False, None
+    alasan: list[str] = []
+    mean_r = seri.get("mean_r")
+    pnl = seri.get("total_pnl_usd", seri.get("pnl_usd"))
+    if isinstance(mean_r, (int, float)) and mean_r < 0:
+        alasan.append(f"ekspektasi {mean_r:+.3f} R/trade (rugi)")
+    if isinstance(pnl, (int, float)) and pnl <= 0:
+        alasan.append(f"PnL kumulatif {pnl:+.2f} USD (belum positif)")
+    if not alasan:
+        return False, None
+    return True, "; ".join(alasan) + f" · n={int(n)}"
 
 
 def _risk_state(s: SASession, pasar: str) -> tuple[str, str | None, dict[str, Any]]:

@@ -339,6 +339,49 @@
 			{@const akurasiForex = (pasarAkurasiObj?.pasar?.forex as any) ?? null}
 			{@const akurasiGmgn = (pasarAkurasiObj?.pasar?.gmgn as any) ?? null}
 			{@const akurasiPoly = (pasarAkurasiObj?.pasar?.polymarket as any) ?? null}
+			<!-- Karantina setup rugi (keputusan owner 9 Okt): penanda datang dari verdict backend
+			     (`detail.bukti.setup_dikarantina`). Kita SUNTIKKAN ke per_setup supaya tabel tetap
+			     menampilkan setup itu (jejak audit utuh) tapi ditandai DIARSIPKAN. Tidak menghitung ulang. -->
+			{@const karantinaPasar = (mk: string): Record<string, any> => {
+				const v = verdictSemua.find((x) => x.pasar === mk) as any;
+				return (v?.detail?.bukti?.setup_dikarantina as Record<string, any>) ?? {};
+			}}
+			{@const tandaiKarantina = (blok: any, mk: string): any => {
+				if (!blok?.per_setup) return blok;
+				const kar = karantinaPasar(mk);
+				if (!Object.keys(kar).length) return blok;
+				const per_setup: Record<string, any> = {};
+				let adaPenanda = false;
+				for (const [nama, s] of Object.entries(blok.per_setup as Record<string, any>)) {
+					const info = kar[nama] ?? kar[(s as any)?.nama] ?? null;
+					if (info) {
+						per_setup[nama] = { ...(s as any), dikarantina: true, alasan_karantina: info.alasan ?? null };
+						adaPenanda = true;
+					} else {
+						per_setup[nama] = s;
+					}
+				}
+				return adaPenanda ? { ...blok, per_setup } : blok;
+			}}
+			{@const akurasiCryptoT = tandaiKarantina(akurasiCrypto, 'crypto')}
+			{@const akurasiForexT = tandaiKarantina(akurasiForex, 'forex')}
+			{@const akurasiGmgnT = tandaiKarantina(akurasiGmgn, 'gmgn')}
+			{@const akurasiPolyT = tandaiKarantina(akurasiPoly, 'polymarket')}
+			<!-- Penanda karantina untuk blok IDX (tabel custom, bukan AkurasiPasar). -->
+			{@const idxAkurasiKarantina = karantinaPasar('idx')}
+			{@const idxSetupKarantina = (nama: string, s: any): any =>
+				idxAkurasiKarantina[nama] ?? idxAkurasiKarantina[s?.setup] ?? null}
+			{@const idxAkurasiObjT = idxAkurasiObj
+				? {
+						...idxAkurasiObj,
+						per_setup: Object.fromEntries(
+							Object.entries((idxAkurasiObj.per_setup ?? {}) as Record<string, any>).map(([nama, s]: [string, any]) => {
+								const kar = idxSetupKarantina(nama, s);
+								return [nama, kar ? { ...s, dikarantina: true, alasan_karantina: kar.alasan ?? null } : s];
+							})
+						)
+					}
+				: null}
 			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
 			<!-- kind `gmgn` (job gmgn-sync): `paper` = konfigurasi + kesehatan berkas bot,
 			     `radar` = jendela likuiditas per chain. Kini sampai UI (AREA_KIND). -->
@@ -698,7 +741,7 @@
 									market="crypto · trade tuntas"
 									judul="Akurasi per Strategi (Crypto)"
 									subjudul="Ledger nyata venue crypto — pakem bukti sama dengan IDX"
-									data={akurasiCrypto}
+									data={akurasiCryptoT}
 								/>
 							{/if}
 
@@ -826,7 +869,7 @@
 							market="crypto · trade tuntas"
 							judul="Akurasi per Strategi"
 							subjudul="Dari ledger nyata — hanya trade yang sudah tuntas"
-							data={akurasiCrypto}
+							data={akurasiCryptoT}
 						/>
 					</div>
 				{/if}
@@ -1158,7 +1201,7 @@
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket)"
 							subjudul="Entri menang/kalah mesin paper — fees sudah dibebankan; bukan R, belum lewat split beku"
-							data={akurasiPoly}
+							data={akurasiPolyT}
 						/>
 						<StatisticalEdgeCard
 							verdict={verdictObj}
@@ -1181,7 +1224,7 @@
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket)"
 							subjudul="Arm A momentum · B kandidat · C fade · D favorit — dari shadow summary"
-							data={akurasiPoly}
+							data={akurasiPolyT}
 						/>
 						<div class="permukaan-2 rounded-card border border-line p-4">
 							<div class="flex items-center justify-between mb-3 border-b border-line-soft pb-2">
@@ -1629,11 +1672,18 @@
 								</thead>
 								<tbody class="divide-y divide-line-soft">
 									{#each Object.entries((idxAkurasiObj.per_setup ?? {}) as Record<string, any>) as [nama, s] (nama)}
-										<tr class="hover:bg-surface/50 transition-colors">
+										{@const kar = idxSetupKarantina(nama, s)}
+										<tr class="transition-colors {kar ? 'bg-neg/5 hover:bg-neg/10' : 'hover:bg-surface/50'}">
 											<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-text">
 												{s.setup ?? nama}
 												{#if s.grader?.length}
 													<span class="ml-1 text-10 text-text-3">{s.grader.join(',')}</span>
+												{/if}
+												{#if kar}
+													<span
+														class="ml-1.5 rounded border border-neg/40 bg-neg/10 px-1.5 py-0.5 text-10 font-bold text-neg align-middle whitespace-nowrap"
+														title={kar.alasan ?? 'Rugi dalam data uji — diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
+													>DIARSIPKAN</span>
 												{/if}
 											</td>
 											<td class="py-1.5 px-1.5 text-right text-text-2 sm:py-2 sm:px-2.5">{s.n ?? '—'}</td>
@@ -2279,7 +2329,7 @@
 						<AkurasiPasar
 							judul="Akurasi per Strategi (Forex)"
 							subjudul="Trade tuntas dari jurnal mesin — NO FILL tidak dihitung sebagai trade"
-							data={akurasiForex}
+							data={akurasiForexT}
 						/>
 					</div>
 				{:else if sub === 'sesi'}
@@ -2770,7 +2820,7 @@
 						<AkurasiPasar
 							judul="Akurasi & PnL LP Terukur"
 							subjudul="Mark lokal — rekonsiliasi on-chain belum ada (dinyatakan apa adanya)"
-							data={akurasiGmgn}
+							data={akurasiGmgnT}
 						/>
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
