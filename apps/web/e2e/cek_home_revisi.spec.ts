@@ -26,10 +26,11 @@ test('Home: card gabungan, sinyal per market maks 3, ticker berjalan', async ({ 
 	await expect(kartuCrypto.locator('.sinyal-baris')).toHaveCount(3);
 	await expect(kartuCrypto.getByText(/Lihat semua \(\d+\)/)).toBeVisible();
 
-	// (3) bahasa tegas — label kartu berganti saat revisi 7 Okt:
-	//     'PELUANG' → 'KANDIDAT' (lihat commit f9befec). Teks lama sudah tak dipakai.
+	// (3) bahasa manusia — 9 Okt 2026 pemilik: "terlalu pro, targetnya bot trading doang".
+	//     Judul pindah dari jargon (KANDIDAT/lolos gate) ke kalimat awam. Penjaganya tetap:
+	//     harus ada pernyataan status yang bisa dibaca manusia.
 	const teks = await page.locator('body').innerText();
-	expect(teks).toMatch(/TIDAK ADA SINYAL|KANDIDAT|GAGAL SISTEM/);
+	expect(teks).toMatch(/Bot memantau|layak dibeli|TIDAK ADA SINYAL|GAGAL SISTEM/);
 
 	// (4) ticker beranimasi, dua salinan, pause saat hover
 	const anim = await page.evaluate(() => {

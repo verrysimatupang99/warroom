@@ -62,8 +62,8 @@
 		{
 			pasar: 'IDX',
 			sumber: 'Stock Arjum',
-			strategi: 'Bandarmologi + BSJP + ARA Hunter',
-			isi: 'Baca aliran broker (ATS, frekuensi, no-sell) → skor 0–100 per emiten → sinyal BSJP (beli sore, jual pagi) + ARA Hunter. Anak strategi: ARA_HUNTER, BSJP, INTRADAY, MOMENTUM, BREAKOUT, REVERSAL, SWING.',
+			strategi: 'Bandarmologi · BSJP · ARA Hunter (berdiri sendiri)',
+			isi: 'Dua hal berbeda, bukan turunan. (1) Bandarmologi = cara baca: aliran broker (ATS, frekuensi, no-sell) → skor 0–100 per emiten. (2) Strategi = aturan beli/jual yang diuji sendiri, terpisah dari cara baca: BSJP (beli sore, jual pagi), ARA Hunter, INTRADAY, MOMENTUM, BREAKOUT, REVERSAL, SWING.',
 			bukti: 'Ledger mesin (616+ trade) dengan grader v3; hanya trade TUNTAS masuk metrik.'
 		},
 		{

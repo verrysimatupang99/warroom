@@ -226,7 +226,9 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
     if execution_state == "frozen":
         alasan.append("mesin beku — data historis, bukan kondisi berjalan")
     if pasar in _WAJIB_SPLIT and not sp.terverifikasi:
-        alasan.append("split data belum dibekukan (ADR-003) — hasil belum boleh dipromosikan")
+        alasan.append(
+            "data uji belum dibekukan (split beku wajib, ADR-003) — hasil belum boleh dipercaya"
+        )
     if not sp.terverifikasi and pasar in _WAJIB_SPLIT:
         pass  # sudah masuk di atas
 
@@ -247,7 +249,7 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
         headline = f"{label} — MODEL BREACH"
         decision = "jangan diperbesar; rugi melebihi batas yang direncanakan"
     elif promotion_state == "blocked":
-        headline = f"{label} — KANDIDAT, BELUM BISA DIPROMOSIKAN"
+        headline = f"{label} — KANDIDAT, BELUM LAYAK DIPERCAYA"
         decision = "boleh dipantau sebagai bukti; belum layak dijadikan dasar keputusan"
     else:
         headline = f"{label} — LOLOS SEMUA GATE"

@@ -28,6 +28,7 @@
 	import JudulBagian from './JudulBagian.svelte';
 	import KepalaVerdict from './KepalaVerdict.svelte';
 	import Penjelasan from './Penjelasan.svelte';
+	import Istilah from './Istilah.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import SinyalPasar from './SinyalPasar.svelte';
@@ -1407,12 +1408,12 @@
 							Halaman ini dibaca dari ATAS ke BAWAH sebagai satu alur: dari <b>bahan mentah</b>
 							sampai <b>keputusan</b>. Tiap blok berlabel LANGKAH — inilah artinya:
 							<div class="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
-								<div><b class="font-mono text-accent">1 · Screener</b> — bahan mentah: 3 emiten yang lolos filter broker+teknikal. Belum keputusan.</div>
-								<div><b class="font-mono text-accent">2 · Akurasi</b> — mana SETUP yang layak dipercaya (ARA vs BSJP vs INTRADAY) + tingkat pakem.</div>
-								<div><b class="font-mono text-accent">3 · Sinyal</b> — ledger mesin: 24 sinyal terakhir, entry/SL/TP + umur (CREATED berhari-hari = nyangkut).</div>
-								<div><b class="font-mono text-accent">4 · BSJP</b> — kandidat tahan semalam (beli sore, jual pagi) dari walk-forward.</div>
-								<div><b class="font-mono text-accent">5 · Bandarmologi</b> — skor 0–100 per emiten dari ATS/frekuensi/no-sell, komponennya diaudit.</div>
-								<div><b class="font-mono text-accent">6 · ARA Hunter</b> — watchlist breakout auto-rejection (bagian paling berisiko: lihat min R).</div>
+								<div><b class="font-mono text-accent">1 · Bahan mentah</b> — 3 emiten yang lolos saringan broker+teknikal. Belum keputusan.</div>
+								<div><b class="font-mono text-accent">2 · Layak dipercaya?</b> — mana yang aturannya sudah cukup terbukti (ARA vs BSJP vs INTRADAY) + seberapa tebal datanya.</div>
+								<div><b class="font-mono text-accent">3 · Catatan transaksi</b> — 24 sinyal terakhir: harga masuk/keluar + umur (kalau lama menggantung berarti tak jalan).</div>
+								<div><b class="font-mono text-accent">4 · Tahan semalam (BSJP)</b> — kandidat beli sore, jual pagi, dari uji walk-forward.</div>
+								<div><b class="font-mono text-accent">5 · Aliran broker</b> — skor 0–100 per emiten dari aliran broker, tiap komponen bisa diperiksa.</div>
+								<div><b class="font-mono text-accent">6 · Anti-reject (ARA)</b> — daftar pantau breakout auto-reject; bagian paling berisiko (lihat rugi terburuk).</div>
 							</div>
 							<p class="mt-1.5">
 								Semua dari <b>ledger mesin yang sama</b>; yang membuat berbeda hanya pertanyaan yang dijawab.
@@ -1424,7 +1425,7 @@
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
 									<h3 class="text-14 font-medium text-text">
-										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 1</span>{/if}Arjum Multi-Factor Stock Screener
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 1</span>{/if}Bahan Mentah — 3 Emiten Lolos Saringan
 									</h3>
 									<p class="text-11 text-text-3">Filter kombinasi broker flow, teknikal, dan probabilitas event</p>
 								</div>
@@ -1596,7 +1597,7 @@
 					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 						<div>
 							<h3 class="text-14 font-medium text-text">
-								{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 2</span>{/if}Akurasi Signal per Setup
+								{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 2</span>{/if}Layak Dipercaya? — Akurasi per Aturan
 							</h3>
 							<p class="text-11 text-text-3">
 								Ledger mesin (grader v3) — hanya baris tuntas yang masuk metrik; kematangan dinilai per hari bursa
@@ -1698,7 +1699,7 @@
 					<SinyalPasar
 						pasar="idx"
 						judul="Sinyal & Entry Setup (IDX)"
-						subjudul={(sub === 'sinyal' || !sub ? 'LANGKAH 3 · ' : '') + 'Ledger mesin 616: ARA Hunter, BSJP, Scalping INTRADAY — entry = zona, hasil = net R'}
+						subjudul={(sub === 'sinyal' || !sub ? 'LANGKAH 3 · ' : '') + 'Catatan transaksi mesin 616: ARA, BSJP, Scalping — harga masuk/keluar, hasil per transaksi'}
 						data={idxSinyalObj}
 					/>
 				{/if}
@@ -1723,7 +1724,7 @@
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
 									<h3 class="text-14 font-medium text-text">
-										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 4</span>{/if}BSJP — Beli Sore, Jual Pagi
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 4</span>{/if}Tahan Semalam — Beli Sore, Jual Pagi (BSJP)
 									</h3>
 									<p class="text-11 text-text-3">
 										Peringkat kandidat tahan semalam: beli menjelang tutup, jual di pembukaan
@@ -1899,7 +1900,7 @@
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 5</span>{/if}Bandarmologi &amp; Broker Summary</h3>
+									<h3 class="text-14 font-medium text-text">{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 5</span>{/if}Aliran Broker — Siapa yang Bergerak</h3>
 									<p class="text-11 text-text-3">Analisis akumulator/distributor, Average Transaction Size (ATS), dan status No-Sell</p>
 								</div>
 								{#if idxBandar?.hari}
@@ -2012,7 +2013,7 @@
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
 									<h3 class="text-14 font-medium text-text">
-										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 6</span>{/if}Watchlist Sinyal ARA Hunter (IDX616)
+										{#if sub === 'sinyal' || !sub}<span class="text-accent font-mono text-11 mr-1">LANGKAH 6</span>{/if}Anti-Reject (ARA) — Daftar Pantau Berisiko
 									</h3>
 									<p class="text-11 text-text-3">Setup breakout auto-rejection atas terdaftar dari ledger</p>
 								</div>
@@ -2131,11 +2132,11 @@
 			<!-- ========================================== -->
 			{#if kunci === 'forex'}
 				{#if sub === 'struktur' || !sub}
-					<JudulBagian nomor="1" judul="Struktur" tujuan="Cockpit harga (TradingView TVC:GOLD) + sinyal & entry setup dari jurnal mesin" ikon="◈" />
+					<JudulBagian nomor="1" judul="Struktur" tujuan="Pandangan harga emas (XAU/USD) + sinyal & titik masuk dari jurnal mesin" ikon="◈" />
 				{:else if sub === 'sesi'}
-					<JudulBagian nomor="2" judul="Sesi" tujuan="Kapan tiap bursa buka/tutup (OANDA-style), pola volume per sesi" ikon="◷" />
+					<JudulBagian nomor="2" judul="Sesi" tujuan="Kapan tiap bursa buka/tutup + ramai-tidaknya tiap jam sesi" ikon="◷" />
 				{:else if sub === 'kalender'}
-					<JudulBagian nomor="3" judul="Kalender" tujuan="Agenda makro + hitung mundur: apakah aman masuk posisi sekarang" ikon="⌗" />
+					<JudulBagian nomor="3" judul="Kalender" tujuan="Agenda berita besar + hitung mundur: apakah aman masuk posisi sekarang" ikon="⌗" />
 				{:else if sub === 'demo'}
 					<JudulBagian nomor="4" judul="Keterbatasan & Demo" tujuan="Apa yang belum ada (akun broker, biaya) — dinyatakan terbuka" ikon="⚠" />
 				{/if}
@@ -2156,29 +2157,29 @@
 						<div class="permukaan-2 rounded-card border border-line p-4">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Cockpit Komoditas: Spot Gold (XAU/USD)</h3>
-									<p class="text-11 text-text-3">Struktur harga multi-bar, moving average & trend bias</p>
+									<h3 class="text-14 font-medium text-text">Pandangan Harga Emas (XAU/USD)</h3>
+									<p class="text-11 text-text-3">Struktur harga, rata-rata bergerak & kecenderungan arah</p>
 								</div>
-								<span class="rounded px-2 py-0.5 text-11 font-bold font-mono uppercase {forexObj?.bias === 'bullish' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
-									{forexObj?.bias ?? 'BEARISH'}
+								<span class="rounded px-2 py-0.5 text-11 font-bold font-mono {forexObj?.bias === 'bullish' ? 'text-pos bg-pos/10 border border-pos/20' : 'text-neg bg-neg/10 border border-neg/20'}">
+									{forexObj?.bias === 'bullish' ? 'Cenderung NAIK' : 'Cenderung TURUN'}
 								</span>
 							</div>
 
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono mb-3">
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<div class="text-10 text-text-3">CLOSE</div>
+									<div class="text-10 text-text-3">Harga terakhir</div>
 									<div class="text-16 font-bold text-text">${angka(forexObj?.close)}</div>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<div class="text-10 text-text-3">EMA 20</div>
+									<div class="text-10 text-text-3"><Istilah k="mean R">Rata-rata cepat (20)</Istilah></div>
 									<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema20)}</div>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<div class="text-10 text-text-3">EMA 50</div>
+									<div class="text-10 text-text-3">Rata-rata lambat (50)</div>
 									<div class="text-14 font-medium text-text-2">${angka(forexObj?.ema50)}</div>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<div class="text-10 text-text-3">ATR (14)</div>
+									<div class="text-10 text-text-3">Ayunan harga (14)</div>
 									<div class="text-14 font-medium text-accent">${angka(forexObj?.atr14)} ({forexObj?.atr_pct ?? '—'}%)</div>
 								</div>
 							</div>
@@ -2506,11 +2507,11 @@
 			<!-- ========================================== -->
 			{#if kunci === 'gmgn'}
 				{#if sub === 'radar' || !sub}
-					<JudulBagian nomor="1" judul="Radar" tujuan="Jendela likuiditas per chain + penjelasan Robinhood Chain vs Meteora + verifikasi harga live" ikon="◉" />
+					<JudulBagian nomor="1" judul="Radar" tujuan="Kapan tiap jaringan ramai (jam ramai-nya) + Robinhood Chain vs Meteora + cek harga langsung" ikon="◉" />
 				{:else if sub === 'lp'}
-					<JudulBagian nomor="2" judul="LP" tujuan="LP di dua tempat: Solana (Meteora) &amp; Robinhood Chain (Uniswap) — fee, IL, vs hold" ikon="≋" />
+					<JudulBagian nomor="2" judul="LP" tujuan="Menaruh dana di dua tempat: Solana (Meteora) &amp; Robinhood Chain (Uniswap) — untung fee, risiko impermanent loss, bandingkan dgn sekadar tahan" ikon="≋" />
 				{:else if sub === 'memecoin'}
-					<JudulBagian nomor="3" judul="Memecoin" tujuan="Memecoin GMGN/FOMO: bot paper, safety gate, smart money — eksplorasi, bukan rekomendasi" ikon="✦" />
+					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru dari GMGN/FOMO: bot uji coba, saringan keamanan, pantauan pemain besar — eksplorasi, bukan rekomendasi" ikon="✦" />
 				{/if}
 
 				<!-- PETA TARGET (revisi pemilik 7 Okt): tiga tujuan yang disebut eksplisit —

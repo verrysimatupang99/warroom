@@ -277,7 +277,7 @@ def evaluate(g: GateInput) -> GateResult:
     if not g.split or not g.split.startswith("frozen:"):
         return GateResult(
             "insufficient",
-            "split data belum dibekukan (wajib split=frozen:<id>)",
+            "data uji belum dibekukan (split beku wajib: split=frozen:<id>, ADR-003)",
             ci_low, ci_high, win_rate, g.be, g.n, need, ci=g.ci, deff=g.deff,
             notes=[*notes, "split beku wajib (ADR-003)"],
         )

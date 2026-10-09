@@ -34,7 +34,7 @@
 			{ k: 'Bukti', t: verdict.evidence_state },
 			{ k: 'Risiko', t: verdict.risk_state },
 			{ k: 'Eksekusi', t: verdict.execution_state },
-			{ k: 'Promosi', t: verdict.promotion_state }
+			{ k: 'Boleh dipakai', t: verdict.promotion_state }
 		];
 	});
 </script>
@@ -46,7 +46,7 @@
 			<div class="state">
 				{#each labelState as s (s.k)}
 					<span class="chip" class:chip-risiko={s.k === 'Risiko' && verdict.risk_state === 'breach'}
-						class:chip-promosi={s.k === 'Promosi' && verdict.promotion_state === 'promotable'}>
+						class:chip-promosi={s.k === 'Boleh dipakai' && verdict.promotion_state === 'promotable'}>
 						<span class="chip-k">{s.k}</span>
 						<span class="chip-t">{s.t}</span>
 					</span>
@@ -70,7 +70,7 @@
 		</div>
 		<p class="keputusan">{verdict.decision}</p>
 		{#if verdict.blocked_reason}
-			<p class="alasan"><b>Kenapa belum bisa dipromosikan:</b> {verdict.blocked_reason}</p>
+			<p class="alasan"><b>Kenapa belum boleh dipercaya:</b> {verdict.blocked_reason}</p>
 		{/if}
 	</section>
 {/if}

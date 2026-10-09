@@ -2,6 +2,7 @@
 	// EquityCurve: Grafik kurva return R kumulatif interaktif.
 	// Bersih, presisi, tanpa chart library berat — SVG murni dan responsif.
 	import { angka } from '$lib/format';
+	import Istilah from './Istilah.svelte';
 
 	interface Point {
 		i: number;
@@ -84,21 +85,21 @@
 <div class="permukaan-2 rounded-card border border-line p-3">
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2.5">
 		<div>
-			<h3 class="text-13 font-medium text-text">Kurva Ekuitas (R Kumulatif)</h3>
-			<p class="text-11 text-text-3">Performa kumulatif unit risiko (R) dari waktu ke waktu</p>
+			<h3 class="text-13 font-medium text-text">Perkembangan Hasil (satuan risiko)</h3>
+			<p class="text-11 text-text-3">Naik-turunnya hasil bot dari waktu ke waktu — tiap titik = satu transaksi selesai</p>
 		</div>
 
 		{#if stats}
 			<div class="flex flex-wrap items-center gap-3 text-11">
 				<div class="flex items-center gap-1">
-					<span class="text-text-3">Total R:</span>
+					<span class="text-text-3"><Istilah k="mean R">Total hasil</Istilah>:</span>
 					<span class="angka text-13 font-bold {isPositive ? 'text-pos' : 'text-neg'}">
 						{stats.total_r != null && stats.total_r > 0 ? '+' : ''}{angka(stats.total_r ?? 0)} R
 					</span>
 				</div>
 				{#if stats.winrate_pct != null}
 					<div class="flex items-center gap-1">
-						<span class="text-text-3">Win Rate:</span>
+						<span class="text-text-3"><Istilah k="WR">Tingkat menang</Istilah>:</span>
 						<span class="angka text-text">{angka(stats.winrate_pct)}%</span>
 					</div>
 				{/if}

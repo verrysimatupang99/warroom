@@ -4,6 +4,7 @@
 	// yang terbukti secara statistik (Wilson CI95% > Break-Even).
 	import { angka } from '$lib/format';
 	import type { VerdictPasar } from '$lib/api/types';
+	import Istilah from './Istilah.svelte';
 
 	interface VerdictData {
 		n?: number;
@@ -53,15 +54,15 @@
 	const alasanBelum = $derived(
 		canonical?.blocked_reason ||
 			(!canonical
-				? 'verdict kanonik belum tersedia — hasil tidak boleh dipromosikan'
+				? 'kesimpulan resmi bot belum tersedia — hasil belum boleh dipercaya'
 				: !splitBeku
-					? 'split data belum dibekukan (wajib split=frozen:<id>) — hasil belum boleh dipromosikan'
+					? 'data uji belum dibekukan — hasil belum boleh dipercaya'
 					: !ciLolos
-						? 'batas bawah CI95 masih di bawah break-even'
+						? 'batas bawah keyakinan masih di bawah titik impas'
 						: !cukupSampel
-							? `sampel ${n} < kebutuhan ${verdict?.nNeeded}`
+							? `jumlah contoh ${n} < kebutuhan ${verdict?.nNeeded}`
 							: n < 100
-								? `sampel ${n} < 100`
+								? `jumlah contoh ${n} < 100`
 								: '')
 	);
 </script>
@@ -70,7 +71,7 @@
 	<div class="mb-2.5 flex items-center justify-between border-b border-line-soft pb-2">
 		<div>
 			<h3 class="text-13 font-medium text-text">{judul}</h3>
-			<p class="text-11 text-text-3">Validasi matematis probabilitas menang vs ambang impas (BE)</p>
+			<p class="text-11 text-text-3">Perbandingan tingkat menang bot vs titik impas — sudah lulus pemeriksaan wajib atau belum</p>
 		</div>
 
 		{#if n > 0}
@@ -80,7 +81,7 @@
 					: 'bg-warn/15 text-warn border-warn/40'}"
 				title={alasanBelum || 'gate lolos: CI bawah > BE, sampel cukup, split beku'}
 			>
-				{isEdgeProven ? 'EDGE TERBUKTI' : 'BELUM DIPROMOSIKAN'}
+				{isEdgeProven ? 'LAYAK DIPERCAYA' : 'BELUM LAYAK DIPERCAYA'}
 			</span>
 		{/if}
 	</div>
@@ -89,7 +90,7 @@
 		<div class="space-y-3">
 			<div class="grid grid-cols-3 gap-2 text-center">
 				<div class="rounded bg-surface p-2 border border-line-soft">
-					<span class="text-10 uppercase text-text-3 block">Win Rate</span>
+					<span class="text-10 uppercase text-text-3 block"><Istilah k="WR">Tingkat menang</Istilah></span>
 					<span class="angka text-15 font-bold {winrate > bePct ? 'text-pos' : 'text-neg'}">
 						{angka(winrate)}%
 					</span>
@@ -97,7 +98,7 @@
 				</div>
 
 				<div class="rounded bg-surface p-2 border border-line-soft">
-					<span class="text-10 uppercase text-text-3 block">Break-Even (BE)</span>
+					<span class="text-10 uppercase text-text-3 block"><Istilah k="break-even">Titik impas</Istilah></span>
 					<span class="angka text-15 font-bold text-text-2">
 						{angka(bePct)}%
 					</span>
@@ -105,23 +106,23 @@
 				</div>
 
 				<div class="rounded bg-surface p-2 border border-line-soft">
-					<span class="text-10 uppercase text-text-3 block">Batas Bawah CI95</span>
+					<span class="text-10 uppercase text-text-3 block"><Istilah k="ci_low">Batas bawah keyakinan</Istilah></span>
 					<span class="angka text-15 font-bold {ciLow > bePct ? 'text-pos' : 'text-warn'}">
 						{angka(ciLow)}%
 					</span>
-					<span class="text-10 text-text-3 block mt-0.5">Wilson 95%</span>
+					<span class="text-10 text-text-3 block mt-0.5">hitungan Wilson</span>
 				</div>
 			</div>
 
 			<!-- Status split ditampilkan EKSPLISIT: inilah satu-satunya alasan yang membuat
 			     angka di atas belum boleh disebut "terbukti" (ADR-003). -->
 			<div class="flex flex-wrap items-center gap-2 text-11">
-				<span class="text-text-3">split data:</span>
+				<span class="text-text-3">data uji:</span>
 				{#if splitBeku}
 					<span class="rounded border border-pos/40 bg-pos/10 px-1.5 py-0.5 font-mono text-10 text-pos">{verdict?.split}</span>
 				{:else}
 					<span class="rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 font-mono text-10 text-warn">belum dibekukan</span>
-					<span class="text-text-3">→ promosi hasil dilarang sampai dibekukan (ADR-003)</span>
+					<span class="text-text-3">→ hasil belum boleh dipercaya sampai dibekukan</span>
 				{/if}
 				{#if verdict?.nNeeded != null && !cukupSampel}
 					<span class="text-text-3">· butuh ≈{verdict.nNeeded} sampel (kini {n})</span>
@@ -149,13 +150,13 @@
 				</div>
 				<p class="mt-1.5 text-11 text-text-3">
 					{#if isEdgeProven}
-						<span class="text-pos font-medium">✓ Lolos gate:</span> batas bawah keyakinan 95% ({angka(ciLow)}%) di atas
-						Break-Even ({angka(bePct)}%), sampel cukup, dan split data sudah dibekukan. Baru pada keadaan ini
+						<span class="text-pos font-medium">✓ Lulus pemeriksaan:</span> batas bawah keyakinan 95% ({angka(ciLow)}%) di atas
+						titik impas ({angka(bePct)}%), jumlah contoh cukup, dan data uji sudah dibekukan. Baru pada keadaan ini
 						angka boleh disebut keunggulan.
 					{:else}
-						<span class="text-warn font-medium">⚠ Belum bisa dipromosikan:</span> {alasanBelum}.
+						<span class="text-warn font-medium">⚠ Belum boleh dipercaya:</span> {alasanBelum}.
 						{#if ciLolos}
-							Angka mentahnya memang di atas break-even, tetapi <b>gate resmi belum lolos</b> — halaman ini
+							Angkanya memang sudah di atas titik impas, tapi <b>pemeriksaan wajib belum lulus</b> — halaman ini
 							menampilkannya sebagai bukti berjalan, bukan kesimpulan.
 						{/if}
 					{/if}

@@ -13,6 +13,7 @@
 	import { getArea, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
 	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload, VerdictPasar } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
+	import Istilah from '$lib/components/Istilah.svelte';
 
 	let sinyal = $state<SinyalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -108,18 +109,21 @@
 		// menyimpulkan "ada 6 yang layak dieksekusi". Sekarang dipisah tegas:
 		//   KANDIDAT  = ada sesuatu untuk dipantau (belum tentu layak)
 		//   PROMOTABLE= lolos SEMUA gate (angka ini biasanya 0, dan itu JUJUR)
+		// 9 Okt 2026 — bahasa manusia: pemilik keluh "terlalu pro, targetnya bot trading doang".
+		// Judul tidak lagi memakai "KANDIDAT/lolos gate" (jargon) di baris utama; jargonnya
+		// turun ke alasan (dengan <Istilah>) supaya yang awam paham detik pertama.
 		const promotable = verdictSemua.filter((v) => v.promotable_edge).length;
 		const judul = promotable
-			? `${promotable} LOLOS GATE · ${pasarAda.length} kandidat`
-			: `${pasarAda.length} KANDIDAT · 0 lolos gate`;
+			? `${promotable} pasar layak dibeli`
+			: `Bot memantau ${pasarAda.length} pasar · belum ada yang layak dibeli`;
 		return {
 			judul,
 			nada: 'ada',
 			waktu: null,
 			alasan:
 				(promotable
-					? `Ada ${promotable} pasar yang lolos seluruh gate. `
-					: 'Kandidat = ada yang dipantau; BELUM ada yang lolos seluruh gate. ') +
+					? `Ada ${promotable} pasar yang sudah lulus semua pemeriksaan wajib. `
+					: 'Ada yang dipantau, tetapi belum ada yang lulus semua pemeriksaan wajib. Ini normal: lebih baik menunggu daripada memaksa beli. ') +
 				`Teratas: ${pasarAda[0].label}${pasarAda[0].sinyal[0]?.pair ? ` · ${pasarAda[0].sinyal[0].pair}` : ''}` +
 				`${pasarAda[0].sinyal[0]?.skor != null ? ` · skor ${pasarAda[0].sinyal[0].skor}/100` : ''}.` +
 				sisaKosong
@@ -366,8 +370,7 @@
 					<b>tidak ada sinyal</b> = mesin hidup tetapi tidak ada setup yang cocok;
 					<b class="neg">gagal sistem</b> = sumber/job tak terbaca — dua hal berbeda.
 				</p>
-			</div>
-			<div class="sinyal-grid">
+			</div>			<div class="sinyal-grid">
 				{#each pasarDaftar as p (p.pasar)}
 					<article class="sinyal-kartu {p.status_data}">
 						<header class="sinyal-kepala">
