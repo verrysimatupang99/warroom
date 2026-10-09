@@ -20,6 +20,8 @@ from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from warroom_core import autonomy, prompts_dir
+from warroom_core import build_id as core_build_id
+from warroom_core import domain_version as core_domain_version
 from warroom_core.db import Fact, ResearchRecord, ResearchRun, User, session_scope
 from warroom_core.db.session import SASession
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
@@ -236,6 +238,24 @@ def create_app() -> FastAPI:
 
     # --- sistem -----------------------------------------------------------------------
 
+    @app.get("/api/v1/build")
+    def build() -> dict[str, Any]:
+        """Identitas build yang sedang berjalan — **tanpa auth**, untuk verifikasi deploy.
+
+        Hanya mengembalikan `build_id` + `domain_version`; bukan data sesi, bukan
+        konfigurasi. Dipakai skrip deploy (ops/deploy-web.sh) untuk memastikan proses
+        yang JALAN memegang build yang BARU, bukan versi lama di memori — penyebab
+        insiden 2026-10-08/09 (HTTP 500 di semua halaman karena manifest lama).
+
+        Sengaja publik & terpisah dari /health (yang butuh sesi): saat deploy kita belum
+        punya sesi, dan justru saat itulah verifikasi paling dibutuhkan.
+        """
+        return {
+            "build_id": core_build_id(),
+            "domain_version": core_domain_version(),
+            "time": datetime.now(UTC).isoformat(),
+        }
+
     @app.get("/api/v1/health")
     def health(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         db_ok = True
@@ -248,6 +268,7 @@ def create_app() -> FastAPI:
             "status": "ok" if db_ok else "degraded",
             "db": db_ok,
             "time": datetime.now(UTC).isoformat(),
+            "build_id": core_build_id(),
             "user": user.username,
         }
 

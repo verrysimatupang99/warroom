@@ -54,6 +54,23 @@ __all__ = [
 DOMAIN_VERSION: str = live_trading.__version__
 
 
+def build_id() -> str:
+    """Identitas build yang sedang berjalan (mis. git SHA pendek + waktu).
+
+    Kenapa ada: kejadian 2026-10-08/09 — build web selesai 21:00 tetapi proses node
+    yang jalan berasal dari 20:58, sehingga proses memegang manifest lama sementara
+    chunk di disk sudah diganti build baru -> HTTP 500 di semua halaman. Tidak ada
+    cara mengetahui ketidakcocokan build<->proses saat itu.
+
+    Nilai di-inject saat deploy lewat env ``WARROOM_BUILD_ID`` (dibaca skrip deploy).
+    Bila tidak ada (mis. saat uji lokal), kembalikan ``"dev"`` supaya jelas bukan build
+    produksi — bukan menebak nilai.
+    """
+    nilai = os.environ.get("WARROOM_BUILD_ID", "").strip()
+    return nilai or "dev"
+
+
+
 def domain_version() -> str:
     """Versi paket domain yang sedang dipakai platform."""
     return live_trading.__version__

@@ -24,7 +24,13 @@ cd "$WEB_DIR"
 TIMEOUT_S="${WARROOM_DEPLOY_TIMEOUT:-40}"
 INTERVAL_S=2
 BASE="http://127.0.0.1:3100"
+API_BASE="http://127.0.0.1:8800"
 BACKUP_DIR="/home/admin/warroom/backups/web-$(date +%Y%m%d-%H%M%S)"
+
+# Identitas build untuk verifikasi build<->proses. Bila tidak diset, diturunkan dari git.
+BUILD_ID="${WARROOM_BUILD_ID:-$(git -C "$WEB_DIR" rev-parse --short HEAD 2>/dev/null || echo local)}"
+export WARROOM_BUILD_ID="$BUILD_ID"
+echo "build_id: $BUILD_ID"
 
 # 1) Simpan build lama untuk rollback.
 if [[ -d build ]]; then
@@ -33,7 +39,7 @@ if [[ -d build ]]; then
 	echo "backup build lama -> $BACKUP_DIR"
 fi
 
-# 2) Build.
+# 2) Build. Skrip npm juga menulis build/build-id.txt + build-id.js (identitas build).
 npm run build
 
 # 3) Restart.
@@ -58,6 +64,20 @@ while (( elapsed < TIMEOUT_S )); do
 	sleep "$INTERVAL_S"
 	elapsed=$(( elapsed + INTERVAL_S ))
 done
+
+# 4b) VERIFIKASI build<->proses: proses yang JALAN harus melaporkan build_id yang sama
+#     dengan yang baru di-build. Ini menutup tepat insiden 2026-10-08/09 (proses lama
+#     memegang manifest lama sementara chunk di disk sudah diganti -> HTTP 500).
+if (( lolos == 1 )); then
+	id_disk="$(cat "$WEB_DIR/build/build-id.txt" 2>/dev/null | tr -d '\n' || true)"
+	# API melaporkan build_id proses (WARROOM_BUILD_ID di-inject lewat systemd EnvironmentFile).
+	id_api="$(curl -sf --max-time 3 "$API_BASE/api/v1/build" 2>/dev/null | grep -oE '"build_id"\s*:\s*"[^"]*"' | head -n1 | sed -E 's/.*"([^"]*)"$/\1/' || true)"
+	if [[ -n "$id_disk" && -n "$id_api" && "$id_disk" != "$id_api" ]]; then
+		echo "PERINGATAN: build_id disk ($id_disk) != build_id API ($id_api)"
+		echo "  API mungkin belum di-restart. Jalankan: sudo systemctl restart warroom-api"
+		# Web sendiri sudah lolos health gate; ini peringatan lintas-layanan, bukan kegagalan web.
+	fi
+fi
 
 if (( lolos == 1 )); then
 	# 2b) Pasang CSP ENFORCE dengan hash skrip bootstrap build BARU (audit QA putaran 2).

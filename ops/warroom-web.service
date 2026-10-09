@@ -16,6 +16,8 @@ Environment=PORT=3100
 # Kosong = same-origin: web memanggil /api/v1/* relatif dan Caddy mem-proxy ke API.
 # Jangan diisi kecuali web dan API memang beda origin (dan CORS dinyalakan sengaja).
 Environment=PUBLIC_API_BASE=
+# Identitas build untuk verifikasi build<->proses (ops/set-build-id.sh).
+EnvironmentFile=-/etc/warroom/build.env
 ExecStart=/usr/bin/node build/index.js
 Restart=on-failure
 RestartSec=10

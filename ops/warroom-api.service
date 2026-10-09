@@ -17,6 +17,8 @@ EnvironmentFile=/etc/warroom/db.env
 EnvironmentFile=/etc/warroom/llm.env
 # Opsional: dipakai endpoint /api/v1/alerts untuk melaporkan status transport.
 EnvironmentFile=-/etc/warroom/notifier.env
+# Identitas build untuk verifikasi build<->proses (ops/set-build-id.sh).
+EnvironmentFile=-/etc/warroom/build.env
 ExecStart=/home/admin/warroom/.venv/bin/uvicorn warroom_api.app:app --host 127.0.0.1 --port 8800 --log-level warning
 Restart=on-failure
 RestartSec=10
