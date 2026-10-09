@@ -26,6 +26,7 @@
 	import AkurasiPasar from './AkurasiPasar.svelte';
 	import KartuGateSetup from './KartuGateSetup.svelte';
 	import ZonaAktif from './ZonaAktif.svelte';
+	import CockpitCrypto from './CockpitCrypto.svelte';
 	import DompetPasar from './DompetPasar.svelte';
 	import JudulBagian from './JudulBagian.svelte';
 	import KepalaVerdict from './KepalaVerdict.svelte';
@@ -583,6 +584,9 @@
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
+								<!-- Cockpit mesin & ruang risiko (tiru desk Crypto Tencent, 9 Okt): status pipeline,
+								     dimensi gerbang, sinyal aktif dari fakta crypto_sinyal + risiko. TANPA panel MEXC. -->
+								<CockpitCrypto sinyal={cryptoSinyalObj} risiko={risikoObj} />
 								<!-- Susunan ini SUDAH BENAR menurut pemilik (7 Okt) — jangan diubah tanpa
 								     alasan baru: Dompet dulu, lalu kurva, lalu catatan cara membacanya. -->
 								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
