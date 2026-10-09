@@ -76,11 +76,11 @@ def test_daftar_job_idempoten(db) -> None:
         "publish-facts", "freshness", "notify", "refresh-snapshot", "radar-update", "lp-mark",
         "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
-        "paper-scan", "retensi", "llm-brief-crypto", "llm-brief-forex", "llm-brief-idx",
-        "llm-brief-gmgn", "llm-brief-polymarket", "rekonsiliasi-crypto",
+        "paper-scan", "retensi", "source-health", "llm-brief-crypto", "llm-brief-forex",
+        "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket", "rekonsiliasi-crypto",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 25
+    assert total == 26
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -298,7 +298,13 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         schedule.ensure_jobs(s)
     _matikan_job_berat()
     hasil = run_once()
-    assert {h["job"] for h in hasil} == {"publish-facts", "freshness", "notify", "prompts-sync"}
+    assert {h["job"] for h in hasil} == {
+        "publish-facts",
+        "freshness",
+        "notify",
+        "prompts-sync",
+        "source-health",
+    }
     with session_scope() as s:
         jenis = {e.type for e in s.scalars(select(Event)).all()}
     assert {"job.ran", "snapshot.published", "freshness.checked"} <= jenis

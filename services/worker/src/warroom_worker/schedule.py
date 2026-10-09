@@ -261,6 +261,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="pemindaian kuantitatif SMC & auto-open posisi paper saat lolos 5 risk gates + alert Telegram.",
     ),
     JobSpec(
+        name="source-health",
+        interval_s=60,
+        enabled=True,
+        payload={"host": None, "units": None},
+        note=(
+            "tulis `services` + `heartbeats` (R3): baca status unit systemd (baca-saja, tanpa "
+            "restart) lalu catat denyut. Tanpa ini kedua tabel tetap kosong dan kesiapan "
+            "(`collect_readiness`) selalu 'unknown'."
+        ),
+    ),
+    JobSpec(
         name="retensi",
         interval_s=86400,
         enabled=True,

@@ -17,7 +17,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core import autonomy
-from warroom_core.db import Alert, Event, Fact, Job
+from warroom_core.db import Alert, Event, Fact, Heartbeat, Job, Service
 from warroom_notifier.dispatch import kirim_tertunda
 
 from warroom_worker import schedule
@@ -33,6 +33,7 @@ __all__ = [
     "handler_radar_update",
     "handler_refresh_snapshot",
     "handler_signal_sync",
+    "handler_source_health",
     "register_handlers",
     "root_dir",
 ]
@@ -1149,6 +1150,73 @@ def handler_retensi(s: SASession, job: Job) -> str:
     )
 
 
+def handler_source_health(s: SASession, job: Job) -> str:
+    """Tulis `services` + `heartbeats` dari status unit systemd (baca-saja, R3).
+
+    Sebelum ini kedua tabel kosong sama sekali: pembacanya (`metrics.collect_readiness`,
+    `stream`) sudah ada, tapi tak ada penulis → kesiapan selalu 'unknown'.
+
+    Baca-saja mutlak: `systemctl show` tidak mengubah apa pun, tidak me-restart unit.
+    Unit yang dipantau dibatasi daftar tetap di bawah supaya tidak menyapu seluruh host.
+    """
+    import socket
+
+    host = str(job.payload_json.get("host") or socket.gethostname())
+    units = job.payload_json.get("units") or [
+        "warroom-api",
+        "warroom-worker",
+        "warroom-web",
+        "nginx",
+    ]
+
+    now = datetime.now(UTC)
+    ditulis = 0
+    status_ringkas: dict[str, str] = {}
+    for unit in units:
+        aktif = _unit_state(unit)
+        status_ringkas[unit] = aktif
+        _upsert_service(s, host=host, unit=unit, status=aktif, detail={"sumber": "systemctl show"})
+        # Denyut ditulis apa pun statusnya: yang penting "kapan terakhir dilihat", bukan tebakan.
+        s.add(Heartbeat(host=host, unit=unit, beat_at=now, payload_json={"status": aktif}))
+        ditulis += 1
+    s.flush()
+    ringkas = " ".join(f"{u}={status_ringkas[u]}" for u in units)
+    return f"host={host} unit={ditulis} {ringkas}"
+
+def _unit_state(unit: str) -> str:
+    """Status unit systemd (baca-saja). Gagal/tak ada → 'unknown'/'not-found', bukan tebakan."""
+    import subprocess
+
+    try:
+        r = subprocess.run(  # noqa: S603
+            ["systemctl", "show", unit, "-p", "LoadState", "-p", "ActiveState"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    if r.returncode != 0:
+        return "unknown"
+    load = next((b.split("=", 1)[1] for b in r.stdout.splitlines() if b.startswith("LoadState=")), "")
+    active = next((b.split("=", 1)[1] for b in r.stdout.splitlines() if b.startswith("ActiveState=")), "")
+    if load in {"not-found", ""}:
+        return "not-found"
+    return active or "unknown"
+
+def _upsert_service(
+    s: SASession, *, host: str, unit: str, status: str, detail: dict[str, Any]
+) -> None:
+    """Satu baris per (host, unit) — pakai unique constraint, bukan tumpuk baris baru."""
+    row = s.scalar(select(Service).where(Service.host == host, Service.unit == unit))
+    if row is None:
+        s.add(Service(host=host, unit=unit, status=status, detail_json=detail))
+    else:
+        row.status = status
+        row.detail_json = detail
+        row.updated_at = datetime.now(UTC)
+
 def register_handlers() -> dict[str, Any]:
     """Daftarkan handler ke `schedule.HANDLERS` (dipanggil sekali saat worker start)."""
     schedule.HANDLERS.update(
@@ -1179,6 +1247,7 @@ def register_handlers() -> dict[str, Any]:
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
             "retensi": handler_retensi,
+            "source-health": handler_source_health,
         }
     )
     return schedule.HANDLERS
