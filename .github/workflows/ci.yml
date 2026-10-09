@@ -13,7 +13,7 @@ env:
   GITLEAKS_VERSION: 8.30.1
 
 jobs:
-  # Jaring pengaman domain: 219 tes harus tetap hijau sepanjang migrasi (03-backend.md §1).
+  # Jaring pengaman domain: 227 tes harus tetap hijau sepanjang migrasi (03-backend.md §1).
   domain:
     name: domain (live-trading) — ruff + pytest
     runs-on: ubuntu-latest
@@ -60,6 +60,12 @@ jobs:
       - name: OpenAPI contract tidak drift
         working-directory: warroom
         run: uv run python ops/check-openapi-contract.py
+      # R5: tes platform (api/worker/core) kini ikut CI. Tes ber-DB **di-skip** dengan
+      # alasan jelas bila WARROOM_TEST_DB_URL tidak ada (lihat conftest.py) — jadi job ini
+      # tetap hijau tanpa Postgres, dan tidak pernah berpura-pura lulus.
+      - name: pytest platform (tes ber-DB di-skip tanpa WARROOM_TEST_DB_URL)
+        working-directory: warroom
+        run: uv run pytest -q
 
   # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
   secrets:
