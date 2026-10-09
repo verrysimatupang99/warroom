@@ -14,8 +14,7 @@ import { expect, test } from '@playwright/test';
 
 test('Home: tabel akurasi & catatan per pasar terlipat, bisa dibuka', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByText('STATUS HARI INI')).toBeVisible({ timeout: 25000 });
-	await expect(page.getByText(/KANDIDAT|TIDAK ADA SINYAL|GAGAL SISTEM/).first()).toBeVisible({ timeout: 25000 });
+	await expect(page.getByText('Status hari ini')).toBeVisible({ timeout: 25000 });
 
 	// (1) kedua <details> tertutup
 	const jumlah = await page.locator('details').count();

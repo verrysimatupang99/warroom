@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
 
 test('Home: card gabungan, sinyal per market maks 3, ticker berjalan', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByText('STATUS HARI INI')).toBeVisible({ timeout: 25000 });
+	await expect(page.getByText('Status hari ini')).toBeVisible({ timeout: 25000 });
 
 	// (1) satu card memuat status DAN akurasi
 	const kartu = page.locator('.kartu-gabung').first();

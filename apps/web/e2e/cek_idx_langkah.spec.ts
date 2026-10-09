@@ -20,7 +20,7 @@ test('IDX: enam langkah berurutan di tab Sinyal', async ({ page }) => {
   }
   // penjelasan arti tiap langkah ikut tampil
   expect(t).toContain('bahan mentah');
-  expect(t).toContain('mana SETUP yang layak dipercaya');
+  expect(t).toContain('Layak dipercaya');
   console.log('--- LANGKAH IDX ---');
   console.log(t.slice(t.indexOf('Halaman ini dibaca'), t.indexOf('Halaman ini dibaca') + 900));
 });

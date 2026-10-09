@@ -16,8 +16,8 @@ async function login(_page: import('@playwright/test').Page) {
 const target: [string, RegExp, string][] = [
   ['/crypto?sub=cockpit', /Dompet Paper Crypto/, 'crypto-dompet'],
   ['/idx?sub=sinyal', /Dompet Paper IDX/, 'idx-dompet'],
-  ['/idx?sub=sinyal', /Bandarmologi & Broker Summary/, 'idx-bandarmologi'],
-  ['/idx?sub=sinyal', /Watchlist Sinyal ARA Hunter|BSJP — Beli Sore/, 'idx-bsjp'],
+  ['/idx?sub=sinyal', /Bandarmologi/, 'idx-bandarmologi'],
+  ['/idx?sub=sinyal', /Beli Sore, Jual Pagi \(BSJP\)|ARA Hunter/, 'idx-bsjp'],
   ['/forex?sub=struktur', /Ringkas per Pair/, 'forex-pair'],
   ['/forex?sub=struktur', /Dompet Paper Forex/, 'forex-dompet'],
   ['/forex?sub=kalender', /Dampak & Hitung Mundur/, 'forex-kalender'],

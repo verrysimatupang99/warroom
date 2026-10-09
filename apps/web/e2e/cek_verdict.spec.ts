@@ -35,8 +35,8 @@ test('halaman pasar: headline verdict tampil & berasal dari API', async ({ page,
 		expect(harap, `verdict API tidak memuat ${pasar}`).toBeTruthy();
 		expect(teks).toContain(harap!.replace(' — ', ' — ').split('—')[0].trim());
 
-		// lima state wajib tampil
-		for (const k of ['Sinyal', 'Bukti', 'Risiko', 'Eksekusi', 'Promosi']) {
+		// lima state wajib tampil (label UI terkini; 'Promosi' → 'Boleh dipakai' sejak 7 Okt)
+		for (const k of ['Sinyal', 'Bukti', 'Risiko', 'Eksekusi', 'Boleh dipakai']) {
 			expect(teks, `${pasar}: state ${k} hilang`).toContain(k);
 		}
 		console.log(`--- ${label} ---\n` + teks.slice(0, 220));
