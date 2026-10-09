@@ -30,14 +30,18 @@ systemctl status warroom-api warroom-worker warroom-web caddy
 journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # 194 tes
-cd apps/web && npm run test                            # 27 vitest
+uv run ruff check . && uv run pytest -q                # suite penuh: 761 tes (audit 8 Okt 2026)
+cd apps/web && npm run test                            # 9 berkas, 35 vitest
 npx playwright test                                    # 27 e2e (butuh web+caddy hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
 # domain (dari ~/live-trading)
-uv run ruff check . && uv run pytest                   # 224 tes
+uv run ruff check . && uv run pytest                   # 219 tes domain
 ```
+
+Angka di atas = kondisi per 8 Okt 2026 (`docs/overnight-production-readiness-audit-2026-10-08.md`).
+Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
+Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
 
 ## Arsitektur satu layar
 

@@ -62,6 +62,19 @@ printf 'WARROOM_E2E_USER=uji-web\nWARROOM_E2E_PASS=…\n' > ~/.config/warroom/e2
 npx playwright test                     # 27 tes: 7 rute, login, SSE, a11y, screenshot
 ```
 
+## Angka tes (kondisi per 8 Okt 2026)
+
+Selalu jadikan output perintah sebagai sumber kebenaran; angka di bawah hanya rujukan
+terakhir yang tercatat (`docs/overnight-production-readiness-audit-2026-10-08.md`):
+
+| Suite | Jumlah |
+|---|---|
+| Python (`.venv/bin/pytest -q`) | **761 tes** |
+| Web (`npm run test`) | **9 berkas, 35 tes** |
+| E2E (`npx playwright test`) | **27 tes** |
+| Domain (`~/live-trading`) | **219 tes** |
+| OpenAPI contract | **50 path cocok** |
+
 ## Status
 
 - **P0–P6 selesai** (fondasi → integrasi → otonomi berbatas → kesiapan live).
