@@ -90,23 +90,61 @@ def handler_freshness(s: SASession, job: Job) -> str:
         if umur > ambang:
             basi.append(f)
 
+    # --- Pisahkan "basi karena pasar kering" (bukan masalah) dari "basi karena job gagal" ---
+    # Temuan 9 Okt: subjek alert per-pair (`signal/ETHUSDT`, ...) membuat dedupe TIDAK menolong
+    # saat banyak pair tua sekaligus — 12 alert serentak. Padahal `signal-sync` status `ok`,
+    # hanya `sinyal=0` (pasar kering). Pair lama memang tak diperbarui bila tak ada sinyal baru:
+    # itu WAJAR, bukan kegagalan. Alert untuk kondisi wajar = derau yang menenggelamkan alert
+    # sungguhan. Aturan: fakta `signal` HANYA dianggap masalah bila job penulisnya (`signal-sync`)
+    # sedang gagal; kalau tidak, ia dihitung sebagai `basi_wajar` (dicatat di event, tanpa alert).
+    sinyal_penulis_gagal = False
+    js = s.scalar(select(Job).where(Job.name == "signal-sync").limit(1))
+    if js is not None and js.last_status not in ("ok", None):
+        sinyal_penulis_gagal = True
+
     dibuat = 0
+    basi_wajar = 0
     if job.payload_json.get("alert_on_basi", True):
+        # Kelompokkan per (kind, sumber): satu alert mewakili BANYAK pair, bukan per-pair.
+        # Dedupe `_alert` per-subjek lalu efektif untuk seluruh kelompok — tanpa mengubah
+        # perilaku untuk fakta non-kelompok (mis. snapshot).
+        grup: dict[tuple[str, str], list] = {}
         for f in basi:
-            subjek = f"{f.kind}/{f.key}"
-            umur_mnt = round((now - f.observed_at).total_seconds() / 60, 1)
+            if f.kind == "signal" and not sinyal_penulis_gagal:
+                basi_wajar += 1
+                continue
+            grup.setdefault((f.kind, f.source or "-"), []).append(f)
+
+        for (kind, sumber), anggota in grup.items():
+            anggota.sort(key=lambda x: x.observed_at)
+            paling_baru = anggota[-1]
+            umur_mnt = round((now - paling_baru.observed_at).total_seconds() / 60, 1)
+            ambang_mnt = round(
+                max(paling_baru.ttl_s * grace_faktor, paling_baru.ttl_s + grace_min_s) / 60
+            )
+            if len(anggota) == 1:
+                subjek = f"{kind}/{paling_baru.key}"
+                pesan = (
+                    f"data basi: {subjek} umur {umur_mnt} mnt — melewati ambang "
+                    f"{ambang_mnt} mnt (ttl {paling_baru.ttl_s} s + grace)"
+                )
+            else:
+                contoh = ", ".join(x.key for x in anggota[:3])
+                sisa = f" +{len(anggota) - 3} lain" if len(anggota) > 3 else ""
+                subjek = f"{kind}/{sumber}" if sumber != "-" else f"{kind}/banyak"
+                pesan = (
+                    f"data basi: {len(anggota)} {kind} dari sumber '{sumber}' "
+                    f"({contoh}{sisa}) — paling baru umur {umur_mnt} mnt, melewati ambang {ambang_mnt} mnt"
+                )
             if _alert(
                 s,
                 subject=subjek,
-                message=(
-                    f"data basi: {subjek} umur {umur_mnt} mnt — melewati ambang "
-                    f"{round(max(f.ttl_s * grace_faktor, f.ttl_s + grace_min_s) / 60)} mnt "
-                    f"(ttl {f.ttl_s} s + grace)"
-                ),
+                message=pesan,
                 aksi=(
-                    f"periksa sumber '{f.source}' (job yang menulisnya), lalu jalankan ulang job terkait"
+                    f"periksa sumber '{paling_baru.source}' (job yang menulisnya), "
+                    f"lalu jalankan ulang job terkait"
                 ),
-                fact_ids=[f.id],
+                fact_ids=[f.id for f in anggota[:10]],
             ):
                 dibuat += 1
 
@@ -114,12 +152,17 @@ def handler_freshness(s: SASession, job: Job) -> str:
         Event(
             type="freshness.checked",
             actor="worker",
-            payload_json={"diperiksa": len(rows), "basi": len(basi), "alert_baru": dibuat},
+            payload_json={
+                "diperiksa": len(rows),
+                "basi": len(basi),
+                "basi_wajar": basi_wajar,
+                "alert_baru": dibuat,
+            },
             fact_ids=[f.id for f in basi],
-            severity="warning" if basi else "info",
+            severity="warning" if (len(basi) - basi_wajar) else "info",
         )
     )
-    return f"diperiksa={len(rows)} basi={len(basi)} alert_baru={dibuat}"
+    return f"diperiksa={len(rows)} basi={len(basi)} basi_wajar={basi_wajar} alert_baru={dibuat}"
 
 
 def handler_notify(s: SASession, job: Job) -> str:
