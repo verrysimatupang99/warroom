@@ -25,6 +25,7 @@
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import AkurasiPasar from './AkurasiPasar.svelte';
 	import KartuGateSetup from './KartuGateSetup.svelte';
+	import ZonaAktif from './ZonaAktif.svelte';
 	import DompetPasar from './DompetPasar.svelte';
 	import JudulBagian from './JudulBagian.svelte';
 	import KepalaVerdict from './KepalaVerdict.svelte';
@@ -2323,6 +2324,10 @@
 								</div>
 							</div>
 						</div>
+						<!-- Zona & sinyal mesin (tiru desk XAU Tencent, 9 Okt): baris pair/TF/zona/arah/
+						     entry/SL/TP apa adanya dari jurnal mesin. Angka tidak dihitung di UI. -->
+						<ZonaAktif blok={forexSinyalObj} />
+
 						<!-- Sinyal & entry setup forex (6 Okt): XAUUSD 4-agen + multi-pair, dari jurnal Tencent -->
 						<SinyalPasar
 							pasar="forex"
