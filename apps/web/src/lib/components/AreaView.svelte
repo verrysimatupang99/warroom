@@ -24,6 +24,7 @@
 	import type { DecisionItem } from './DecisionFeed.svelte';
 	import StrategyLeaderboard from './StrategyLeaderboard.svelte';
 	import AkurasiPasar from './AkurasiPasar.svelte';
+	import KartuGateSetup from './KartuGateSetup.svelte';
 	import DompetPasar from './DompetPasar.svelte';
 	import JudulBagian from './JudulBagian.svelte';
 	import KepalaVerdict from './KepalaVerdict.svelte';
@@ -1743,6 +1744,11 @@
 						</p>
 					{/if}
 				</div>
+
+				<!-- Gate live-trading (tiru desk IDX Tencent, 9 Okt): centang otomatis per setup dari
+				     fakta idx_akurasi. Ambang TIDAK diubah — komponen hanya menyusun centang dari
+				     angka yang sudah ada (n≥30, hari≥10, pakem ≥ PRELIMINARY, ekspektasi > 0). -->
+				<KartuGateSetup blok={idxAkurasiObj} />
 
 				<!-- Sinyal & entry setup IDX (6 Okt): ARA/BSJP/INTRADAY dari ledger mesin -->
 				{#if sub === 'bsjp' || sub === 'sinyal'}
