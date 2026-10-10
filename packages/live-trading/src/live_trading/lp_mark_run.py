@@ -2,7 +2,7 @@
 
 Satu perintah (`lt lp-mark`) menjalankan rangkaian penuh:
 
-1. baca posisi LP terbuka (`gmgn-scan/lp_paper_state.json` — mesin yang sudah ada);
+1. baca posisi LP terbuka (state/lp_paper_state.json — arsip gmgn-scan);
 2. tarik mark **per alamat pool** dari DexScreener (gratis, tanpa key);
 3. hitung fee taksiran + IL + **LP vs hold** dengan rumus di `lp_mark.py`;
 4. tulis jejak ke `state/lp_ledger.jsonl` (append-only);
@@ -29,7 +29,7 @@ from . import lp_mark
 __all__ = ["baca_posisi", "hitung_semua", "jalankan_lp_mark", "laporan_lp_mark"]
 
 FEE_TIER_BAWAAN = 0.01  # asumsi konservatif, selalu dilabeli taksiran
-STATE_LP_PAPER = "~/gmgn-scan/lp_paper_state.json"
+STATE_LP_PAPER = "~/live-trading/state/lp_paper_state.json"
 LEDGER_LP = "lp_ledger.jsonl"
 MARK_LP = "lp_mark_terakhir.json"
 
@@ -69,7 +69,7 @@ def hitung_semua(
             "status": "tidak-ada-posisi",
             "mark": [],
             "pakem": None,
-            "alasan": "belum ada posisi LP paper — jalankan lp_paper.py enter dulu",
+            "alasan": "belum ada posisi LP paper (lp_paper) — state kosong/hilang",
         }
 
     ledger_path = Path(state_dir) / LEDGER_LP

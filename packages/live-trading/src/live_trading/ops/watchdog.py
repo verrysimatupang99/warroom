@@ -27,7 +27,7 @@ def cek_produksi(home: Path | None = None) -> list[tuple[str, float, float]]:
         ("snapshot", umur(h / "live-trading/state/snapshot.json"), 1200.0),
         ("verdicts", umur(h / "live-trading/state/verdicts.jsonl"), 2400.0),
         ("gmgn_siklus", umur(h / "gmgn-paper/state/cycle.log"), 4200.0),
-        ("lp_mark", umur(h / "gmgn-scan/lp_mark.log"), 93600.0),
+        ("lp_mark", umur(h / "live-trading/state/lp_mark_terakhir.json"), 93600.0),
         # Radar kini LOKAL (recreate 6 Okt): ditulis tiap kali `lt radar-update` jalan.
         ("radar_lokal", umur(h / "live-trading/state/radar_state.json"), 3600.0),
     ]

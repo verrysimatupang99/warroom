@@ -1070,8 +1070,8 @@ def main(argv: list[str] | None = None) -> int:
     lm = sub.add_parser("lp-mark", help="mark posisi LP paper dari pasar nyata → ledger + pakem")
     lm.add_argument(
         "--state",
-        default="~/gmgn-scan/lp_paper_state.json",
-        help="berkas state LP paper (bawaan: mesin gmgn-scan)",
+        default="~/live-trading/state/lp_paper_state.json",
+        help="berkas state LP paper (arsip gmgn-scan; kosong bila tak ada)",
     )
     lm.set_defaults(func=cmd_lp_mark)
 

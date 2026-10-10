@@ -241,10 +241,10 @@ def _pod_card(lap, llm: dict | None = None) -> str:
 
 
 def _lp_panel(path: str | None = None) -> dict[str, Any]:
-    """Panel paper LP lokal — baca lp_paper_state.json, tidak pernah ditulis."""
+    """Panel paper LP lokal — baca lp_paper_state.json (arsip gmgn-scan)."""
     from pathlib import Path as _P
 
-    p = _P(path or str(_P.home() / "gmgn-scan" / "lp_paper_state.json"))
+    p = _P(path or str(_P.home() / "live-trading" / "state" / "lp_paper_state.json"))
     try:
         d = json.loads(p.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -252,8 +252,9 @@ def _lp_panel(path: str | None = None) -> dict[str, Any]:
     pos = d.get("positions") or []
     mark = None
     try:
-        log = (p.parent / "lp_mark.log").read_text(encoding="utf-8").strip().splitlines()
-        mark = log[-1] if log else None
+        # Jejak mark kini di state/lp_mark_terakhir.json (dulu lp_mark.log di gmgn-scan).
+        mk = (p.parent / "lp_mark_terakhir.json").read_text(encoding="utf-8")
+        mark = mk.strip().splitlines()[-1][:160] if mk.strip() else None
     except OSError:
         mark = None
     return {
@@ -641,11 +642,12 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     # `lp_paper` SENGAJA TIDAK ditulis ke snapshot.
     #
     # Temuan 10 Okt: kunci `lp_paper` dipakai DUA sumber dengan ARTI BERBEDA:
-    #   - domain ini: POSISI arc LP dari `~/gmgn-scan/lp_paper_state.json` (panel HTML laporan)
+    #   - domain ini: POSISI arc LP dari `~/live-trading/state/lp_paper_state.json` (panel HTML laporan;
+    #     dulu `~/gmgn-scan/`, dilepas 10 Okt)
     #   - adapter gmgn: KINERJA arm LP dari `~/gmgn-paper/state/sim_ledger.jsonl` (panel /lp UI)
     # Keduanya kind=`snapshot`, key=`lp_paper` — jadi saling MENIMPA. API memilih
     # `observed_at` terbaru, dan snapshot domain (irama 15 menit) hampir selalu lebih baru.
-    # Begitu `gmgn-scan/lp_paper_state.json` hilang (10 Okt), domain menulis
+    # Begitu berkas state LP hilang (10 Okt), domain menulis
     # `{"tersedia": false}` yang **menimpa** kinerja nyata n=283 → panel vonis /lp buta
     # (17 kali pada 10 Okt). Laporan HTML domain tetap membaca lewat `_lp_panel()` sendiri.
     snap["poly_paper"] = _poly_panel()
@@ -1259,7 +1261,7 @@ def _ctx(snap):
     e = _e
     r = snap.get("risiko", {})
     led0 = snap.get("ledger", {})
-    # Panel LP Arc (posisi paper dari `~/gmgn-scan/lp_paper_state.json`) SENGAJA tidak lagi
+    # Panel LP Arc (posisi paper dari arsip gmgn-scan, kini `~/live-trading/state/`) SENGAJA tidak lagi
     # ditulis ke snapshot supaya tidak menimpa kinerja arm LP dari adapter gmgn
     # (temuan 10 Okt). Laporan HTML tetap butuh nilainya — dibaca langsung di sini.
     lp0 = _lp_panel()
@@ -1705,7 +1707,7 @@ def _blok(snap):
     blok["lp"] = _card(
         "LP Arc",
         body
-        + _sumber("lp_paper_state.json + cron mark 00:05 WIB")
+        + _sumber("lp_mark_terakhir.json + cron lp-mark tiap jam")
         + _arti(_arti_lp(lp)),
     )
 
