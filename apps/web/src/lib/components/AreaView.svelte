@@ -257,6 +257,41 @@
 		const diarsip = daftar.filter((d) => d.kar);
 		return { daftar, terbaik, hindari, diarsip };
 	}
+
+	/**
+	 * PELUANG HARI INI (FOREX) — pakem sama dengan IDX, angka apa adanya dari jurnal mesin.
+	 * Kekhususan forex: sampel MASIH KECIL (n=5/strategi). Jadi vonis "Layak/Merugikan"
+	 * TIDAK dipakai; yang ditampilkan adalah "sampel belum cukup" sebagai kejujuran utama.
+	 * Nama mesin diterjemahkan ke bahasa manusia, tapi angka & jumlah sampel tidak diubah.
+	 */
+	function hitungPeluangForex(blok: any, setupKarantina: (n: string, s: any) => any) {
+		const ps = (blok?.per_setup ?? {}) as Record<string, any>;
+		const namaManusia = (s: string): string =>
+			s === 'XAUUSD (SMC 4-agen)' ? 'Gold (XAUUSD) — struktur + berita + risiko'
+			: s === 'Forex gabungan' ? 'Semua pair digabung'
+			: s.includes('multi-pair') || s.includes('NAS100') ? 'Multi-pair (NAS100, EURUSD)'
+			: s;
+		const daftar = Object.entries(ps).map(([nama, s]: [string, any]) => ({
+			nama,
+			manusia: namaManusia(String(s?.nama ?? nama)),
+			n: Number(s?.n ?? 0),
+			mean_r: s?.mean_r == null ? null : Number(s.mean_r),
+			total_r: s?.total_r == null ? null : Number(s.total_r),
+			menang: s?.menang == null ? null : Number(s.menang),
+			kar: setupKarantina(nama, s)
+		}));
+		// Forex: ambang sampel belum ditetapkan owner. Kita HANYA menyebut "cukup" bila n>=30
+		// (pakem gate yang sudah dipakai di tempat lain), selain itu "belum cukup" — apa adanya.
+		const AMBANG_VONIS = 30;
+		const hidup = daftar.filter((d) => d.mean_r != null && !d.kar);
+		const terbaik = hidup.slice().sort((a, b) => (b.mean_r ?? 0) - (a.mean_r ?? 0))[0] ?? null;
+		const hindari = hidup
+			.filter((d) => (d.mean_r ?? 0) < 0)
+			.sort((a, b) => (a.mean_r ?? 0) - (b.mean_r ?? 0));
+		const diarsip = daftar.filter((d) => d.kar);
+		const cukup = hidup.length > 0 && hidup.every((d) => d.n >= AMBANG_VONIS);
+		return { daftar, terbaik, hindari, diarsip, cukup, ambang: AMBANG_VONIS, nMaks: Math.max(0, ...daftar.map((d) => d.n)) };
+	}
 </script>
 
 <div class="space-y-4">
@@ -407,6 +442,10 @@
 			{@const idxAkurasiKarantina = karantinaPasar('idx')}
 			{@const idxSetupKarantina = (nama: string, s: any): any =>
 				idxAkurasiKarantina[nama] ?? idxAkurasiKarantina[s?.setup] ?? null}
+			<!-- Karantina untuk blok FOREX (tabel custom, bukan AkurasiPasar). -->
+			{@const forexAkurasiKarantina = karantinaPasar('forex')}
+			{@const forexSetupKarantina = (nama: string, s: any): any =>
+				forexAkurasiKarantina[nama] ?? forexAkurasiKarantina[s?.nama] ?? null}
 			{@const idxAkurasiObjT = idxAkurasiObj
 				? {
 						...idxAkurasiObj,
@@ -2390,6 +2429,7 @@
 			<!-- ========================================== -->
 			<!-- VIEW KHUSUS: FOREX & KOMODITAS             -->
 			<!-- ========================================== -->
+			{@const peluangForex = hitungPeluangForex(akurasiForexT, forexSetupKarantina)}
 			{#if kunci === 'forex'}
 				{#if sub === 'struktur' || !sub}
 					<JudulBagian nomor="1" judul="Struktur" tujuan="Pandangan harga emas (XAU/USD) + sinyal & titik masuk dari jurnal mesin" ikon="◈" />
@@ -2489,6 +2529,66 @@
 
 						<!-- Dompet paper forex: Rp 10 juta, dari jurnal mesin -->
 						<DompetPasar market="forex" dompet={dompetObj} judul="Dompet Paper Forex" />
+
+						<!-- PELUANG HARI INI (FOREX) — pola sama dengan IDX ('Peluang + Hipotesis +
+						     Hati-hati'), TAPI satu beda penting yang jujur: sampel forex masih kecil
+						     (n=5/strategi), jadi tombol/tanda 'Layak' TIDAK dipakai. Yang ditonjolkan
+						     justru 'sampel belum cukup'. Angka murni dari jurnal mesin — tanpa ambang baru. -->
+			{#if peluangForex.daftar.length}
+							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+								<!-- 1. Peluang hari ini -->
+								<div class="rounded-card border border-line bg-surface p-3 sm:col-span-2">
+									<div class="text-10 uppercase tracking-wide text-text-3">Peluang hari ini</div>
+									{#if peluangForex.terbaik}
+										<div class="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+											<span class="text-16 font-bold text-text">{peluangForex.terbaik.manusia}</span>
+											<span
+												class="rounded border px-1.5 py-0.5 text-10 font-bold {peluangForex.cukup ? 'border-pos/40 bg-pos/10 text-pos' : 'border-amber-500/40 bg-amber-500/10 text-amber-500'}"
+											>
+												{peluangForex.cukup ? 'Sampel cukup' : 'Sampel belum cukup'}
+											</span>
+											<span class="font-mono text-12 {(peluangForex.terbaik.mean_r ?? 0) > 0 ? 'text-pos' : (peluangForex.terbaik.mean_r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
+												{peluangForex.terbaik.mean_r != null ? `${peluangForex.terbaik.mean_r > 0 ? '+' : ''}${angka(peluangForex.terbaik.mean_r, { desimal: 2 })}R / trade` : 'belum ada R'}
+											</span>
+										</div>
+										<p class="mt-1 text-11 text-text-2">
+											<i>Hipotesis:</i> ikuti struktur pasar + zona SMC, disaring risiko & berita.
+											Baru <b>{peluangForex.terbaik.n} trade tuntas</b> — belum cukup untuk divonis.
+											Ambang vonis kita n≥{peluangForex.ambang}; angka apa adanya dari jurnal mesin.
+										</p>
+									{:else}
+										<p class="mt-1 text-12 text-text-3">Belum ada setup dengan angka yang bisa disebut peluang.</p>
+									{/if}
+								</div>
+								<!-- 2. Hati-hati -->
+								<div class="rounded-card border border-neg/30 bg-neg/5 p-3">
+									<div class="text-10 uppercase tracking-wide text-text-3">Hati-hati</div>
+									{#if peluangForex.hindari.length || peluangForex.diarsip.length}
+										<ul class="mt-1 space-y-1 text-11 text-text-2">
+											{#each peluangForex.diarsip as d (d.nama)}
+												<li>
+													<b class="text-neg">{d.manusia}</b> — <b>dihentikan</b>
+													{#if d.mean_r != null}({angka(d.mean_r, { desimal: 2 })}R dari {d.n} trade){/if}.
+													<div class="text-10 text-text-3">{d.kar?.alasan ?? 'merugikan dalam data uji'}</div>
+												</li>
+											{/each}
+											{#each peluangForex.hindari.filter((h) => !h.kar) as d (d.nama)}
+												<li>
+													<b class="text-neg">{d.manusia}</b> — {angka(d.mean_r ?? 0, { desimal: 2 })}R dari {d.n} trade.
+													<span class="text-text-3">Sampel kecil — pantau, jangan buru-buru simpulkan.</span>
+												</li>
+											{/each}
+										</ul>
+									{:else}
+										<p class="mt-1 text-11 text-text-3">Tidak ada setup merugikan yang tercatat.</p>
+									{/if}
+									<p class="mt-2 border-t border-neg/20 pt-1.5 text-10 text-text-3">
+										Catatan jujur: sampel terbesar baru n={peluangForex.nMaks}, jauh di bawah ambang
+										vonis n≥{peluangForex.ambang}. Nilai R di sini <b>bruto</b> — biaya broker belum tercatat.
+									</p>
+								</div>
+							</div>
+						{/if}
 						<!-- Ringkas per pair: XAUUSD vs NAS100 vs EURUSD (wataknya beda) -->
 						<ForexPair data={forexSinyalObj} />
 						<!-- Kalkulator posisi: dari angka yang sudah ada, bukan taksiran -->
