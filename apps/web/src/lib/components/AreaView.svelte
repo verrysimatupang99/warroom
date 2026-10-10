@@ -865,6 +865,65 @@
 							</div>
 						</div>
 
+						<!-- Rincian nilai PER-ATURAN (tiru 'gate checks' desk Tencent).
+						     Menjawab "aturan mana yang benar-benar berguna?": tiap aturan gate diuji
+						     apakah performa lolos vs tolak berbeda nyata (t), bukan kebetulan derau.
+						     Angka apa adanya dari pengukuran.per_aturan — termasuk yang negatif. -->
+						{#if pengukuranObj?.per_aturan && Object.keys(pengukuranObj.per_aturan).length > 0}
+							{@const pa = pengukuranObj.per_aturan}
+							{@const barisPa = Object.entries(pa).map(([nama, v]: any) => ({ nama, ...v }))
+								.sort((a: any, b: any) => (b.n ?? 0) - (a.n ?? 0))}
+							<div class="permukaan-2 rounded-card border border-line p-3">
+								<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
+									<div>
+										<h3 class="text-14 font-medium text-text">Nilai per Aturan Gate</h3>
+										<p class="text-11 text-text-3">Aturan mana yang benar-benar memisahkan trade bagus dari derau</p>
+									</div>
+									<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-text-3 border border-line">
+										{barisPa.length} aturan
+									</span>
+								</div>
+								<div class="overflow-x-auto">
+									<table class="w-full text-11">
+										<thead>
+											<tr class="border-b border-line-soft text-text-3">
+												<th class="py-1.5 pr-2 text-left font-medium">Aturan</th>
+												<th class="py-1.5 px-2 text-right font-medium">n</th>
+												<th class="py-1.5 px-2 text-right font-medium">Eksp. R</th>
+												<th class="py-1.5 px-2 text-right font-medium">t</th>
+												<th class="py-1.5 pl-2 text-left font-medium">Putusan</th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each barisPa as r (r.nama)}
+												<tr class="border-b border-line-soft/50">
+													<td class="py-1.5 pr-2 font-mono text-text-2">{r.nama}</td>
+													<td class="angka py-1.5 px-2 text-right text-text-2">{r.n ?? '—'}</td>
+													<td class="angka py-1.5 px-2 text-right" class:text-pos={((r.expectancy_r ?? 0) as number) > 0} class:text-neg={((r.expectancy_r ?? 0) as number) <= 0}>
+														{r.expectancy_r != null ? `${angka(r.expectancy_r)}` : '—'}
+													</td>
+													<td class="angka py-1.5 px-2 text-right text-text-3">{r.t != null ? angka(r.t) : '—'}</td>
+													<td class="py-1.5 pl-2">
+														{#if !r.sampel_cukup}
+															<span class="text-text-3">sampel belum cukup</span>
+														{:else if r.putusan === 'berguna'}
+															<span class="text-pos">berguna</span>
+														{:else}
+															<span class="text-text-3">{r.putusan ?? '—'}</span>
+														{/if}
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								</div>
+								<p class="mt-2 text-10 text-text-3">
+									t = statistik uji beda (makin jauh dari 0 makin nyata). Putusan 'tidak bisa dibedakan dari derau' berarti
+									aturan itu belum terbukti menambah nilai — ditampilkan apa adanya, bukan disembunyikan.
+								</p>
+							</div>
+						{/if}
+
 						<!-- Akurasi per strategi dalam mode RINGKAS (pembaruan halus 7 Okt).
 						     Dulu tabel 9 kolom ini tidak pernah muncul di tab Ukur karena kondisi
 						     `sub === 'ukur'` di pemanggilnya berada di dalam grid yang hanya dirender
