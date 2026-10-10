@@ -953,6 +953,27 @@
         "summary": "Me"
       }
     },
+    "/api/v1/build": {
+      "get": {
+        "description": "Identitas build yang sedang berjalan — **tanpa auth**, untuk verifikasi deploy.\n\nHanya mengembalikan `build_id` + `domain_version`; bukan data sesi, bukan\nkonfigurasi. Dipakai skrip deploy (ops/deploy-web.sh) untuk memastikan proses\nyang JALAN memegang build yang BARU, bukan versi lama di memori — penyebab\ninsiden 2026-10-08/09 (HTTP 500 di semua halaman karena manifest lama).\n\nSengaja publik & terpisah dari /health (yang butuh sesi): saat deploy kita belum\npunya sesi, dan justru saat itulah verifikasi paling dibutuhkan.",
+        "operationId": "build_api_v1_build_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Build Api V1 Build Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Build"
+      }
+    },
     "/api/v1/crypto": {
       "get": {
         "operationId": "area_crypto_api_v1_crypto_get",
@@ -2130,6 +2151,54 @@
         "summary": "Live Grants"
       }
     },
+    "/api/v1/lp": {
+      "get": {
+        "operationId": "area_lp_api_v1_lp_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Area Lp Api V1 Lp Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Area Lp"
+      }
+    },
     "/api/v1/metrics": {
       "get": {
         "description": "Teks metrik yang sama, **wajib sesi** — nginx tidak mengekspos /metrics ke publik.\n\nUI (Biaya & LLMConsole) memakai jalur ini supaya tidak pernah mengenai 404 dari\nreverse proxy, sementara /metrics tetap hanya untuk scraper lokal.",
@@ -2797,6 +2866,54 @@
         "summary": "Sinyal Per Pasar"
       }
     },
+    "/api/v1/sistem": {
+      "get": {
+        "operationId": "area_sistem_api_v1_sistem_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Area Sistem Api V1 Sistem Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Area Sistem"
+      }
+    },
     "/api/v1/stream": {
       "get": {
         "operationId": "stream_api_v1_stream_get",
@@ -2861,7 +2978,7 @@
     },
     "/api/v1/sumber": {
       "get": {
-        "description": "Daftar SUMBER DATA tiap pasar — satu tempat, biar tidak ada tebakan.\n\nRevisi pemilik 7 Okt: \"sumber data: Crypto MEXC; IDX Stock Arjum; Forex TVC;\nPolymarket Dokumentasi PM; Meme: Meteora=Solana, Robinhood=Uniswap\". Daftar ini\ndipakai UI (halaman market + Sistem) supaya pembaca tahu angka ini datang dari mana.",
+        "description": "Daftar SUMBER DATA tiap pasar — satu tempat, biar tidak ada tebakan.\n\nRevisi pemilik 10 Okt: \"Crypto OKX\" (ganti MEXC total).\nRevisi pemilik 7 Okt: \"sumber data: Crypto MEXC; IDX Stock Arjum; Forex TVC;\nPolymarket Dokumentasi PM; Meme: Meteora=Solana, Robinhood=Uniswap\". Daftar ini\ndipakai UI (halaman market + Sistem) supaya pembaca tahu angka ini datang dari mana.",
         "operationId": "sumber_data_api_v1_sumber_get",
         "parameters": [
           {
