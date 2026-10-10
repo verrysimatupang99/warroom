@@ -638,7 +638,16 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             pass
 
     snap["gmgn"] = _gmgn_panel()
-    snap["lp_paper"] = _lp_panel()
+    # `lp_paper` SENGAJA TIDAK ditulis ke snapshot.
+    #
+    # Temuan 10 Okt: kunci `lp_paper` dipakai DUA sumber dengan ARTI BERBEDA:
+    #   - domain ini: POSISI arc LP dari `~/gmgn-scan/lp_paper_state.json` (panel HTML laporan)
+    #   - adapter gmgn: KINERJA arm LP dari `~/gmgn-paper/state/sim_ledger.jsonl` (panel /lp UI)
+    # Keduanya kind=`snapshot`, key=`lp_paper` — jadi saling MENIMPA. API memilih
+    # `observed_at` terbaru, dan snapshot domain (irama 15 menit) hampir selalu lebih baru.
+    # Begitu `gmgn-scan/lp_paper_state.json` hilang (10 Okt), domain menulis
+    # `{"tersedia": false}` yang **menimpa** kinerja nyata n=283 → panel vonis /lp buta
+    # (17 kali pada 10 Okt). Laporan HTML domain tetap membaca lewat `_lp_panel()` sendiri.
     snap["poly_paper"] = _poly_panel()
 
     # Akurasi IDX per setup — dari ledger mesin (impor 6 Okt, beku). Lokal, tanpa jaringan,
@@ -1250,7 +1259,10 @@ def _ctx(snap):
     e = _e
     r = snap.get("risiko", {})
     led0 = snap.get("ledger", {})
-    lp0 = snap.get("lp_paper", {})
+    # Panel LP Arc (posisi paper dari `~/gmgn-scan/lp_paper_state.json`) SENGAJA tidak lagi
+    # ditulis ke snapshot supaya tidak menimpa kinerja arm LP dari adapter gmgn
+    # (temuan 10 Okt). Laporan HTML tetap butuh nilainya — dibaca langsung di sini.
+    lp0 = _lp_panel()
     pp0 = snap.get("poly_paper", {})
     g0 = snap.get("gmgn", {})
     gstats = g0.get("stats") or [{}]
@@ -1663,7 +1675,7 @@ def _blok(snap):
             "lihat kartu LP."
             if any(
                 (x.get("verdict") == "KELUAR")
-                for x in ((snap.get("lp_paper") or {}).get("posisi") or [])
+                for x in ((_lp_panel() or {}).get("posisi") or [])
             )
             else "tidak perlu tindakan."
         )
@@ -1671,7 +1683,7 @@ def _blok(snap):
     )
 
     # paper LP lokal (baca-saja)
-    lp = snap.get("lp_paper", {})
+    lp = _lp_panel()
     if lp.get("tersedia") and lp.get("posisi"):
         rows = "".join(
             f"<tr><td>{e(str(x.get('symbol')))}</td><td class='n'>${float(x.get('notional') or 0):,.2f}</td>"

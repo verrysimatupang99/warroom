@@ -97,9 +97,32 @@
 
 	// ---- Kalender ----
 	const macro = $derived(
-		(fakta(forex, 'bagian')?.value as { macro?: { tersedia?: boolean; berikutnya?: Record<string, unknown>[]; jumlah?: number } } | undefined)?.macro ?? null
+		(fakta(forex, 'bagian')?.value as {
+			macro?: {
+				tersedia?: boolean;
+				berikutnya?: Record<string, unknown>[];
+				jumlah?: number;
+				tanggal_min?: number | null;
+				tanggal_max?: number | null;
+			};
+		} | undefined)?.macro ?? null
 	);
 	const events = $derived((macro?.berikutnya ?? []) as Record<string, unknown>[]);
+	// Rentang data kalender (dari fakta `macro`). Sumber "thisweek" hanya memuat minggu
+	// berjalan; saat minggu itu habis, `berikutnya` kosong walaupun `jumlah` besar. Tanpa
+	// rentang, "AGENDA KOSONG" menyamakan "tak ada agenda" dengan "data minggu lalu" —
+	// dan pembaca bisa salah paham. Ditampilkan apa adanya.
+	const tgl = (ts: number | null | undefined) =>
+		ts == null ? '—' : waktuWIB(new Date(ts * 1000).toISOString()).split(',')[0];
+	const rentangKalender = $derived(
+		macro?.tanggal_min != null && macro?.tanggal_max != null
+			? `${tgl(macro.tanggal_min)} – ${tgl(macro.tanggal_max)}`
+			: null
+	);
+	// Semua event sudah lewat? (jendela sumber habis, bukan "tidak ada agenda").
+	const kalenderLewat = $derived(
+		!!macro?.tersedia && (macro?.jumlah ?? 0) > 0 && events.length === 0 && macro?.tanggal_max != null
+	);
 	const dampakKelas = (im: unknown) => {
 		const s = String(im ?? '').toLowerCase();
 		if (s.includes('high')) return 'tinggi';
@@ -211,7 +234,11 @@
 		<section class="kartu" aria-label="Agenda makro">
 			<h2 class="judul">
 				Agenda makro
-				<span class="dim">{macro?.jumlah != null ? `${macro.jumlah} event` : '—'}{forex ? ` · umur ${umurDetik(fakta(forex, 'bagian')?.age_s ?? null)}` : ''}</span>
+				<span class="dim">
+					{macro?.jumlah != null ? `${macro.jumlah} event` : '—'}
+					{#if rentangKalender}· {rentangKalender}{/if}
+					{forex ? ` · umur ${umurDetik(fakta(forex, 'bagian')?.age_s ?? null)}` : ''}
+				</span>
 			</h2>
 			{#if events.length}
 				<div class="gulir">
@@ -230,6 +257,16 @@
 					</tbody>
 				</table>
 				</div>
+			{:else if kalenderLewat}
+				<!-- Jujur: ini BUKAN "tak ada agenda". Datanya memang minggu berjalan yang
+				     sudah selesai. Tanpa kalimat ini, pembaca bisa menyimpulkan keliru bahwa
+				     benar-benar tak ada agenda — atau aneh karena "83 event" tapi kosong.
+				     SENGAJA tanpa `ringkas`: prop itu menyembunyikan baris `pesan`, dan pesan
+				     inilah inti kejujurannya (temuan 10 Okt: pesan penting sempat tak tampil). -->
+				<EmptyState
+					judul="Minggu ini sudah selesai"
+					pesan={`Sumber kalender ("thisweek") memuat ${macro?.jumlah} event untuk ${rentangKalender ?? 'minggu berjalan'} — semuanya sudah lewat. Belum ada agenda minggu depan: sumber memang belum menerbitkannya, jadi ini bukan "tidak ada agenda".`}
+				/>
 			{:else}
 				<EmptyState
 					judul="Agenda kosong"

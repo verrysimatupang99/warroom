@@ -103,6 +103,11 @@ def ringkas(
     kini = time.time() if sekarang is None else sekarang
     blokir = stand_down(events, sekarang=kini, jendela_menit=jendela_menit)
     depan = [e for e in events if e.get("ts", 0) >= kini][:6]
+    # Rentang tanggal data (informatif). Sumber "thisweek" hanya memuat minggu berjalan;
+    # saat minggu itu habis (mis. Sabtu), `berikutnya` kosong walaupun `jumlah` besar.
+    # Tanpa rentang, UI tak bisa membedakan "tak ada agenda" dari "data minggu lalu" —
+    # pembaca bisa salah paham bahwa benar-benar tak ada agenda. Murni keterangan, bukan gate.
+    ts_sah = [e["ts"] for e in events if isinstance(e.get("ts"), (int, float))]
     return {
         "tersedia": True,
         "jumlah": len(events),
@@ -111,6 +116,8 @@ def ringkas(
         "alasan": blokir,
         "berikutnya": depan,
         "dari_cache_mnt": dari_cache_mnt,
+        "tanggal_min": min(ts_sah) if ts_sah else None,
+        "tanggal_max": max(ts_sah) if ts_sah else None,
         "error": error,
     }
 
