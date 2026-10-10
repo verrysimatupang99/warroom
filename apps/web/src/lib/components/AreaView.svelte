@@ -392,6 +392,12 @@
 			{@const gmgnPaperObj = (faktaGmgnPaper?.value as any) ?? null}
 			{@const faktaGmgnRadarMentah = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'radar')}
 			{@const gmgnRadarMentahObj = (faktaGmgnRadarMentah?.value as any) ?? null}
+			<!-- Status hasil apa adanya (perbaikan per-halaman 10 Okt): kartu "PAPER JALAN"
+			     hijau dulu berdiri sendiri tanpa hasil di dekatnya, jadi terlihat lebih baik
+			     dari kenyataan. snapshot/gmgn memang TIDAK punya vonis gate dan statnya masih
+			     posisi terbuka (closed=0) — itu yang ditampilkan apa adanya. -->
+			{@const faktaGmgnSnap = data.facts.find((f) => f.kind === 'snapshot' && f.key === 'gmgn')}
+			{@const gmgnSnapStats = ((faktaGmgnSnap?.value as any)?.stats as any[]) ?? []}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
 			{@const faktaBacktest = temukanFakta(data.facts, 'backtest')}
 			{@const pengukuranObj = (faktaPengukuran?.value as any) ?? null}
@@ -2668,6 +2674,20 @@
 								<span class="rounded px-1.5 py-0.5 text-10 font-bold border {gmgnPaperObj ? 'text-pos bg-pos/10 border-pos/20' : 'text-text-3 bg-canvas border-line'}">{gmgnPaperObj ? 'PAPER JALAN' : 'BELUM ADA DATA'}</span>
 							</div>
 							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">GMGN / FOMO</b> — pemindaian token baru + safety gate (bundler, dev hold, entrapment).</p>
+							<!-- Status hasil apa adanya (perbaikan per-halaman 10 Okt): kartu "PAPER JALAN"
+							     hijau dulu berdiri sendiri, jadi terlihat lebih baik dari kenyataan. Fakta
+							     snapshot/gmgn TIDAK punya vonis gate (tak ada kata lolos/ditolak/gate), dan
+							     statnya masih posisi TERBUKA (closed=0) — jadi ditulis apa adanya di sini. -->
+							{#if gmgnSnapStats?.length}
+								{@const st0 = gmgnSnapStats[0]}
+								<div class="mt-1.5 rounded border border-warn/40 bg-warn/10 px-1.5 py-1">
+									<div class="text-10 font-bold text-warn">Belum ada hasil tuntas</div>
+									<p class="text-10 text-text-3 leading-snug">
+										{st0.trades ?? 0} posisi dicatat · <b>{st0.closed ?? 0} tuntas</b> · {st0.open_at_end ?? 0} masih terbuka.
+										Uji gate "lolos vs ditolak" belum masuk fakta — belum bisa dinilai di sini.
+									</p>
+								</div>
+							{/if}
 							{#if gmgnPaperObj?.isi?.['run_config.json']}
 								{@const rc = gmgnPaperObj.isi['run_config.json']}
 								<p class="mt-1 text-10 text-text-3 font-mono">
