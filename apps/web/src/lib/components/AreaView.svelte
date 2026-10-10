@@ -224,6 +224,39 @@
 		const day = getWIBDate().getUTCDay();
 		return day === 0 || day === 6;
 	});
+
+	/**
+	 * PELUANG HARI INI (pembaruan 10 Okt, tiru pola InvestSaham 'Screener + Hipotesis +
+	 * Hati-hati'): tiga pertanyaan yang dijawab mesin kita sendiri, apa adanya.
+	 * Angka MURNI dari idx_akurasi (mean_r + n) — tak ada ambang baru. Nama setup
+	 * diterjemahkan ke bahasa manusia, tapi vonis tetap diturunkan dari angka.
+	 */
+	function hitungPeluangIdx(blok: any, setupKarantina: (n: string, s: any) => any) {
+		const ps = (blok?.per_setup ?? {}) as Record<string, any>;
+		const namaManusia = (s: string): string =>
+			s === 'BSJP_STRONG' ? 'Beli Sore Jual Pagi'
+			: s === 'BSJP_ARA' ? 'Beli Sore Jual Pagi (versi ARA)'
+			: s === 'ARA_HUNTER' ? 'Anti-Reject (kejar ARA)'
+			: s === 'INTRADAY' ? 'Scalping Intraday'
+			: s;
+		const daftar = Object.entries(ps).map(([nama, s]: [string, any]) => ({
+			nama,
+			manusia: namaManusia(String(s?.setup ?? nama)),
+			n: Number(s?.n ?? 0),
+			mean_r: s?.mean_r == null ? null : Number(s.mean_r),
+			total_r: s?.total_r == null ? null : Number(s.total_r),
+			pakem: s?.tingkat ?? null,
+			kar: setupKarantina(nama, s)
+		}));
+		// "terbaik" = mean_r tertinggi yang JUJUR: hanya yang punya angka & tak diarsipkan.
+		const hidup = daftar.filter((d) => d.mean_r != null && !d.kar);
+		const terbaik = hidup.slice().sort((a, b) => (b.mean_r ?? 0) - (a.mean_r ?? 0))[0] ?? null;
+		const hindari = hidup
+			.filter((d) => (d.mean_r ?? 0) < 0)
+			.sort((a, b) => (a.mean_r ?? 0) - (b.mean_r ?? 0));
+		const diarsip = daftar.filter((d) => d.kar);
+		return { daftar, terbaik, hindari, diarsip };
+	}
 </script>
 
 <div class="space-y-4">
@@ -1518,6 +1551,7 @@
 					{@const kpiIdxSaldo = kpiIdx?.titik?.length ? kpiIdx.titik[kpiIdx.titik.length - 1]?.saldo_idr ?? null : null}
 					{@const kpiIdxPnl = kpiIdx?.total_pnl_idr ?? null}
 					{@const kpiBsjp = idxAkurasiObj?.bsjp_gabungan ?? null}
+					{@const peluangIdx = hitungPeluangIdx(idxAkurasiObj, idxSetupKarantina)}
 					<div class="space-y-4">
 						<div class="grid grid-cols-2 gap-2 font-mono sm:grid-cols-4">
 							<div class="rounded-card border border-line bg-surface p-2.5">
@@ -1546,6 +1580,57 @@
 								<div class="text-10 text-text-3">kandidat dari mesin idx616</div>
 							</div>
 						</div>
+
+						<!-- PELUANG HARI INI (pembaruan 10 Okt, tiru pola InvestSaham 'Screener + Hipotesis +
+						     Hati-hati'): tiga pertanyaan yang dijawab mesin kita sendiri, apa adanya.
+						     Angka MURNI dari idx_akurasi (mean_r + n) — tak ada ambang baru. Nama setup
+						     diterjemahkan ke bahasa manusia, tapi vonis tetap diturunkan dari angka. -->
+					{#if peluangIdx.terbaik || peluangIdx.diarsip.length}
+							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+								<!-- 1. Peluang hari ini: satu baris, bahasa manusia -->
+								<div class="rounded-card border border-pos/30 bg-pos/5 p-3 sm:col-span-2">
+									<div class="text-10 uppercase tracking-wide text-text-3">Peluang hari ini</div>
+									{#if peluangIdx.terbaik}
+										<div class="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+											<span class="text-16 font-bold text-text">{peluangIdx.terbaik.manusia}</span>
+											<span class="rounded border border-pos/40 bg-pos/10 px-1.5 py-0.5 text-10 font-bold text-pos">
+												{(peluangIdx.terbaik.mean_r ?? 0) > 0 ? 'Layak' : 'Merugikan'}
+											</span>
+											<span class="font-mono text-12 { (peluangIdx.terbaik.mean_r ?? 0) > 0 ? 'text-pos' : 'text-neg'}">
+												{(peluangIdx.terbaik.mean_r ?? 0) > 0 ? '+' : ''}{angka(peluangIdx.terbaik.mean_r ?? 0, { desimal: 2 })}R / trade
+											</span>
+										</div>
+										<p class="mt-1 text-11 text-text-2">
+											<i>Hipotesis:</i> beli sore, jual pagi. Dari <b>{peluangIdx.terbaik.n} transaksi tuntas</b>
+											({peluangIdx.terbaik.pakem ?? 'sampel'}); total {peluangIdx.terbaik.total_r != null ? `${peluangIdx.terbaik.total_r > 0 ? '+' : ''}${angka(peluangIdx.terbaik.total_r, { desimal: 2 })}R` : '—'}.
+											Angka apa adanya dari ledger mesin — bukan janji.
+										</p>
+									{:else}
+										<p class="mt-1 text-12 text-text-3">Belum ada setup dengan angka positif yang bisa disebut peluang.</p>
+									{/if}
+								</div>
+								<!-- 2. Hati-hati: setup yang merugikan / sudah diarsipkan -->
+								<div class="rounded-card border border-neg/30 bg-neg/5 p-3">
+									<div class="text-10 uppercase tracking-wide text-text-3">Hati-hati</div>
+									{#if peluangIdx.hindari.length || peluangIdx.diarsip.length}
+										<ul class="mt-1 space-y-1 text-11 text-text-2">
+											{#each peluangIdx.diarsip as d (d.nama)}
+												<li>
+													<b class="text-neg">{d.manusia}</b> — <b>dihentikan</b>
+													{#if d.mean_r != null}({angka(d.mean_r, { desimal: 2 })}R dari {d.n} trade){/if}.
+													<div class="text-10 text-text-3">{d.kar?.alasan ?? 'merugikan dalam data uji'}</div>
+												</li>
+											{/each}
+											{#each peluangIdx.hindari.filter((h) => !h.kar) as d (d.nama)}
+												<li><b class="text-neg">{d.manusia}</b> — {angka(d.mean_r ?? 0, { desimal: 2 })}R dari {d.n} trade (pola Rugi).</li>
+											{/each}
+										</ul>
+									{:else}
+										<p class="mt-1 text-11 text-text-3">Tidak ada setup merugikan yang tercatat.</p>
+									{/if}
+								</div>
+							</div>
+						{/if}
 						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya.
 						     Ini "uang" — selalu di atas, apa pun tabnya. -->
 						<DompetPasar market="idx" dompet={dompetObj} judul="Dompet Paper IDX (Rp 10 juta)" />
