@@ -24,7 +24,7 @@ def _pakai_db_tes() -> None:
             if line.startswith("WARROOM_TEST_DB_URL="):
                 os.environ["WARROOM_DB_URL"] = line.split("=", 1)[1].strip().strip("\"'")
                 return
-    pytest.skip("WARROOM_TEST_DB_URL tidak tersedia — tes DB dilewati (bukan lulus)")
+    pytest.skip("WARROOM_TEST_DB_URL tidak tersedia — tes DB dilewati (bukan lulus)", allow_module_level=True)
 
 
 _pakai_db_tes()
