@@ -13,58 +13,43 @@ env:
   GITLEAKS_VERSION: 8.30.1
 
 jobs:
-  # Jaring pengaman domain: 227 tes harus tetap hijau sepanjang migrasi (03-backend.md §1).
+  # Jaring pengaman domain: tes packages/live-trading harus hijau (dulu repo luar
+  # verrysimatupang99/live-trading, kini PRIVATE + 404 di runner — F3: domain sudah
+  # ANGGOTA WORKSPACE di packages/live-trading/).
   domain:
-    name: domain (live-trading) — ruff + pytest
+    name: domain (packages/live-trading) — ruff + pytest
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: live-trading
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: verrysimatupang99/live-trading
-          path: live-trading
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
       - run: uv sync --frozen
-      - run: uv run ruff check .
-      - run: uv run pytest -q
+      - run: uv run ruff check packages/live-trading/src packages/live-trading/tests
+      - run: uv run pytest packages/live-trading -q
 
-  # Platform: workspace + dependensi path ke domain (tanpa salinan kode) — ADR-002.
+  # Platform: workspace tunggal — domain sudah di dalam repo (packages/live-trading,
+  # ADR-002/F3). Tidak checkout repo luar lagi.
   platform:
     name: platform (warroom) — sync + ruff + import domain
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: warroom
-      # Wajib berdampingan: [tool.uv.sources] memakai path relatif ke domain (ADR-002).
-      - uses: actions/checkout@v4
-        with:
-          repository: verrysimatupang99/live-trading
-          path: live-trading
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
       - name: uv sync (workspace + domain editable)
-        working-directory: warroom
         run: uv sync --frozen
       - name: ruff
-        working-directory: warroom
         run: uv run ruff check .
       - name: bukti domain bisa diimpor dari platform
-        working-directory: warroom
         run: uv run python -c "import live_trading, warroom_core; print(live_trading.__version__, warroom_core.paths())"
       - name: OpenAPI contract tidak drift
-        working-directory: warroom
         run: uv run python ops/check-openapi-contract.py
       # R5: tes platform (api/worker/core) kini ikut CI. Tes ber-DB **di-skip** dengan
       # alasan jelas bila WARROOM_TEST_DB_URL tidak ada (lihat conftest.py) — jadi job ini
       # tetap hijau tanpa Postgres, dan tidak pernah berpura-pura lulus.
       - name: pytest platform (tes ber-DB di-skip tanpa WARROOM_TEST_DB_URL)
-        working-directory: warroom
         run: uv run pytest -q
 
   # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
@@ -101,4 +86,6 @@ jobs:
         run: node scripts/lint-tokens.mjs src
       - run: npm run check
       - run: npm run test
+      - name: knip (tak ada berkas/dependensi mati)
+        run: npm run knip
       - run: npm run build
