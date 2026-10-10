@@ -1732,6 +1732,7 @@
 										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">MEAN R</th>
 										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">TOTAL R</th>
 										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">PAKEM</th>
+										<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">VONIS</th>
 										<th class="hidden py-1.5 px-1.5 sm:table-cell sm:py-2 sm:px-2.5 text-right">JALAN</th>
 									</tr>
 								</thead>
@@ -1774,6 +1775,20 @@
 												>
 													{s.pakem}
 												</span>
+											</td>
+											<!-- VONIS: diturunkan MURNI dari angka yang sudah ada (mean_r + pakem). Tidak ada
+											     ambang baru — hanya menaruh kesimpulan di depan supaya mata tak menebak mana
+											     setup yang layak dipercaya (dulu ARA -139R sebaris dgn BSJP +20R, tanpa vonis). -->
+											<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
+												{#if kar}
+													<span class="rounded border border-neg/40 text-neg bg-neg/10 px-1.5 py-0.5 text-10 font-bold whitespace-nowrap">Diarsipkan</span>
+												{:else if (s.mean_r ?? 0) > 0 && s.pakem !== 'INSUFFICIENT'}
+													<span class="rounded border border-pos/40 text-pos bg-pos/10 px-1.5 py-0.5 text-10 font-bold whitespace-nowrap">Layak</span>
+												{:else if (s.mean_r ?? 0) > 0}
+													<span class="rounded border border-warn/40 text-warn bg-warn/10 px-1.5 py-0.5 text-10 font-bold whitespace-nowrap">Belum terbukti</span>
+												{:else}
+													<span class="rounded border border-neg/40 text-neg bg-neg/10 px-1.5 py-0.5 text-10 font-bold whitespace-nowrap">Merugikan</span>
+												{/if}
 											</td>
 											<td class="hidden py-1.5 px-1.5 text-right text-text-3 sm:table-cell sm:py-2 sm:px-2.5">{s.belum_tuntas ?? 0}</td>
 										</tr>
