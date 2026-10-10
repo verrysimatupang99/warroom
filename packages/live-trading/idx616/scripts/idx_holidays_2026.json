@@ -1,0 +1,29 @@
+{
+  "source": "VERIFIED 31 Aug 2026: cross-checked calendarlabs.com/idx-market-holidays-2026 + sectors.app/indonesia/calendars/trading-calendar (keduanya sepakat: 22 holidays, 239 trading days). Lebaran 1447H = 20-24 Mar (BUKAN April!), Imlek 16-17 Feb, Nyepi 18-19 Mar, Maulid 25 Aug. Re-verify tiap awal tahun via idx.co.id/id/berita/jadwal-libur-bursa",
+  "exchange": "IDX/BEI",
+  "year": 2026,
+  "holidays": [
+    {"date": "2026-01-01", "name": "Tahun Baru Masehi"},
+    {"date": "2026-01-16", "name": "Isra Mikraj Nabi Muhammad SAW"},
+    {"date": "2026-02-16", "name": "Cuti Bersama Tahun Baru Imlek 2577"},
+    {"date": "2026-02-17", "name": "Tahun Baru Imlek 2577"},
+    {"date": "2026-03-18", "name": "Cuti Bersama Nyepi (Saka 1948)"},
+    {"date": "2026-03-19", "name": "Nyepi - Hari Raya Saka Baru 1948"},
+    {"date": "2026-03-20", "name": "Idul Fitri 1447 H (hari ke-1)"},
+    {"date": "2026-03-23", "name": "Idul Fitri 1447 H (hari ke-2)"},
+    {"date": "2026-03-24", "name": "Cuti Bersama Idul Fitri 1447 H"},
+    {"date": "2026-04-03", "name": "Wafat Isa Almasih (Good Friday)"},
+    {"date": "2026-05-01", "name": "Hari Buruh Internasional"},
+    {"date": "2026-05-14", "name": "Kenaikan Isa Almasih"},
+    {"date": "2026-05-15", "name": "Cuti Bersama Kenaikan Isa Almasih"},
+    {"date": "2026-05-27", "name": "Idul Adha 1447 H"},
+    {"date": "2026-05-28", "name": "Cuti Bersama Idul Adha 1447 H"},
+    {"date": "2026-06-01", "name": "Hari Lahir Pancasila"},
+    {"date": "2026-06-16", "name": "Tahun Baru Islam 1448 H"},
+    {"date": "2026-08-17", "name": "Hari Kemerdekaan RI"},
+    {"date": "2026-08-25", "name": "Maulid Nabi Muhammad SAW"},
+    {"date": "2026-12-24", "name": "Cuti Bersama Natal"},
+    {"date": "2026-12-25", "name": "Hari Raya Natal"},
+    {"date": "2026-12-31", "name": "Cuti Bersama Akhir Tahun"}
+  ]
+}
