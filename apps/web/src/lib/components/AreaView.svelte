@@ -292,6 +292,52 @@
 		const cukup = hidup.length > 0 && hidup.every((d) => d.n >= AMBANG_VONIS);
 		return { daftar, terbaik, hindari, diarsip, cukup, ambang: AMBANG_VONIS, nMaks: Math.max(0, ...daftar.map((d) => d.n)) };
 	}
+
+	/**
+	 * VONIS LP (pembaruan 10 Okt) — pola yang sama dengan IDX/FOREX, tapi ini KABAR BURUK.
+	 * Angka MURNI dari `sim_ledger.jsonl` (via fact `lp_paper`) — tak ada ambang baru:
+	 * "cukup" memakai n>=30 (pakem gate yang sudah ada). Tak ada satu angka pun yang dihitung
+	 * ulang di UI; semuanya dibaca apa adanya dari fact. Yang dilakukan UI hanya MENERJEMAHKAN
+	 * angka menjadi kalimat, dan membandingkan `signal` vs `control` (pembanding yang sudah
+	 * ada di data — bukan yang kita karang).
+	 *
+	 * Kenapa ditulis jujur sekeras ini: mesin LP ini RUGI, dan lebih buruk dari tebakan acak.
+	 * Menyembunyikannya sama dengan mengundang pemilik membuang uang ke jalur yang sudah
+	 * terbukti merugi.
+	 */
+	function hitungVonisLp(lp: any): Record<string, any> {
+		if (!lp?.tersedia) {
+			return { ada: false, status: lp?.status ?? 'tidak-ada' };
+		}
+		const b = (lp.basis ?? {}) as Record<string, any>;
+		const gr = (lp.gross ?? {}) as Record<string, any>;
+		const kel = (lp.per_kelompok ?? {}) as Record<string, any>;
+		const sig = kel.signal ?? null;
+		const ctrl = kel.control ?? null;
+		const n = Number(b.n ?? 0);
+		const cukup = n >= 30; // pakem gate yang sudah ada, bukan ambang baru
+		const rugi = Number(b.mean_net_pct ?? 0) < 0;
+		// Apakah sinyal LEBIH BURUK dari kontrol? Ini bukti terkuat, dan apa adanya.
+		const sinyalParah = sig && ctrl && Number(sig.median_net_pct ?? 0) < Number(ctrl.median_net_pct ?? 0);
+		const grossRugi = Number(gr.mean_pct ?? 0) < 0;
+		const slipSig = Number((lp.slippage_per_kelompok ?? {}).signal ?? NaN);
+		const slipCtrl = Number((lp.slippage_per_kelompok ?? {}).control ?? NaN);
+		const slipLebihBesar = Number.isFinite(slipSig) && Number.isFinite(slipCtrl) && slipSig > slipCtrl;
+		return {
+			ada: true, cukup, rugi, sinyalParah, grossRugi, slipLebihBesar,
+			n, mean: Number(b.mean_net_pct ?? 0), median: Number(b.median_net_pct ?? 0),
+			menang: Number(b.menang_pct ?? 0), tp: Number(b.tp_rate_pct ?? 0), sl: Number(b.sl_rate_pct ?? 0),
+			exp: b.expectancy_usd == null ? null : Number(b.expectancy_usd),
+			grossMean: Number(gr.mean_pct ?? 0), grossMedian: Number(gr.median_pct ?? 0),
+			sig, ctrl, slipSig, slipCtrl,
+			gesekan: (lp.gesekan ?? {}) as Record<string, any>,
+			exit: (lp.exit_reason ?? {}) as Record<string, number>,
+			perGeo: (lp.per_geometri ?? {}) as Record<string, any>,
+			geometri: lp.geometri ?? '—',
+			baris: Number(lp.baris ?? 0), barisRusak: Number(lp.baris_rusak ?? 0),
+			notional: lp.notional_usd ?? null
+		};
+	}
 </script>
 
 <div class="space-y-4">
@@ -333,7 +379,11 @@
 		</div>
 	{/if}
 
-	<AreaLoader area={kunci}>
+	<!-- Basis data mengikuti SUB, bukan hanya area induk. Sub `lp` punya area sendiri
+	     di API (`/areas/lp`) karena faktanya beda: `lp_paper` = kinerja arm LP dari
+	     sim_ledger.jsonl. Dulu selalu `kunci` (gmgn) sehingga sub LP tak pernah menerima
+	     fakta `lp_paper` — panel vonisnya buta. Halaman lain tetap memakai `kunci`. -->
+	<AreaLoader area={sub === 'lp' ? 'lp' : kunci}>
 		{#snippet children(data)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
@@ -3170,7 +3220,111 @@
 				{/if}
 
 				{#if sub === 'lp'}
+					{@const vonis = hitungVonisLp(lpPaperObj)}
 					<div class="space-y-4">
+						<!-- VONIS LP (pembaruan 10 Okt) — pola Peluang + Hipotesis + Hati-hati, sama
+						     spt /idx & /forex, TAPI ini kabar buruk. Angka MURNI dari sim_ledger.jsonl
+						     via fact `lp_paper`; tak ada ambang baru (cukup = n>=30, pakem gate).
+						     Ditulis sekeras ini karena mesinnya RUGI dan lebih buruk dari acak —
+						     menyembunyikannya berarti mengundang pemilik membuang uang. -->
+						{#if vonis.ada}
+							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+								<!-- 1. Peluang hari ini: jujur bahwa TIDAK ADA peluang -->
+								<div class="rounded-card border border-neg/40 bg-neg/5 p-3 sm:col-span-2">
+									<div class="text-10 uppercase tracking-wide text-text-3">Peluang hari ini</div>
+									<div class="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+										<span class="text-16 font-bold text-text">Belum ada — mesin LP ini merugi</span>
+										<span class="rounded border border-neg/40 bg-neg/10 px-1.5 py-0.5 text-10 font-bold text-neg">
+											{vonis.cukup ? 'Terbukti rugi' : 'Sampel belum cukup'}
+										</span>
+										<span class="font-mono text-12 text-neg">{vonis.mean > 0 ? '+' : ''}{angka(vonis.mean, { desimal: 2 })}% / trade</span>
+									</div>
+									<p class="mt-1 text-11 text-text-2">
+										<i>Hipotesis:</i> mesin ini memilih pool memecoin untuk dipanen fee-nya, lalu dibandingkan
+										dengan sekadar menahan token. Dari <b>{vonis.n} posisi tuntas</b>
+										({vonis.cukup ? 'sampel cukup' : 'sampel kecil'}), median <b class="text-neg">{angka(vonis.median, { desimal: 2 })}%</b>
+										dan menang cuma <b>{angka(vonis.menang, { desimal: 1 })}%</b>. Angka apa adanya dari ledger mesin.
+									</p>
+									<p class="mt-1 text-11 text-text-3">
+										Vonis: <b class="text-neg">jangan taruh uang di sini</b>. Ini bukan mesin yang belum dioptimalkan —
+										sinyalnya justru memilih pool yang cenderung jatuh (lihat panel Hati-hati).
+									</p>
+								</div>
+								<!-- 2. Hati-hati: sebab kalah, dengan angka -->
+								<div class="rounded-card border border-neg/30 bg-neg/5 p-3">
+									<div class="text-10 uppercase tracking-wide text-text-3">Hati-hati</div>
+									<ul class="mt-1 space-y-1 text-11 text-text-2">
+										{#if vonis.grossRugi}
+											<li>
+												<b class="text-neg">Bukan cuma biaya</b> — sebelum biaya pun sudah
+												{angka(vonis.grossMean, { desimal: 2 })}%. Jadi menurunkan fee tak menolong.
+											</li>
+										{/if}
+										{#if vonis.sinyalParah && vonis.sig && vonis.ctrl}
+											<li>
+												<b class="text-neg">Sinyal lebih buruk dari acak</b> — pilihan ber-sinyal median
+												{angka(vonis.sig.median_net_pct, { desimal: 2 })}% (n={vonis.sig.n}), pilihan acak (control)
+												hanya {angka(vonis.ctrl.median_net_pct, { desimal: 2 })}% (n={vonis.ctrl.n}).
+											</li>
+										{/if}
+										{#if vonis.slipLebihBesar}
+											<li>
+												<b class="text-neg">Selip harga 4× lebih besar</b> — sinyal {angka(vonis.slipSig, { desimal: 1 })}% vs
+												acak {angka(vonis.slipCtrl, { desimal: 1 })}%. Sinyal menyasar pool lebih tipis.
+											</li>
+										{/if}
+										<li>
+											<b class="text-neg">{angka(vonis.sl, { desimal: 0 })}% posisi kena stop-loss</b> — keluar paksa
+											(TP {angka(vonis.tp, { desimal: 0 })}%).
+										</li>
+									</ul>
+								</div>
+							</div>
+							<!-- 3. Kepekaan TP/SL: bukti semua geometri rugi (tak ada setelan penyelamat) -->
+							<div class="rounded-card border border-line bg-surface p-3">
+								<div class="text-10 uppercase tracking-wide text-text-3">Uji kepekaan TP/SL</div>
+								<p class="mt-1 text-11 text-text-2">
+									Mesin sudah mencoba beberapa setelan target/stop. Semuanya rugi — jadi masalahnya bukan di setelan:
+								</p>
+								<div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 font-mono">
+									{#each Object.entries(vonis.perGeo) as [label, v]}
+										<div class="rounded border border-line bg-canvas p-2">
+											<div class="text-10 text-text-3">{label.replace('TP+', 'TP ').replace('/SL-', ' / SL ')}</div>
+											<div class="text-13 font-bold {Number((v as any).mean_net_pct) > 0 ? 'text-pos' : 'text-neg'}">
+												{angka(Number((v as any).mean_net_pct), { desimal: 2 })}%
+											</div>
+											<div class="text-10 text-text-3">n={(v as any).n}</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+							<!-- 4. Gesekan & sebaran keluar: apa yang sebenarnya terjadi -->
+							<div class="rounded-card border border-line bg-surface p-3">
+								<div class="text-10 uppercase tracking-wide text-text-3">Gesekan &amp; cara keluar</div>
+								<div class="mt-1 grid grid-cols-2 gap-2 text-11 font-mono sm:grid-cols-4">
+									<div>
+										<span class="text-text-3 text-10 block">SELIP (median)</span>
+										<span class="text-neg">{vonis.gesekan.slippage_median_pct == null ? '—' : angka(Number(vonis.gesekan.slippage_median_pct), { desimal: 1 }) + '%'}</span>
+									</div>
+									<div>
+										<span class="text-text-3 text-10 block">GESEKAN TOTAL</span>
+										<span class="text-neg">{vonis.gesekan.friction_median_pct == null ? '—' : angka(Number(vonis.gesekan.friction_median_pct), { desimal: 2 }) + '%'}</span>
+									</div>
+									<div>
+										<span class="text-text-3 text-10 block">FEE / SISI</span>
+										<span class="text-text-2">{vonis.gesekan.fee_pct_per_side_median == null ? '—' : angka(Number(vonis.gesekan.fee_pct_per_side_median), { desimal: 2 }) + '%'}</span>
+									</div>
+									<div>
+										<span class="text-text-3 text-10 block">EXIT: SL / TP / GANTUNG</span>
+										<span class="text-text-2">{vonis.exit.sl ?? 0} / {vonis.exit.tp ?? 0} / {vonis.exit.open_at_end ?? 0}</span>
+									</div>
+								</div>
+								<p class="mt-2 text-10 text-text-3">
+									Catatan jujur: angka bruto — biaya broker/venue nyata belum tercatat. Gesekan menggerus
+									tambahan ~{angka(vonis.grossMean - vonis.mean, { desimal: 2 })} poin, tapi sumber rugi utamanya tetap pemilihan pool.
+								</p>
+							</div>
+						{/if}
 						<!-- Dompet paper LP: Rp 10 juta, dari mark posisi -->
 						<DompetPasar market="gmgn" dompet={dompetObj} judul="Dompet Paper GMGN / LP" />
 						<!-- Akurasi & PnL LP terukur (6 Okt): hasil dinyatakan P&L (IL+fee), bukan R -->

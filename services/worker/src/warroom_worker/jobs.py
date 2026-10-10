@@ -506,9 +506,15 @@ def handler_gmgn_sync(s: SASession, job: Job) -> str:
     lm = gmgn.lp_mark_ringkas()
     _tulis_fakta(s, kind="snapshot", key="lp_mark", value=lm,
                  source=str(lm.get("path", "state/lp_mark_terakhir.json")), ttl_s=7200)
+    # Arm LP paper: kinerja dari sim_ledger.jsonl (baca-saja). Halaman /lp butuh ini;
+    # sebelumnya `lp_paper` selalu {"tersedia": false} sehingga halaman tak punya angka.
+    lp = gmgn.lp_paper_ringkas()
+    _tulis_fakta(s, kind="snapshot", key="lp_paper", value=lp,
+                 source=str(lp.get("path", "state/sim_ledger.jsonl")), ttl_s=7200)
     return (
         f"gmgn={g.get('status')} berkas={g.get('files')} radar={r.get('status')} "
-        f"sumber={r.get('sumber')} lp_mark={lm.get('status')}"
+        f"sumber={r.get('sumber')} lp_mark={lm.get('status')} lp_paper={lp.get('status')} "
+        f"lp_n={(lp.get('basis') or {}).get('n')}"
     )
 
 

@@ -56,6 +56,12 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
         "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko", "pasar_akurasi",
         "dompet", "lp_verifikasi",
     ),
+    "lp": (
+        # Arm LP/GMGN paper: kinerja dari sim_ledger.jsonl (fact snapshot/lp_paper).
+        # Mesin pemindaian tetap di area gmgn; di sini fokus halaman kinerja LP.
+        "bagian", "lp_paper", "lp_mark", "lp_verifikasi", "gmgn",
+        "gmgn_posisi", "gmgn_ledger", "gmgn_equity", "gmgn_risiko", "pasar_akurasi", "dompet",
+    ),
     "polymarket": (
         "bagian", "poly_paper", "lp_paper", "equity", "ledger",
         "poly_posisi", "poly_ledger", "poly_equity", "poly_risiko", "pasar_akurasi", "dompet",

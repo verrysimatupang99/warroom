@@ -7,6 +7,7 @@ tidak ada perubahan apa pun di host lain.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -100,3 +101,148 @@ def radar_ringkas(state_path: str | None = None) -> dict[str, Any]:
         "chains": chains,
         "sumber": "lokal",  # radar lokal Webdock, bukan cache host lain
     }
+
+# --- LP paper (arm LP/GMGN) -------------------------------------------------
+# Sumber: ~/gmgn-paper/state/sim_ledger.jsonl (ledger simulasi, ditulis mesin GMGN).
+# Rumus dipakai SAMA seperti mesin (gmgn_paper/sim.py::summarize): median/mean net_pct,
+# tp_rate/sl_rate, expectancy_usd = mean/100*4.0 (notional $4), "cukup" = n>=30.
+# TIDAK ada rumus baru, TIDAK ada default angka: berkas hilang -> status jujur.
+SIM_LEDGER_STATE = "~/gmgn-paper/state/sim_ledger.jsonl"
+_LP_NOTIONAL_USD = 4.0
+
+
+def _lp_stats(nets: list[float], results: list[dict]) -> dict[str, Any]:
+    """Ringkas satu kelompok memakai rumus mesin (bukan rumus baru)."""
+    nets = sorted(x for x in nets if isinstance(x, (int, float)))
+    n = len(nets)
+    if n == 0:
+        return {"n": 0, "cukup": False}
+    tp = sum(1 for r in results if r.get("exit_reason") == "tp")
+    sl = sum(1 for r in results if r.get("exit_reason") == "sl")
+    return {
+        "n": n,
+        "cukup": n >= 30,  # ambang gate yang sudah ada, bukan ambang baru
+        "median_net_pct": nets[n // 2],
+        "mean_net_pct": sum(nets) / n,
+        "menang_pct": sum(1 for x in nets if x > 0) / n * 100.0,
+        "tp_rate_pct": tp / n * 100.0,
+        "sl_rate_pct": sl / n * 100.0,
+        "expectancy_usd": sum(nets) / n / 100.0 * _LP_NOTIONAL_USD,
+    }
+
+
+def _lp_gross(nets: list[float]) -> dict[str, Any]:
+    nets = sorted(x for x in nets if isinstance(x, (int, float)))
+    n = len(nets)
+    if n == 0:
+        return {"n": 0}
+    return {"n": n, "median_pct": nets[n // 2], "mean_pct": sum(nets) / n,
+            "menang_pct": sum(1 for x in nets if x > 0) / n * 100.0}
+
+
+def lp_paper_ringkas(state_dir: str | None = None) -> dict[str, Any]:
+    """Ringkas kinerja arm LP paper dari `sim_ledger.jsonl` — baca-saja.
+
+    Kenapa ada: UI `/lp` butuh angka apa adanya, dan fact `lp_paper` selama ini
+    kosong (`{"tersedia": false}`) sehingga halaman tak bisa menampilkan apa pun.
+    Ringkasan ini murni hitungan dari ledger; tidak menyentuh mesin, tidak menulis
+    ke `~/gmgn-paper`, tidak menyentuh wallet/venue.
+    """
+    p = Path(state_dir or SIM_LEDGER_STATE).expanduser()
+    if not p.exists():
+        return {"tersedia": False, "status": "tidak-ada", "path": str(p)}
+
+    rows: list[dict] = []
+    rusak = 0
+    try:
+        for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                rusak += 1  # dilaporkan, bukan disembunyikan (pelajaran sim.py)
+    except OSError as exc:
+        return {"tersedia": False, "status": "tidak-izin", "path": str(p),
+                "detail": type(exc).__name__}
+
+    done = [r for r in rows if r.get("status") == "done" and r.get("results")]
+    if not done:
+        return {"tersedia": False, "status": "kosong", "path": str(p),
+                "baris": len(rows), "baris_rusak": rusak}
+
+    # Geometri basis = hasil[0] (TP100/SL65), sama seperti pembacaan mesin.
+    def _basis(r: dict) -> dict | None:
+        res = r.get("results") or []
+        return res[0] if res else None
+
+    basis_rows = [(r, _basis(r)) for r in done]
+    basis_rows = [(r, b) for r, b in basis_rows if b]
+
+    nets = [b["net_pct"] for _, b in basis_rows if b.get("net_pct") is not None]
+    gross = [b["gross_pct"] for _, b in basis_rows if b.get("gross_pct") is not None]
+    res_all = [b for _, b in basis_rows]
+    tp0 = basis_rows[0][1]
+
+    ringkas: dict[str, Any] = {
+        "tersedia": True,
+        "path": str(p),
+        "baris": len(rows),
+        "baris_rusak": rusak,
+        "status": "ok" if rusak == 0 else "rusak-sebagian",
+        "sampel": len(nets),
+        "geometri": f"TP+{tp0.get('tp_pct', 0):g}/SL-{tp0.get('sl_pct', 0):g}",
+        "basis": _lp_stats(nets, res_all),
+        "gross": _lp_gross(gross),
+        "notional_usd": _LP_NOTIONAL_USD,
+    }
+
+    # Kelompok: signal (pakai sinyal) vs control (acak, tanpa sinyal) — pembanding kunci.
+    per_kelompok = {}
+    for g in ("signal", "control", "admitted"):
+        sub = [(r, b) for r, b in basis_rows if r.get("group") == g]
+        if len(sub) >= 5:
+            per_kelompok[g] = _lp_stats([b["net_pct"] for _, b in sub if b.get("net_pct") is not None],
+                                        [b for _, b in sub])
+    ringkas["per_kelompok"] = per_kelompok
+
+    # Gesekan: median, dibawa apa adanya (bukan tafsir).
+    def _med(vals: list[float]) -> float | None:
+        vals = sorted(x for x in vals if isinstance(x, (int, float)))
+        return vals[len(vals) // 2] if vals else None
+
+    ringkas["gesekan"] = {
+        "slippage_median_pct": _med([r.get("slippage_pct") for r, _ in basis_rows]),
+        "friction_median_pct": _med([r.get("friction_pct") for r, _ in basis_rows]),
+        "fee_pct_per_side_median": _med([r.get("fee_pct_per_side") for r, _ in basis_rows]),
+    }
+
+    # Slippage per kelompok — bukti "sinyal menyasar pool lebih tipis".
+    sl_kel = {}
+    for g, sub in ((g, [(r, b) for r, b in basis_rows if r.get("group") == g])
+                   for g in ("signal", "control")):
+        if len(sub) >= 5:
+            sl_kel[g] = _med([r.get("slippage_pct") for r, _ in sub])
+    ringkas["slippage_per_kelompok"] = sl_kel
+
+    # Sebaran exit — apa yang sebenarnya terjadi.
+    exit_reason = {}
+    for _, b in basis_rows:
+        k = b.get("exit_reason") or "?"
+        exit_reason[k] = exit_reason.get(k, 0) + 1
+    ringkas["exit_reason"] = exit_reason
+
+    # Kepekaan TP/SL: semua geometri yang sudah diuji mesin (tak ada yang selamat?).
+    per_geo: dict[str, list[float]] = {}
+    for r in done:
+        for res in (r.get("results") or []):
+            label = f"TP+{res.get('tp_pct', 0):g}/SL-{res.get('sl_pct', 0):g}"
+            if res.get("net_pct") is not None:
+                per_geo.setdefault(label, []).append(res["net_pct"])
+    ringkas["per_geometri"] = {
+        lab: {"n": len(v), "mean_net_pct": sum(v) / len(v),
+              "median_net_pct": sorted(v)[len(v) // 2]}
+        for lab, v in sorted(per_geo.items())
+    }
+    return ringkas

@@ -528,6 +528,7 @@ def create_app() -> FastAPI:
             "idx": "IDX",
             "forex": "Forex",
             "gmgn": "GMGN / LP",
+            "lp": "LP / Yield",
             "polymarket": "Polymarket",
         }
 
