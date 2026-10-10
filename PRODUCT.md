@@ -95,6 +95,8 @@ palsu, angka andalan "+228R" yang tidak bisa direproduksi, dan edge BSJP yang be
 
 ## Evidence on Hand
 
+> Diverifikasi 10 Okt 2026 (audit kerapian; angka tes: Python 806, Web 9/36, E2E 47 spec/79 test(), domain 227, OpenAPI 50 path).
+
 **Data nyata yang sudah ada (bukan contoh karangan):**
 - Snapshot produksi hidup: 13 bagian, termasuk `bsjp` (1 STRONG / 2 ARA pada pemindaian terakhir).
 - Riwayat tick IDX: 24,9 juta baris di arsip Tencent (SMA10 dihitung dari sini).

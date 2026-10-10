@@ -13,16 +13,28 @@ ambang gate & rumus BE hanya boleh diubah manusia.
 ## Struktur
 
 ```
-apps/web/        SvelteKit (adapter-node) — konsumsi API, tanpa logika domain
-services/api/    FastAPI: REST + SSE, auth/RBAC
-services/worker/ job runner (snapshot, collect, replay, learner, parity-drift, reconcile, freshness, backup)
-services/llm/    LLM gateway (nutaraline → qonek, circuit breaker, cache, audit)
-services/notifier/ alert → Telegram/email/push
-packages/core/   façade ke domain `live-trading` (dependensi path, tanpa salinan kode)
-ops/             systemd units, Caddyfile, skrip deploy, runbook
-contracts/       OpenAPI hasil generate (`curl :8800/api/openapi.json`); tipe TS menyusul
-docs/adr/        Architecture Decision Records
+apps/web/           SvelteKit (adapter-node) — frontend KANONIS publik (:3100 via nginx /)
+services/api/       FastAPI: REST + SSE, auth/RBAC (:8800 via nginx /api/)
+services/worker/    job runner (snapshot, collect, replay, learner, parity-drift, reconcile, freshness, backup)
+services/llm/       LLM gateway (nutaraline → qonek, circuit breaker, cache, audit)
+services/notifier/  alert → Telegram/email/push
+packages/core/      façade ke domain `live-trading` (dependensi path, tanpa salinan kode)
+packages/live-trading/ domain trading: kolektor, ledger, dashboard diagnostik internal (:8799, localhost saja)
+  ├─ idx616/scripts/  mesin IDX 616 KANONIS (arjum_client/pool, BSJP/ARA watcher, grader v3, ledger)
+  ├─ frontend/        dashboard HTML statis internal/diagnostik — BUKAN frontend publik
+  └─ vendor/forex/    salinan baca-saja skrip forex Tencent (rujukan, bukan dependensi impor)
+ops/                systemd units, nginx vhost sumber, skrip deploy, runbook
+contracts/          OpenAPI hasil generate (`curl :8800/api/openapi.json`); tipe TS menyusul
+docs/adr/           Architecture Decision Records
 ```
+
+Kanonis yang ditetapkan 10 Okt 2026 (audit kerapian):
+- Frontend publik = `apps/web` (SvelteKit). `packages/live-trading/frontend` tetap ada
+  untuk dashboard diagnostik `:8799` (localhost) + dikunci `test_multipage`/`test_sinkron`.
+- Mesin IDX = `packages/live-trading/idx616/scripts` (duplikat `vendor/idx` + grader v2
+  + `idx_bsjp_exit.py` dihapus 10 Okt, commit `6ff1b10`).
+- State LP paper mati `~/gmgn-scan/` dilepas 10 Okt → `~/live-trading/state/lp_paper_state.json`
+  + jejak mark `lp_mark_terakhir.json` (commit `b73d74b`).
 
 ## Mulai
 
@@ -59,20 +71,20 @@ E2E + a11y + screenshot (butuh sesi):
 ```bash
 cd apps/web
 printf 'WARROOM_E2E_USER=uji-web\nWARROOM_E2E_PASS=…\n' > ~/.config/warroom/e2e.env  # mode 600
-npx playwright test                     # 106 tes: 8 rute, login, SSE, a11y, screenshot
+npx playwright test                     # 47 berkas spec, 79 panggilan test(): login, SSE, a11y, screenshot
 ```
 
-## Angka tes (kondisi per 9 Okt 2026)
+## Angka tes (kondisi per 10 Okt 2026)
 
 Selalu jadikan output perintah sebagai sumber kebenaran; angka di bawah hanya rujukan
-terakhir yang tercatat. Diverifikasi 9 Okt 2026 lewat `pytest --collect-only -q` dan
-`npx playwright test --list` (lihat catatan R2 di `docs/`):
+terakhir yang tercatat. Diverifikasi 10 Okt 2026 lewat `pytest --collect-only` dan
+`grep -r "test(" apps/web/e2e`:
 
 | Suite | Jumlah |
 |---|---|
 | Python (`.venv/bin/pytest -q`) | **806 tes** |
 | Web (`npm run test`) | **9 berkas, 36 tes** |
-| E2E (`npx playwright test`) | **106 tes** |
+| E2E (`npx playwright test`) | **47 berkas spec, 79 panggilan `test()`** |
 | Domain (`~/live-trading`) | **227 tes** |
 | OpenAPI contract | **50 path cocok** |
 
