@@ -19,11 +19,12 @@ def _pakai_db_tes() -> None:
         os.environ["WARROOM_DB_URL"] = os.environ["WARROOM_TEST_DB_URL"]
         return
     env = Path.home() / ".config" / "warroom" / "test-db.env"
-    for line in env.read_text(encoding="utf-8").splitlines():
-        if line.startswith("WARROOM_TEST_DB_URL="):
-            os.environ["WARROOM_DB_URL"] = line.split("=", 1)[1].strip().strip("\"'")
-            return
-    raise RuntimeError("DB tes tidak ada — tes ini tidak boleh jatuh ke DB produksi")
+    if env.exists():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            if line.startswith("WARROOM_TEST_DB_URL="):
+                os.environ["WARROOM_DB_URL"] = line.split("=", 1)[1].strip().strip("\"'")
+                return
+    pytest.skip("WARROOM_TEST_DB_URL tidak tersedia — tes DB dilewati (bukan lulus)")
 
 
 _pakai_db_tes()
