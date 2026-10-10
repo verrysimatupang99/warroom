@@ -1,4 +1,4 @@
-"""Kolektor crypto — data publik Binance perp + MEXC kontrak.
+"""Kolektor crypto — data publik Binance perp + OKX swap (pengganti MEXC, 10 Okt).
 
 Ini lapisan **data**, bukan mesin sinyal. Mesin SMC warisan (``crypto/scripts``)
 masih jalan apa adanya dan dipakai sebagai pembanding sampai port-nya selesai.
@@ -23,6 +23,21 @@ from ..config import Settings
 from . import make_client
 
 DEFAULT_PAIRS = ("BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "LINKUSDT", "SUIUSDT")
+
+
+def okx_inst(pair: str) -> str:
+    """MEXC "BTC_USDT" / "BTCUSDT" -> OKX "BTC-USDT-SWAP" (default SWAP).
+
+    Aturan: buang "_", lalu bila berakhir USDT dan belum ada "-", sisipkan
+    pemisah dan akhiran SWAP. Sudah berbentuk OKX -> dibiarkan apa adanya.
+    """
+    p = str(pair).upper().strip()
+    if "-" in p:
+        return p
+    p = p.replace("_", "")
+    if p.endswith("USDT") and len(p) > 4:
+        return f"{p[:-4]}-USDT-SWAP"
+    return p
 
 
 def taker_ratio(klines: list[list[Any]]) -> float | None:
@@ -82,13 +97,18 @@ class CryptoCollector:
                 out.append({"pair": p, "error": type(exc).__name__})
         return out
 
-    def mexc_check(self, pair: str = "BTC_USDT") -> dict[str, Any]:
-        """Verifikasi jalur eksekusi (MEXC) hidup dari mesin ini."""
-        d = self._get(self.settings.mexc_contract, "/api/v1/contract/ticker", {"symbol": pair})
-        data = d.get("data") or {}
+    def okx_check(self, pair: str = "BTC-USDT-SWAP") -> dict[str, Any]:
+        """Verifikasi jalur data OKX hidup dari mesin ini (pengganti MEXC, 10 Okt).
+
+        OKX memakai `-` (BTC-USDT-SWAP), sumber lama memakai `_` (BTC_USDT). Simbol
+        dinormalkan lewat `okx_inst()` supaya pemanggil boleh pakai gaya lama.
+        """
+        inst = okx_inst(pair)
+        d = self._get(self.settings.okx_api, "/api/v5/market/ticker", {"instId": inst})
+        data = (d.get("data") or [{}])[0]
         return {
-            "symbol": pair,
-            "last": data.get("lastPrice"),
-            "funding": data.get("fundingRate"),
-            "ok": bool(d.get("success")),
+            "symbol": inst,
+            "last": data.get("last"),
+            "funding": None,  # funding diambil endpoint terpisah (public/funding-rate)
+            "ok": str(d.get("code")) == "0" and bool(data),
         }

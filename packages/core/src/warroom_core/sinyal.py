@@ -475,8 +475,8 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
         return DaftarSinyal(
             pasar="crypto", label="Crypto (SMC)", status_data="ada",
             rute=_rute_pasar("crypto"), jumlah=len(hidup), sinyal=sinyal,
-            sumber="MEXC", mode="PAPER",
-            catatan_mode="harga & depth MEXC; eksekusi paper (order tidak dikirim)",
+            sumber="OKX", mode="PAPER",
+            catatan_mode="harga & depth OKX; eksekusi paper (order tidak dikirim)",
         )
     # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
     dari_verdict = _umur_iso(_verdict_terakhir(s))

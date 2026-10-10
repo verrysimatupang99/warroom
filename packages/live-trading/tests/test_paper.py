@@ -86,7 +86,7 @@ def test_compute_be_stop_long_dan_short() -> None:
     assert compute_be_stop("SHORT", 1000.0, fee_buffer_pct=0.002) == 998.0
 
 
-def test_tp1_digeser_ke_net_break_even_mexc(tmp_path: Path) -> None:
+def test_tp1_digeser_ke_net_break_even_okx(tmp_path: Path) -> None:
     """Saat net_be=True, TP1 kena -> stop digeser ke entry * (1 + fee_buffer) bukan entry murni."""
     b = _broker(tmp_path)
     b.open_position(

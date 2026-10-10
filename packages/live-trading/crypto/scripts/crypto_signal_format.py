@@ -6,7 +6,7 @@ Usage:
       --sl 7.782 --tp 8.504 --quality 6.5 --poi "FVG bullish 1H fresh" \
       --note "1H+4H HH/HL, taker 1.37, OI +2.7%"
 Output: formatted text block (print) untuk Telegram.
-Optional: --live untuk ambil posisi live dari MEXC (bila sudah open).
+Optional: --live untuk ambil posisi live dari OKX (bila sudah open).
 """
 import argparse
 import sys
@@ -14,12 +14,25 @@ import sys
 sys.path.insert(0, "/home/ubuntu/.hermes/scripts")
 
 
+def okx_inst(pair):
+    """MEXC "AVAX_USDT" -> OKX "AVAX-USDT-SWAP" (pengganti MEXC, 10 Okt)."""
+    p = str(pair).upper().strip()
+    if "-" in p:
+        return p
+    p = p.replace("_", "")
+    if p.endswith("USDT") and len(p) > 4:
+        return f"{p[:-4]}-USDT-SWAP"
+    return p
+
+
 def fetch_live(pair):
+    """Posisi live dari OKX. Klien privat OKX belum ada -> kembalikan None apa
+    adanya (pemanggil sudah menangani None), BUKAN angka palsu."""
     try:
-        from mexc_client import positions, price
-        ps = positions(pair)
+        from okx_client import positions, price
+        ps = positions(okx_inst(pair))
         if ps:
-            return float(ps[0]["holdAvgPrice"]), float(ps[0]["holdVol"]), price(pair)
+            return float(ps[0]["avgPx"]), float(ps[0]["pos"]), price(okx_inst(pair))
     except Exception:
         pass
     return None, None, None
@@ -53,8 +66,8 @@ def main():
             args.entry = entry_real
     if cur is None:
         try:
-            from mexc_client import price
-            cur = price(symbol or args.pair.replace("_", ""))
+            from okx_client import price
+            cur = price(okx_inst(symbol or args.pair))
         except Exception:
             cur = 0.0
 

@@ -26,11 +26,11 @@ MID_CAP = ["SUIUSDT", "INJUSDT", "ARBUSDT", "OPUSDT", "FETUSDT", "DOGEUSDT"]
 EXTRA = ["XRPUSDT", "HYPEUSDT", "LINKUSDT", "NEARUSDT", "LTCUSDT", "AVAXUSDT",
          "FARTCOINUSDT", "PUMPUSDT", "UNIUSDT", "LITUSDT", "ZECUSDT"]
 # Added 26 Sep (request Dumbledore): +4. Semua sudah diverifikasi ada di Binance
-# fapi DAN MEXC futures (nama kontrak sama, tanpa alias) — ENA vol $731M,
+# fapi DAN OKX swap (nama kontrak sama, tanpa alias) — ENA vol $731M,
 # ONDO $342M, TAO $264M, VIRTUAL $45M (paling tipis, awasi spread).
 EXTRA2 = ["ENAUSDT", "VIRTUALUSDT", "ONDOUSDT", "TAOUSDT"]
 # Added 26 Sep (request Dumbledore): AAVE. Ada di Binance fapi ($162M/24j) DAN
-# MEXC futures (AAVE_USDT, contractSize 0.01 -> 1 lot = $1.54, pas di target
+# OKX swap (AAVE-USDT-SWAP, contractSize 0.01 -> 1 lot = $1.54, pas di target
 # ~$1.5/trade). ATR1H ~1.0% = tepat di batas gate A5, jadi bisa ke-skip kalau
 # volatilitas turun.
 EXTRA3 = ["AAVEUSDT"]

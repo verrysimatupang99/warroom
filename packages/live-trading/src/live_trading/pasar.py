@@ -841,7 +841,7 @@ def ringkas_akurasi_pasar(state_dir: Path) -> dict[str, Any]:
 # Biaya per pasar: True = sudah termasuk, False = BRUTO (belum termasuk), None = tidak diketahui.
 # Ditulis di satu tempat supaya halaman bukti dan halaman pasar tidak bisa berbeda pendapat.
 BIAYA_PASAR: dict[str, tuple[bool | None, str]] = {
-    "crypto": (True, "cost_bps terukur per trade (friksi MEXC)"),
+    "crypto": (True, "cost_bps terukur per trade (friksi OKX)"),
     "idx": (True, "grader v3 — net_r sudah termasuk biaya"),
     "forex": (False, "spread/komisi broker belum ada di jurnal"),
     "gmgn": (True, "fee LP + IL dihitung di mark lokal"),

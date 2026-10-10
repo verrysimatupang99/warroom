@@ -29,7 +29,7 @@ __all__ = [
     "ringkas",
 ]
 
-# Tarif taker publik (per sisi, dalam bps). MEXC futures taker 0,05% = 5 bps/sisi.
+# Tarif taker publik (per sisi, dalam bps). OKX swap taker 0,05% = 5 bps/sisi.
 # Angka ini bisa ditimpa lewat parameter; yang penting ia EKSPLISIT, bukan tersembunyi
 # di dalam default fungsi.
 FEE_TAKER_BPS_PER_SISI = 5.0

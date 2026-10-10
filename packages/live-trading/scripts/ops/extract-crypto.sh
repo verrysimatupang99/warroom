@@ -1,6 +1,6 @@
 #!/bin/bash
 # Ekstraksi crypto pipeline Tencent -> Webdock
-# ATURAN: crypto_auto_exec.py (jalur MEXC milik kawan) TIDAK disalin sebagai modul aktif.
+# ATURAN: crypto_auto_exec.py (jalur order milik kawan) TIDAK disalin sebagai modul aktif.
 set -u
 KEY=/etc/poly-pilot/backup_ed25519
 SRC=/home/ubuntu/.hermes/scripts
@@ -22,7 +22,7 @@ sudo scp -q -i "$KEY" ubuntu@43.155.219.37:/home/ubuntu/.hermes/state/crypto_equ
 sudo scp -q -i "$KEY" ubuntu@43.155.219.37:/home/ubuntu/.hermes/scripts/crypto-watchlist.json "$DST/state/" 2>/dev/null && echo "  ok  crypto-watchlist.json"
 sudo scp -q -i "$KEY" ubuntu@43.155.219.37:/home/ubuntu/.hermes/crypto-journal/crypto_journal.xlsx "$DST/journal/" 2>/dev/null && echo "  ok  crypto_journal.xlsx"
 
-echo; echo "=== 3. Reference (NON-AKTIF, tanpa mexc_client) ==="
+echo; echo "=== 3. Reference (NON-AKTIF, tanpa klien privat) ==="
 sudo scp -q -i "$KEY" "ubuntu@43.155.219.37:$SRC/crypto_auto_exec.py" "$DST/reference/crypto_auto_exec.py.REFERENCE" && echo "  ok  crypto_auto_exec.py (reference only)"
 
 sudo chown -R admin:admin "$DST"
@@ -31,4 +31,4 @@ ls -la "$DST/scripts/" | awk '{print $5, $9}' | tail -15
 echo "--- state ---"; ls -la "$DST/state/" | awk '{print $5, $9}' | tail -5
 echo "--- reference ---"; ls -la "$DST/reference/" | awk '{print $5, $9}' | tail -3
 echo; echo "=== cek tidak ada kredensial terbawa ==="
-grep -rl -i -E "mexc_client|api_key|secret" "$DST/scripts/" 2>/dev/null | head -5 || echo "  bersih: tidak ada referensi kredensial di scripts/"
+grep -rl -i -E "okx_client|mexc_client|api_key|secret" "$DST/scripts/" 2>/dev/null | head -5 || echo "  bersih: tidak ada referensi kredensial di scripts/"

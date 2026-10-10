@@ -7,7 +7,7 @@ from warroom_core.signal import MarketData, RiskPolicy, Signal
 def signal(signal_id="s1"):
     now = datetime.now(UTC)
     return Signal(
-        signal_id=signal_id, market="crypto", venue="mexc", instrument="BTCUSDT",
+        signal_id=signal_id, market="crypto", venue="okx", instrument="BTCUSDT",
         strategy="smc", direction="long", entry=100, stop=98, target=104,
         risk_reward=2, confidence=.8, created_at=now,
         expires_at=now + timedelta(minutes=5), freshness_s=1, reason="test",
@@ -15,7 +15,7 @@ def signal(signal_id="s1"):
 
 
 def data():
-    return MarketData("crypto", "mexc", "BTCUSDT", datetime.now(UTC), 100, 2, 100_000, {})
+    return MarketData("crypto", "okx", "BTCUSDT", datetime.now(UTC), 100, 2, 100_000, {})
 
 
 def test_paper_executor_deduplicates_and_records_fill():

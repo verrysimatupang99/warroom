@@ -105,7 +105,7 @@ def main() -> int:
     print(f"  biaya funding rata-rata: {rata:+.4f}R per kandidat (positif = kita MEMBAYAR)")
     for arah, v in sorted(per_arah.items()):
         print(f"    {arah:<6} n={len(v):<5} rata-rata {st.fmean(v):+.4f}R")
-    print("\n  Bandingkan dengan edge kotor ~+0,04 s/d +0,05R dan fee maker MEXC ~0-1 bps.")
+    print("\n  Bandingkan dengan edge kotor ~+0,04 s/d +0,05R dan fee maker OKX ~0-1 bps.")
     return 0
 
 

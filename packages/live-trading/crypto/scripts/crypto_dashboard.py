@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Crypto trading dashboard — pipeline status, watchlist, MEXC live, Agent 6.
+"""Crypto trading dashboard — pipeline status, watchlist, OKX live, Agent 6.
 
 Stdlib only (http.server + json + sqlite-free). Port 8771.
 Data sources:
   ~/.hermes/cron/jobs.json              -> status job pipeline (5309ec6950c8)
   ~/.hermes/cron/output/<job>/          -> file output terakhir (umur laporan)
   ~/.hermes/crypto-watchlist.json       -> signal + status + P/L
-  ~/.hermes/mexc_futures.json + mexc_client -> balance & posisi live MEXC
+  ~/.hermes/okx_*.json + okx_client -> balance & posisi live OKX (menunggu API key)
   ~/.hermes/state/onchain_enrich.jsonl  -> Agent 6 (makro DefiLlama + positioning)
 
 Dijalankan sebagai systemd user service (crypto-dashboard.service) supaya tahan restart gateway.
@@ -38,7 +38,7 @@ JOB_ID = "5309ec6950c8"
 PORT = 8771
 WIB = timezone(timedelta(hours=7))
 
-_cache = {"mexc": (0.0, None), "mexc_lock": threading.Lock()}
+_cache = {"okx": (0.0, None), "okx_lock": threading.Lock()}
 
 
 # ------------------------------------------------------------------ helpers
@@ -85,33 +85,40 @@ def pipeline_status():
     }
 
 
-def mexc_state():
-    """Balance + posisi live MEXC, cache 60 detik biar tidak spam API."""
-    with _cache["mexc_lock"]:
-        ts, val = _cache["mexc"]
+def okx_state():
+    """Balance + posisi live OKX, cache 60 detik biar tidak spam API.
+
+    Pengganti MEXC (10 Okt). Klien privat OKX BELUM terpasang — jadi fungsi ini
+    mengembalikan status jujur: `ok=False` + `error` yang menyebut sebabnya,
+    BUKAN angka palsu. Begitu klien privat + API key trading ada, isi blok
+    `try` di bawah tinggal diarahkan ke sana.
+    """
+    with _cache["okx_lock"]:
+        ts, val = _cache["okx"]
         if val is not None and time.time() - ts < 60:
             return val
         data = {"ok": False, "balance": None, "positions": [], "error": None}
         try:
-            import mexc_client as mx
-            data["balance"] = mx.balance_usdt()
-            pos = mx.positions() or []
+            import okx_client as ox  # belum ada -> jatuh ke except (jujur, bukan bohong)
+            data["balance"] = ox.balance_usdt()
+            pos = ox.positions() or []
             clean = []
             for p in pos:
                 clean.append({
-                    "symbol": p.get("symbol"),
-                    "side": "LONG" if str(p.get("positionType")) == "1" else "SHORT",
-                    "vol": p.get("holdVol"),
-                    "open_price": p.get("holdAvgPrice") or p.get("openAvgPrice"),
-                    "leverage": p.get("leverage"),
-                    "pnl": p.get("realised") or p.get("imRate"),
-                    "im": p.get("im"),
+                    "symbol": p.get("instId"),
+                    "side": "LONG" if str(p.get("posSide")) == "long" else "SHORT",
+                    "vol": p.get("pos"),
+                    "open_price": p.get("avgPx"),
+                    "leverage": p.get("lever"),
+                    "pnl": p.get("upl"),
+                    "im": p.get("imr"),
                 })
             data["positions"] = clean
             data["ok"] = True
         except Exception as exc:
-            data["error"] = f"{type(exc).__name__}: {str(exc)[:120]}"
-        _cache["mexc"] = (time.time(), data)
+            data["error"] = (f"klien privat OKX belum ada ({type(exc).__name__}) — "
+                             f"autotrade menunggu API key trading dari owner")
+        _cache["okx"] = (time.time(), data)
         return data
 
 
@@ -264,10 +271,10 @@ def watchlist():
 # ------------------------------------------- catatan evaluasi -> bullet
 # Urutan tampil grup (bukan urutan pencocokan). Grup terakhir = default.
 _EVAL_DISPLAY = ["Ringkasan", "Kandidat & setup", "Penyebab / konteks",
-                 "Posisi & trigger", "Verifikasi MEXC", "Event & risiko", "Aksi"]
+                 "Posisi & trigger", "Verifikasi OKX", "Event & risiko", "Aksi"]
 _EVAL_MATCH = [
     ("Aksi", ("no action", "silent", "hold,", "crypto-auto-eval")),
-    ("Verifikasi MEXC", ("positionid", "holdvol", "stoporder", "verified live", "liq ")),
+    ("Verifikasi OKX", ("positionid", "pos", "stoporder", "verified live", "liq ")),
     ("Posisi & trigger", ("still_open", "#sig", "tersentuh", "fill ", "px now",
                           "trigger", "tp1", "sl ")),
     ("Penyebab / konteks", ("penyebab", "vold", "low_vol")),
@@ -314,7 +321,7 @@ POS_TTL = 300  # detik
 
 
 def _binance_sym(symbol):
-    """MEXC 'LINK_USDT' / watchlist pair -> Binance 'LINKUSDT'."""
+    """OKX 'LINK-USDT-SWAP' / watchlist pair -> Binance 'LINKUSDT'."""
     if not symbol:
         return None
     s = str(symbol).upper().replace("_", "").strip()
@@ -354,7 +361,7 @@ def _must_show():
     """Koin yang wajib tampil di Blok 2 + alasannya (prioritas tertinggi)."""
     need = {}
     try:
-        for p in (mexc_state().get("positions") or []):
+        for p in (okx_state().get("positions") or []):
             s = _binance_sym(p.get("symbol"))
             if s:
                 need[s] = "posisi open"
@@ -471,7 +478,7 @@ def summary():
     return {
         "now": datetime.now(WIB).strftime("%d %b %Y %H:%M:%S WIB"),
         "pipeline": pipeline_status(),
-        "mexc": mexc_state(),
+        "okx": okx_state(),
         "watchlist": watchlist(),
         "stats": stats(),
         "agent6": agent6(),
@@ -486,7 +493,7 @@ PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>₿ Crypto Trading Desk — Pipeline · MEXC · Agent 6</title>
+<title>₿ Crypto Trading Desk — Pipeline · OKX · Agent 6</title>
 <style>
 :root{--bg:#080d13;--card:#111a24;--card2:#0e161f;--border:#1e2c3a;--accent:#38bdf8;
 --green:#22c55e;--red:#ef4444;--yellow:#eab308;--text:#e6f0f7;--muted:#7c93a6;--purple:#a78bfa;}
@@ -552,7 +559,7 @@ footer{color:var(--muted);font-size:11px;text-align:center;padding:24px 0}
 <header>
   <div class="container">
     <h1>₿ Crypto Trading Desk <span class="badge neutral" id="hdr-status">loading…</span></h1>
-    <div class="sub">Pipeline 5-agent + Agent 6 confluence · eksekusi MEXC Futures · <span id="hdr-time">—</span></div>
+    <div class="sub">Pipeline 5-agent + Agent 6 confluence · eksekusi OKX Swap · <span id="hdr-time">—</span></div>
   </div>
 </header>
 <div class="container">
@@ -583,8 +590,8 @@ footer{color:var(--muted);font-size:11px;text-align:center;padding:24px 0}
   </section>
 
   <section>
-    <h2>💼 MEXC Live</h2>
-    <div id="mexc"></div>
+    <h2>💼 OKX Live</h2>
+    <div id="okx"></div>
   </section>
 
   <section>
@@ -679,7 +686,7 @@ async function load(){
   let d;
   try { d = await (await fetch('api/summary', {cache:'no-store'})).json(); }
   catch(e){ document.getElementById('hdr-status').textContent = 'API error'; return; }
-  const p = d.pipeline, s = d.stats, m = d.mexc;
+  const p = d.pipeline, s = d.stats, m = d.okx;
 
   document.getElementById('hdr-time').textContent = d.now;
   const hs = document.getElementById('hdr-status');
@@ -690,7 +697,7 @@ async function load(){
   renderEquity(d.equity || {});
 
   document.getElementById('kpis').innerHTML = `
-    <div class="card"><div class="kpi-label">Balance MEXC</div>
+    <div class="card"><div class="kpi-label">Balance OKX</div>
       <div class="kpi-value">${usd(m.balance)}</div>
       <div class="kpi-note">${m.ok ? 'live' : 'gagal ambil: ' + (m.error||'—')}</div></div>
     <div class="card"><div class="kpi-label">Posisi Open</div>
@@ -750,7 +757,7 @@ async function load(){
     : '<div class="card muted">Belum ada signal di watchlist.</div>';
 
   const pos = m.positions || [];
-  document.getElementById('mexc').innerHTML = pos.length ? `
+  document.getElementById('okx').innerHTML = pos.length ? `
     <table><thead><tr><th>Symbol</th><th>Arah</th><th>Vol</th><th>Entry</th><th>Leverage</th><th>IM</th></tr></thead>
     <tbody>${pos.map(x=>`<tr><td><b>${x.symbol}</b></td><td>${statusBadge(x.side)}</td>
       <td class="mono">${fmt(x.vol)}</td><td class="mono">${fmt(x.open_price)}</td>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Crypto orderflow collector — public MEXC perp + recent kline delta.
+"""Crypto orderflow collector — public OKX swap + recent kline delta (10 Okt).
 
 Output JSON: {symbol, last, change_24h, oi, oi_delta_24h, volume_24h,
 turnover_24h, funding, long_short_bias, taker_buy_sell_ratio, range_24h, ...}
@@ -14,9 +14,29 @@ import subprocess
 import sys
 import time
 
-MEXC_TICKER = "https://contract.mexc.com/api/v1/contract/ticker?symbol={sym}"
-MEXC_KLINE = "https://contract.mexc.com/api/v1/contract/kline/{sym}?interval={iv}&start={s}&end={e}"
-MEXC_FUNDING = "https://contract.mexc.com/api/v1/contract/funding_rate/{sym}"
+OKX_TICKER = "https://www.okx.com/api/v5/market/ticker?instId={sym}"
+OKX_KLINE = "https://www.okx.com/api/v5/market/candles?instId={sym}&bar={iv}&limit={limit}"
+OKX_FUNDING = "https://www.okx.com/api/v5/public/funding-rate?instId={sym}"
+
+
+def okx_inst(pair):
+    """MEXC "BTC_USDT" / "BTCUSDT" -> OKX "BTC-USDT-SWAP"."""
+    p = str(pair).upper().strip()
+    if "-" in p:
+        return p
+    p = p.replace("_", "")
+    if p.endswith("USDT") and len(p) > 4:
+        return f"{p[:-4]}-USDT-SWAP"
+    return p
+
+
+# OKX bar: 1H/4H/1D dst. Pemanggil lama mengirim "Hour1"/"Min60" gaya MEXC.
+_BAR_OKX = {"Min1": "1m", "Min5": "5m", "Min15": "15m", "Min30": "30m",
+            "Min60": "1H", "Hour1": "1H", "Hour4": "4H", "Day1": "1D"}
+
+
+def bar_okx(iv):
+    return _BAR_OKX.get(str(iv), str(iv))
 
 
 def fetch(url, timeout=12):
@@ -29,42 +49,34 @@ def fetch(url, timeout=12):
 
 
 def get_ticker(sym):
-    d = fetch(MEXC_TICKER.format(sym=sym))
-    return d.get("data", {}) if d.get("success") else {}
+    d = fetch(OKX_TICKER.format(sym=okx_inst(sym)))
+    data = d.get("data") or []
+    return data[0] if (str(d.get("code")) == "0" and data) else {}
 
 
 def get_funding(sym):
-    d = fetch(MEXC_FUNDING.format(sym=sym))
-    if d.get("success") and "data" in d:
-        data = d["data"]
-        if isinstance(data, list) and data:
-            return data[0]
-    return {}
+    d = fetch(OKX_FUNDING.format(sym=okx_inst(sym)))
+    data = d.get("data") or []
+    return data[0] if (str(d.get("code")) == "0" and data) else {}
 
 
 def get_kline(sym, interval, days):
-    now = int(time.time())
-    d = fetch(MEXC_KLINE.format(sym=sym, iv=interval, s=now - days * 86400, e=now))
-    if not d.get("success"):
+    """Candle OKX. OKX kirim TERBARU DULU (descending) -> dibalik jadi MENAIK,
+    sama seperti bentuk MEXC dulu, supaya pemakai di bawah tak perlu diubah."""
+    limit = min(100, max(24, days * 24))
+    d = fetch(OKX_KLINE.format(sym=okx_inst(sym), iv=bar_okx(interval), limit=limit))
+    if str(d.get("code")) != "0":
         return []
-    data = d["data"]
-    if not isinstance(data, dict):
-        return []
-    times = data.get("time", [])
-    opens = data.get("open", [])
-    highs = data.get("high", [])
-    lows = data.get("low", [])
-    closes = data.get("close", [])
-    vols = data.get("vol", [])
-    if not (times and closes and len(times) == len(closes)):
-        return []
-    return [{"t": int(times[i]), "O": float(opens[i]), "H": float(highs[i]),
-             "L": float(lows[i]), "C": float(closes[i]), "V": float(vols[i])}
-            for i in range(len(times))]
+    rows = d.get("data") or []
+    rows = [r for r in rows if len(r) >= 6]
+    rows.sort(key=lambda r: int(r[0]))  # menaik (paling tua dulu)
+    return [{"t": int(r[0]), "O": float(r[1]), "H": float(r[2]),
+             "L": float(r[3]), "C": float(r[4]), "V": float(r[5])}
+            for r in rows]
 
 
 def oi_delta(sym):
-    """Approximate OI delta by using volume surge as proxy. MEXC public
+    """Approximate OI delta by using volume surge as proxy. OKX public
     doesn't expose OI history, so we use turnover acceleration as a signal
     of new contracts opening. Also use Taker buy/sell ratio from depth.
     """
@@ -86,12 +98,12 @@ def depth_proxy(sym):
     t = get_ticker(sym)
     if not t:
         return {}
-    bid1 = float(t.get("bid1", 0))
-    ask1 = float(t.get("ask1", 0))
+    bid1 = float(t.get("bidPx", 0) or 0)
+    ask1 = float(t.get("askPx", 0) or 0)
     spread = (ask1 - bid1) / bid1 * 100 if bid1 > 0 else 0
-    last = float(t.get("lastPrice", 0))
-    h24 = float(t.get("high24Price", 0))
-    l24 = float(t.get("lower24Price", 0))
+    last = float(t.get("last", 0) or 0)
+    h24 = float(t.get("high24h", 0) or 0)
+    l24 = float(t.get("low24h", 0) or 0)
     mid24 = (h24 + l24) / 2
     # Position of last vs 24h mid: >0 means buy pressure, <0 means sell pressure
     buy_pressure = (last - mid24) / (h24 - l24) * 100 if h24 > l24 else 0
@@ -114,13 +126,16 @@ def main():
     d = depth_proxy(sym)
     vol_delta = oi_delta(sym)
 
-    last = float(t.get("lastPrice", 0))
-    h24 = float(t.get("high24Price", 0))
-    l24 = float(t.get("lower24Price", 0))
-    change24 = float(t.get("riseFallRate", 0)) * 100
-    oi = float(t.get("holdVol", 0))
-    vol24 = float(t.get("volume24", 0))
-    turnover24 = float(t.get("amount24", 0))
+    last = float(t.get("last", 0) or 0)
+    h24 = float(t.get("high24h", 0) or 0)
+    l24 = float(t.get("low24h", 0) or 0)
+    # OKX tak kirim % perubahan; hitung dari open24h (apa adanya, dari 2 angka OKX).
+    open24 = float(t.get("open24h", 0) or 0)
+    change24 = ((last - open24) / open24 * 100) if open24 > 0 else 0.0
+    # OKX tak punya "open interest"/"holdVol" di ticker; biarkan 0 apa adanya.
+    oi = 0.0
+    vol24 = float(t.get("vol24h", 0) or 0)
+    turnover24 = float(t.get("volCcy24h", 0) or 0)
     funding = float(f.get("fundingRate", t.get("fundingRate", 0)) or 0) * 100
     next_funding = f.get("nextSettleTime", "N/A")
 

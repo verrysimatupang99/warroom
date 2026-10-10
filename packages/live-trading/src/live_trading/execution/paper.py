@@ -44,7 +44,7 @@ def compute_be_stop(
     """True Net Break-Even stop yang menutup biaya round-trip.
 
     ``total_bps`` (bila diberi) = biaya TERUKUR dari buku order (P2) — dipakai apa adanya.
-    Tanpa itu, jatuh ke ``fee_buffer_pct`` lama (0,1% = asumsi fee taker MEXC 0,05%×2).
+    Tanpa itu, jatuh ke ``fee_buffer_pct`` lama (0,1% = asumsi fee taker OKX 0,05%×2).
     """
     pct = (total_bps / 10000.0) if total_bps is not None else fee_buffer_pct
     if direction.upper() == "LONG":

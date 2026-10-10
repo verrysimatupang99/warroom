@@ -7,7 +7,7 @@ from warroom_core.signal import Signal
 def sig(i, strategy="smc"):
     now = datetime(2026, 1, 1, tzinfo=UTC)
     return Signal(
-        i, "crypto", "mexc", "BTCUSDT", strategy, "long", 100, 98, 104, 2, .8,
+        i, "crypto", "okx", "BTCUSDT", strategy, "long", 100, 98, 104, 2, .8,
         now, now + timedelta(minutes=5), 1, "test",
     )
 

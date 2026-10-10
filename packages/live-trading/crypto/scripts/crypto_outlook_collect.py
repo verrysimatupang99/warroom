@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Morning outlook collector for thread 648.
-MEXC perp digest (BTC/ETH focus) + CoinGecko global & OTHERS proxy.
+OKX swap digest (BTC/ETH focus) + CoinGecko global & OTHERS proxy.
 Printed to stdout for the cron agent to compose a two-scenario outlook.
 """
 import json

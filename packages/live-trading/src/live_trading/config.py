@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # --- Endpoint data (semua publik, tanpa key) -------------------------
     binance_fapi: str = "https://fapi.binance.com"
     binance_dapi: str = "https://dapi.binance.com"
-    mexc_contract: str = "https://contract.mexc.com"
+    okx_api: str = "https://www.okx.com"
     coingecko: str = "https://api.coingecko.com/api/v3"
     feargreed: str = "https://api.alternative.me"
     tradingview_scanner: str = "https://scanner.tradingview.com"

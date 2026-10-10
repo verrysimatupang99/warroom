@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Render a crypto outlook chart with TWO panels: 1D (3M) + 4H (30D).
-Dark theme, Telegram-sized. Auto-pulls from MEXC Contract API, fallback yfinance.
+Dark theme, Telegram-sized. Auto-pulls from OKX API, fallback yfinance.
 
 Usage:
   crypto_outlook_chart_v2.py --symbol BTC_USDT --title "BTC Outlook" \
@@ -37,36 +37,37 @@ YFIN = {"BTC_USDT": "BTC-USD", "ETH_USDT": "ETH-USD", "SOL_USDT": "SOL-USD",
         "MATIC_USDT": "MATIC-USD", "DOT_USDT": "DOT-USD", "LTC_USDT": "LTC-USD"}
 
 
-def fetch_mexc(symbol, interval, span_days):
-    now = int(time.time())
-    url = (f"https://contract.mexc.com/api/v1/contract/kline/{symbol}"
-           f"?interval={interval}&start={now - span_days * 86400}&end={now}")
+_BAR_OKX = {"Min1": "1m", "Min5": "5m", "Min15": "15m", "Min30": "30m",
+            "Min60": "1H", "Hour1": "1H", "Hour4": "4H", "Day1": "1D"}
+
+
+def okx_inst(pair):
+    """MEXC "BTC_USDT" / "BTCUSDT" -> OKX "BTC-USDT-SWAP" (pengganti MEXC, 10 Okt)."""
+    p = str(pair).upper().strip()
+    if "-" in p:
+        return p
+    p = p.replace("_", "")
+    if p.endswith("USDT") and len(p) > 4:
+        return f"{p[:-4]}-USDT-SWAP"
+    return p
+
+
+def fetch_okx(symbol, interval, span_days):
+    """Candle OKX (pengganti MEXC). OKX kirim TERBARU DULU -> dibalik menaik."""
+    limit = min(300, max(50, span_days * (24 if interval in ("Min60", "Hour1") else 6)))
+    url = (f"https://www.okx.com/api/v5/market/candles?instId={okx_inst(symbol)}"
+           f"&bar={_BAR_OKX.get(str(interval), '1H')}&limit={limit}")
     out = subprocess.run(["curl", "-s", "--max-time", "15", url],
                          capture_output=True, text=True, timeout=25).stdout
     d = json.loads(out)
-    if not d.get("success") or "data" not in d:
+    if str(d.get("code")) != "0":
         return None
-    data = d["data"]
-    # MEXC format: data = {"time":[...], "open":[...], "high":[...], "low":[...], "close":[...], "vol":[...]}
-    if not isinstance(data, dict):
+    rows = [r for r in (d.get("data") or []) if len(r) >= 6]
+    if not rows:
         return None
-    times = data.get("time", [])
-    opens = data.get("open", [])
-    highs = data.get("high", [])
-    lows = data.get("low", [])
-    closes = data.get("close", [])
-    vols = data.get("vol", [])
-    if not (times and closes and len(times) == len(closes)):
-        return None
-    candles = []
-    for i in range(len(times)):
-        candles.append({
-            "t": int(times[i]),
-            "O": float(opens[i]), "H": float(highs[i]),
-            "L": float(lows[i]), "C": float(closes[i]),
-            "V": float(vols[i]) if i < len(vols) else 0.0,
-        })
-    return candles
+    rows.sort(key=lambda r: int(r[0]))
+    return [{"t": int(r[0]), "O": float(r[1]), "H": float(r[2]),
+             "L": float(r[3]), "C": float(r[4]), "V": float(r[5])} for r in rows]
 
 
 def fetch_yf(symbol, interval, span_days):
@@ -93,7 +94,7 @@ def fetch_yf(symbol, interval, span_days):
 
 
 def fetch(symbol, interval, span_days):
-    c = fetch_mexc(symbol, interval, span_days)
+    c = fetch_okx(symbol, interval, span_days)
     if c and len(c) > 5:
         return c
     return fetch_yf(symbol, interval, span_days)

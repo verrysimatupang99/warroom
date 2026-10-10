@@ -7,7 +7,7 @@ from live_trading.signals.golden_pullback import GoldenPullbackStrategy
 
 def test_strategy_emits_unified_paper_signal_from_deterministic_payload():
     data = MarketData(
-        "crypto", "mexc", "BTCUSDT", datetime.now(UTC), 106, 2, 100_000,
+        "crypto", "okx", "BTCUSDT", datetime.now(UTC), 106, 2, 100_000,
         {
             "direction": "long", "swing_low": 100, "swing_high": 120,
             "structure_bias": "bullish", "liquidity_swept": True,
@@ -23,7 +23,7 @@ def test_strategy_emits_unified_paper_signal_from_deterministic_payload():
 
 def test_strategy_emits_no_signal_when_smc_gate_is_missing():
     data = MarketData(
-        "crypto", "mexc", "BTCUSDT", datetime.now(UTC), 106, 2, 100_000,
+        "crypto", "okx", "BTCUSDT", datetime.now(UTC), 106, 2, 100_000,
         {"direction": "long", "swing_low": 100, "swing_high": 120,
          "structure_bias": "bullish", "liquidity_swept": False, "confirmation": True},
     )

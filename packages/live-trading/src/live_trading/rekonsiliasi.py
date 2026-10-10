@@ -8,7 +8,7 @@ daftar "terbuka" **tanpa** baris ledger, tidak ada yang menutupnya di sini: posi
 menggantung selamanya, dan ledger kehilangan R-nya.
 
 Bukti 6 Okt: OP_USDT & LIT_USDT masih ``still_open`` sejak 27 Sep, padahal candle
-MEXC menunjukkan keduanya terisi 26/27 Sep dan kena SL pada 28/27 Sep. Akibatnya
+OKX menunjukkan keduanya terisi 26/27 Sep dan kena SL pada 28/27 Sep. Akibatnya
 ledger melaporkan +3,844R padahal seharusnya +1,844R — selisih 2R yang terlalu
 besar untuk dibiarkan.
 
@@ -37,28 +37,43 @@ from typing import Any
 
 __all__ = ["rekonstruksi_posisi", "rekonsiliasi_watchlist"]
 
-_KLINE = "https://contract.mexc.com/api/v1/contract/kline/{pair}?interval=Min60&start={start}"
+_KLINE = "https://www.okx.com/api/v5/market/candles?instId={pair}&bar=1H&limit=100"
 _STATUS_TERBUKA = {"still_open", "open", "pending"}
 
 
-def _pair_mexc(pair: str) -> str:
-    p = str(pair).upper()
-    return p if "_" in p else f"{p[:-4]}_USDT" if p.endswith("USDT") else p
+def _pair_okx(pair: str) -> str:
+    """MEXC "BTC_USDT" / "BTCUSDT" -> OKX "BTC-USDT-SWAP" (pengganti MEXC, 10 Okt)."""
+    p = str(pair).upper().strip()
+    if "-" in p:
+        return p
+    p = p.replace("_", "")
+    if p.endswith("USDT") and len(p) > 4:
+        return f"{p[:-4]}-USDT-SWAP"
+    return p
 
 
 def _klines(pair: str, sejak_iso: str, timeout: float = 20.0) -> dict[str, list[float]]:
-    t0 = int(datetime.fromisoformat(sejak_iso).timestamp()) - 3600
+    """Candle 1H dari OKX (pengganti MEXC, 10 Okt).
+
+    Bentuk OKX: data = [ts, o, h, l, c, vol, ...] TERBARU DULU (descending).
+    Bentuk MEXC dulu: {time:[...], high:[...], low:[...]}. Di sini dikembalikan
+    dengan URUTAN SAMA seperti pemakai lama: urut MENAIK (paling tua dulu),
+    supaya logika rekonsiliasi di bawah tidak perlu diubah.
+    """
     req = urllib.request.Request(
-        _KLINE.format(pair=_pair_mexc(pair), start=t0),
+        _KLINE.format(pair=_pair_okx(pair)),
         headers={"User-Agent": "war-room/1.0"},
     )
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.load(r)
-    data = d.get("data") or {}
+    rows = d.get("data") or []
+    t0 = int(datetime.fromisoformat(sejak_iso).timestamp()) - 3600
+    rows = [x for x in rows if int(x[0]) >= t0]
+    rows.sort(key=lambda x: int(x[0]))  # OKX kirim terbaru dulu -> balik ke menaik
     return {
-        "t": [int(x) for x in (data.get("time") or [])],
-        "h": [float(x) for x in (data.get("high") or [])],
-        "l": [float(x) for x in (data.get("low") or [])],
+        "t": [int(x[0]) for x in rows],
+        "h": [float(x[2]) for x in rows],
+        "l": [float(x[3]) for x in rows],
     }
 
 
@@ -139,7 +154,7 @@ def _hasil(
         "status": status,
         "r": r,
         "note": (
-            f"REKONSILIASI candle MEXC 1H: terisi {terisi_pada or '—'} → {label} "
+            f"REKONSILIASI candle OKX 1H: terisi {terisi_pada or '—'} → {label} "
             f"{f'@ {harga}' if harga is not None else ''} pada {waktu or '—'} "
             f"(SL dicek lebih dulu bila satu candle menyentuh dua level)."
         ),

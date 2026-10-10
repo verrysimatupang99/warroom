@@ -65,31 +65,31 @@ EXECUTED = True   # set per-item di main(): False kalau sinyal di-skip (paper)
 def manage_tp1(pair, be_level, tp2):
     """TP1 kena -> partial 50% + SL digeser ke BE. Aturan user 26 Sep (binding).
 
-    Kalau lotnya nggak bisa dibelah (1 lot = ukuran terkecil di MEXC), cukup
+    Kalau lotnya nggak bisa dibelah (1 lot = ukuran terkecil di OKX), cukup
     set BE. APA PUN hasilnya harus dilaporkan — jangan diam kalau gagal, karena
     posisi tanpa proteksi itu masalah uang beneran.
 
     Return (ok, pesan).
     """
     if not EXECUTED:
-        return True, ("PAPER TRADE (tanpa eksekusi MEXC — signal di-skip atas "
+        return True, ("PAPER TRADE (tanpa eksekusi OKX — signal di-skip atas "
                       "keputusan user). Tidak ada posisi untuk di-manage; hasil "
                       "TP/SL tetap dicatat di jurnal.")
     try:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        import mexc_client as mx
+        import okx_client as mx
         try:
-            from crypto_auto_exec import mexc_symbol
+            from crypto_auto_exec import okx_symbol
         except Exception:
-            mexc_symbol = lambda x: x
+            okx_symbol = lambda x: x
     except Exception as exc:
-        return False, f"GAGAL import mexc_client ({type(exc).__name__})"
+        return False, f"GAGAL import okx_client ({type(exc).__name__})"
 
-    sym = mexc_symbol(pair)
+    sym = okx_symbol(pair)
     try:
         pos = [p for p in (mx.positions(sym) or []) if abs(float(p.get("holdVol") or 0)) > 0]
         if not pos:
-            return False, "tidak ada posisi MEXC untuk pair ini (entry manual?) — set BE manual"
+            return False, "tidak ada posisi OKX untuk pair ini (entry manual?) — set BE manual"
         p = pos[0]
         hold = int(float(p["holdVol"]))
         mx.cancel_stop_orders(sym)
@@ -224,7 +224,7 @@ def main():
         paper_tag = ""
         if not EXECUTED:
             label += " [PAPER — tanpa eksekusi]"
-            paper_tag = "PAPER (tanpa eksekusi MEXC). "
+            paper_tag = "PAPER (tanpa eksekusi OKX). "
         ts = datetime.now(WIB).strftime("%d/%b %H:%M").replace("/", "/")
         if hit_tp(tp2):
             it["status"] = "closed_TP2"

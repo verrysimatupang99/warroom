@@ -1916,7 +1916,7 @@ def _blok(snap):
             "<details><summary>metodologi + semua uji</summary>"
             f"<p class='dim'>biaya {bt.get('biaya_bps', 5):.0f} bps/sisi (taker). Edge kotor tanpa "
             f"biaya: {_r(bt.get('kotor_semua'))} — selisihnya yang dimakan biaya. Di bursa "
-            f"maker 0% (MEXC futures) biaya mendekati nol, jadi angka gate di atas adalah "
+            f"maker 0% (OKX swap) biaya mendekati nol, jadi angka gate di atas adalah "
             f"sisi paling pesimis.</p>"
             f"<p><b>Uji klaster (satu pair = satu unit)</b>: beda lolos vs ditolak "
             f"{bt.get('klaster_r')}R · t={bt.get('klaster_t')} · n={bt.get('klaster_n_pair')} "

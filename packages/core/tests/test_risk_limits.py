@@ -6,13 +6,13 @@ from warroom_core.signal import MarketData, RiskPolicy, Signal, evaluate_risk
 def _signal():
     now = datetime.now(UTC)
     return Signal(
-        "risk-1", "crypto", "mexc", "BTCUSDT", "smc", "long",
+        "risk-1", "crypto", "okx", "BTCUSDT", "smc", "long",
         100, 98, 104, 2, .8, now, now + timedelta(minutes=5), 1, "test",
     )
 
 
 def _data():
-    return MarketData("crypto", "mexc", "BTCUSDT", datetime.now(UTC), 100, 2, 100_000, {})
+    return MarketData("crypto", "okx", "BTCUSDT", datetime.now(UTC), 100, 2, 100_000, {})
 
 
 def test_risk_rejects_daily_loss_open_exposure_and_position_caps():

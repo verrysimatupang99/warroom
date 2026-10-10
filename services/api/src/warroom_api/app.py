@@ -780,15 +780,16 @@ def create_app() -> FastAPI:
     def sumber_data(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         """Daftar SUMBER DATA tiap pasar — satu tempat, biar tidak ada tebakan.
 
+        Revisi pemilik 10 Okt: "Crypto OKX" (ganti MEXC total).
         Revisi pemilik 7 Okt: "sumber data: Crypto MEXC; IDX Stock Arjum; Forex TVC;
         Polymarket Dokumentasi PM; Meme: Meteora=Solana, Robinhood=Uniswap". Daftar ini
         dipakai UI (halaman market + Sistem) supaya pembaca tahu angka ini datang dari mana.
         """
         return {
             "sumber": [
-                {"pasar": "crypto", "label": "Crypto", "sumber": "MEXC",
+                {"pasar": "crypto", "label": "Crypto", "sumber": "OKX",
                  "keterangan": (
-                     "Harga & depth dari MEXC (venue paper). "
+                     "Harga & depth dari OKX (venue paper). "
                      "Sinyal = SMC multi-timeframe, gate 6 aturan."
                  )},
                 {"pasar": "idx", "label": "IDX", "sumber": "Stock Arjum",
@@ -817,7 +818,7 @@ def create_app() -> FastAPI:
                 },
             ],
             "sumber_atom": [
-                {"nama": "MEXC", "dipakai": "harga & eksekusi paper crypto"},
+                {"nama": "OKX", "dipakai": "harga & eksekusi paper crypto"},
                 {"nama": "Stock Arjum", "dipakai": "IDX bandarmologi/BSJP"},
                 {"nama": "TVC (TradingView)", "dipakai": "forex (bias/struktur)"},
                 {"nama": "Dokumentasi Polymarket", "dipakai": "aturan & dataset Polymarket"},

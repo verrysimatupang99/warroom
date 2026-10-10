@@ -8,7 +8,7 @@ from warroom_core.signal import MarketData
 def test_normalize_market_data_sets_common_shape_and_freshness():
     now = datetime.now(UTC)
     data = normalize_market_data(
-        market="crypto", venue="mexc", instrument="BTCUSDT",
+        market="crypto", venue="okx", instrument="BTCUSDT",
         observed_at=now, price=100.0, spread_bps=2.0, liquidity_usd=1000,
         payload={"source": "test"},
     )
@@ -19,9 +19,9 @@ def test_normalize_market_data_sets_common_shape_and_freshness():
 
 def test_normalize_market_data_rejects_naive_timestamp_and_bad_price():
     with pytest.raises(ValueError):
-        normalize_market_data("crypto", "mexc", "BTCUSDT", datetime.now(), 100, None, None, {})
+        normalize_market_data("crypto", "okx", "BTCUSDT", datetime.now(), 100, None, None, {})
     with pytest.raises(ValueError):
-        normalize_market_data("crypto", "mexc", "BTCUSDT", datetime.now(UTC), 0, None, None, {})
+        normalize_market_data("crypto", "okx", "BTCUSDT", datetime.now(UTC), 0, None, None, {})
 
 
 def test_adapter_protocol_is_small_and_explicit():

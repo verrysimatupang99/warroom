@@ -33,7 +33,7 @@ C_EMA = "#d29922"
 
 
 def fetch_klines(symbol, interval="Day1", span_days=120):
-    # Map MEXC-style interval names to Binance kline intervals
+    # Map interval names to Binance kline intervals
     interval_map = {"Day1": "1d", "Hour4": "4h", "Min60": "1h", "Week1": "1w"}
     binance_interval = interval_map.get(interval, "1d")
     limit = max(span_days // (1 if binance_interval == "1d" else 6), 50)
@@ -141,7 +141,7 @@ def draw(rows, title, levels, out_path):
     for t in legend.get_texts():
         t.set_color(FG)
     fig.text(
-        0.99, 0.01, "source: MEXC perp · auto-generated",
+        0.99, 0.01, "source: OKX swap · auto-generated",
         color="#6e7681", fontsize=7.5, ha="right",
     )
     fig.subplots_adjust(left=0.07, right=0.84, top=0.93, bottom=0.08)

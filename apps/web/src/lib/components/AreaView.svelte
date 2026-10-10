@@ -589,7 +589,7 @@
 					<div class="mt-3">
 						<Penjelasan judul="Metode yang dipakai (SMC multi-timeframe) + cara membaca kolomnya">
 							<p>
-								<b>Apa yang diukur:</b> mesin memindai pair crypto (MEXC) di tiga kerangka waktu —
+								<b>Apa yang diukur:</b> mesin memindai pair crypto (OKX) di tiga kerangka waktu —
 								<b>1D, 4H, 1H</b> — mencari <i>point of interest</i> (POI) berupa FVG/order block,
 								menunggu harga kembali ke area itu, lalu menyusun entry/SL/TP di sekitarnya.
 								Kolom POI itu sebabnya: entry hanya sah bila harga berada di dalam area.
@@ -663,7 +663,7 @@
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
 								<!-- Cockpit mesin & ruang risiko (tiru desk Crypto Tencent, 9 Okt): status pipeline,
-								     dimensi gerbang, sinyal aktif dari fakta crypto_sinyal + risiko. TANPA panel MEXC. -->
+								     dimensi gerbang, sinyal aktif dari fakta crypto_sinyal + risiko. TANPA panel OKX. -->
 								<CockpitCrypto sinyal={cryptoSinyalObj} risiko={risikoObj} />
 								<!-- Susunan ini SUDAH BENAR menurut pemilik (7 Okt) — jangan diubah tanpa
 								     alasan baru: Dompet dulu, lalu kurva, lalu catatan cara membacanya. -->
@@ -1237,7 +1237,7 @@
 
 								<div class="rounded border border-line bg-surface p-2.5 space-y-1">
 									<div class="flex justify-between items-center font-bold text-text">
-										<span>MEXC Contract</span>
+										<span>OKX Swap</span>
 										<span class="text-pos">HTTP 200</span>
 									</div>
 									<div class="text-text-3 text-10">Ticker, Orderbook, Index Price</div>

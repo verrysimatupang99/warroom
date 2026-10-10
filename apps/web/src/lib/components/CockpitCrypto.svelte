@@ -6,7 +6,7 @@
 	 * status mesin, dimensi gerbang, sinyal aktif, dan ruang risiko. DISESUAIKAN ke War Room:
 	 * angka datang apa adanya dari fakta (`crypto_sinyal`, `risiko`) — tidak dihitung ulang.
 	 *
-	 * SENGAJA TANPA panel MEXC (saldo/posisi bursa): itu butuh kredensial yang atas arahan
+	 * SENGAJA TANPA panel OKX (saldo/posisi bursa): itu butuh kredensial yang atas arahan
 	 * owner TIDAK diambil dari Tencent. Yang tampil hanya angka yang sudah ada di War Room.
 	 */
 	interface Entri {
@@ -167,7 +167,7 @@
 
 		<p class="mt-2 text-10 text-text-3">
 			<b>Populasi:</b> sinyal aktif = baris mesin yang belum ditutup. Kolom <span class="font-mono">r</span> =
-			hasil berjalan (bisa minus sebelum ditutup). Panel bursa (saldo/posisi MEXC) sengaja tidak ada —
+			hasil berjalan (bisa minus sebelum ditutup). Panel bursa (saldo/posisi OKX) sengaja tidak ada —
 			butuh kredensial yang tidak diambil dari Tencent.
 		</p>
 		{#if sinyal.suplai?.mesin}

@@ -179,7 +179,7 @@ export async function getEvents(limit = 120, tipe?: string): Promise<Kejadian[]>
 	return j.events ?? [];
 }
 
-/** Sumber data tiap pasar (satu tempat: MEXC, Stock Arjum, TVC, PM, GMGN/FOMO, Meteora/Uniswap). */
+/** Sumber data tiap pasar (satu tempat: OKX, Stock Arjum, TVC, PM, GMGN/FOMO, Meteora/Uniswap). */
 export async function getSumber(): Promise<{
 	sumber: { pasar: string; label: string; sumber: string; keterangan: string }[];
 	sumber_atom: { nama: string; dipakai: string }[];

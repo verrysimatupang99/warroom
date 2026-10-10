@@ -3,7 +3,7 @@ cd /home/admin/live-trading/crypto/scripts
 
 echo "=== 1. reachability sumber data dari Webdock ==="
 for u in "https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT" \
-         "https://contract.mexc.com/api/v1/contract/ticker?symbol=BTC_USDT" \
+         "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP" \
          "https://api.alternative.me/fng/?limit=1" \
          "https://api.coingecko.com/api/v3/global"; do
   printf "  %-62s " "$(echo $u | cut -c1-62)"

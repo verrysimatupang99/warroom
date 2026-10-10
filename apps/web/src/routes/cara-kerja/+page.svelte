@@ -33,7 +33,7 @@
 	const metode = [
 		{
 			pasar: 'Crypto',
-			sumber: 'MEXC',
+			sumber: 'OKX',
 			strategi: 'SMC multi-timeframe',
 			isi: 'Scan 1D + 4H + 1H → cari POI (FVG/order block) → tunggu harga kembali ke area → susun entry/SL/TP. Enam aturan gate: mtf_alignment, poi_valid, freshness, sl_distance, atr_min, exposure.',
 			bukti: 'Pengukuran shadow (lolos vs ditolak) + walk-forward backtest + ledger R. Pakem: INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING.'

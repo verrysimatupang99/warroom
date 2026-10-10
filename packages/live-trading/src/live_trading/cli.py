@@ -47,7 +47,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         checks.append(
             _check(c, "binance coin-m", f"{s.binance_dapi}/dapi/v1/ticker/price?symbol=BTCUSD_PERP")
         )
-        checks.append(_check(c, "mexc futures", f"{s.mexc_contract}/api/v1/contract/ticker?symbol=BTC_USDT"))
+        checks.append(_check(c, "okx swap", f"{s.okx_api}/api/v5/market/ticker?instId=BTC-USDT-SWAP"))
         checks.append(_check(c, "coingecko global", f"{s.coingecko}/global"))
         checks.append(_check(c, "fear & greed", f"{s.feargreed}/fng/?limit=1"))
         checks.append(
@@ -186,8 +186,8 @@ def _collect_crypto() -> int:
             f"    {r['pair']:<10} {r['price']:>10,.2f} {r['chg24h']:>6.2f}% "
             f"{r['funding']:>8.4f}% {str(r['taker']):>7} {r['quote_vol']:>8,.1f}"
         )
-    ex = c.mexc_check()
-    print(f"    jalur eksekusi MEXC: {'hidup' if ex['ok'] else 'MATI'} ({ex['symbol']} @ {ex['last']})")
+    ex = c.okx_check()
+    print(f"    jalur data OKX: {'hidup' if ex['ok'] else 'MATI'} ({ex['symbol']} @ {ex['last']})")
     return 0
 
 

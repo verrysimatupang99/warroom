@@ -189,7 +189,7 @@
 	         tepat di belakangnya -> mulus tanpa lompat. Saat kursor/fokus di atasnya,
 	         animasi berhenti (orang butuh membaca angka diam).
 	     (b) REALTIME — data di-refresh tiap 15 s dari `bagian.crypto` (harga & chg24h
-	         nyata dari MEXC, bukan contoh). Umur data ditulis apa adanya di ekornya. -->
+	         nyata dari OKX, bukan contoh). Umur data ditulis apa adanya di ekornya. -->
 	<div class="ticker" aria-label="Harga pasar (berjalan)">
 		<div class="ticker-jalur" class:sepi={ticker.length === 0}>
 			{#if ticker.length === 0}
@@ -216,7 +216,7 @@
 
 	<div class="isi">
 		{#if sumber.length}
-			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto MEXC, IDX Stock Arjum,
+			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto OKX, IDX Stock Arjum,
 			     Forex TVC, Polymarket Dokumentasi PM, Meme GMGN/FOMO, LP Meteora & Uniswap) —
 			     sekarang tertulis di halaman, bukan tersembunyi di kepala orang. -->
 			<div class="sumber-strip" aria-label="Sumber data tiap pasar">

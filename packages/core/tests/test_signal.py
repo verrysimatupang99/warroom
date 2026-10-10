@@ -33,7 +33,7 @@ def test_signal_rejects_invalid_direction_and_live_mode():
 
 def test_signal_market_data_and_risk_allow_fresh_paper_signal():
     data = MarketData(
-        market="crypto", venue="mexc", instrument="BTCUSDT",
+        market="crypto", venue="okx", instrument="BTCUSDT",
         observed_at=datetime.now(UTC), price=100.0, spread_bps=3.0,
         liquidity_usd=100_000.0, payload={"source": "test"},
     )
@@ -44,7 +44,7 @@ def test_signal_market_data_and_risk_allow_fresh_paper_signal():
 def test_risk_rejects_stale_spread_liquidity_expiry_and_kill_switch():
     now = datetime.now(UTC)
     data = MarketData(
-        market="crypto", venue="mexc", instrument="BTCUSDT",
+        market="crypto", venue="okx", instrument="BTCUSDT",
         observed_at=now - timedelta(minutes=10), price=100.0,
         spread_bps=30, liquidity_usd=100, payload={},
     )
