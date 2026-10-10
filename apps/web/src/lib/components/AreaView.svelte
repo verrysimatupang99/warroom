@@ -1511,7 +1511,41 @@
 				{/if}
 
 				{#if sub === 'sinyal' || !sub}
+					<!-- Deret KPI besar (tiru kartu ringkasan IDX-616 Tencent): uang → hasil → sampel →
+					     sinyal. Pembaruan 10 Okt: pertanyaan "layak dipercaya atau tidak?" dijawab lebih
+					     dulu, sebelum tabel panjang. Angka apa adanya dari fakta (dompet + idx_akurasi). -->
+					{@const kpiIdx = (dompetObj?.pasar?.idx as any) ?? null}
+					{@const kpiIdxSaldo = kpiIdx?.titik?.length ? kpiIdx.titik[kpiIdx.titik.length - 1]?.saldo_idr ?? null : null}
+					{@const kpiIdxPnl = kpiIdx?.total_pnl_idr ?? null}
+					{@const kpiBsjp = idxAkurasiObj?.bsjp_gabungan ?? null}
 					<div class="space-y-4">
+						<div class="grid grid-cols-2 gap-2 font-mono sm:grid-cols-4">
+							<div class="rounded-card border border-line bg-surface p-2.5">
+								<div class="text-10 uppercase tracking-wide text-text-3">Dompet paper</div>
+								<div class="mt-0.5 text-20 font-bold text-text">
+									{kpiIdxSaldo != null ? `Rp ${(kpiIdxSaldo / 1e6).toFixed(2)} jt` : '—'}
+								</div>
+								<div class="text-10 text-text-3">modal awal Rp 10 jt</div>
+							</div>
+							<div class="rounded-card border border-line bg-surface p-2.5">
+								<div class="text-10 uppercase tracking-wide text-text-3">Hasil berjalan</div>
+								<div class="mt-0.5 text-20 font-bold { (kpiIdxPnl ?? 0) > 0 ? 'text-pos' : (kpiIdxPnl ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
+									{kpiIdxPnl != null ? `${kpiIdxPnl > 0 ? '+' : '−'}Rp ${(Math.abs(kpiIdxPnl) / 1000).toFixed(0)} rb` : '—'}
+								</div>
+								<div class="text-10 text-text-3">{kpiIdx?.titik?.length ? `${(kpiIdx.titik.length - 1)} trade tuntas` : '—'}</div>
+							</div>
+							<div class="rounded-card border border-line bg-surface p-2.5">
+								<div class="text-10 uppercase tracking-wide text-text-3">BSJP gabungan</div>
+								<div class="mt-0.5 text-20 font-bold { (kpiBsjp?.mean_r ?? 0) > 0 ? 'text-pos' : (kpiBsjp?.mean_r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
+									{kpiBsjp?.mean_r != null ? `${kpiBsjp.mean_r > 0 ? '+' : ''}${angka(kpiBsjp.mean_r, { desimal: 2 })}R` : '—'}								</div>
+								<div class="text-10 text-text-3">n {kpiBsjp?.n ?? 0} · {kpiBsjp?.n_hari ?? 0} hari</div>
+							</div>
+							<div class="rounded-card border border-line bg-surface p-2.5">
+								<div class="text-10 uppercase tracking-wide text-text-3">Setup hidup</div>
+								<div class="mt-0.5 text-20 font-bold text-text">{idx616?.length ?? 0}</div>
+								<div class="text-10 text-text-3">kandidat dari mesin idx616</div>
+							</div>
+						</div>
 						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya.
 						     Ini "uang" — selalu di atas, apa pun tabnya. -->
 						<DompetPasar market="idx" dompet={dompetObj} judul="Dompet Paper IDX (Rp 10 juta)" />
@@ -2658,6 +2692,35 @@
 				{:else if sub === 'memecoin'}
 					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru dari GMGN/FOMO: bot uji coba, saringan keamanan, pantauan pemain besar — eksplorasi, bukan rekomendasi" ikon="✦" />
 				{/if}
+
+				<!-- Deret KPI besar di kepala halaman GMGN (tiru kartu ringkasan Tencent):
+				     berapa bot paper jalan, berapa hasil tuntas, dan vonis gate apa adanya.
+				     Pembaruan 10 Okt: kartu "PAPER JALAN" hijau dulu berdiri sendiri tanpa angka. -->
+				{@const gmgnStats0 = (gmgnSnapStats?.[0] as any) ?? null}
+				{@const gmgnTuntas = gmgnStats0?.closed ?? 0}
+				{@const gmgnTerbuka = gmgnStats0?.open_at_end ?? 0}
+				<div class="mb-4 grid grid-cols-2 gap-2 font-mono sm:grid-cols-4">
+					<div class="rounded-card border border-line bg-surface p-2.5">
+						<div class="text-10 uppercase tracking-wide text-text-3">Bot paper</div>
+						<div class="mt-0.5 text-20 font-bold {gmgnPaperObj ? 'text-pos' : 'text-text-3'}">{gmgnPaperObj ? 'Jalan' : '—'}</div>
+						<div class="text-10 text-text-3">pemindai token baru</div>
+					</div>
+					<div class="rounded-card border border-line bg-surface p-2.5">
+						<div class="text-10 uppercase tracking-wide text-text-3">Posisi dicatat</div>
+						<div class="mt-0.5 text-20 font-bold text-text">{gmgnStats0?.trades ?? 0}</div>
+						<div class="text-10 text-text-3">dari mesin paper</div>
+					</div>
+					<div class="rounded-card border border-line bg-surface p-2.5">
+						<div class="text-10 uppercase tracking-wide text-text-3">Hasil tuntas</div>
+						<div class="mt-0.5 text-20 font-bold {gmgnTuntas > 0 ? 'text-pos' : 'text-warn'}">{gmgnTuntas}</div>
+						<div class="text-10 text-text-3">{gmgnTerbuka} masih terbuka</div>
+					</div>
+					<div class="rounded-card border border-line bg-surface p-2.5">
+						<div class="text-10 uppercase tracking-wide text-text-3">Vonis gate</div>
+						<div class="mt-0.5 text-18 font-bold text-warn">Belum dinilai</div>
+						<div class="text-10 text-text-3">uji lolos vs ditolak belum ada</div>
+					</div>
+				</div>
 
 				<!-- PETA TARGET (revisi pemilik 7 Okt): tiga tujuan yang disebut eksplisit —
 				     memecoin di GMGN/FOMO, LP Uniswap di Robinhood Chain, LP Solana/Meteora —

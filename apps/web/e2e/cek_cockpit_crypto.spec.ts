@@ -14,9 +14,12 @@ test.describe('/crypto — cockpit mesin & risiko', () => {
 		await page.goto('/crypto?sub=cockpit');
 		await tungguSiap(page);
 
-		await expect(page.getByText('Cockpit — Status Mesin & Ruang Risiko')).toBeVisible({ timeout: 15000 });
-		await expect(page.getByText('Ruang sisa').first()).toBeVisible();
-		await expect(page.getByText('Dimensi gerbang').first()).toBeVisible();
+		// Pembaruan 10 Okt: rombakan UI/UX meniru dashboard Tencent — judul kartu jadi
+		// "Ringkasan Crypto — Uang, Risiko, Sinyal" dan KPI ditulis huruf besar lewat CSS.
+		await expect(page.getByText('Ringkasan Crypto — Uang, Risiko, Sinyal')).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/Modal paper/i).first()).toBeVisible();
+		await expect(page.getByText(/Ruang risiko sisa/i).first()).toBeVisible();
+		await expect(page.getByText(/Dimensi gerbang/i).first()).toBeVisible();
 
 		// Panel MEXC TIDAK boleh ada (arahan owner: key tidak diambil).
 		expect(await page.getByText('MEXC Live').count()).toBe(0);

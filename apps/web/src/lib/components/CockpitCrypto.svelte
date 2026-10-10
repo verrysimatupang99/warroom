@@ -65,10 +65,10 @@
 <div class="permukaan-2 rounded-card border border-line p-3">
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
 		<div>
-			<h3 class="text-14 font-medium text-text">Cockpit — Status Mesin & Ruang Risiko</h3>
+			<h3 class="text-14 font-medium text-text">Ringkasan Crypto — Uang, Risiko, Sinyal</h3>
 			<p class="text-11 text-text-3">
-				Dari fakta <span class="font-mono">crypto_sinyal</span> + <span class="font-mono">risiko</span> —
-				apa yang dipantau mesin dan berapa ruang yang tersisa. Bukan angka bursa.
+				Keadaan hari ini dalam satu pandangan. Angka dari fakta
+				<span class="font-mono">crypto_sinyal</span> + <span class="font-mono">risiko</span> — bukan angka bursa.
 			</p>
 		</div>
 		<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono border border-line text-accent">
@@ -76,27 +76,30 @@
 		</span>
 	</div>
 
-	<!-- Ruang risiko (tiru kartu risk desk Tencent) -->
+	<!-- Deret KPI besar (tiru kartu ringkasan Tencent: label kecil → angka besar → catatan).
+	     Pembaruan 10 Okt: pertanyaan pembaca "kok bisa rugi?" dijawab lebih dulu di sini. -->
 	<div class="mb-3 grid grid-cols-2 gap-2 font-mono sm:grid-cols-4">
 		<div class="rounded bg-surface border border-line p-2.5">
-			<div class="text-10 text-text-3">Modal paper</div>
-			<div class="text-14 font-bold text-text">${angka(risiko?.equity_usd, 2)}</div>
+			<div class="text-10 uppercase tracking-wide text-text-3">Modal paper</div>
+			<div class="mt-0.5 text-20 font-bold text-text">${angka(risiko?.equity_usd, 2)}</div>
+			<div class="text-10 text-text-3">saldo kertas, bukan uang nyata</div>
 		</div>
 		<div class="rounded bg-surface border border-line p-2.5">
-			<div class="text-10 text-text-3">Hasil hari ini</div>
-			<div class="text-14 font-bold { (risiko?.hari_ini_r ?? 0) > 0 ? 'text-pos' : (risiko?.hari_ini_r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
+			<div class="text-10 uppercase tracking-wide text-text-3">Hasil hari ini</div>
+			<div class="mt-0.5 text-20 font-bold { (risiko?.hari_ini_r ?? 0) > 0 ? 'text-pos' : (risiko?.hari_ini_r ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
 				{(risiko?.hari_ini_r ?? 0) > 0 ? '+' : ''}{angka(risiko?.hari_ini_r, 2)}R
 			</div>
+			<div class="text-10 text-text-3">{risiko?.total_trade ?? 0} trade tuntas</div>
 		</div>
 		<div class="rounded bg-surface border border-line p-2.5">
-			<div class="text-10 text-text-3">Ruang sisa</div>
-			<div class="text-14 font-bold text-text-2">{angka(risiko?.sisa_ruang_r, 2)}R</div>
-			<div class="text-10 text-text-3 mt-1">batas {angka(risiko?.batas_rugi_r, 2)}R</div>
+			<div class="text-10 uppercase tracking-wide text-text-3">Ruang risiko sisa</div>
+			<div class="mt-0.5 text-20 font-bold text-text-2">{angka(risiko?.sisa_ruang_r, 2)}R</div>
+			<div class="text-10 text-text-3">dari batas {angka(risiko?.batas_rugi_r, 2)}R</div>
 		</div>
 		<div class="rounded bg-surface border border-line p-2.5">
-			<div class="text-10 text-text-3">Posisi terbuka</div>
-			<div class="text-14 font-bold text-text">{risiko?.posisi_terbuka ?? 0}<span class="text-text-3">/{risiko?.maks_posisi ?? '—'}</span></div>
-			<div class="text-10 text-text-3 mt-1">{risiko?.total_trade ?? 0} trade tuntas</div>
+			<div class="text-10 uppercase tracking-wide text-text-3">Posisi terbuka</div>
+			<div class="mt-0.5 text-20 font-bold text-text">{risiko?.posisi_terbuka ?? 0}<span class="text-13 text-text-3">/{risiko?.maks_posisi ?? '—'}</span></div>
+			<div class="text-10 text-text-3">batas {risiko?.maks_posisi ?? '—'} posisi</div>
 		</div>
 	</div>
 
