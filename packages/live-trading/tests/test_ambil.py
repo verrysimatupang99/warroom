@@ -1,15 +1,16 @@
 """Uji aturan exit LP (dari threads) + tampilannya di dashboard."""
 
-import importlib.util
+from live_trading.lp_exit import aturan_keluar as _aturan
+
+
+class _Lp:
+    @staticmethod
+    def aturan_keluar(pos, row, kini):
+        return _aturan(pos, row, kini)
 
 
 def _lp():
-    spec = importlib.util.spec_from_file_location(
-        "lp_paper", "/home/admin/gmgn-scan/lp_paper.py"
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    return _Lp()
 
 
 def _pos(**kw):
@@ -73,29 +74,33 @@ def test_tahan_sehat() -> None:
     assert v == "TAHAN"
 
 
-def test_dashboard_tampilkan_verdict() -> None:
+def test_dashboard_tampilkan_verdict(monkeypatch) -> None:
     from live_trading import dashboard
+
+    panel = {
+        "tersedia": True,
+        "capital": 30.0,
+        "posisi": [
+            {
+                "symbol": "UBI",
+                "notional": 30.0,
+                "fee_hari": 1.44,
+                "vl": 4.83,
+                "vl_now": 4.5,
+                "verdict": "KELUAR",
+                "alasan": "target +5% kena",
+            }
+        ],
+    }
+    # dashboard kini membaca panel LP langsung (bukan dari snap) supaya tak
+    # menimpa fakta kinerja arm LP (temuan 10 Okt) — uji menyuntik panelnya.
+    monkeypatch.setattr(dashboard, "_lp_panel", lambda *a, **k: panel)
 
     snap = {
         "mode": "paper",
         "dibuat": "x",
         "risiko": {},
         "ledger": {},
-        "lp_paper": {
-            "tersedia": True,
-            "capital": 30.0,
-            "posisi": [
-                {
-                    "symbol": "UBI",
-                    "notional": 30.0,
-                    "fee_hari": 1.44,
-                    "vl": 4.83,
-                    "vl_now": 4.5,
-                    "verdict": "KELUAR",
-                    "alasan": "target +5% kena",
-                }
-            ],
-        },
     }
     html_out = dashboard.fragments(snap)["lp"]
     assert "KELUAR" in html_out and "target +5% kena" in html_out

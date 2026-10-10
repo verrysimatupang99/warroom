@@ -78,9 +78,10 @@ def test_daftar_job_idempoten(db) -> None:
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
         "paper-scan", "retensi", "source-health", "llm-brief-crypto", "llm-brief-forex",
         "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket", "rekonsiliasi-crypto",
+        "lpagent-sync",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 26
+    assert total == 27
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -302,6 +303,7 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         "publish-facts",
         "freshness",
         "notify",
+        "lpagent-sync",
         "prompts-sync",
         "source-health",
     }
