@@ -8,6 +8,7 @@
 		getAlerts,
 		getAku,
 		getAreas,
+		getArea,
 		getKesegaran,
 		getKesehatan,
 		getMetrikTeks,
@@ -60,6 +61,9 @@
 	let alerts = $state<AlertsPayload | null>(null);
 	let aku = $state<Aku | null>(null);
 	let proposals = $state<Proposal[] | null>(null);
+	// Fakta `lpagent` (kind sendiri) — dari /api/v1/areas/sistem. Telemetri pool
+	// Solana/Meteora via LP Agent Open API; tanpa kunci isinya jujur 'menunggu-kunci'.
+	let lpagent = $state<Record<string, any> | null>(null);
 	let aksiGalat = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -80,6 +84,15 @@
 		if (al.status === 'fulfilled') alerts = al.value;
 		if (ak.status === 'fulfilled') aku = ak.value;
 		if (pr.status === 'fulfilled') proposals = pr.value.proposals;
+		// Fakta lpagent datang lewat area 'sistem' (kind `lpagent`). Gagal → tetap null,
+		// halaman menampilkan 'belum ada fakta', bukan mengarang daftar pool.
+		try {
+			const sys = await getArea('sistem');
+			const f = (sys.facts ?? []).find((x: any) => x.key === 'pools');
+			lpagent = f ? (f.value as Record<string, any>) : null;
+		} catch {
+			lpagent = null;
+		}
 		try {
 			metrik = await getMetrikTeks();
 			galatMetrik = null;
@@ -158,6 +171,101 @@
 				ekspor="sistem-area.csv"
 			/>
 		</Block>
+	{:else if sub === 'mesin'}
+		<!-- Mesin = sumber data PIHAK KETIGA (bukan berkas lokal). Saat ini LP Agent
+		     (telemetri pool Solana/Meteora). Fakta `lpagent` diterbitkan job
+		     `lpagent-sync`; tanpa kunci isinya jujur 'menunggu-kunci' — halaman ini
+		     menampilkan apa adanya, tidak pernah mengarang daftar pool. -->
+		{#if lpagent}
+			<Block
+				judul="LP Agent · likuiditas Solana (Meteora)"
+				deskripsi={lpagent.sumber ?? 'LP Agent Open API'}
+				memuat={memuat && !lpagent}
+			>
+				<div
+					class="rounded-card border p-3 {lpagent.tersedia ? 'border-line' : 'border-warn/40 bg-warn/5'}"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span
+							class="rounded border px-1.5 py-0.5 text-10 font-bold {lpagent.tersedia
+								? 'border-pos/40 bg-pos/10 text-pos'
+								: 'border-warn/40 bg-warn/10 text-warn'}"
+						>
+							{lpagent.tersedia ? 'AKTIF' : 'MENUNGGU KUNCI'}
+						</span>
+						<span class="font-mono text-11 text-text-3">{lpagent.status}</span>
+						{#if lpagent.tersedia}
+							<span class="angka text-11 text-text-2">{lpagent.n ?? 0} pool</span>
+						{/if}
+					</div>
+					{#if !lpagent.tersedia}
+						<p class="mt-2 text-12 text-text-2">
+							Belum ada data pool — <b>dan itu jujur</b>, bukan nol yang menyamar sebagai
+							"tidak ada peluang". Sebabnya:
+						</p>
+						<p class="mt-1 text-11 text-text-3">{lpagent.sebab}</p>
+					{/if}
+					<div class="mt-2 grid grid-cols-2 gap-2 text-11 sm:grid-cols-4">
+						<div>
+							<span class="label-mikro block">sumber</span>
+							<span class="text-text-2">API pihak ketiga</span>
+						</div>
+						<div>
+							<span class="label-mikro block">base url</span>
+							<span class="font-mono text-10 text-text-3">{lpagent.base_url ?? '—'}</span>
+						</div>
+						<div>
+							<span class="label-mikro block">jalur uang</span>
+							<span class="text-neg">terkunci</span>
+						</div>
+						<div>
+							<span class="label-mikro block">snapshot</span>
+							<span class="text-text-2">{lpagent.frekuensi_snapshot ?? 'tiap 30 menit'}</span>
+						</div>
+					</div>
+					<p class="mt-2 text-10 text-text-3">
+						Baca-saja (endpoint GET). Jalur bangun transaksi (zap-in/zap-out, Jito) <b>TIDAK
+						dipanggil</b> — gerbang live tetap <span class="angka">armed=false</span>. Ini telemetri
+						pool, bukan sinyal beli.
+					</p>
+				</div>
+				{#if lpagent.tersedia && (lpagent.pools ?? []).length > 0}
+					<DataTable
+						kolom={[
+							{ kunci: 'token0', label: 'token0' },
+							{ kunci: 'token1', label: 'token1' },
+							{ kunci: 'protocol', label: 'protokol' },
+							{ kunci: 'tvl', label: 'tvl', numerik: true },
+							{ kunci: 'vol_24h', label: 'vol 24j', numerik: true },
+							{ kunci: 'fee_24h', label: 'fee 24j', numerik: true },
+							{ kunci: 'organic_score', label: 'organik', numerik: true },
+							{ kunci: 'bin_step', label: 'bin step', numerik: true }
+						]}
+						baris={lpagent.pools.map((p: any) => ({
+							token0: p.token0 ?? '—',
+							token1: p.token1 ?? '—',
+							protocol: p.protocol ?? '—',
+							tvl: p.tvl ?? '—',
+							vol_24h: p.vol_24h ?? '—',
+							fee_24h: p.fee_24h ?? '—',
+							organic_score: p.organic_score ?? '—',
+							bin_step: p.bin_step ?? '—'
+						}))}
+						cari="cari pool…"
+						ekspor="sistem-lpagent.csv"
+						padat
+					/>
+				{/if}
+			</Block>
+		{:else}
+			<Block judul="LP Agent · likuiditas Solana (Meteora)" memuat={memuat}>
+				<p class="text-13 text-text-2">
+					Belum ada fakta <span class="angka">lpagent</span>. Job
+					<span class="angka">lpagent-sync</span> menerbitkannya tiap 30 menit — halaman ini
+					tidak mengarang data pool.
+				</p>
+			</Block>
+		{/if}
 	{:else if sub === 'kesegaran'}
 		<Block
 			judul="Matriks kesegaran"

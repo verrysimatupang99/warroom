@@ -530,6 +530,7 @@ def create_app() -> FastAPI:
             "gmgn": "GMGN / LP",
             "lp": "LP / Yield",
             "polymarket": "Polymarket",
+            "sistem": "Sistem",
         }
 
         def _baris(nama: str, v: Any) -> dict[str, Any]:

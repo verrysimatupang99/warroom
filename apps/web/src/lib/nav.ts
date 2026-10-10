@@ -121,7 +121,8 @@ export const AREAS: Area[] = [
 		ikon: 'sistem',
 		kategori: 'sistem',
 		anak: [
-			{ slug: 'layanan', label: 'Layanan', kunci: [], catatan: 'Unit lintas host, uptime, restart' },
+			{ slug: 'layanan', label: 'Layanan', kunci: ['bagian'], catatan: 'Unit lintas host, uptime, restart' },
+			{ slug: 'mesin', label: 'Mesin', kunci: ['lpagent'], catatan: 'Sumber data pihak ketiga: LP Agent (telemetri Solana/Meteora)' },
 			{ slug: 'kesegaran', label: 'Kesegaran', kunci: [], catatan: 'Matriks umur vs ambang' },
 			{ slug: 'biaya', label: 'Biaya', kunci: [], catatan: 'Kuota & konsumsi' },
 			{ slug: 'event', label: 'Event', kunci: [], catatan: 'Event log lengkap' },

@@ -66,6 +66,12 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
         "bagian", "poly_paper", "lp_paper", "equity", "ledger",
         "poly_posisi", "poly_ledger", "poly_equity", "poly_risiko", "pasar_akurasi", "dompet",
     ),
+    "sistem": (
+        # Halaman kesehatan lintas mesin. `bagian` = ringkasan bagian (kind snapshot).
+        # Fakta `lpagent` (kind sendiri) dibaca lewat AREA_KIND, bukan di sini — AREA_KEYS
+        # hanya menampung KEY dari kind `snapshot`.
+        "bagian",
+    ),
 }
 
 # Fakta dari kind NON-snapshot yang ikut tampil di area. Dipakai gate: GateBlok membaca
@@ -97,6 +103,11 @@ AREA_KIND: dict[str, tuple[str, ...]] = {
     # per chain. Sebelumnya kind ini TIDAK sampai ke UI (hanya dibaca kind snapshot),
     # padahal semua angka memecoin/FOMO berasal dari sini (temuan tim, 7 Okt).
     "gmgn": ("gmgn",),
+    # kind `lpagent` = telemetri pool Solana/Meteora dari LP Agent Open API (job
+    # `lpagent-sync`). Ia kind SENDIRI (bukan `snapshot`) karena sumbernya API pihak
+    # ketiga, bukan berkas lokal — dan tanpa kunci isinya jujur `menunggu-kunci`,
+    # bukan angka pool palsu. Tanpa entri ini fakta tak pernah sampai ke UI.
+    "sistem": ("lpagent",),
 }
 
 

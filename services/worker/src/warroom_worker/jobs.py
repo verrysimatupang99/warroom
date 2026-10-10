@@ -424,6 +424,27 @@ def handler_parity_drift(s: SASession, job: Job) -> str:
     return f"status={d.status} drift={d.drift} mirror={d.mirror_n} eksekutor={d.executor_n}"
 
 
+def handler_lpagent_sync(s: SASession, job: Job) -> str:
+    """Terbitkan telemetri pool likuiditas Solana/Meteora dari LP Agent (baca-saja).
+
+    Tanpa LPAGENT_API_KEY handler tetap jalan dan menerbitkan fakta jujur
+    ``menunggu-kunci`` — halaman /sistem jadi benar sejak hari pertama, dan API pihak
+    ketiga tidak pernah ditembak tanpa kunci. Gerbang live tidak disentuh (armed=false).
+    """
+    from warroom_worker.adapters import lpagent
+
+    r = lpagent.lpagent_ringkas(top=int(job.payload_json.get("top", 5)))
+    _tulis_fakta(
+        s,
+        kind="lpagent",
+        key="pools",
+        value=r,
+        source=r.get("base_url", lpagent.BASE_URL),
+        ttl_s=int(job.payload_json.get("ttl_s", 3600)),
+    )
+    return f"lpagent={r.get('status')} tersedia={r.get('tersedia')} n={r.get('n', 0)}"
+
+
 def handler_reconcile(s: SASession, job: Job) -> str:
     """Verifikasi klaim uang ke sumber on-chain; tak terverifikasi → alert (P4-T5).
 
@@ -1283,6 +1304,7 @@ def register_handlers() -> dict[str, Any]:
             "parity-drift": handler_parity_drift,
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,
+            "lpagent-sync": handler_lpagent_sync,
             "rekonsiliasi-crypto": handler_rekonsiliasi_crypto,
             "signal-sync": handler_signal_sync,
             "learner": handler_learner,

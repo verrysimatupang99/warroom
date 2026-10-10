@@ -103,6 +103,20 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="lpagent-sync",
+        interval_s=1800,
+        # SENGAJA enabled=True walau kunci belum ada: handler mendeteksi kunci hilang dan
+        # menerbitkan fakta jujur "menunggu-kunci" (bukan nol, bukan angka karangan),
+        # sehingga halaman /sistem langsung jujur sejak hari pertama tanpa menembak API.
+        enabled=True,
+        payload={"top": 5, "ttl_s": 3600},
+        note=(
+            "snapshot pool likuiditas Solana/Meteora dari LP Agent Open API (baca-saja). "
+            "Tanpa LPAGENT_API_KEY → fakta 'menunggu-kunci', bukan angka palsu. "
+            "Tier Basic rate limit kecil: UI tak pernah memanggil API ini langsung."
+        ),
+    ),
+    JobSpec(
         name="reconcile",
         interval_s=3600,
         enabled=True,
