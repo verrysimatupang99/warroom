@@ -40,9 +40,9 @@ addopts = "-q"
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-# crypto/ + vendor/ = kode warisan dari Tencent, masih jalan apa adanya.
+# crypto/ + vendor/ + idx616/ = kode warisan Tencent, masih jalan apa adanya.
 # Lint berlaku untuk kode aktif saja (src/, tests/).
-extend-exclude = ["crypto", "vendor", ".venv"]
+extend-exclude = ["crypto", "vendor", "idx616", ".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

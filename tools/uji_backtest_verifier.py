@@ -110,9 +110,8 @@ def fact_refs_nyata(trade: dict, n_facts: int) -> tuple:
     bukti kelayakan yang relevan — plus parameter trade yang diuji, semuanya dari baris
     fakta NYATA (`idx_akurasi`), dengan `fact_id` asli.
     """
-    from warroom_core.db import session_scope
     from sqlalchemy import text
-
+    from warroom_core.db import session_scope
     from warroom_llm import FactRef
 
     with session_scope() as s:
@@ -162,7 +161,7 @@ def fact_refs_nyata(trade: dict, n_facts: int) -> tuple:
         )
 
     # Sisipkan fakta lain (jika ada) sebagai konteks tambahan — tetap fact_id asli.
-    for i, f in enumerate(fakta_db):
+    for f in fakta_db:
         if int(f[0]) == fact_id_riwayat:
             continue
         refs.append(
@@ -233,7 +232,8 @@ def jalankan(n: int, hanya: str | None, dry: bool, min_facts: int, sebar: bool =
         print(
             f"[{i + 1}] {baris['ticker']:12} {baris['setup']:12} asli={baris['asli']:6} "
             f"-> setuju={baris['setuju']} tingkat={baris['tingkat']} "
-            f"({baris['status']}/{baris['provider']}{'/' + baris['error_code'] if baris['error_code'] else ''})"
+            f"({baris['status']}/{baris['provider']}/"
+            f"{baris['error_code'] or '-'})"
         )
         if baris["alasan"]:
             print(f"      alasan: {baris['alasan']}")
@@ -263,7 +263,9 @@ def jalankan(n: int, hanya: str | None, dry: bool, min_facts: int, sebar: bool =
         print(f"  {k}: {v}")
     if "tambah_nilai_pct" in ringkas:
         go = (ringkas.get("tambah_nilai_pct", 0) >= 60) and (ringkas.get("false_negatif_pct", 100) <= 20)
-        print(f"  -> kriteria GO (usulan): tambah_nilai>=60% DAN false_negatif<=20% => {'GO' if go else 'NO-GO'}")
+        hasil_go = 'GO' if go else 'NO-GO'
+        print(f"  -> kriteria GO (usulan): tambah_nilai>=60% DAN "
+              f"false_negatif<=20% => {hasil_go}")
     print("\nCATATAN: kriteria GO/NO-GO adalah USULAN; keputusan akhir hak owner (ADR-006).")
     return {"ringkasan": ringkas, "hasil": hasil}
 
