@@ -1148,6 +1148,46 @@
 						{#if sub === 'eksekusi'}
 							{@render panelPosisi(false)}
 						{/if}
+						{#if sub === 'eksekusi'}
+							<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
+						{/if}
+						{#if sub === 'eksekusi'}
+							<div class="permukaan-2 rounded-card border border-line p-3">
+								<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
+									<div>
+										<h3 class="text-14 font-medium text-text">Log Aksi &amp; Skip</h3>
+										<p class="text-11 text-text-3">Lolos vs ditolak + alasan aturan gate — data skips yang selama ini hanya di fakta</p>
+									</div>
+									<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono text-text-3 border border-line">
+										{cryptoSinyalObj?.jumlah_verdict ?? 0} verdict · {cryptoSinyalObj?.jumlah_lolos ?? 0} lolos
+									</span>
+								</div>
+								{#if !cryptoSinyalObj?.entries?.length}
+									<div class="py-4 text-center text-12 text-text-3">Belum ada verdict pada siklus ini.</div>
+								{:else}
+									<div class="space-y-1.5">
+										{#each (cryptoSinyalObj?.entries ?? []).slice(0, 12) as e (String(e.pair) + String(e.waktu))}
+											<div class="flex flex-wrap items-center justify-between gap-2 rounded-card border border-line-soft bg-surface px-2.5 py-1.5 font-mono text-11">
+												<span class="flex items-center gap-2">
+													<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {e.status === 'lolos' ? 'bg-pos/15 text-pos border border-pos/30' : 'bg-warn/15 text-warn border border-warn/30'}">
+														{e.status === 'lolos' ? 'LOLOS' : 'SKIP'}
+													</span>
+													<span class="font-bold text-text">{e.pair} {e.arah}</span>
+													<span class="text-text-3">skor {e.skor ?? '—'}</span>
+												</span>
+												<span class="text-text-3">{e.aturan_gagal?.length ? `gagal: ${(e.aturan_gagal ?? []).join(', ')}` : (e.tier ?? '')}</span>
+											</div>
+										{/each}
+									</div>
+									{#if (cryptoSinyalObj?.dimensi ?? []).length}
+										<p class="mt-2 text-10 text-text-3">
+											Aturan paling sering menggagalkan:
+											{(cryptoSinyalObj?.dimensi ?? []).slice(0, 3).map((d: any) => `${d.dimensi} ${d.persen}%`).join(' · ')}
+										</p>
+									{/if}
+								{/if}
+							</div>
+						{/if}
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
 								<div>
