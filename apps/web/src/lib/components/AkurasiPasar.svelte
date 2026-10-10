@@ -18,6 +18,12 @@
 		pnl_usd?: number | null;
 		menang?: number | null;
 		kalah?: number | null;
+		/** Win-rate impas (%), diturunkan backend dari titik-tengah band harga entry.
+		 *  Di pasar biner, impas ≈ harga beli: beli 0,82 → butuh WR > 82% hanya utk balik modal. */
+		be_wr_pct?: number | null;
+		/** True = win-rate nyata berada di ATAS ambang impas. null = data belum cukup. */
+		lolos_be?: boolean | null;
+		entry_mid?: number | null;
 		tingkat?: string | null;
 		ci_winrate?: number[] | null;
 		alasan?: string[] | null;
@@ -51,6 +57,9 @@
 	let { judul, subjudul, data, market, ringkas = false }: Props = $props();
 
 	const baris = $derived(Object.entries(data?.per_setup ?? {}).map(([k, v]) => ({ kunci: k, ...v })));
+	/** Ada kolom BE-WR hanya bila backend menyediakannya (pasar biner berharga entry).
+	 *  Dipakai untuk menyembunyikan kolom di pasar yang tak punya ambang impas. */
+	const adaBe = $derived(baris.some((s) => s.be_wr_pct != null));
 
 	function angka(v: number | null | undefined, dp = 4): string {
 		if (v === null || v === undefined) return '—';
@@ -120,6 +129,14 @@
 							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Total R</th>
 							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">PnL</th>
 						{/if}
+							{#if !ringkas}
+								<!-- BE-WR (7 Okt): "menang 80%" terlihat bagus sampai dibandingkan ambang impas. -->
+								{#if adaBe}
+									<th
+										class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right"
+										title="Win-rate impas: di bawah angka ini, menang sebanyak apa pun tetap rugi (pasar biner: impas ≈ harga beli)">BE-WR</th>
+								{/if}
+							{/if}
 						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">Pakem</th>
 					</tr>
 				</thead>
@@ -154,6 +171,20 @@
 								</td>
 								<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right text-text-2">
 									{rupiah(s.total_pnl_usd ?? s.pnl_usd) === '—' ? '—' : `${rupiah(s.total_pnl_usd ?? s.pnl_usd)} USD`}
+								</td>
+							{/if}
+							{#if !ringkas && adaBe}
+								<!-- WR vs impas: gunakan satu sel ekspresi tanpa @const (batasan Svelte di dlm <if>). -->
+								<td
+									class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-bold {s.lolos_be === true ? 'text-pos' : s.lolos_be === false ? 'text-neg' : 'text-text-3'}"
+									title={s.winrate_pct != null && s.be_wr_pct != null ? `Menang ${angka(s.winrate_pct, 2)}% vs impas ${angka(s.be_wr_pct, 2)}% — selisih ${(s.winrate_pct - s.be_wr_pct) > 0 ? '+' : ''}${angka(s.winrate_pct - s.be_wr_pct, 2)} poin` : 'BE-WR tidak tersedia'}
+								>
+									{s.be_wr_pct != null ? `${angka(s.be_wr_pct, 1)}%` : '—'}
+									{#if s.lolos_be === false}
+										<span class="ml-1 text-9 font-normal">di bawah</span>
+									{:else if s.lolos_be === true}
+										<span class="ml-1 text-9 font-normal">lolos</span>
+									{/if}
 								</td>
 							{/if}
 							<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">

@@ -752,6 +752,18 @@ def _akurasi_polymarket(state_dir: Path) -> dict[str, Any]:
         menang = int(d.get("wins") or 0)
         kalah = int(d.get("losses") or 0)
         pakem = _pakem_hitung(n, menang)
+        # BE-WR (win-rate impas) diturunkan dari HARGA ENTRY yang sudah ada di shadow
+        # summary — bukan ambang baru. Di pasar biner adil, impas ≈ harga beli: beli di
+        # 0,82 → hadiah menang +0,22× stake, kalah −1,00× → butuh WR > 82% hanya utk balik
+        # modal. Dipakai untuk membandingkan "menang banyak tapi rugi" (arm B) apa adanya.
+        lo = (d.get("strategy") or {}).get("entryLo") if isinstance(d.get("strategy"), dict) else None
+        hi = (d.get("strategy") or {}).get("entryHi") if isinstance(d.get("strategy"), dict) else None
+        be_wr_pct = None
+        entry_mid = None
+        if isinstance(lo, (int, float)) and isinstance(hi, (int, float)):
+            entry_mid = round((float(lo) + float(hi)) / 2, 4)
+            if 0 < entry_mid < 1:
+                be_wr_pct = round(100 * entry_mid, 2)
         per_setup[nama] = {
             "nama": nama,
             "n": n,
@@ -764,9 +776,15 @@ def _akurasi_polymarket(state_dir: Path) -> dict[str, Any]:
             "aturan": (d.get("strategy") or {}).get("sideMode")
             if isinstance(d.get("strategy"), dict)
             else None,
-            "band": [(d.get("strategy") or {}).get("entryLo"), (d.get("strategy") or {}).get("entryHi")]
-            if isinstance(d.get("strategy"), dict)
-            else None,
+            "band": [lo, hi],
+            "entry_mid": entry_mid,
+            "be_wr_pct": be_wr_pct,
+            # Lolos = win-rate NYATA berada di ATAS ambang impas (bukan cuma positif).
+            "lolos_be": (
+                round(100 * menang / n, 2) > be_wr_pct
+                if (n and be_wr_pct is not None)
+                else None
+            ),
             **pakem,
         }
     total = round(sum(v.get("pnl_usd") or 0 for v in per_setup.values()), 4) if per_setup else None
@@ -780,6 +798,8 @@ def _akurasi_polymarket(state_dir: Path) -> dict[str, Any]:
         "catatan": [
             "Win-rate = entri menang/kalah dari mesin paper; bukan R dan belum lewat split beku.",
             "Fees & slippage sudah dibebankan sesuai 'feeMode: receipt' milik poly-pilot.",
+            "BE-WR = win-rate impas, diturunkan dari titik-tengah band harga entry (pasar biner:"
+            " impas ≈ harga beli). Win-rate di bawah BE-WR = rugi walau menang banyak.",
         ],
     }
 
