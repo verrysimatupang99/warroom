@@ -79,6 +79,11 @@
 	const pasarAda = $derived(pasarDaftar.filter((p) => p.status_data === 'ada'));
 	const pasarKosong = $derived(pasarDaftar.filter((p) => p.status_data === 'kosong'));
 	const pasarGagal = $derived(pasarDaftar.filter((p) => p.status_data === 'gagal'));
+
+	// SSOT: Kandidat teratas yang disorot di teks verdikt dan kartu setup entry
+	const pasarTeratas = $derived(pasarAda[0] ?? null);
+	const sinyalTeratas = $derived(pasarTeratas?.sinyal?.[0] ?? null);
+
 	const verdikt = $derived.by(() => {
 		if (pasarDaftar.length === 0 && daftar.length === 0)
 			return { judul: 'BELUM ADA DATA', nada: 'netral', waktu: null, alasan: 'Sumber belum mengirim sinyal.' };
@@ -124,8 +129,10 @@
 				(promotable
 					? `Ada ${promotable} pasar yang sudah lulus semua pemeriksaan wajib. `
 					: 'Ada yang dipantau, tetapi belum ada yang lulus semua pemeriksaan wajib. Ini normal: lebih baik menunggu daripada memaksa beli. ') +
-				`Teratas: ${pasarAda[0].label}${pasarAda[0].sinyal[0]?.pair ? ` · ${pasarAda[0].sinyal[0].pair}` : ''}` +
-				`${pasarAda[0].sinyal[0]?.skor != null ? ` · skor ${pasarAda[0].sinyal[0].skor}/100` : ''}.` +
+				(pasarTeratas
+					? `Teratas: ${pasarTeratas.label}${sinyalTeratas?.pair ? ` · ${sinyalTeratas.pair}` : ''}` +
+					  `${sinyalTeratas?.skor != null ? ` · skor ${sinyalTeratas.skor}/100` : ''}.`
+					: '') +
 				sisaKosong
 		};
 	});
@@ -171,12 +178,34 @@
 		}
 		return out;
 	};
+
 	const setupTeratas = $derived.by(() => {
-		const ada = daftar.filter((r) => r.ada && r.pasar === 'crypto');
-		const t = ada[0];
-		return t ? setupDari(t) : [];
+		if (!pasarTeratas) return [];
+		const out: Setup[] = [];
+		const num = (v: unknown) => (typeof v === 'number' ? v : null);
+		const f = (v: number | null) => (v == null ? '—' : formatHarga(v));
+
+		if (pasarTeratas.pasar === 'crypto' && sinyalTeratas) {
+			const e = num(sinyalTeratas.entry), sl = num(sinyalTeratas.sl), tp = num(sinyalTeratas.tp1);
+			if (e != null) out.push({ label: 'Masuk', nilai: f(e), nada: 'masuk' });
+			if (sl != null) out.push({ label: 'Stop', nilai: f(sl), nada: 'stop' });
+			if (tp != null) out.push({ label: 'Target', nilai: f(tp), nada: 'target' });
+			if (e != null && sl != null && e > 0) out.push({ label: 'Jarak stop', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
+			if (out.length) return out;
+		}
+
+		// Fallback ke detail dari bentuk legacy (daftar/SinyalPasar) bila pasar non-crypto
+		const sp = daftar.find((r) => r.ada && r.pasar === pasarTeratas.pasar);
+		return sp ? setupDari(sp) : [];
 	});
-	const subjekTeratas = $derived(daftar.find((r) => r.ada && r.pasar === 'crypto')?.subjek ?? null);
+
+	const subjekTeratas = $derived.by(() => {
+		if (sinyalTeratas?.pair) return sinyalTeratas.pair;
+		if (pasarTeratas) {
+			return daftar.find((r) => r.ada && r.pasar === pasarTeratas.pasar)?.subjek ?? null;
+		}
+		return null;
+	});
 </script>
 
 <svelte:head><title>War Room — satu layar, semua pasar</title></svelte:head>

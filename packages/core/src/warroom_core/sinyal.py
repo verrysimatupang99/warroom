@@ -145,11 +145,12 @@ def _crypto(s: SASession) -> SinyalPasar:
             ),
         )
 
-    def kunci(k: dict[str, Any]) -> tuple[int, int, int]:
+    def kunci(k: dict[str, Any]) -> tuple[int, int, int, str]:
         rules = k.get("rules") or []
         tier = str(k.get("tier") or "SKIP")
         ok = sum(1 for r in rules if r.get("ok"))
-        return (_TIER_RANK.get(tier, 0), ok, len(rules))
+        ts = str(_waktu_kandidat(k) or "")
+        return (_TIER_RANK.get(tier, 0), ok, len(rules), ts)
 
     terbaik = max(kandidat, key=kunci)
     # Kandidat dengan waktu TERBARU: itu "kapan sinyal ini dibuat". Tanpa ts → jangan mengarang.
@@ -456,6 +457,7 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
         key=lambda f: (
             _TIER_RANK.get(str((f.value_json or {}).get("tier") or "").upper(), 0),
             -len((f.value_json or {}).get("aturan_gagal") or []),
+            _ke_utc(f.observed_at).isoformat(),
         ),
         reverse=True,
     )
