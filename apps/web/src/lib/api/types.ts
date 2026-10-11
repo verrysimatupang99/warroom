@@ -226,6 +226,10 @@ export interface SinyalPasar {
 	 *  cocok) · "gagal" (sumber tak terbaca / mesin mati). Dua yang terakhir TIDAK sama. */
 	status_data: 'ada' | 'kosong' | 'gagal';
 	detail: Record<string, unknown>;
+	confluence: string[];
+	metrics: Record<string, unknown>;
+	autotrade_verdict: 'OKE' | 'PANTAU' | 'SKIP' | string;
+	alasan_eksekusi: string;
 }
 
 export interface SinyalItem {
@@ -244,6 +248,10 @@ export interface SinyalItem {
 	label: string | null;
 	umur_s: number | null;
 	skor: number | null;
+	confluence?: string[];
+	metrics?: Record<string, unknown>;
+	autotrade_verdict?: 'OKE' | 'PANTAU' | 'SKIP' | string;
+	alasan_eksekusi?: string;
 }
 
 /** Sinyal satu pasar untuk Home: maks 3 + status jujur (ada/kosong/gagal). */
@@ -262,6 +270,10 @@ export interface DaftarSinyalPasar {
 	mode?: 'LIVE' | 'PAPER' | 'HISTORIS';
 	catatan_mode?: string;
 	sinyal: SinyalItem[];
+	confluence?: string[];
+	metrics?: Record<string, unknown>;
+	autotrade_verdict?: 'OKE' | 'PANTAU' | 'SKIP' | string;
+	alasan_eksekusi?: string;
 }
 
 export interface SinyalPayload {

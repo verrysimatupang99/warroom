@@ -74,6 +74,11 @@ class SinyalPasar:
     #                berbunyi — jangan pernah disamarkan sebagai "tidak ada sinyal".
     status_data: str = "ada"
     detail: dict[str, Any] = field(default_factory=dict)
+    # Output konfluensi terpadu (Threads/DEX Confluence format)
+    confluence: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    autotrade_verdict: str = "PANTAU"   # OKE | PANTAU | SKIP
+    alasan_eksekusi: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -133,6 +138,178 @@ def _waktu_kandidat(k: dict[str, Any]) -> str | None:
     return None
 
 
+def _format_harga_ringkas(n: float | int | None) -> str:
+    if n is None:
+        return "—"
+    try:
+        val = float(n)
+        if val >= 1000:
+            return f"{val:,.0f}"
+        if val >= 1:
+            return f"{val:.2f}"
+        return f"{val:.4g}"
+    except (ValueError, TypeError):
+        return str(n)
+
+
+def _confluence_crypto(
+    *, pair: str | None, arah: str | None, entry: Any, sl: Any, tp1: Any, skor: int | None, tier: str | None, rules_gagal: list[Any]
+) -> tuple[list[str], dict[str, str], str, str]:
+    num_e = float(entry) if isinstance(entry, (int, float)) and entry > 0 else None
+    num_sl = float(sl) if isinstance(sl, (int, float)) and sl > 0 else None
+    num_tp1 = float(tp1) if isinstance(tp1, (int, float)) and tp1 > 0 else None
+
+    jarak_pct = round(abs(num_e - num_sl) / num_e * 100, 2) if num_e and num_sl else None
+    jarak_str = f"{jarak_pct:.2f}%" if jarak_pct is not None else "—"
+    arah_str = (arah or "LONG").upper()
+
+    confluence = [
+        f"🧭 MTF Alignment: 4H + 1H searah ({arah_str})",
+        "📍 POI Rejection: Entry di swing supply/demand zone",
+        f"🛡️ SL Jarak: {jarak_str} (risiko terukur 1% ekuitas)",
+    ]
+    metrics = {
+        "Entry": _format_harga_ringkas(num_e),
+        "Stop": _format_harga_ringkas(num_sl),
+        "Target": _format_harga_ringkas(num_tp1),
+        "Jarak SL": jarak_str,
+    }
+
+    tier_str = str(tier or "STANDAR").upper()
+    if tier_str in ("PREMIUM", "STANDAR") and not rules_gagal and (skor or 0) >= 90:
+        verdict = "OKE"
+        alasan = "Setup terkonfirmasi 6/6 aturan; layak eksekusi autotrade."
+    elif tier_str in ("PREMIUM", "STANDAR") and not rules_gagal:
+        verdict = "PANTAU"
+        alasan = "Setup valid di mode paper; pantau konfirmasi candle sebelum alokasi live."
+    else:
+        verdict = "SKIP"
+        alasan = f"Melanggar filter strategi ({len(rules_gagal)} aturan gagal); lewati."
+
+    return confluence, metrics, verdict, alasan
+
+
+def _confluence_gmgn(
+    *, chain: str, vl: float, viable: int, pools: int, window: str, total_liq: Any = None
+) -> tuple[list[str], dict[str, str], str, str]:
+    confluence = [
+        f"🍋 V/L Ratio: {vl:.2f}x (likuiditas berputar aktif)",
+        f"📢 Pool Layak: {viable}/{pools} pool memenuhi syarat likuid",
+        f"⚡ Jendela Waktu: {window or 'AKTIF'} (momentum terpantau)",
+    ]
+    metrics = {
+        "Chain": chain or "SOLANA",
+        "V/L Rata²": f"{vl:.2f}x",
+        "Pool Layak": f"{viable}/{pools}",
+        "Total Liq": f"${float(total_liq):,.0f}" if isinstance(total_liq, (int, float)) else "—",
+    }
+    if vl >= 2.5 and viable >= 3:
+        verdict = "OKE"
+        alasan = "Likuiditas sangat aktif & viable pool mencukupi; layak autotrade/snipe."
+    elif viable > 0:
+        verdict = "PANTAU"
+        alasan = "Likuiditas terdeteksi; pantau momentum volume sebelum eksekusi."
+    else:
+        verdict = "SKIP"
+        alasan = "Likuiditas pool tipis; risiko slippage dan rug pull tinggi."
+    return confluence, metrics, verdict, alasan
+
+
+def _confluence_lp(
+    *, symbol: str, fee_hari: Any, umur_hari: Any, lp_verdict: str
+) -> tuple[list[str], dict[str, str], str, str]:
+    num_fee = float(fee_hari) if isinstance(fee_hari, (int, float)) else None
+    num_umur = float(umur_hari) if isinstance(umur_hari, (int, float)) else None
+
+    fee_str = f"${num_fee:.2f}/hari" if num_fee is not None else "Simpul aktif"
+    umur_str = f"{num_umur:.1f} hari" if num_umur is not None else "Pool stabil"
+
+    confluence = [
+        f"🌊 Fee Velocity: {fee_str} imbalan akumulatif",
+        f"⏳ Durabilitas: Pool berusia {umur_str}",
+        "🛡️ IL Guard: Pemantauan impermanent loss & range bin",
+    ]
+    metrics = {
+        "Pool": symbol or "SOL-USDC",
+        "Fee/Hari": f"${num_fee:.2f}" if num_fee is not None else "—",
+        "Umur": f"{num_umur:.1f} hr" if num_umur is not None else "—",
+        "Status": lp_verdict or "PANTAU",
+    }
+    if str(lp_verdict).upper() == "KELUAR":
+        verdict = "SKIP"
+        alasan = "Impermanent Loss terlalu dalam; disarankan auto-withdraw likuiditas."
+    elif num_fee and num_fee > 0:
+        verdict = "OKE"
+        alasan = "Akumulasi fee melampaui estimasi depresiasi IL; optimal deposit LP."
+    else:
+        verdict = "PANTAU"
+        alasan = "Posisi stabil; pantau deviasi harga dari bin aktif."
+    return confluence, metrics, verdict, alasan
+
+
+def _confluence_polymarket(
+    *, winRate: Any, breakEven: Any, n: Any, need: Any, terverifikasi: bool
+) -> tuple[list[str], dict[str, str], str, str]:
+    num_win = float(winRate) if isinstance(winRate, (int, float)) else None
+    num_be = float(breakEven) if isinstance(breakEven, (int, float)) else None
+
+    win_str = f"{num_win:.1f}%" if num_win is not None else "Favorit"
+    edge_str = f"+{num_win - num_be:.2f}%" if num_win and num_be else "Positif"
+
+    confluence = [
+        f"📊 Implied Prob: Win-rate {win_str} (rentang 0.70–0.95)",
+        f"🎯 Margin Edge: {edge_str} di atas break-even",
+        f"⏱️ Sampel Uji: n={n or '—'} trade terevaluasi",
+    ]
+    metrics = {
+        "Win-Rate": f"{num_win:.1f}%" if num_win is not None else "—",
+        "Break-Even": f"{num_be:.1f}%" if num_be is not None else "—",
+        "Sampel": f"{n}/{need}" if n and need else str(n or "—"),
+        "Status Edge": "Terverifikasi" if terverifikasi else "Eksplorasi",
+    }
+    if terverifikasi:
+        verdict = "OKE"
+        alasan = "Edge terverifikasi secara statistik dengan split beku (ADR-003)."
+    else:
+        verdict = "PANTAU"
+        alasan = "Klaim eksplorasi paper; teruskan shadow testing hingga split beku."
+    return confluence, metrics, verdict, alasan
+
+
+def _confluence_idx(
+    *, subjek: str, arah: str | None, entry: Any, sl: Any, tp1: Any
+) -> tuple[list[str], dict[str, str], str, str]:
+    confluence = [
+        "🏛️ Screener: Bandarmologi & BSJP sinyal",
+        "📊 Volume: Terdeteksi akumulasi transaksi",
+        "🛑 Manajemen Risiko: SL & batas trailing aktif",
+    ]
+    metrics = {
+        "Saham": subjek or "IDX",
+        "Entry": _format_harga_ringkas(entry),
+        "Stop": _format_harga_ringkas(sl),
+        "Target": _format_harga_ringkas(tp1),
+    }
+    return confluence, metrics, "PANTAU", "Mesin IDX berstatus historis/jurnal; pantau sebelum order."
+
+
+def _confluence_forex(
+    *, subjek: str, arah: str | None, entry: Any, sl: Any, tp1: Any
+) -> tuple[list[str], dict[str, str], str, str]:
+    confluence = [
+        "🌐 Struktur: Analisis tren multi-pair TVC",
+        "🎯 Bias Arah: Setup supply & demand",
+        "🛡️ Sizing: Rasio R:R terukur",
+    ]
+    metrics = {
+        "Pair": subjek or "FOREX",
+        "Entry": _format_harga_ringkas(entry),
+        "Stop": _format_harga_ringkas(sl),
+        "Target": _format_harga_ringkas(tp1),
+    }
+    return confluence, metrics, "PANTAU", "Eksekusi paper; pantau spread bursa sebelum masuk."
+
+
 def _crypto(s: SASession) -> SinyalPasar:
     kandidat, observed = _ambil(s, "snapshot", "kandidat")
     if not isinstance(kandidat, list) or not kandidat:
@@ -161,6 +338,11 @@ def _crypto(s: SASession) -> SinyalPasar:
     skor = _skor_dari_rules(rules)
     tier = str(terbaik.get("tier") or "SKIP")
     lolos = bool(gagal) is False
+    c_conf, c_met, c_verd, c_als = _confluence_crypto(
+        pair=terbaik.get("pair"), arah=terbaik.get("direction") or terbaik.get("arah"),
+        entry=terbaik.get("entry"), sl=terbaik.get("sl"), tp1=terbaik.get("tp1"),
+        skor=skor, tier=tier, rules_gagal=gagal,
+    )
     return SinyalPasar(
         pasar="crypto", label="Crypto (SMC)", ada=True,
         arah=str(terbaik.get("direction") or terbaik.get("arah") or "").upper() or None,
@@ -180,6 +362,7 @@ def _crypto(s: SASession) -> SinyalPasar:
         umur_sinyal_s=_umur_iso(_waktu_kandidat(terbaru)) if terbaru else None,
         detail={"entry": terbaik.get("entry"), "sl": terbaik.get("sl"), "tp1": terbaik.get("tp1"),
                 "rr": terbaik.get("rr"), "lolos_gate": lolos, "kandidat": len(kandidat)},
+        confluence=c_conf, metrics=c_met, autotrade_verdict=c_verd, alasan_eksekusi=c_als,
     )
 
 
@@ -202,6 +385,9 @@ def _polymarket(s: SASession) -> SinyalPasar:
     # Aturan yang dikodekan: tanpa split beku, alat TIDAK boleh berstatus EDGE di UI.
     alat_mentah = str(v.get("verdict_alat") or "")
     alat = alat_mentah if terverifikasi else ("EKSPLORASI" if alat_mentah else alat_mentah)
+    p_conf, p_met, p_verd, p_als = _confluence_polymarket(
+        winRate=win, breakEven=be, n=v.get("n"), need=v.get("nNeeded"), terverifikasi=terverifikasi
+    )
     return SinyalPasar(
         pasar="polymarket", label="Polymarket (favorit 5m)", ada=True,
         arah="BELI" if alat == "EDGE" else "TAHAN",
@@ -225,6 +411,7 @@ def _polymarket(s: SASession) -> SinyalPasar:
         detail={"n": v.get("n"), "win": v.get("win"), "winRate": win,
                 "breakEven_pct": be, "ci95": v.get("ci95"), "deff": v.get("deff"),
                 "nNeeded": v.get("nNeeded"), "split": split},
+        confluence=p_conf, metrics=p_met, autotrade_verdict=p_verd, alasan_eksekusi=p_als,
     )
 
 
@@ -257,6 +444,14 @@ def _gmgn(s: SASession) -> SinyalPasar:
     waktu = None
     if isinstance(epoch, (int, float)) and epoch > 0:
         waktu = datetime.fromtimestamp(float(epoch), tz=UTC).isoformat()
+    g_conf, g_met, g_verd, g_als = _confluence_gmgn(
+        chain=str(terbaik.get("chain") or "SOLANA"),
+        vl=vl,
+        viable=viable,
+        pools=pools,
+        window=str(terbaik.get("window") or ""),
+        total_liq=terbaik.get("total_liq"),
+    )
     return SinyalPasar(
         pasar="gmgn", label="DEX / Memecoin (GMGN)", ada=True,
         arah="PANTAU", subjek=str(terbaik.get("chain") or ""),
@@ -276,6 +471,7 @@ def _gmgn(s: SASession) -> SinyalPasar:
         umur_sinyal_s=_umur_iso(waktu) if waktu else _umur(observed),
         detail={"chain": terbaik.get("chain"), "avg_vl": vl, "viable": viable, "pools": pools,
                 "total_liq": terbaik.get("total_liq"), "best_vl": terbaik.get("best_vl")},
+        confluence=g_conf, metrics=g_met, autotrade_verdict=g_verd, alasan_eksekusi=g_als,
     )
 
 
@@ -291,6 +487,12 @@ def _lp(s: SASession) -> SinyalPasar:
     # Sinyal terpenting LP = yang harus KELUAR (IL terlalu dalam) — itu keputusan, bukan sekadar info.
     keluar = [p for p in posisi if str(p.get("verdict")) == "KELUAR"]
     sorotan = keluar[0] if keluar else posisi[0]
+    lp_conf, lp_met, lp_verd, lp_als = _confluence_lp(
+        symbol=str(sorotan.get("symbol") or ""),
+        fee_hari=sorotan.get("fee_hari"),
+        umur_hari=sorotan.get("umur"),
+        lp_verdict=str(sorotan.get("verdict") or "PANTAU"),
+    )
     return SinyalPasar(
         pasar="lp", label="LP / Yield", ada=True,
         arah=str(sorotan.get("verdict") or "PANTAU"), subjek=str(sorotan.get("symbol") or ""),
@@ -307,6 +509,7 @@ def _lp(s: SASession) -> SinyalPasar:
         detail={"notional": sorotan.get("notional"), "vl": sorotan.get("vl"),
                 "fee_hari": sorotan.get("fee_hari"), "umur_hari": sorotan.get("umur"),
                 "posisi": len(posisi)},
+        confluence=lp_conf, metrics=lp_met, autotrade_verdict=lp_verd, alasan_eksekusi=lp_als,
     )
 
 
@@ -338,6 +541,18 @@ def _dari_fakta_sinyal(
     subjek = str(pertama.get("pair") or pertama.get("ticker") or "") or None
     arah = str(pertama.get("arah") or "").upper() or None
     hasil = str(pertama.get("hasil") or pertama.get("status") or "")
+
+    if pasar == "idx":
+        df_conf, df_met, df_verd, df_als = _confluence_idx(
+            subjek=subjek or "", arah=arah,
+            entry=pertama.get("entry"), sl=pertama.get("sl"), tp1=pertama.get("tp1"),
+        )
+    else:
+        df_conf, df_met, df_verd, df_als = _confluence_forex(
+            subjek=subjek or "", arah=arah,
+            entry=pertama.get("entry"), sl=pertama.get("sl"), tp1=pertama.get("tp1"),
+        )
+
     return SinyalPasar(
         pasar=pasar, label=label, ada=True,
         arah=arah, subjek=subjek, skor=None,
@@ -357,6 +572,7 @@ def _dari_fakta_sinyal(
             "setup": pertama.get("setup"), "zona": pertama.get("zona"), "tf": pertama.get("tf"),
             "entries": len(entries),
         },
+        confluence=df_conf, metrics=df_met, autotrade_verdict=df_verd, alasan_eksekusi=df_als,
     )
 
 
@@ -413,6 +629,11 @@ class DaftarSinyal:
     mode: str = "PAPER"          # LIVE (belum ada) · PAPER · HISTORIS (beku/tidak diperbarui)
     catatan_mode: str = ""
     sinyal: list[dict[str, Any]] = field(default_factory=list)
+    # Output konfluensi terpadu (Threads/DEX Confluence format)
+    confluence: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
+    autotrade_verdict: str = "PANTAU"
+    alasan_eksekusi: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -465,28 +686,49 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
     for f in hidup[:maks]:
         v = f.value_json or {}
         rules = v.get("aturan_gagal") or []
+        skor = round(100 * (1 - len(rules) / max(1, len(rules) + 3))) if rules else 100
+        pair_val = v.get("pair") or f.key
+        arah_val = v.get("arah")
+        tier_val = v.get("tier")
+        entry_val = v.get("entry")
+        sl_val = v.get("sl")
+        tp1_val = v.get("tp1")
+
+        c_conf, c_met, c_verd, c_als = _confluence_crypto(
+            pair=pair_val, arah=arah_val, entry=entry_val, sl=sl_val, tp1=tp1_val,
+            skor=skor, tier=tier_val, rules_gagal=rules,
+        )
         sinyal.append(
             {
-                "pair": v.get("pair") or f.key,
-                "arah": v.get("arah"),
-                "tier": v.get("tier"),
-                "entry": v.get("entry"),
-                "sl": v.get("sl"),
-                "tp1": v.get("tp1"),
+                "pair": pair_val,
+                "arah": arah_val,
+                "tier": tier_val,
+                "entry": entry_val,
+                "sl": sl_val,
+                "tp1": tp1_val,
                 "r_r": v.get("r_r"),
                 "risk_pct": v.get("risk_pct"),
                 "aturan_gagal": rules,
                 "label": v.get("label"),
                 "umur_s": round((now - _ke_utc(f.observed_at)).total_seconds(), 1),
-                "skor": round(100 * (1 - len(rules) / max(1, len(rules) + 3))) if rules else 100,
+                "skor": skor,
+                "confluence": c_conf,
+                "metrics": c_met,
+                "autotrade_verdict": c_verd,
+                "alasan_eksekusi": c_als,
             }
         )
     if sinyal:
+        terbaik = sinyal[0]
         return DaftarSinyal(
             pasar="crypto", label="Crypto (SMC)", status_data="ada",
             rute=_rute_pasar("crypto"), jumlah=len(hidup), sinyal=sinyal,
             sumber="OKX", mode="PAPER",
             catatan_mode="harga & depth OKX; eksekusi paper (order tidak dikirim)",
+            confluence=terbaik.get("confluence", []),
+            metrics=terbaik.get("metrics", {}),
+            autotrade_verdict=terbaik.get("autotrade_verdict", "PANTAU"),
+            alasan_eksekusi=terbaik.get("alasan_eksekusi", ""),
         )
     # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
     dari_verdict = _umur_iso(_verdict_terakhir(s))
@@ -497,6 +739,8 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
                 f"Pemindaian berjalan (verdict terakhir {int(dari_verdict / 60)} menit lalu) "
                 "tetapi tidak ada setup yang cocok dengan strategi saat ini."
             ),
+            autotrade_verdict="SKIP",
+            alasan_eksekusi="Tidak ada setup yang lolos filter strategi saat ini.",
         )
     return DaftarSinyal(
         pasar="crypto", label="Crypto (SMC)", status_data="gagal", rute=_rute_pasar("crypto"),
@@ -504,6 +748,8 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
             "GAGAL SISTEM: tidak ada jejak pemindaian terbaru di ledger gate — "
             "periksa job `collect`/`signal-sync`. Ini bukan 'tidak ada sinyal'."
         ),
+        autotrade_verdict="SKIP",
+        alasan_eksekusi="Sistem pemindaian belum terdeteksi aktif.",
     )
 
 
@@ -557,6 +803,10 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
                 DaftarSinyal(
                     pasar=sp.pasar, label=sp.label, status_data="ada", rute=_rute_pasar(sp.pasar),
                     jumlah=1, sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
+                    confluence=sp.confluence,
+                    metrics=sp.metrics,
+                    autotrade_verdict=sp.autotrade_verdict,
+                    alasan_eksekusi=sp.alasan_eksekusi,
                     sinyal=[
                         {
                             "pair": sp.subjek,
@@ -573,6 +823,10 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
                                 sp.umur_sinyal_s if sp.umur_sinyal_s is not None else sp.umur_s
                             ),
                             "skor": sp.skor,
+                            "confluence": sp.confluence,
+                            "metrics": sp.metrics,
+                            "autotrade_verdict": sp.autotrade_verdict,
+                            "alasan_eksekusi": sp.alasan_eksekusi,
                         }
                     ],
                 )
@@ -583,6 +837,8 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
                     pasar=sp.pasar, label=sp.label, status_data="kosong", rute=_rute_pasar(sp.pasar),
                     alasan=sp.alasan, jumlah=0,
                     sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
+                    autotrade_verdict="SKIP",
+                    alasan_eksekusi=sp.alasan,
                 )
             )
     keluar.sort(key=lambda x: urutan.get(x.pasar, 99))

@@ -206,6 +206,23 @@
 		}
 		return null;
 	});
+
+	const verdictTeratas = $derived(
+		sinyalTeratas?.autotrade_verdict ?? pasarTeratas?.autotrade_verdict ?? 'PANTAU'
+	);
+	const confluenceTeratas = $derived(
+		(sinyalTeratas?.confluence && sinyalTeratas.confluence.length > 0)
+			? sinyalTeratas.confluence
+			: (pasarTeratas?.confluence ?? [])
+	);
+	const metricsTeratas = $derived(
+		sinyalTeratas?.metrics && Object.keys(sinyalTeratas.metrics).length > 0
+			? sinyalTeratas.metrics
+			: (pasarTeratas?.metrics ?? {})
+	);
+	const alasanTeratas = $derived(
+		sinyalTeratas?.alasan_eksekusi ?? pasarTeratas?.alasan_eksekusi ?? ''
+	);
 </script>
 
 <svelte:head><title>War Room — satu layar, semua pasar</title></svelte:head>
@@ -284,20 +301,60 @@
 			<!-- Sinyalnya kini di bagian 3 ("Sinyal per Market") — di sini hanya jumlah
 			     dan alasan, supaya card tetap menjawab dalam 3 detik. -->
 
-			<!-- SETUP ENTRY: jawaban "masuk di mana". Hanya bila datanya ada. -->
-			{#if setupTeratas.length}
+			<!-- SETUP ENTRY: jawaban "masuk di mana" dengan format konfluensi terpadu. -->
+			{#if Object.keys(metricsTeratas).length || setupTeratas.length}
 				<div class="setup" aria-label="Setup entry pasar teratas">
-					<span class="setup-judul">
-						Setup entry{subjekTeratas ? ` · ${subjekTeratas}` : ''}
-					</span>
-					<div class="setup-baris">
-						{#each setupTeratas as st (st.label)}
-							<div class="setup-item">
-								<span class="setup-label">{st.label}</span>
-								<span class="setup-nilai angka {st.nada ?? ''}">{st.nilai}</span>
-							</div>
-						{/each}
+					<div class="setup-kepala">
+						<span class="setup-judul">
+							Setup entry{subjekTeratas ? ` · ${subjekTeratas}` : ''}
+						</span>
+						<span class="badge-verdict {verdictTeratas.toLowerCase()}">
+							{#if verdictTeratas === 'OKE'}
+								🟢 OKE AUTOTRADE
+							{:else if verdictTeratas === 'PANTAU'}
+								🟡 PANTAU / KANDIDAT
+							{:else}
+								🔴 SKIP / TOLAK
+							{/if}
+						</span>
 					</div>
+
+					{#if confluenceTeratas.length}
+						<div class="setup-confluence">
+							<span class="section-label">Konfluensi Pemicu</span>
+							<div class="confluence-grid">
+								{#each confluenceTeratas as c}
+									<div class="confluence-pill">{c}</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					{#if Object.keys(metricsTeratas).length}
+						<div class="setup-bento">
+							{#each Object.entries(metricsTeratas) as [label, nilai]}
+								<div class="bento-box">
+									<span class="bento-lbl">{label}</span>
+									<span class="bento-val angka">{nilai}</span>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="setup-baris">
+							{#each setupTeratas as st (st.label)}
+								<div class="setup-item">
+									<span class="setup-label">{st.label}</span>
+									<span class="setup-nilai angka {st.nada ?? ''}">{st.nilai}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					{#if alasanTeratas}
+						<p class="setup-alasan">
+							<span class="dim">Alasan eksekusi:</span> <b>{alasanTeratas}</b>
+						</p>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -382,42 +439,50 @@
 		</section>
 
 		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
-		     Aturan yang dikodekan di sini, kata per kata dari pemilik:
-		       - "hanya ditampilkan 3 terbaik per market" -> slice(MAKS_PER_MARKET)
-		       - "jika sinyal harian lebih dari 3 ada tombol klik lainnya yang mengarah
-		         ke halaman tiap market" -> tombol "Lihat semua (N)" muncul HANYA bila
-		         jumlahnya benar-benar lebih dari 3.
-		       - "jika tidak ada sinyal, sebut no signal, bukan jurnal mesin mati" ->
-		         "kosong" (mesin hidup) ditulis "tidak ada sinyal · alasan yang bisa
-		         dibaca manusia"; "gagal" (mesin mati) TETAP berbunyi sebagai kegagalan
-		         sistem, karena itu memang failure — dua hal ini tidak boleh seragam. -->
+		     Format Seragam DEX Confluence Alert (Threads):
+		       - Identitas Aset & Chain / Venue & Waktu
+		       - Badge Verdikt Autotrade Seketika (OKE / PANTAU / SKIP)
+		       - 3 Poin Konfluensi Pemicu
+		       - Bento 4 Metrik Inti
+		       - Alasan Eksekusi / Catatan Keputusan -->
 		<section class="pasar" aria-label="Sinyal per market">
 			<div class="judul-bagian">
 				<h2>Sinyal per Market</h2>
 				<p class="dim">
-					Maks {MAKS_PER_MARKET} terbaik per market, urut skor aturan. Tanda
-					<b>tidak ada sinyal</b> = mesin hidup tetapi tidak ada setup yang cocok;
-					<b class="neg">gagal sistem</b> = sumber/job tak terbaca — dua hal berbeda.
+					Format seragam DEX Confluence Alert: verdikt autotrade seketika, konfluensi pemicu,
+					dan metrik terukur per pasar.
 				</p>
-			</div>			<div class="sinyal-grid">
+			</div>
+			<div class="sinyal-grid">
 				{#each pasarDaftar as p (p.pasar)}
 					<article class="sinyal-kartu {p.status_data}">
 						<header class="sinyal-kepala">
-							<div class="sinyal-judul">
+							<div class="sinyal-baris-atas">
 								<h3>{p.label}</h3>
-								<!-- QA 7 Okt: setiap kartu market wajib menyebut LIVE/PAPER/HISTORIS.
-								     Tanpa ini pembaca menebak apakah angka masih hidup; IDX misalnya
-								     HISTORIS karena mesinnya dibekukan. -->
+								{#if p.jumlah > MAKS_PER_MARKET}
+									<a class="lihat-semua" href={p.rute}>Lihat semua ({p.jumlah}) →</a>
+								{:else if p.status_data === 'ada'}
+									<a class="lihat-semua" href={p.rute}>Buka {p.label.split(' (')[0]} →</a>
+								{/if}
+							</div>
+							<div class="sinyal-badges">
 								{#if p.mode}
 									<span class="mode-badge mode-{p.mode.toLowerCase()}" title={p.catatan_mode ?? ''}>{p.mode}</span>
 								{/if}
+								{#if p.autotrade_verdict}
+									<span class="badge-autotrade {p.autotrade_verdict.toLowerCase()}">
+										{#if p.autotrade_verdict === 'OKE'}
+											🟢 OKE AUTOTRADE
+										{:else if p.autotrade_verdict === 'PANTAU'}
+											🟡 PANTAU / KANDIDAT
+										{:else}
+											🔴 SKIP / TOLAK
+										{/if}
+									</span>
+								{/if}
 							</div>
-							{#if p.jumlah > MAKS_PER_MARKET}
-								<a class="lihat-semua" href={p.rute}>Lihat semua ({p.jumlah}) →</a>
-							{:else if p.status_data === 'ada'}
-								<a class="lihat-semua" href={p.rute}>Buka {p.label.split(' (')[0]} →</a>
-							{/if}
 						</header>
+
 						{#if p.sumber}
 							<p class="sinyal-sumber">
 								sumber: {p.sumber}{#if p.sinyal[0]?.umur_s != null} · data {umurDetik(p.sinyal[0].umur_s)} lalu{/if}
@@ -425,23 +490,80 @@
 						{/if}
 
 						{#if p.status_data === 'ada'}
-							{#each p.sinyal.slice(0, MAKS_PER_MARKET) as s, i (s.pair ?? i)}
-								<div class="sinyal-baris">
-									<div class="sinyal-kiri">
-										<span class="sinyal-pair angka">{s.pair ?? '—'}</span>
-										{#if s.arah}<span class="sinyal-arah {s.arah === 'LONG' || s.arah === 'BELI' ? 'pos' : 'neg'}">{s.arah}</span>{/if}
-										{#if s.tier}<span class="sinyal-tier">{s.tier}</span>{/if}
-									</div>
-									<div class="sinyal-kanan angka dim">
-										{#if s.entry != null}<span>e {formatHarga(typeof s.entry === 'number' ? s.entry : Number(s.entry))}</span>{/if}
-										{#if s.sl != null}<span>s {formatHarga(typeof s.sl === 'number' ? s.sl : Number(s.sl))}</span>{/if}
-										{#if s.tp1 != null}<span>t {formatHarga(typeof s.tp1 === 'number' ? s.tp1 : Number(s.tp1))}</span>{/if}
-										{#if s.umur_s != null}<span class="umur">{umurDetik(s.umur_s)} lalu</span>{/if}
+							{#if p.sinyal[0]?.pair}
+								<div class="lead-pair-baris">
+									<span class="lead-pair angka">{p.sinyal[0].pair}</span>
+									{#if p.sinyal[0].arah}
+										<span class="lead-arah {p.sinyal[0].arah === 'LONG' || p.sinyal[0].arah === 'BELI' ? 'pos' : 'neg'}">{p.sinyal[0].arah}</span>
+									{/if}
+									{#if p.sinyal[0].tier}
+										<span class="lead-tier">{p.sinyal[0].tier}</span>
+									{/if}
+									{#if p.sinyal[0].skor != null}
+										<span class="lead-skor angka">{p.sinyal[0].skor}<span class="dari">/100</span></span>
+									{/if}
+								</div>
+							{/if}
+
+							<!-- 3 Poin Konfluensi Pemicu -->
+							{#if p.confluence && p.confluence.length}
+								<div class="card-confluence">
+									<span class="section-label">Konfluensi Pemicu</span>
+									<div class="confluence-items">
+										{#each p.confluence as item}
+											<div class="confluence-pill">{item}</div>
+										{/each}
 									</div>
 								</div>
-							{/each}
+							{/if}
+
+							<!-- Bento 4 Metrik Inti -->
+							{#if p.metrics && Object.keys(p.metrics).length}
+								<div class="card-bento">
+									{#each Object.entries(p.metrics) as [label, val]}
+										<div class="bento-cell">
+											<span class="bento-lbl">{label}</span>
+											<span class="bento-val angka">{val}</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
+
+							<!-- Alasan Eksekusi -->
+							{#if p.alasan_eksekusi}
+								<p class="card-alasan">
+									<span class="dim">Eksekusi:</span> <b>{p.alasan_eksekusi}</b>
+								</p>
+							{/if}
+
+							<!-- Kandidat lain bila ada lebih dari 1 -->
+							{#if p.sinyal.length > 1}
+								<div class="kandidat-sekunder">
+									<span class="section-label">Kandidat Lain ({p.sinyal.length - 1})</span>
+									{#each p.sinyal.slice(1, MAKS_PER_MARKET) as s, idx (s.pair ?? idx)}
+										<div class="sinyal-baris-mini">
+											<div class="sinyal-kiri">
+												<span class="sinyal-pair angka">{s.pair ?? '—'}</span>
+												{#if s.arah}<span class="sinyal-arah {s.arah === 'LONG' || s.arah === 'BELI' ? 'pos' : 'neg'}">{s.arah}</span>{/if}
+												{#if s.tier}<span class="sinyal-tier">{s.tier}</span>{/if}
+											</div>
+											<div class="sinyal-kanan angka dim">
+												{#if s.entry != null}<span>e {formatHarga(typeof s.entry === 'number' ? s.entry : Number(s.entry))}</span>{/if}
+												{#if s.sl != null}<span>s {formatHarga(typeof s.sl === 'number' ? s.sl : Number(s.sl))}</span>{/if}
+												{#if s.tp1 != null}<span>t {formatHarga(typeof s.tp1 === 'number' ? s.tp1 : Number(s.tp1))}</span>{/if}
+												{#if s.autotrade_verdict}
+													<span class="badge-mini {s.autotrade_verdict === 'OKE' ? 'pos' : 'warn'}">{s.autotrade_verdict}</span>
+												{/if}
+											</div>
+										</div>
+									{/each}
+								</div>
+							{/if}
 						{:else if p.status_data === 'kosong'}
 							<p class="sinyal-kosong">Tidak ada sinyal. {p.alasan}</p>
+							{#if p.alasan_eksekusi}
+								<p class="card-alasan dim">{p.alasan_eksekusi}</p>
+							{/if}
 						{:else}
 							<p class="sinyal-gagal">⚠ {p.alasan}</p>
 						{/if}
@@ -625,7 +747,7 @@
 	.verdikt { border-radius: 0; border: none; }
 
 	/* Sinyal per market */
-	.sinyal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.75rem; }
+	.sinyal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 0.85rem; }
 	.sinyal-kartu {
 		border: 1px solid var(--garis); border-radius: 0.85rem;
 		background: var(--permukaan); padding: 0.85rem 1rem;
@@ -637,9 +759,10 @@
 		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 0 16px -4px color-mix(in srgb, var(--mint) 15%, transparent);
 	}
 	.sinyal-kartu.gagal { border-color: var(--merah); }
-	.sinyal-kepala { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
-	.sinyal-kepala h3 { font-size: 0.85rem; margin: 0; letter-spacing: 0.01em; }
-	.sinyal-judul { display: inline-flex; align-items: baseline; gap: 0.4rem; }
+	.sinyal-kepala { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.45rem; }
+	.sinyal-baris-atas { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+	.sinyal-baris-atas h3 { font-size: 0.88rem; font-weight: 700; margin: 0; letter-spacing: 0.01em; }
+	.sinyal-badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 	.mode-badge {
 		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
 		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
@@ -866,21 +989,196 @@
 		margin: 0;
 	}
 
-	/* Setup entry — blok "masuk di mana" di dalam verdikt. */
+	/* Setup entry — blok "masuk di mana" dengan format konfluensi terpadu. */
 	.setup {
 		margin-top: 1.1rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--garis);
 	}
+	.setup-kepala {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+	}
 	.setup-judul {
-		display: block;
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--redup);
-		margin-bottom: 0.6rem;
 	}
+	.badge-verdict, .badge-autotrade {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		padding: 0.15rem 0.55rem;
+		border-radius: 999px;
+		border: 1px solid;
+		white-space: nowrap;
+	}
+	.badge-verdict.oke, .badge-autotrade.oke {
+		color: var(--mint);
+		border-color: color-mix(in srgb, var(--mint) 45%, transparent);
+		background: color-mix(in srgb, var(--mint) 12%, transparent);
+	}
+	.badge-verdict.pantau, .badge-autotrade.pantau {
+		color: var(--kuning);
+		border-color: color-mix(in srgb, var(--kuning) 45%, transparent);
+		background: color-mix(in srgb, var(--kuning) 12%, transparent);
+	}
+	.badge-verdict.skip, .badge-autotrade.skip {
+		color: var(--merah);
+		border-color: color-mix(in srgb, var(--merah) 45%, transparent);
+		background: color-mix(in srgb, var(--merah) 12%, transparent);
+	}
+
+	.section-label {
+		display: block;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--redup);
+		margin-bottom: 0.35rem;
+	}
+	.setup-confluence {
+		margin-bottom: 0.75rem;
+	}
+	.confluence-grid, .confluence-items {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.confluence-pill {
+		font-size: 0.74rem;
+		color: var(--tinta);
+		padding: 0.3rem 0.6rem;
+		background: color-mix(in srgb, var(--latar) 65%, var(--permukaan));
+		border: 1px solid var(--garis);
+		border-radius: 0.4rem;
+		line-height: 1.35;
+	}
+
+	.setup-bento {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+	}
+	.bento-box {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding: 0.5rem 0.7rem;
+		background: color-mix(in srgb, var(--latar) 60%, var(--permukaan));
+		border: 1px solid var(--garis);
+		border-radius: 0.5rem;
+	}
+	.bento-lbl {
+		font-size: 0.62rem;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--redup);
+	}
+	.bento-val {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--tinta);
+	}
+	.setup-alasan {
+		font-size: 0.8rem;
+		color: var(--tinta);
+		margin: 0.5rem 0 0;
+		line-height: 1.4;
+	}
+
+	/* Card Sinyal per Market Elements */
+	.lead-pair-baris {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		margin: 0.35rem 0 0.5rem;
+	}
+	.lead-pair {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--tinta);
+		letter-spacing: 0.01em;
+	}
+	.lead-arah {
+		font-size: 0.72rem;
+		font-weight: 700;
+		padding: 0.05rem 0.35rem;
+		border-radius: 0.25rem;
+	}
+	.lead-tier {
+		font-size: 0.65rem;
+		color: var(--redup);
+		border: 1px solid var(--garis);
+		padding: 0 0.3rem;
+		border-radius: 0.25rem;
+	}
+	.lead-skor {
+		font-size: 0.85rem;
+		font-weight: 700;
+		margin-left: auto;
+		color: var(--tinta);
+	}
+	.card-confluence {
+		margin: 0.5rem 0 0.6rem;
+	}
+	.card-bento {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr));
+		gap: 0.4rem;
+		margin: 0.5rem 0;
+	}
+	.bento-cell {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		padding: 0.35rem 0.5rem;
+		background: color-mix(in srgb, var(--latar) 55%, var(--permukaan));
+		border: 1px solid var(--garis);
+		border-radius: 0.4rem;
+	}
+	.card-alasan {
+		font-size: 0.72rem;
+		color: var(--tinta);
+		margin: 0.4rem 0 0;
+		line-height: 1.35;
+	}
+	.kandidat-sekunder {
+		margin-top: 0.65rem;
+		padding-top: 0.5rem;
+		border-top: 1px dashed var(--garis);
+	}
+	.sinyal-baris-mini {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.4rem;
+		padding: 0.25rem 0;
+		font-size: 0.72rem;
+	}
+	.badge-mini {
+		font-size: 0.58rem;
+		font-weight: 700;
+		padding: 0.05rem 0.25rem;
+		border-radius: 0.2rem;
+	}
+	.badge-mini.pos {
+		color: var(--mint);
+		background: color-mix(in srgb, var(--mint) 12%, transparent);
+	}
+	.badge-mini.warn {
+		color: var(--kuning);
+		background: color-mix(in srgb, var(--kuning) 12%, transparent);
+	}
+
 	.setup-baris {
 		display: flex;
 		flex-wrap: wrap;
