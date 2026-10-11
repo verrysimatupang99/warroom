@@ -35,7 +35,7 @@ def upgrade() -> None:
         FROM (
             SELECT (payload_json->>'alert_id')::bigint AS aid, count(*) AS n
             FROM events
-            WHERE type = 'alert.sent' AND payload_json ? 'alert_id'
+            WHERE type = 'alert.sent' AND payload_json->>'alert_id' ~ '^[0-9]+$'
             GROUP BY 1
         ) sub
         WHERE a.id = sub.aid
@@ -49,7 +49,7 @@ def upgrade() -> None:
                    (payload_json->>'alert_id')::bigint AS aid,
                    payload_json->>'detail' AS detail
             FROM events
-            WHERE type = 'alert.sent' AND payload_json ? 'alert_id'
+            WHERE type = 'alert.sent' AND payload_json->>'alert_id' ~ '^[0-9]+$'
               AND payload_json->>'ok' = 'false'
             ORDER BY (payload_json->>'alert_id')::bigint, id DESC
         ) sub

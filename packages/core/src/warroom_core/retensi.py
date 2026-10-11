@@ -100,7 +100,6 @@ def rencana(
         )
         .subquery()
     )
-    dirujuk = select(Event.id).where(func.jsonb_array_length(Event.fact_ids) > 0)
     # fact_ids berbentuk JSONB array angka; bandingkan lewat EXISTS agar tidak memuat semua
     # id ke memori.
     kandidat_facts = (
@@ -113,7 +112,6 @@ def rencana(
             .exists()
         )
     )
-    _ = dirujuk  # disimpan untuk keterbacaan; filter memakai EXISTS di atas
     n_facts = s.scalar(select(func.count()).select_from(kandidat_facts.subquery())) or 0
 
     batas_events = now - timedelta(days=events_hari)

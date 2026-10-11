@@ -1642,13 +1642,24 @@ dependencies = [
     { name = "sqlalchemy" },
 ]
 
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13,<2" },
     { name = "live-trading", editable = "packages/live-trading" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3,<9" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6,<8" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7,<1" },
     { name = "sqlalchemy", specifier = ">=2.0,<3" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "warroom-llm"

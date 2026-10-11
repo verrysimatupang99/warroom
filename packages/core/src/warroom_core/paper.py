@@ -39,9 +39,7 @@ class PaperExecutor:
         else:
             direction_sign = 1 if signal.direction in {"long", "yes"} else -1
             fill_price = data.price * (1 + direction_sign * self.policy.slippage_bps / 10_000)
-            fee_usd = (
-                fill_price * (decision.size_usd or 0) / max(fill_price, 1e-12)
-            ) * self.policy.fee_bps / 10_000
+            fee_usd = (decision.size_usd or 0) * self.policy.fee_bps / 10_000
             record = PaperRecord(
                 signal.signal_id, "filled", "paper_fill", recorded_at,
                 price=fill_price, risk_usd=decision.size_usd,

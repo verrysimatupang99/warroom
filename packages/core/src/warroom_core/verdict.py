@@ -278,7 +278,13 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
         blok = _fakta(s, "pasar_akurasi") or {}
         gm = (blok.get("pasar") or {}).get("gmgn") or {}
         seri = (gm.get("per_setup") or {}).get("LP Terukur (mark lokal)") or {}
-        pnl = seri.get("total_pnl_usd") or seri.get("pnl_usd")
+        pnl = seri.get("total_pnl_usd")
+        if pnl is None:
+            pnl = seri.get("pnl_usd")
+    if ev_detail.get("dikarantina"):
+        alasan.append(
+            ev_detail.get("alasan_karantina") or "setup wajah pasar sedang dikarantina (rugi)"
+        )
     if isinstance(mean_r, (int, float)) and mean_r <= 0:
         alasan.append(f"ekspektasi {mean_r:+.3f} R/trade — belum positif")
     if pnl is not None and isinstance(pnl, (int, float)) and pnl <= 0:
@@ -291,8 +297,6 @@ def verdict_pasar(s: SASession, sp: Any) -> Verdict:
         alasan.append(
             "data uji belum dibekukan (split beku wajib, ADR-003) — hasil belum boleh dipercaya"
         )
-    if not sp.terverifikasi and pasar in _WAJIB_SPLIT:
-        pass  # sudah masuk di atas
 
     promotable = not alasan
     promotion_state = "promotable" if promotable else "blocked"

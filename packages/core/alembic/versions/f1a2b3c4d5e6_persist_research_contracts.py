@@ -1,7 +1,7 @@
 """Persist versioned research contracts and artifact provenance.
 
 Revision ID: f1a2b3c4d5e6
-Revises: edc4c7a26d32
+Revises: a1f2c3d4e5b6
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "f1a2b3c4d5e6"
-down_revision: tuple[str, str] = ("a1f2c3d4e5b6", "edc4c7a26d32")
+down_revision: str | None = "a1f2c3d4e5b6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

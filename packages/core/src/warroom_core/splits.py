@@ -51,22 +51,21 @@ def _sha256_file(p: Path) -> str:
 
 
 def _scan_outcome(path: Path) -> tuple[bool, int]:
-    """Cari penanda outcome di berkas jsonl(.gz). Kembalikan (ada, jumlah_baris_dibaca)."""
+    """Cari penanda outcome di berkas jsonl(.gz). Kembalikan (ada, total_baris)."""
     import gzip
 
     pembuka = gzip.open if path.suffix == ".gz" else open
     dibaca = 0
+    ada = False
     try:
         with pembuka(path, "rt", encoding="utf-8", errors="replace") as fh:  # type: ignore[operator]
             for baris in fh:
                 dibaca += 1
-                if any(f'"{m}"' in baris for m in OUTCOME_MARKERS):
-                    return True, dibaca
-                if dibaca >= 20000:  # berhenti: cukup untuk deteksi penanda
-                    break
+                if not ada and any(f'"{m}"' in baris for m in OUTCOME_MARKERS):
+                    ada = True
     except (OSError, EOFError):
-        return False, dibaca
-    return False, dibaca
+        return ada, dibaca
+    return ada, dibaca
 
 
 def bekukan(
@@ -97,9 +96,11 @@ def bekukan(
 
     berkas: list[dict[str, Any]] = []
     ada_outcome = False
+    total_baris = 0
     for p in sorted(d.glob("events-*.jsonl*")):
-        ok, _n = _scan_outcome(p)
+        ok, n_baris = _scan_outcome(p)
         ada_outcome = ada_outcome or ok
+        total_baris += n_baris
         berkas.append({"file": p.name, "sha256": _sha256_file(p), "bytes": p.stat().st_size})
 
     if not berkas:
@@ -131,7 +132,7 @@ def bekukan(
         partitions_json=partisi,
         window_from=to_dt(wf),
         window_to=to_dt(hs),
-        rows=sum(int(b["bytes"] > 0) for b in berkas),
+        rows=total_baris,
         created_by=created_by,
     )
     s.add(baris)

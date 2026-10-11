@@ -212,3 +212,17 @@ def test_handler_learner_menolak_saat_kill_switch(db) -> None:
     assert status == "ok"
     assert "kill switch" in detail
     assert datetime.now(UTC) is not None
+
+
+def test_terapkan_menolak_usulan_yang_ditolak(db) -> None:
+    with session_scope() as s:
+        autonomy.seed_parameters(s)
+        hasil = autonomy.usulkan(
+            s, "agent.threshold", 0.99,
+            alasan="terlalu tinggi",
+            evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)},
+        )
+        assert hasil["keputusan"] == "ditolak"
+        pid = hasil["proposal_id"]
+    with session_scope() as s:
+        assert autonomy.terapkan(s, pid, actor="owner") is False

@@ -39,7 +39,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 __all__ = ["Base", "Fact", "Event", "Verdict", "Trade", "Strategy", "Parameter", "Proposal",
            "LLMCall", "Prompt", "Alert", "Service", "Heartbeat", "User", "Session", "AuditLog",
-           "Dataset", "ResearchRun", "ResearchRecord"]
+           "Dataset", "ResearchRun", "ResearchRecord", "FrozenSplit", "Job", "Grant"]
 
 Money = Numeric(20, 8)
 
@@ -480,6 +480,7 @@ class Job(Base):
     )
 
     __table_args__ = (Index("ix_jobs_enabled_next", "enabled", "next_run_at"),)
+ 
 
 class Grant(Base):
     """Izin aksi live (P6-T1) — pola harness Polymarket: `grantedBy/messageId/scope/at`.

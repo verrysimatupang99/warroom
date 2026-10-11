@@ -112,6 +112,19 @@ def hash_konfigurasi(s: SASession) -> str:
     return hashlib.sha256(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()
 
 
+def _sanitasi_split(s: SASession, evidence: dict[str, Any] | None) -> str | None:
+    if not evidence:
+        return None
+    split_ev = evidence.get("split")
+    if split_ev:
+        from warroom_core import splits as _splits
+
+        if _splits.split_untuk_gate(s, str(split_ev)) is None:
+            return None
+        return str(split_ev)
+    return None
+
+
 def putuskan_usulan(
     s: SASession,
     nama: str,
@@ -141,12 +154,7 @@ def putuskan_usulan(
             return "ditolak", "bukti kurang: butuh n, win, be (dan split beku) sebelum mengubah angka"
         # "frozen:<id>" hanya bermakna bila id itu terdaftar. Kalau tidak terdaftar, buang
         # labelnya supaya gate menolak — bukan meloloskan split yang dikarang (ADR-003).
-        split_ev = evidence.get("split")
-        if split_ev:
-            from warroom_core import splits as _splits
-
-            if _splits.split_untuk_gate(s, str(split_ev)) is None:
-                split_ev = None
+        split_ev = _sanitasi_split(s, evidence)
         g = evaluate(
             GateInput(
                 n=int(evidence["n"]),
@@ -190,13 +198,15 @@ def usulkan(
 
     verdict_gate = ""
     if evidence and all(k in evidence for k in ("n", "win", "be")):
+        split_ev = _sanitasi_split(s, evidence)
         verdict_gate = evaluate(
             GateInput(
                 n=int(evidence["n"]),
                 win=int(evidence["win"]),
                 be=float(evidence["be"]),
                 ci=float(evidence.get("ci", DEFAULT_CI)),
-                split=evidence.get("split"),
+                split=split_ev,
+                label=evidence.get("label", "konfirmasi"),
             )
         ).verdict
 
@@ -243,7 +253,7 @@ def usulkan(
 def terapkan(s: SASession, proposal_id: int, *, actor: str = "owner") -> bool:
     """Terapkan usulan yang menunggu manusia (mis. scope live). Mencatat aktor."""
     pr = s.get(Proposal, proposal_id)
-    if pr is None or pr.status == "diterapkan":
+    if pr is None or pr.status != "butuh_manusia":
         return False
     p = s.scalar(select(Parameter).where(Parameter.name == pr.parameter_name))
     if p is None or p.locked:

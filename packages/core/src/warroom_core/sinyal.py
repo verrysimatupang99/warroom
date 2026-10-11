@@ -261,7 +261,11 @@ def _gmgn(s: SASession) -> SinyalPasar:
         arah="PANTAU", subjek=str(terbaik.get("chain") or ""),
         skor=round(100 * viable / pools) if pools else None,
         tier=str(terbaik.get("window") or ""),
-        alasan=f"V/L {vl:.2f} ({viable}/{pools} pool layak); {terbaik.get('note')}",
+        alasan=(
+            f"V/L {vl:.2f} ({viable}/{pools} pool layak); {terbaik.get('note')}"
+            if pools
+            else f"V/L {vl:.2f}; {terbaik.get('note')}"
+        ),
         terverifikasi=False,
         catatan_kejujuran=(
             "Ini kelayakan likuiditas, BUKAN edge arah harga. Belum ada bukti PnL dari venue ini."
@@ -448,7 +452,13 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
         obs = _ke_utc(f.observed_at)
         if (now - obs).total_seconds() <= f.ttl_s:
             hidup.append(f)
-    hidup.sort(key=lambda f: str((f.value_json or {}).get("tier", "")))
+    hidup.sort(
+        key=lambda f: (
+            _TIER_RANK.get(str((f.value_json or {}).get("tier") or "").upper(), 0),
+            -len((f.value_json or {}).get("aturan_gagal") or []),
+        ),
+        reverse=True,
+    )
     sinyal = []
     for f in hidup[:maks]:
         v = f.value_json or {}
@@ -465,9 +475,7 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
                 "risk_pct": v.get("risk_pct"),
                 "aturan_gagal": rules,
                 "label": v.get("label"),
-                "umur_s": _umur_iso(None) if False else round(
-                    (now - _ke_utc(f.observed_at)).total_seconds(), 1
-                ),
+                "umur_s": round((now - _ke_utc(f.observed_at)).total_seconds(), 1),
                 "skor": round(100 * (1 - len(rules) / max(1, len(rules) + 3))) if rules else 100,
             }
         )
@@ -559,7 +567,9 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
                             "risk_pct": None,
                             "aturan_gagal": [],
                             "label": sp.catatan_kejujuran,
-                            "umur_s": sp.umur_sinyal_s or sp.umur_s,
+                            "umur_s": (
+                                sp.umur_sinyal_s if sp.umur_sinyal_s is not None else sp.umur_s
+                            ),
                             "skor": sp.skor,
                         }
                     ],
