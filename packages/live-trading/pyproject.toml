@@ -47,5 +47,3 @@ extend-exclude = ["crypto", "vendor", "idx616", ".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-# tv_feed.py = skrip warisan yang dipanggil sebagai subprocess (bukan API kita).
-per-file-ignores = { "src/live_trading/collectors/tv_feed.py" = ["UP031", "UP041"] }

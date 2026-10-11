@@ -182,14 +182,22 @@ def has_role(user: User, minimum: Role) -> bool:
     return _ROLE_RANK.get(user.role, 0) >= _ROLE_RANK[minimum]
 
 
+# Hash dummy konstan untuk mitigasi kebocoran waktu enumerasi username.
+_DUMMY_HASH = hash_password("dummy-password-for-timing-mitigation")
+
+
 def login(username: str, password: str, totp_code: str | None = None) -> str | None:
     """Verifikasi sandi (+TOTP bila terdaftar) dan kembalikan id sesi, atau None.
 
     Pesan gagal **tidak** membedakan "pengguna tidak ada" dan "sandi salah".
+    Mitigasi enumerasi waktu: selalu jalankan verifikasi scrypt meskipun pengguna tidak ada.
     """
     with session_scope() as s:
         user = s.scalar(select(User).where(User.username == username))
-        if user is None or not user.active or not verify_password(password, user.pass_hash):
+        if user is None or not user.active:
+            verify_password(password, _DUMMY_HASH)
+            return None
+        if not verify_password(password, user.pass_hash):
             return None
         if not verify_totp(user.totp_secret_enc, totp_code):
             return None

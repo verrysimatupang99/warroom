@@ -1612,7 +1612,9 @@ version = "0.1.0"
 source = { editable = "services/api" }
 dependencies = [
     { name = "fastapi" },
+    { name = "pydantic" },
     { name = "pyotp" },
+    { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "warroom-core" },
     { name = "warroom-llm" },
@@ -1621,7 +1623,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
     { name = "pyotp", specifier = ">=2.9,<3" },
+    { name = "sqlalchemy", specifier = ">=2.0,<3" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32,<1" },
     { name = "warroom-core", editable = "packages/core" },
     { name = "warroom-llm", editable = "services/llm" },

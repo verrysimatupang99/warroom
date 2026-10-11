@@ -39,10 +39,18 @@ class Limiter:
         self._kunci: dict[str, deque[float]] = {}
         self._lock = Lock()
 
+    def _bersihkan_kadaluwarsa(self, t: float) -> None:
+        batas_bawah = t - self.jendela_s
+        kunci_hapus = [k for k, q in self._kunci.items() if not q or q[-1] <= batas_bawah]
+        for k in kunci_hapus:
+            del self._kunci[k]
+
     def izinkan(self, kunci: str, *, sekarang: float | None = None) -> bool:
         """True bila permintaan boleh lanjut; catat waktunya bila boleh."""
         t = time.monotonic() if sekarang is None else sekarang
         with self._lock:
+            if len(self._kunci) >= 1000:
+                self._bersihkan_kadaluwarsa(t)
             q = self._kunci.setdefault(kunci, deque())
             batas_bawah = t - self.jendela_s
             while q and q[0] <= batas_bawah:

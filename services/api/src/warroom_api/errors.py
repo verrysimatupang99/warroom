@@ -6,6 +6,7 @@ yang bisa ditampilkan apa adanya dan dicatat di log.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -13,6 +14,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 __all__ = ["install_error_handlers"]
+
+logger = logging.getLogger("warroom_api.errors")
 
 
 def _body(code: str, message: str, detail: Any | None = None) -> dict[str, Any]:
@@ -42,7 +45,16 @@ def install_error_handlers(app: FastAPI) -> None:
         # `detail` boleh berupa objek (mis. daftar grant yang kurang) — diteruskan apa adanya
         # supaya klien bisa menampilkan kekurangan spesifik, bukan pesan kabur.
         if isinstance(exc.detail, (dict, list)):
-            pesan = str(exc.detail.get("catatan") if isinstance(exc.detail, dict) else "detail terstruktur")
+            if isinstance(exc.detail, dict):
+                catatan = (
+                    exc.detail.get("catatan")
+                    or exc.detail.get("message")
+                    or exc.detail.get("alasan")
+                    or "detail terstruktur"
+                )
+                pesan = str(catatan)
+            else:
+                pesan = "detail terstruktur"
             return JSONResponse(status_code=exc.status_code, content=_body(code, pesan, exc.detail))
         return JSONResponse(status_code=exc.status_code, content=_body(code, str(exc.detail)))
 
@@ -56,4 +68,5 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
         # Detail asli TIDAK dibocorkan ke klien (bisa memuat path/kredensial); dicatat di log.
+        logger.exception("Kesalahan server internal tidak tertangani: %s", exc)
         return JSONResponse(status_code=500, content=_body("internal", "kesalahan internal"))

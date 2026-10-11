@@ -65,7 +65,7 @@ async def fetch(symbol="TVC:GOLD", resolution="60", bars=500, timeout=25):
             ("set_auth_token", ["unauthorized_user_token"]),
             ("chart_create_session", [chart, ""]),
             ("resolve_symbol", [chart, "sds_sym_1",
-                                '={"symbol":"%s","adjustment":"splits"}' % symbol]),
+                                f'={{"symbol":"{symbol}","adjustment":"splits"}}']),
             ("create_series", [chart, "sds_1", series, "sds_sym_1", resolution, bars, ""]),
         ]:
             await ws.send(_msg(func, args))
@@ -77,7 +77,7 @@ async def fetch(symbol="TVC:GOLD", resolution="60", bars=500, timeout=25):
         while not done and loop.time() < deadline:
             try:
                 raw = await asyncio.wait_for(ws.recv(), timeout=max(1, deadline - loop.time()))
-            except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed):
+            except (TimeoutError, websockets.exceptions.ConnectionClosed):
                 break
 
             if isinstance(raw, bytes):

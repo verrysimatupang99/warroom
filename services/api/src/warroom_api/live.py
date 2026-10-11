@@ -106,7 +106,8 @@ def arming_status() -> Arming:
     op: dict[str, Any] = {}
     if op_status == "ok" and op_teks:
         try:
-            op = json.loads(op_teks)
+            val = json.loads(op_teks)
+            op = val if isinstance(val, dict) else {}
         except json.JSONDecodeError:
             op = {}
     paused = bool(op.get("paused", True))  # default aman: dianggap paused bila tak terbaca
@@ -121,11 +122,14 @@ def arming_status() -> Arming:
         }
     )
 
-    unit = subprocess.run(  # noqa: S603
-        ["systemctl", "show", UNIT, "-p", "LoadState", "-p", "ActiveState", "-p", "Environment"],
-        capture_output=True, text=True, check=False, timeout=10,
-    )
-    unit_out = unit.stdout if unit.returncode == 0 else ""
+    try:
+        unit = subprocess.run(  # noqa: S603
+            ["systemctl", "show", UNIT, "-p", "LoadState", "-p", "ActiveState", "-p", "Environment"],
+            capture_output=True, text=True, check=False, timeout=10,
+        )
+        unit_out = unit.stdout if unit.returncode == 0 else ""
+    except (subprocess.SubprocessError, OSError):
+        unit_out = ""
     load = next((b.split("=", 1)[1] for b in unit_out.splitlines() if b.startswith("LoadState=")), "?")
     active = next((b.split("=", 1)[1] for b in unit_out.splitlines() if b.startswith("ActiveState=")), "?")
     env_raw = next((b.split("=", 1)[1] for b in unit_out.splitlines() if b.startswith("Environment=")), "")

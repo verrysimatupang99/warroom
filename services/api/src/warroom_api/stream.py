@@ -159,6 +159,7 @@ async def event_stream(
             )
         if rows:
             terakhir_denyut = 0.0
+            await asyncio.sleep(min(poll_s, 0.05))
             continue
 
         terakhir_denyut += poll_s
