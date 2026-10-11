@@ -40,7 +40,8 @@ addopts = "-q"
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-# crypto/ + vendor/ + idx616/ = kode warisan Tencent, masih jalan apa adanya.
+# crypto/ + vendor/ = kode warisan Tencent. idx616/ (mesin kanonik IDX 616) dikecualikan
+# sementara dari lint karena membawa format legacy (semicolon, non-PEP8) hingga sprint IDX.
 # Lint berlaku untuk kode aktif saja (src/, tests/).
 extend-exclude = ["crypto", "vendor", "idx616", ".venv"]
 

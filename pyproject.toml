@@ -41,8 +41,9 @@ dev = [
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-# vendor/ + crypto/ + idx616/scripts di packages/live-trading = kode warisan Tencent (masih jalan apa adanya;
-# paket asalnya juga mengecualikannya). .venv-merge = env uji F3.
+# vendor/ + crypto/ = kode warisan Tencent. idx616/ (mesin kanonik IDX 616) dikecualikan
+# sementara dari lint karena masih membawa 137 format legacy (semicolon, non-PEP8 indent)
+# menunggu refactor terarah pada sprint IDX. .venv-merge = env uji F3.
 extend-exclude = [
     ".venv",
     ".venv-merge",
