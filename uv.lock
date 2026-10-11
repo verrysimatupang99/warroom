@@ -1688,6 +1688,8 @@ name = "warroom-worker"
 version = "0.1.0"
 source = { editable = "services/worker" }
 dependencies = [
+    { name = "live-trading" },
+    { name = "sqlalchemy" },
     { name = "warroom-core" },
     { name = "warroom-llm" },
     { name = "warroom-notifier" },
@@ -1695,6 +1697,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "live-trading", editable = "packages/live-trading" },
+    { name = "sqlalchemy", specifier = ">=2.0,<3" },
     { name = "warroom-core", editable = "packages/core" },
     { name = "warroom-llm", editable = "services/llm" },
     { name = "warroom-notifier", editable = "services/notifier" },

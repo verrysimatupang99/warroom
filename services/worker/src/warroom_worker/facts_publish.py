@@ -161,6 +161,8 @@ def publish_snapshot(
         return PublishReport(status="rusak", detail=f"{type(exc).__name__}: {exc}")
     if not isinstance(payload, dict):
         return PublishReport(status="rusak", detail="snapshot bukan objek JSON")
+    if not payload:
+        return PublishReport(status="rusak", detail="snapshot kosong (tidak ada kunci)")
 
     # Penjaga snapshot separuh (temuan 5 Okt 2026): bandingkan `bagian` sekarang vs kontrak
     # + bagian terbit sebelumnya. Diambil SEBELUM menulis, supaya snapshot separuh tidak
@@ -193,7 +195,6 @@ def publish_snapshot(
 
     # Idempoten: menerbitkan snapshot yang sama dua kali tidak boleh gagal —
     # konflik pada (kind,key,observed_at) diabaikan, bukan error.
-    from sqlalchemy import select
     from sqlalchemy.dialects.postgresql import insert as pg_insert
 
     stmt = pg_insert(Fact).values(rows).on_conflict_do_nothing(

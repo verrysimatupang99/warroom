@@ -37,6 +37,17 @@ def _ts(row: dict[str, Any]) -> datetime | None:
     return d if d.tzinfo else d.replace(tzinfo=UTC)
 
 
+def _r_r(entry: Any, sl: Any, tp1: Any) -> float | None:
+    try:
+        e, s, t = float(entry), float(sl), float(tp1)
+        risiko = abs(e - s)
+        if risiko <= 0:
+            return None
+        return round(abs(t - e) / risiko, 2)
+    except (TypeError, ValueError):
+        return None
+
+
 def sinyal_terakhir(
     state_dir: str | Path,
     *,
@@ -75,7 +86,7 @@ def sinyal_terakhir(
             "sl": r.get("sl"),
             "tp1": r.get("tp1"),
             "risk_pct": r.get("risk_pct"),
-            "r_r": 2.0,
+            "r_r": _r_r(r.get("entry"), r.get("sl"), r.get("tp1")),
             "strategy": r.get("strategy"),
             "mode": r.get("mode", "PAPER"),
             "detail": r.get("detail") or {},

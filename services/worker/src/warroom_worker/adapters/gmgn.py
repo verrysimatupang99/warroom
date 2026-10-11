@@ -160,9 +160,14 @@ def lp_paper_ringkas(state_dir: str | None = None) -> dict[str, Any]:
             if not line:
                 continue
             try:
-                rows.append(json.loads(line))
+                baris = json.loads(line)
             except json.JSONDecodeError:
                 rusak += 1  # dilaporkan, bukan disembunyikan (pelajaran sim.py)
+                continue
+            if isinstance(baris, dict):
+                rows.append(baris)
+            else:
+                rusak += 1
     except OSError as exc:
         return {"tersedia": False, "status": "tidak-izin", "path": str(p),
                 "detail": type(exc).__name__}

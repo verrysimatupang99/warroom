@@ -99,7 +99,7 @@ def baca_json(path: str | Path, *, pakai_sudo: bool = True) -> Bacaan:
 
 def baca_jsonl_ekor(path: str | Path, n: int = 400, *, pakai_sudo: bool = True) -> Bacaan:
     """Baca ``n`` baris terakhir JSONL. Baris rusak dilewati dan dihitung di `meta`."""
-    p = Path(path)
+    p = Path(path).expanduser()
     if pakai_sudo:
         hasil = subprocess.run(  # noqa: S603
             ["sudo", "-n", "tail", f"-{int(n)}", str(p)],
@@ -112,7 +112,7 @@ def baca_jsonl_ekor(path: str | Path, n: int = 400, *, pakai_sudo: bool = True) 
     else:
         teks, status, sudo = _baca_mentah(p, False)
     if status != "ok":
-        return Bacaan(path=str(p), status=status, detail=f"tidak bisa dibaca ({status})")
+        return Bacaan(path=str(p), status=status, detail=f"tidak bisa dibaca ({status})", lewat_sudo=sudo)
     baris: list[dict[str, Any]] = []
     rusak = 0
     for b in (teks or "").splitlines():
@@ -139,19 +139,27 @@ def ringkas_dir(path: str | Path, *, pakai_sudo: bool = True) -> dict[str, Any]:
 
     Dipakai untuk katalog dataset (recorder) tanpa membaca isinya.
     """
-    p = Path(path)
-    perintah = ["sudo", "-n", "bash", "-c", f"find {p} -type f | wc -l; du -sb {p} | cut -f1"]
+    p = Path(path).expanduser()
+    perintah = [
+        "sudo", "-n", "bash", "-c",
+        'find "$1" -type f | wc -l; du -sb "$1" | cut -f1',
+        "bash", str(p),
+    ]
     if pakai_sudo:
         hasil = subprocess.run(  # noqa: S603
             perintah, capture_output=True, text=True, check=False, timeout=120
         )
         if hasil.returncode == 0 and hasil.stdout.strip():
             bagian = hasil.stdout.split()
-            if len(bagian) >= 2:
+            if len(bagian) >= 2 and bagian[0].isdigit() and bagian[1].isdigit():
                 return {"path": str(p), "files": int(bagian[0]), "bytes": int(bagian[1]), "status": "ok"}
     try:
-        files = sum(1 for _ in p.rglob("*") if _.is_file())
-        total = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+        files = 0
+        total = 0
+        for f in p.rglob("*"):
+            if f.is_file():
+                files += 1
+                total += f.stat().st_size
         return {"path": str(p), "files": files, "bytes": total, "status": "ok"}
     except OSError as exc:
         return {"path": str(p), "status": "tidak-izin" if isinstance(exc, PermissionError) else "rusak",

@@ -119,10 +119,10 @@ def arms(base: str | None = None) -> dict[str, dict[str, Any]]:
         tolak = 0
         if ekor.ok and isinstance(ekor.data, list):
             for baris in ekor.data:
-                st = str(baris.get("status", ""))
-                if any(st.startswith(p) for p in STATUS_MASUK):
+                kls = _klasifikasi(str(baris.get("status", "")))
+                if kls == "masuk":
                     masuk += 1
-                else:
+                elif kls == "tolak":
                     tolak += 1
         hasil[nama] = {
             "dir": str(d),
@@ -265,8 +265,6 @@ def parity_drift(
 
 
 def _rpc_url() -> str | None:
-    import os
-
     return os.environ.get("WARROOM_POLYGON_RPC") or None
 
 

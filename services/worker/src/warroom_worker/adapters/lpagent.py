@@ -120,7 +120,7 @@ def _pool_ringkas(p: dict[str, Any]) -> dict[str, Any]:
         "token1": p.get("token1_symbol"),
         "tvl": p.get("tvl"),
         "vol_24h": p.get("vol_24h"),
-        "fee_24h": p.get("fee"),
+        "fee_24h": p.get("fee_24h"),
         "mcap": p.get("mcap"),
         "bin_step": p.get("bin_step"),
         "organic_score": p.get("organic_score"),
