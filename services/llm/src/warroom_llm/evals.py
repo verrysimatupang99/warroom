@@ -41,7 +41,11 @@ class EvalReport:
 
     @property
     def ok(self) -> bool:
-        return self.gagal == 0 and self.total >= MIN_KASUS_PER_PERAN and len(self.roles) >= 3
+        return (
+            self.gagal == 0
+            and len(self.roles) >= 3
+            and all(count >= MIN_KASUS_PER_PERAN for count in self.per_peran.values())
+        )
 
 
 def _fact(raw: dict[str, Any]) -> FactRef:
@@ -84,7 +88,8 @@ def run_case(case: GoldenCase, *, env_names: tuple[str, ...] | None = None) -> d
     cocok_verdict = decision.verdict == case.expect_verdict
     cocok_kode = True
     if case.expect_code is not None:
-        cocok_kode = bool(kode) and kode.startswith(case.expect_code)
+        kode_kategori = kode.split(":", 1)[0] if kode else None
+        cocok_kode = bool(kode) and (kode_kategori == case.expect_code or kode == case.expect_code)
     return {
         "id": case.id,
         "role": case.role,

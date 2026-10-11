@@ -18,7 +18,6 @@ from warroom_llm.prompts import PromptRegistry
 
 ROOT = Path(__file__).resolve().parents[3]
 PROMPTS_DIR = ROOT / "prompts"
-GOLDEN_DIR = ROOT / "services" / "llm" / "golden"
 
 
 @pytest.fixture
@@ -86,7 +85,7 @@ def jawaban():
 
 
 @pytest.fixture
-def gateway_factory(llm_config, prompts, config_factory):
+def gateway_factory(llm_config, prompts):
     """Bangun Gateway dengan transport palsu; tidur dinonaktifkan supaya tes cepat."""
 
     def _make(handler, *, config: LLMConfig | None = None, breaker=None, cache=None) -> Gateway:

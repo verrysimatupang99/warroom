@@ -110,7 +110,7 @@ class ProviderClient:
     """Satu POST ``/chat/completions`` ke provider OpenAI-compatible."""
 
     def __init__(self, config: LLMConfig, client: httpx.Client | None = None) -> None:
-        self._cfg = config
+        self.config = config
         self._client = client or httpx.Client()
         self._owns = client is None
 

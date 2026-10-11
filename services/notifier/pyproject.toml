@@ -5,6 +5,9 @@ description = "War Room notifier — alert → Telegram/email/push, dedupe + ack
 requires-python = ">=3.12"
 dependencies = ["warroom-core"]
 
+[tool.uv.sources]
+warroom-core = { workspace = true }
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

@@ -37,15 +37,24 @@ _INJECTION_HINTS = (
 )
 
 
+_ESCAPED_OPEN = "<<<UNTRUSTED_DATA_ESCAPED"
+_ESCAPED_CLOSE = "<<<END_UNTRUSTED_DATA_ESCAPED>>>"
+
+
 def wrap_untrusted(content: str, label: str = "dokumen") -> str:
     """Bungkus konten tak tepercaya dengan penanda yang bisa dikenali model dan tes."""
-    return f"{_OPEN} label={label!r}>>>\n{content}\n{_CLOSE}"
+    sanitized = content.replace(_CLOSE, _ESCAPED_CLOSE).replace(_OPEN, _ESCAPED_OPEN)
+    return f"{_OPEN} label={label!r}>>>\n{sanitized}\n{_CLOSE}"
 
 
 def extract_untrusted(text: str) -> list[str]:
     """Ambil isi penanda — dipakai tes untuk memastikan pembungkusan benar."""
     pola = rf"{re.escape(_OPEN)}[^\n]*>>>\n(.*?)\n{re.escape(_CLOSE)}"
-    return re.findall(pola, text, flags=re.S)
+    raw_blocks = re.findall(pola, text, flags=re.S)
+    return [
+        block.replace(_ESCAPED_CLOSE, _CLOSE).replace(_ESCAPED_OPEN, _OPEN)
+        for block in raw_blocks
+    ]
 
 
 def detect_injection(text: str) -> list[str]:

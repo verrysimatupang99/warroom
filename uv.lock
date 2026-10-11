@@ -1666,11 +1666,19 @@ name = "warroom-llm"
 version = "0.1.0"
 source = { editable = "services/llm" }
 dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sqlalchemy" },
     { name = "warroom-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "warroom-core", editable = "packages/core" }]
+requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1,<1" },
+    { name = "pydantic", specifier = ">=2.9,<3" },
+    { name = "sqlalchemy", specifier = ">=2.0,<3" },
+    { name = "warroom-core", editable = "packages/core" },
+]
 
 [[package]]
 name = "warroom-notifier"
