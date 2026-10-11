@@ -323,6 +323,57 @@ def test_totp_diwajibkan_bila_terdaftar(client, make_user) -> None:
                     json={"username": username, "password": "rahasia-uji-123", "totp": code})
     assert r.status_code == 200
 
+
+def test_totp_kode_dipakai_ulang_ditolak(client, make_user) -> None:
+    """Replay: kode yang sama tidak bisa dipakai untuk sesi kedua (401)."""
+    import pyotp
+    from warroom_core.db import User, session_scope
+
+    secret = pyotp.random_base32()
+    username, _ = make_user("replayTOTP", role="owner")
+    with session_scope() as s:
+        u = s.query(User).filter_by(username=username).one()
+        u.totp_secret_enc = secret
+
+    badan = {"username": username, "password": "rahasia-uji-123",
+             "totp": pyotp.TOTP(secret).now()}
+    assert client.post("/api/v1/auth/login", json=badan).status_code == 200
+    # Kode sama persis → ditolak, karena counter-nya sudah tercatat.
+    assert client.post("/api/v1/auth/login", json=badan).status_code == 401
+
+
+def test_totp_window_berikutnya_diterima(client, make_user) -> None:
+    """Setelah satu kode dipakai, kode dari counter berikutnya tetap sah."""
+    from datetime import UTC, datetime
+
+    import pyotp
+    from warroom_core.db import User, session_scope
+
+    secret = pyotp.random_base32()
+    username, _ = make_user("majuTOTP", role="owner")
+    with session_scope() as s:
+        u = s.query(User).filter_by(username=username).one()
+        u.totp_secret_enc = secret
+
+    totp = pyotp.TOTP(secret)
+    assert client.post("/api/v1/auth/login",
+                       json={"username": username, "password": "rahasia-uji-123",
+                             "totp": totp.now()}).status_code == 200
+    # Kode untuk counter+1: masih dalam valid_window=1 (offset +1) dan counter-nya
+    # di atas yang tersimpan → diterima.
+    kode_maju = totp.at(datetime.now(UTC), 1)
+    assert client.post("/api/v1/auth/login",
+                       json={"username": username, "password": "rahasia-uji-123",
+                             "totp": kode_maju}).status_code == 200
+
+
+def test_tanpa_secret_login_tetap_lolos_tanpa_totp(client, make_user) -> None:
+    """Pengguna tanpa secret TOTP tetap login normal tanpa kolom totp."""
+    username, _ = make_user("polosTOTP", role="viewer")
+    assert client.post("/api/v1/auth/login",
+                       json={"username": username,
+                             "password": "rahasia-uji-123"}).status_code == 200
+
 def test_design_tokens_membaca_css_dan_bukan_mengarang(client, make_user) -> None:
     """Endpoint token membaca app.css; kalau tak terbaca, menjawab jujur (ada:false).
 

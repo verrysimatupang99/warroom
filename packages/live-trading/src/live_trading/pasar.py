@@ -95,7 +95,11 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
             "status": "paper",
             "sumber": "lp_ledger.jsonl (mark lokal)",
         },
-        {"nama": "Radar rantai & memecoin (GMGN)", "status": "aktif", "sumber": "radar lokal Webdock (filter V/L >= 3x & 0 HP)"},
+        {
+            "nama": "Radar rantai & memecoin (GMGN)",
+            "status": "aktif",
+            "sumber": "radar lokal Webdock (filter V/L >= 3x & 0 HP)",
+        },
         {
             "nama": "FOMO Family (LP Army kasus BAGSPAY)",
             "status": "rencana",
@@ -103,8 +107,16 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
         },
     ],
     "polymarket": [
-        {"nama": "Momentum 5m (arm A)", "status": "rencana", "sumber": "shadow summary poly-pilot (underdog win-rate rendah — dihentikan)"},
-        {"nama": "Kandidat (arm B)", "status": "rencana", "sumber": "shadow summary poly-paper-candidate (slippage di bawah BE — dihentikan)"},
+        {
+            "nama": "Momentum 5m (arm A)",
+            "status": "rencana",
+            "sumber": "shadow summary poly-pilot (underdog win-rate rendah — dihentikan)",
+        },
+        {
+            "nama": "Kandidat (arm B)",
+            "status": "rencana",
+            "sumber": "shadow summary poly-paper-candidate (slippage di bawah BE — dihentikan)",
+        },
         {"nama": "Fade (arm C)", "status": "paper", "sumber": "shadow summary poly-paper-fade"},
         {
             "nama": "Favorit 0,70–0,95 (arm D)",

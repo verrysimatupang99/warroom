@@ -153,7 +153,15 @@ def _format_harga_ringkas(n: float | int | None) -> str:
 
 
 def _confluence_crypto(
-    *, pair: str | None, arah: str | None, entry: Any, sl: Any, tp1: Any, skor: int | None, tier: str | None, rules_gagal: list[Any]
+    *,
+    pair: str | None,
+    arah: str | None,
+    entry: Any,
+    sl: Any,
+    tp1: Any,
+    skor: int | None,
+    tier: str | None,
+    rules_gagal: list[Any],
 ) -> tuple[list[str], dict[str, str], str, str]:
     num_e = float(entry) if isinstance(entry, (int, float)) and entry > 0 else None
     num_sl = float(sl) if isinstance(sl, (int, float)) and sl > 0 else None
@@ -205,7 +213,10 @@ def _confluence_gmgn(
     }
     if vl >= 3.0 and viable >= 5:
         verdict = "OKE"
-        alasan = "Likuiditas sangat aktif & viable pool mencukupi (V/L >= 3x & >= 5 pool); layak autotrade/snipe."
+        alasan = (
+            "Likuiditas sangat aktif & viable pool mencukupi "
+            "(V/L >= 3x & >= 5 pool); layak autotrade/snipe."
+        )
     elif viable > 0:
         verdict = "PANTAU"
         alasan = "Likuiditas terdeteksi; pantau momentum volume & audit rugcheck sebelum eksekusi."
@@ -274,7 +285,11 @@ def _confluence_polymarket(
     elif terverifikasi:
         verdict = "OKE"
         alasan = "Edge terverifikasi secara statistik dengan split beku (ADR-003)."
-    elif ("favorit" in rule_str or "favorite" in rule_str or "arm d" in rule_str) and num_win and num_win >= 75.0:
+    elif (
+        ("favorit" in rule_str or "favorite" in rule_str or "arm d" in rule_str)
+        and num_win
+        and num_win >= 75.0
+    ):
         verdict = "PANTAU"
         alasan = "Arm D Favorit berkinerja profitabel (WR >= 75%); lanjutkan pengumpulan sampel split beku."
     else:

@@ -309,6 +309,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(16), nullable=False, default="viewer")  # viewer|operator|owner
     pass_hash: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     totp_secret_enc: Mapped[str | None] = mapped_column(String(400))
+    totp_last_counter: Mapped[int | None] = mapped_column(BigInteger)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

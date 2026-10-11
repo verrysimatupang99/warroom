@@ -10,9 +10,9 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
-	import type { AreaPayload, PasarRingkasPayload, SinyalPasar, SinyalPayload, VerdictPasar } from '$lib/api/types';
-	import { umurDetik, waktuWIB } from '$lib/format';
+	import { getArea, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
+	import type { AreaPayload, DaftarSinyalPasar, LiveArming, PasarRingkasPayload, SinyalPasar, SinyalPayload, VerdictPasar } from '$lib/api/types';
+	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
 
 	let sinyal = $state<SinyalPayload | null>(null);
@@ -23,25 +23,28 @@
 	let sumber = $state<{ pasar: string; label: string; sumber: string; keterangan: string }[]>([]);
 	// Verdict kanonik (audit QA 7 Okt) — dipakai agar Home TIDAK menyusun kesimpulan sendiri.
 	let verdictSemua = $state<VerdictPasar[]>([]);
-
-	async function muat() {
-		const [s, k, a, sm] = await Promise.allSettled([
-			getSinyalPerPasar(),
-			getArea('crypto'),
-			getPasarRingkas(),
-			getSumber()
-		]);
-		if (sm.status === 'fulfilled') sumber = sm.value.sumber;
-		try {
-			verdictSemua = (await getVerdict()).verdict;
-		} catch {
-			/* verdict opsional di Home; kalau gagal, judul memakai hitungan lama */
-		}
-		if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
-		else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
-		if (k.status === 'fulfilled') kripto = k.value;
-		if (a.status === 'fulfilled') akurasi = a.value;
+	// Mode eksekusi global dari API arming — SATU-SATUNYA sumber badge mode di header Home.
+	let arming = $state<LiveArming | null>(null);
+async function muat() {
+	const [s, k, a, sm, m] = await Promise.allSettled([
+		getSinyalPerPasar(),
+		getArea('crypto'),
+		getPasarRingkas(),
+		getSumber(),
+		getLiveArming()
+	]);
+	if (sm.status === 'fulfilled') sumber = sm.value.sumber;
+	try {
+		verdictSemua = (await getVerdict()).verdict;
+	} catch {
+		/* verdict opsional di Home; kalau gagal, judul memakai hitungan lama */
 	}
+	if (s.status === 'fulfilled') { sinyal = s.value; galat = null; }
+	else galat = s.reason instanceof Error ? s.reason.message : String(s.reason);
+	if (k.status === 'fulfilled') kripto = k.value;
+	if (a.status === 'fulfilled') akurasi = a.value;
+	if (m.status === 'fulfilled') arming = m.value;
+}
 	$effect(() => {
 		void muat();
 		const t = setInterval(() => void muat(), 15000);
@@ -49,10 +52,24 @@
 	});
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
-	// Sinyal PER MARKET (revisi pemilik 7 Okt): maks 3 terbaik per pasar + tautan
-	// "lihat semua" ke halaman pasar. Status dipisah tegas supaya "tidak ada sinyal"
-	// (mesin hidup, tak ada setup cocok) TIDAK pernah tertukar dengan "sistem gagal".
 	const pasarDaftar = $derived(sinyal?.pasar ?? []);
+	// Kejujuran per kartu: SinyalPasar (daftar) membawa `terverifikasi`, `catatan_kejujuran`,
+	// `umur_sinyal_s`, `dibuat_pada` — DaftarSinyalPasar (pasar) belum. Gabungkan per pasar supaya
+	// tiap kartu menampilkan status verifikasi + umur SINYALNYA (bukan umur fakta crypto).
+	const jujurPerPasar = $derived.by(() => {
+		const m = new Map<string, SinyalPasar>();
+		for (const s of sinyal?.sinyal ?? []) m.set(s.pasar, s);
+		return m;
+	});
+	const kartuJujur = (p: DaftarSinyalPasar) => {
+		const s = jujurPerPasar.get(p.pasar);
+		const terverifikasi = p.terverifikasi ?? s?.terverifikasi ?? null;
+		const catatan = p.catatan_kejujuran || s?.catatan_kejujuran || '';
+		const umur_s = p.umur_sinyal_s ?? s?.umur_sinyal_s ?? p.sinyal[0]?.umur_s ?? null;
+		const dibuat = p.dibuat_pada ?? s?.dibuat_pada ?? null;
+		return { terverifikasi, catatan, umur_s, dibuat };
+	};
+	const ringkasCatatan = (t: string) => (t.length > 140 ? `${t.slice(0, 137).trimEnd()}…` : t);
 	const MAKS_PER_MARKET = 3;
 
 	// Ticker: dari bagian.crypto (pair + harga + chg24h) — angka nyata, bukan contoh.
@@ -138,7 +155,7 @@
 	});
 
 	const formatHarga = (n: number | null) =>
-		n == null ? '—' : n >= 1000 ? n.toLocaleString('en-US', { maximumFractionDigits: 0 }) : n >= 1 ? n.toFixed(2) : n.toPrecision(4);
+		n == null ? '—' : n >= 1000 ? angka(n, { desimal: 0 }) : angka(n, { desimal: 2 });
 
 	// SETUP ENTRY — ini yang menjawab "masuk di mana". Datanya SUDAH ada di
 	// `detail` tiap pasar; sebelumnya tidak ditampilkan sehingga verdikt "ADA
@@ -159,22 +176,22 @@
 			// jarak stop dalam % — dari angka, bukan taksiran
 			// QA 7 Okt: ini JARAK STOP, bukan risiko akun. Ukuran posisi menyesuaikan agar
 			// risiko tepat 1% ekuitas (risk.py), jadi jangan diberi label "Risiko".
-			if (e != null && sl != null) out.push({ label: 'Jarak stop', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
+			if (e != null && sl != null) out.push({ label: 'Jarak stop', nilai: `${angka((Math.abs(e - sl) / e) * 100)}%` });
 		} else if (s.pasar === 'polymarket') {
 			const wr = num(d.winRate), be = num(d.breakEven_pct);
-			if (wr != null) out.push({ label: 'Win-rate', nilai: `${wr.toFixed(2)}%` });
-			if (be != null) out.push({ label: 'Break-even', nilai: `${be.toFixed(2)}%` });
+			if (wr != null) out.push({ label: 'Win-rate', nilai: `${angka(wr)}%` });
+			if (be != null) out.push({ label: 'Break-even', nilai: `${angka(be)}%` });
 			const n = num(d.n), need = num(d.nNeeded);
 			if (n != null && need != null) out.push({ label: 'Sampel', nilai: `${n}/${need}` });
 		} else if (s.pasar === 'gmgn') {
 			const v = num(d.viable), p = num(d.pools);
 			if (v != null && p != null) out.push({ label: 'Pool layak', nilai: `${v}/${p}` });
 			const vl = num(d.avg_vl);
-			if (vl != null) out.push({ label: 'V/L rata²', nilai: vl.toFixed(1) });
+			if (vl != null) out.push({ label: 'V/L rata²', nilai: angka(vl, { desimal: 1 }) });
 		} else if (s.pasar === 'lp') {
 			const fee = num(d.fee_hari), umur = num(d.umur_hari);
-			if (fee != null) out.push({ label: 'Fee/hari', nilai: `$${fee.toFixed(2)}` });
-			if (umur != null) out.push({ label: 'Umur', nilai: `${umur.toFixed(1)} hr` });
+			if (fee != null) out.push({ label: 'Fee/hari', nilai: `$${angka(fee)}` });
+			if (umur != null) out.push({ label: 'Umur', nilai: `${angka(umur, { desimal: 1 })} hr` });
 		}
 		return out;
 	};
@@ -190,7 +207,7 @@
 			if (e != null) out.push({ label: 'Masuk', nilai: f(e), nada: 'masuk' });
 			if (sl != null) out.push({ label: 'Stop', nilai: f(sl), nada: 'stop' });
 			if (tp != null) out.push({ label: 'Target', nilai: f(tp), nada: 'target' });
-			if (e != null && sl != null && e > 0) out.push({ label: 'Jarak stop', nilai: `${(Math.abs(e - sl) / e * 100).toFixed(2)}%` });
+			if (e != null && sl != null && e > 0) out.push({ label: 'Jarak stop', nilai: `${angka((Math.abs(e - sl) / e) * 100)}%` });
 			if (out.length) return out;
 		}
 
@@ -249,7 +266,7 @@
 								<span class="tick-harga angka">{formatHarga(t.harga)}</span>
 								{#if t.chg != null}
 									<span class="tick-chg angka" class:naik={t.chg >= 0} class:turun={t.chg < 0}>
-										{t.chg >= 0 ? '▲' : '▼'}{Math.abs(t.chg).toFixed(2)}%
+										{t.chg >= 0 ? '▲' : '▼'}{angka(Math.abs(t.chg))}%
 									</span>
 								{/if}
 							</span>
@@ -278,7 +295,9 @@
 
 		<header class="kepala">
 			<h1 class="merek">War<span>Room</span></h1>
-			<span class="mode">PAPER</span>
+			{#if arming !== null}
+				<span class="mode" title={arming.detail}>{arming.armed ? 'LIVE' : 'PAPER'}</span>
+			{/if}
 			<span class="dim">multi-market · {daftar.length} pasar</span>
 			<span class="spacer"></span>
 			<span class="dim angka">{umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu</span>
@@ -395,13 +414,13 @@
 									<td class="dim">{r.setup ?? '—'} <span class="dim">({r.jumlah_setup} setup)</span></td>
 									<td class="ka">{r.n ?? '—'}</td>
 									<td class="ka">{r.n_hari ?? '—'}</td>
-									<td class="ka">{r.winrate_pct != null ? `${r.winrate_pct}%` : '—'}</td>
+									<td class="ka">{r.winrate_pct != null ? `${angka(r.winrate_pct)}%` : '—'}</td>
 									<td class="ka {r.mean_r != null && r.mean_r > 0 ? 'pos' : r.mean_r != null && r.mean_r < 0 ? 'neg' : ''}">
-										{r.mean_r != null ? `${r.mean_r > 0 ? '+' : ''}${r.mean_r}` : '—'}
+										{r.mean_r != null ? `${r.mean_r > 0 ? '+' : ''}${angka(r.mean_r)}` : '—'}
 									</td>
 									<td class="ka">
-										{#if r.total_r != null}<span class={r.total_r > 0 ? 'pos' : r.total_r < 0 ? 'neg' : ''}>{r.total_r > 0 ? '+' : ''}{r.total_r} R</span>{/if}
-										{#if r.pnl_usd != null}<span class={r.pnl_usd > 0 ? 'pos' : r.pnl_usd < 0 ? 'neg' : ''}>{r.pnl_usd > 0 ? '+' : ''}{r.pnl_usd} USD</span>{/if}
+										{#if r.total_r != null}<span class={r.total_r > 0 ? 'pos' : r.total_r < 0 ? 'neg' : ''}>{r.total_r > 0 ? '+' : ''}{angka(r.total_r)} R</span>{/if}
+										{#if r.pnl_usd != null}<span class={r.pnl_usd > 0 ? 'pos' : r.pnl_usd < 0 ? 'neg' : ''}>{r.pnl_usd > 0 ? '+' : ''}{angka(r.pnl_usd)} USD</span>{/if}
 										{#if r.total_r == null && r.pnl_usd == null}—{/if}
 									</td>
 									<td>
@@ -455,6 +474,7 @@
 			</div>
 			<div class="sinyal-grid">
 				{#each pasarDaftar as p (p.pasar)}
+					{@const jujur = kartuJujur(p)}
 					<article class="sinyal-kartu {p.status_data}">
 						<header class="sinyal-kepala">
 							<div class="sinyal-baris-atas">
@@ -468,6 +488,11 @@
 							<div class="sinyal-badges">
 								{#if p.mode}
 									<span class="mode-badge mode-{p.mode.toLowerCase()}" title={p.catatan_mode ?? ''}>{p.mode}</span>
+								{/if}
+								{#if jujur.terverifikasi === true}
+									<span class="verif-badge verif-ok" title="Sudah lewat split beku (ADR-003)">✓ TERVERIFIKASI</span>
+								{:else if jujur.terverifikasi === false}
+									<span class="verif-badge verif-belum" title="Belum lewat split beku — klaim eksplorasi, bukan edge terbukti">○ BELUM TERVERIFIKASI</span>
 								{/if}
 								{#if p.autotrade_verdict}
 									<span class="badge-autotrade {p.autotrade_verdict.toLowerCase()}">
@@ -485,8 +510,15 @@
 
 						{#if p.sumber}
 							<p class="sinyal-sumber">
-								sumber: {p.sumber}{#if p.sinyal[0]?.umur_s != null} · data {umurDetik(p.sinyal[0].umur_s)} lalu{/if}
+								sumber: {p.sumber}{#if jujur.umur_s != null} · sinyal {umurDetik(jujur.umur_s)} lalu{/if}
 							</p>
+						{:else if jujur.umur_s != null}
+							<p class="sinyal-sumber">
+								sinyal {umurDetik(jujur.umur_s)} lalu
+							</p>
+						{/if}
+						{#if jujur.dibuat}
+							<p class="sinyal-waktu angka">dibuat {waktuWIB(jujur.dibuat)}</p>
 						{/if}
 
 						{#if p.status_data === 'ada'}
@@ -534,6 +566,12 @@
 								<p class="card-alasan">
 									<span class="dim">Eksekusi:</span> <b>{p.alasan_eksekusi}</b>
 								</p>
+							{/if}
+
+							<!-- Catatan kejujuran ringkas — selalu di kartu (bukan hanya <details> audit).
+							     Teks penuh tetap ada di lipatan "Catatan & skor per pasar". -->
+							{#if jujur.catatan}
+								<p class="card-jujur" title={jujur.catatan}>{ringkasCatatan(jujur.catatan)}</p>
 							{/if}
 
 							<!-- Kandidat lain bila ada lebih dari 1 -->
@@ -602,6 +640,11 @@
 						<span class="tanda" class:ada={s.ada} class:belum={!s.ada}>
 							{s.ada ? (s.arah ?? 'ADA') : 'TIDAK ADA'}
 						</span>
+						{#if s.terverifikasi === true}
+							<span class="tanda ada">✓ TERVERIFIKASI</span>
+						{:else if s.terverifikasi === false}
+							<span class="tanda belum">○ BELUM TERVERIFIKASI</span>
+						{/if}
 					</div>
 					{#if s.dibuat_pada}
 						<p class="mini-waktu angka">
@@ -771,6 +814,18 @@
 	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); background: color-mix(in srgb, var(--kuning) 8%, transparent); }
 	.mode-badge.mode-historis { color: var(--redup); border-style: dashed; }
 	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
+	.verif-badge {
+		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
+		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
+		white-space: nowrap;
+	}
+	.verif-badge.verif-ok { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
+	.verif-badge.verif-belum { color: var(--kuning); border-color: var(--kuning); background: color-mix(in srgb, var(--kuning) 8%, transparent); }
+	.sinyal-waktu { font-size: 0.66rem; color: var(--redup); margin: 0 0 0.35rem; }
+	.card-jujur {
+		font-size: 0.72rem; color: var(--redup); margin: 0.4rem 0 0; line-height: 1.4;
+		border-left: 2px solid var(--garis); padding-left: 0.5rem;
+	}
 	.sinyal-sumber { font-size: 0.66rem; color: var(--redup); margin: 0 0 0.35rem; }
 	.lihat-semua {
 		font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap;

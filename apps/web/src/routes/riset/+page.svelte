@@ -37,9 +37,11 @@
 		if (s && area.anak.some((a) => a.slug === s)) return s;
 		return area.anak[0].slug;
 	});
-	function pilihSub(s: string) {
-		if (typeof window !== 'undefined') void goto(`?sub=${s}`, { keepFocus: true, noScroll: true });
-	}
+function pilihSub(s: string) {
+	// replaceState:true — disamakan dengan rute sistem & AreaView (10 Okt 2026):
+	// ganti tab tak menumpuk riwayat; Back selalu keluar halaman, seragam di semua halaman.
+	if (typeof window !== 'undefined') void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
+}
 
 	let kripto = $state<AreaPayload | null>(null);
 	let forex = $state<AreaPayload | null>(null);

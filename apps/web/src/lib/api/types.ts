@@ -269,11 +269,25 @@ export interface DaftarSinyalPasar {
 	/** Tingkat kepercayaan eksekusi: LIVE (belum ada) · PAPER · HISTORIS (beku). */
 	mode?: 'LIVE' | 'PAPER' | 'HISTORIS';
 	catatan_mode?: string;
+	/** Status verifikasi split beku — opsional supaya tetap kompatibel bila backend
+	 *  belum mengirimnya; UI menggabungkan dari SinyalPasar (daftar) per pasar. */
+	terverifikasi?: boolean;
+	catatan_kejujuran?: string;
+	umur_sinyal_s?: number | null;
+	dibuat_pada?: string | null;
 	sinyal: SinyalItem[];
 	confluence?: string[];
 	metrics?: Record<string, unknown>;
 	autotrade_verdict?: 'OKE' | 'PANTAU' | 'SKIP' | string;
 	alasan_eksekusi?: string;
+}
+
+/** Balasan `GET /api/v1/live/arming` — satu-satunya sumber mode eksekusi di UI.
+ *  `armed` true = gate live terbuka (siap live); false = paper. UI tidak mengarang. */
+export interface LiveArming {
+	armed: boolean;
+	checks: Record<string, unknown>[];
+	detail: string;
 }
 
 export interface SinyalPayload {
