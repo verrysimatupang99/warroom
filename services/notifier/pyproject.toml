@@ -3,7 +3,10 @@ name = "warroom-notifier"
 version = "0.1.0"
 description = "War Room notifier — alert → Telegram/email/push, dedupe + ack state"
 requires-python = ">=3.12"
-dependencies = ["warroom-core"]
+dependencies = [
+    "warroom-core",
+    "sqlalchemy>=2.0,<3",
+]
 
 [tool.uv.sources]
 warroom-core = { workspace = true }

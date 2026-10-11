@@ -143,8 +143,6 @@ class TelegramTransport:
 
 
 def _env_file() -> Path:
-    import os
-
     return Path(os.environ.get("WARROOM_NOTIFIER_ENV_FILE", str(ENV_FILE)))
 
 
@@ -155,8 +153,8 @@ def _from_file(key: str) -> str | None:
     bila direktori induknya 700 milik root. Karena itu seluruh akses berkas dibungkus —
     transport hanya boleh gagal dengan hasil "tidak dikonfigurasi", bukan exception.
     """
-    path = _env_file()
     try:
+        path = _env_file()
         if not path.exists():
             return None
         teks = path.read_text(encoding="utf-8", errors="replace")
@@ -174,8 +172,6 @@ def transport_from_env() -> Transport:
     Urutan: Telegram (bila token+chat ada) → webhook HTTP → Null (alert tetap di DB,
     tidak pernah diklaim terkirim).
     """
-    import os
-
     token = os.environ.get("WARROOM_TELEGRAM_BOT_TOKEN") or _from_file("WARROOM_TELEGRAM_BOT_TOKEN")
     chat = os.environ.get("WARROOM_TELEGRAM_CHAT_ID") or _from_file("WARROOM_TELEGRAM_CHAT_ID")
     if token and chat:

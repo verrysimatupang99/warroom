@@ -1685,11 +1685,15 @@ name = "warroom-notifier"
 version = "0.1.0"
 source = { editable = "services/notifier" }
 dependencies = [
+    { name = "sqlalchemy" },
     { name = "warroom-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "warroom-core", editable = "packages/core" }]
+requires-dist = [
+    { name = "sqlalchemy", specifier = ">=2.0,<3" },
+    { name = "warroom-core", editable = "packages/core" },
+]
 
 [[package]]
 name = "warroom-worker"

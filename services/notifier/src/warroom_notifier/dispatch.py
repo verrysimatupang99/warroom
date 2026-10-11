@@ -10,7 +10,7 @@ Kontrak:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
@@ -21,9 +21,6 @@ from warroom_notifier.transport import Transport, transport_from_env
 __all__ = ["MAX_PERCOBAAN", "kirim_tertunda", "tandai_terkirim"]
 
 MAX_PERCOBAAN = 3
-_JEDA = timedelta(minutes=5)
-
-
 
 
 def kirim_tertunda(
@@ -31,7 +28,6 @@ def kirim_tertunda(
     transport: Transport | None = None,
     *,
     limit: int = 10,
-    now: datetime | None = None,
 ) -> list[dict[str, object]]:
     """Kirim alert terbuka yang belum lewat batas percobaan. Kembalikan ringkasan.
 
