@@ -146,3 +146,23 @@ def test_dari_lp_cari_membuat_rujukan(tmp_path: Path) -> None:
         alamat_pool=ref["alamat_pool"], rantai=ref["rantai"],
     )
     assert p["pasangan"] == "BAGSPAY/SOL"
+
+
+def test_analisis_tutup_zero_guard() -> None:
+    """When a leg ends at 0 or v0 is 0, no ZeroDivisionError occurs."""
+    pos = {
+        "masuk_base": 10.0,
+        "masuk_quote": 10.0,
+        "keluar_base": 0.0,
+        "keluar_quote": 5.0,
+        "keluar_ts": 123456789,
+        "masuk_harga_base": 0.0,
+        "masuk_harga_quote": 0.0,
+        "keluar_harga_base": 1.0,
+        "keluar_harga_quote": 1.0,
+    }
+    hasil = L._hitung(pos)
+    assert hasil["status"] == "tertutup"
+    assert hasil["imbalance"] is None
+    assert "nilai masuk non-positif" in hasil["catatan"][0]
+

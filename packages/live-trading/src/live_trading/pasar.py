@@ -182,12 +182,12 @@ def _pakem_hitung(n: int, menang: int) -> dict[str, Any]:
         tingkat = "PRELIMINARY"
     else:
         tingkat = "TUNING"
-    atas, bawah = wilson_interval(menang, n)
+    bawah, atas = wilson_interval(menang, n)
     return {
         "tingkat": tingkat,
         "n": n,
         "n_hari": None,
-        "ci_winrate": [round(atas, 4), round(bawah, 4)],
+        "ci_winrate": [round(bawah, 4), round(atas, 4)],
         "catatan": ["hari independen tidak tersedia — ambang dihitung dari jumlah entri"],
     }
 
@@ -696,6 +696,7 @@ def _akurasi_forex(state_dir: Path) -> dict[str, Any]:
     return {
         "tersedia": True,
         "alasan": None,
+        "seri": fs.get("seri_pakem"),
         "per_setup": per_setup,
         "per_hari": fs.get("per_hari") or [],
         "strategi": STRATEGI_PASAR["forex"],
@@ -863,6 +864,7 @@ def _bukti_pasar(nama: str, blok: dict[str, Any]) -> dict[str, Any]:
         if n:
             seri = {
                 "n": n,
+                "closed_trades": n,
                 "n_hari": max((int(v.get("n_hari") or 0) for v in nilai), default=0) or None,
                 "winrate_pct": None,
                 "mean_r": None,
@@ -874,16 +876,25 @@ def _bukti_pasar(nama: str, blok: dict[str, Any]) -> dict[str, Any]:
     hari = [h.get("tanggal") for h in (blok.get("per_hari") or []) if h.get("tanggal")]
     periode = {"dari": min(hari) if hari else None, "sampai": max(hari) if hari else None}
 
+    ringkas = seri.get("ringkas") if isinstance(seri.get("ringkas"), dict) else {}
+    win_rate = seri.get("winrate_pct") if seri.get("winrate_pct") is not None else ringkas.get("winrate_pct")
+    mean_r = seri.get("mean_r") if seri.get("mean_r") is not None else ringkas.get("mean_r")
+    total_r = seri.get("total_r") if seri.get("total_r") is not None else ringkas.get("total_r")
+
+    closed_trades = seri.get("closed_trades")
+    if closed_trades is None:
+        closed_trades = seri.get("n")
+
     return {
-        "closed_trades": seri.get("n"),
-        "win_rate_pct": seri.get("winrate_pct"),
-        "mean_r": seri.get("mean_r"),
-        "total_r": seri.get("total_r"),
+        "closed_trades": closed_trades,
+        "win_rate_pct": win_rate,
+        "mean_r": mean_r,
+        "total_r": total_r,
         "pnl_usd": seri.get("total_pnl_usd") or seri.get("pnl_usd") or blok.get("total_pnl"),
         "max_drawdown_r": (
-            seri.get("ringkas", {}).get("max_drawdown_r")
-            if isinstance(seri.get("ringkas"), dict)
-            else None
+            ringkas.get("max_drawdown_r")
+            if ringkas.get("max_drawdown_r") is not None
+            else seri.get("max_drawdown_r")
         ),
         "biaya_tercatat": biaya,
         "biaya_keterangan": biaya_ket,

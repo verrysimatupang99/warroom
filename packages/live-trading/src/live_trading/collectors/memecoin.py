@@ -155,12 +155,11 @@ def skrining(
     for venue in VENUE:
         try:
             payload = ambil(venue)
+            pairs = payload.get("pairs") if isinstance(payload, dict) else payload
+            hasil[venue] = [_ringkas(x, venue) for x in pilih_venue(pairs or [], venue, per_venue)]
         except Exception as exc:  # noqa: BLE001 — satu venue gagal jangan menjatuhkan sisanya
             galat.append(f"{venue}: {type(exc).__name__}")
             hasil[venue] = []
-            continue
-        pairs = payload.get("pairs") if isinstance(payload, dict) else payload
-        hasil[venue] = [_ringkas(x, venue) for x in pilih_venue(pairs or [], venue, per_venue)]
 
     out = {
         "diambil_epoch": kini,

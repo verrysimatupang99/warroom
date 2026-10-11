@@ -66,6 +66,8 @@ def nearest_swing_high(candles: list[Candle], price: float, k: int = 2) -> float
 # ------------------------------------------------------------------ bias MTF
 def bias(candles: list[Candle]) -> str:
     """Bias dari EMA20 vs EMA50 pada deret candle satu timeframe — proksi, bukan definisi."""
+    if not candles:
+        return "netral"
     closes = [c["c"] for c in candles]
     e20, e50 = ema(closes, 20), ema(closes, 50)
     if e20 is None or e50 is None:
@@ -192,6 +194,8 @@ class Poi:
 
 def candidate_pois(candles: list[Candle]) -> list[Poi]:
     """Kumpulkan POI yang sah dari ketiga sumber, urut dari yang paling dekat harga."""
+    if not candles:
+        return []
     price = candles[-1]["c"]
     out: list[Poi] = []
     for ob in order_blocks(candles):

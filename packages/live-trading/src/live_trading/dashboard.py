@@ -335,10 +335,12 @@ def _poly_panel(path: str | None = None) -> dict[str, Any]:
         )
     hidup = [a for a in arms if a.get("tersedia")]
     total_pnl = sum(float(a.get("pnl") or 0) for a in hidup)
+    total_balance = sum(float(a.get("balance") or 0) for a in hidup)
     return {
         "tersedia": bool(hidup),
         "arms": arms,
         "total_pnl": round(total_pnl, 4),
+        "total_balance": round(total_balance, 4),
         "updated": max((str(a.get("updated") or "") for a in hidup), default=""),
     }
 
@@ -356,10 +358,10 @@ def _gmgn_panel() -> dict[str, Any]:
             out["stats"] = (d.get("stats") or [])[:3]
         except (OSError, json.JSONDecodeError):
             pass
-    log = GMGN_DIR / "cycle.log"
-    if log.is_file():
+    log_file = GMGN_DIR / "cycle.log"
+    if log_file.is_file():
         try:
-            lines = log.read_text(encoding="utf-8", errors="replace").strip().splitlines()
+            lines = log_file.read_text(encoding="utf-8", errors="replace").strip().splitlines()
             out["log_terakhir"] = lines[-1][:160] if lines else ""
         except OSError:
             pass
@@ -1369,7 +1371,8 @@ def _hero(snap) -> str:
 
     try:
         _ts = _dt.datetime.strptime(dibuat.replace(" WIB", ""), "%Y-%m-%d %H:%M:%S")
-        _basi = int((_dt.datetime.now() - _ts).total_seconds() // 60)
+        _now_wib = _dt.datetime.now(_dt.UTC).replace(tzinfo=None) + _dt.timedelta(hours=7)
+        _basi = int((_now_wib - _ts).total_seconds() // 60)
         basi_txt = f" ({_basi} mnt lalu)" if _basi >= 0 else ""
     except Exception:
         basi_txt = ""
@@ -1464,7 +1467,11 @@ def _blok(snap):
         body = f"<p class='err'>{e(str(crypto))}</p>"
     # risiko & alokasi — tepat di bawah terminal, sebelum data pasar
     lp_usd = float(lp0.get("capital") or 0)
-    pp_usd = float(pp0.get("balance") or 0)
+    pp_usd = float(
+        pp0.get("total_balance")
+        or pp0.get("balance")
+        or sum(float(a.get("balance") or 0) for a in (pp0.get("arms") or []))
+    )
     tot_usd = lp_usd + pp_usd
     if tot_usd > 0:
         lp_pct, pp_pct = lp_usd / tot_usd * 100, pp_usd / tot_usd * 100

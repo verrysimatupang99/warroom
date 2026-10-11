@@ -61,6 +61,7 @@ SELECT ticker,
        COUNT(*) AS n_tick
   FROM trades
  WHERE ts LIKE '{sejak}%' ESCAPE '\\'
+   AND length(ts) >= 10
    AND ticker IN ({tickers})
  GROUP BY ticker, hari
  ORDER BY ticker, hari
@@ -75,6 +76,7 @@ WITH agg AS (
   SELECT ticker, substr(ts,1,10) AS hari, MAX(rowid) AS rid
     FROM trades
    WHERE ts LIKE '{sejak}%' ESCAPE '\\'
+     AND length(ts) >= 10
      AND ticker IN ({tickers})
    GROUP BY ticker, hari
 )

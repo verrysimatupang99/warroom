@@ -161,6 +161,13 @@ def _hitung(pos: dict[str, Any], harga_quote_usd: float | None = None) -> dict[s
     harga_keluar_b = _angka(pos.get("keluar_harga_base"))
     harga_keluar_q = _angka(pos.get("keluar_harga_quote"))
 
+    min_kaki = min(kaki_base, kaki_quote)
+    imbalance = (
+        round(max(kaki_base, kaki_quote) / min_kaki, 5)
+        if min_kaki > 0
+        else None
+    )
+
     hasil: dict[str, Any] = {
         "status": "tertutup",
         "kenaikan_base_pct": round((kaki_base - 1) * 100, 3),
@@ -168,7 +175,7 @@ def _hitung(pos: dict[str, Any], harga_quote_usd: float | None = None) -> dict[s
         "selisih_kaki_pp": round((kaki_base - kaki_quote) * 100, 3),
         # Kedua kaki naik = tanda kuat fee masuk (bukan cuma harga bergerak).
         "jumlah_kedua_kaki_naik": kaki_base > 1.0 and kaki_quote > 1.0,
-        "imbalance": round(max(kaki_base, kaki_quote) / min(kaki_base, kaki_quote), 5),
+        "imbalance": imbalance,
         "catatan": ["nilai absolut butuh harga; yang tidak diketahui tidak ditebak"],
     }
 
@@ -178,20 +185,23 @@ def _hitung(pos: dict[str, Any], harga_quote_usd: float | None = None) -> dict[s
         v0 = b0 * hmb + q0 * hmq  # type: ignore[operator]
         v1 = b1 * hkb + q1 * hkq  # type: ignore[operator]
         hold = b0 * hkb + q0 * hkq  # type: ignore[operator]
-        hasil.update(
-            {
-                "unit": "USD",
-                "nilai_masuk_usd": round(v0, 4),
-                "nilai_keluar_usd": round(v1, 4),
-                "nilai_hold_usd": round(hold, 4),
-                "return_lp_pct": round((v1 / v0 - 1) * 100, 3),
-                "return_hold_pct": round((hold / v0 - 1) * 100, 3),
-                "lp_vs_hold_usd": round(v1 - hold, 4),
-                "lp_vs_hold_pp": round((v1 - hold) / v0 * 100, 3),
-                "menang": "LP" if v1 > hold else ("hold" if hold > v1 else "seri"),
-            }
-        )
-        hasil["catatan"] = ["LP vs hold dihitung dari harga masuk & keluar yang dicatat"]
+        if v0 > 0:
+            hasil.update(
+                {
+                    "unit": "USD",
+                    "nilai_masuk_usd": round(v0, 4),
+                    "nilai_keluar_usd": round(v1, 4),
+                    "nilai_hold_usd": round(hold, 4),
+                    "return_lp_pct": round((v1 / v0 - 1) * 100, 3),
+                    "return_hold_pct": round((hold / v0 - 1) * 100, 3),
+                    "lp_vs_hold_usd": round(v1 - hold, 4),
+                    "lp_vs_hold_pp": round((v1 - hold) / v0 * 100, 3),
+                    "menang": "LP" if v1 > hold else ("hold" if hold > v1 else "seri"),
+                }
+            )
+            hasil["catatan"] = ["LP vs hold dihitung dari harga masuk & keluar yang dicatat"]
+        else:
+            hasil["catatan"] = ["nilai masuk non-positif, metrik relatif dilewati"]
     else:
         # Tanpa harga: tetap bisa menjawab IL vs hold lewat imbal hasil tertimbang
         # modal awal (bukan sekadar jumlah token, yang selalu terlihat naik).

@@ -240,7 +240,7 @@ def _propose_golden_smc_gated(st: Structure, direction: str) -> dict[str, Any] |
     if not candidates:
         return None
     latest = candidates[-1]
-    candle = st.candles_1h[latest["idx"]]
+    candle = st.candles_1h[-80:][latest["idx"]]
     confirmation = (
         candle["c"] > candle["o"] and candle["c"] > latest["level"]
         if direction.lower() == "long"

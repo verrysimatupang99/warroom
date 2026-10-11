@@ -705,3 +705,11 @@ def test_scan_tidak_mati_karena_satu_pair_tanpa_setup(monkeypatch, tmp_path) -> 
         "pair tanpa POI harus dilewati sebagai TANPA SETUP, dan pair berikutnya tetap dinilai"
     )
     assert dipanggil == ["ADAUSDT"], "evaluate tidak boleh dipanggil untuk pair tanpa usulan"
+
+
+def test_smc_empty_candles() -> None:
+    """Empty candle lists must return neutral/empty without IndexError."""
+    assert smc.bias([]) == "netral"
+    assert smc.candidate_pois([]) == []
+    assert smc.nearest_poi([], "long") is None
+

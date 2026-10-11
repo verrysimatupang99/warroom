@@ -421,7 +421,7 @@ def uji_edge_short(
             masuk, keluar = float(k[_I_CLOSE]), float(klines[i + h][_I_CLOSE])
             if not masuk:
                 continue
-            r = (masuk / keluar - 1) * 100  # PnL short
+            r = (masuk - keluar) / masuk * 100  # PnL short
             dasar.append(r)
             if i in idx_sinyal:
                 sig.append(r)
