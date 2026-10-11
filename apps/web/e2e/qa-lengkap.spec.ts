@@ -36,11 +36,11 @@ const AREA: { rute: string; subs: string[] }[] = [
 	{ rute: '/idx', subs: ['Sinyal', 'Bandarmologi', 'BSJP', 'Aliran'] },
 	{ rute: '/forex', subs: ['Struktur', 'Sesi', 'Kalender', 'Demo'] },
 	// 7 Okt: fokus Setup B; arm lain dibekukan ke Arsip.
-	{ rute: '/polymarket', subs: ['Setup B', 'Riset', 'Arm Lain (Beku)', 'Live'] },
+	{ rute: '/polymarket', subs: ['Favorit 0,70–0,95', 'Riset', 'Arm Lain (Beku)', 'Live'] },
 	{ rute: '/gmgn', subs: ['Radar', 'LP', 'Memecoin'] },
 	{
 		rute: '/sistem',
-		subs: ['Layanan', 'Kesegaran', 'Biaya', 'Event', 'AI', 'Kebijakan', 'Audit']
+		subs: ['Layanan', 'Mesin', 'Kesegaran', 'Biaya', 'Event', 'AI', 'Kebijakan', 'Audit']
 	}
 ];
 
