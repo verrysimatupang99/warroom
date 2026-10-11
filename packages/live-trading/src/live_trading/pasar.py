@@ -57,9 +57,14 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
             "sumber": "cron Hermes Tencent `crypto-5agent-pipeline-653` → verdicts.jsonl",
         },
         {
-            "nama": "Fibonacci Golden Pocket Pullback (0,618–0,65)",
+            "nama": "Fibonacci Golden Pocket Pullback (0,618–0,786)",
+            "status": "aktif",
+            "sumber": "live_trading.signals.golden_pullback → SMC Golden Pullback v1",
+        },
+        {
+            "nama": "Orderbook Imbalance Scalping (L2 depth)",
             "status": "rencana",
-            "sumber": "belum dipakai — diusulkan 6 Okt, butuh uji walk-forward dulu",
+            "sumber": "rencana riset L2 orderbook — belum diuji walk-forward",
         },
     ],
     "idx": [
@@ -90,7 +95,7 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
             "status": "paper",
             "sumber": "lp_ledger.jsonl (mark lokal)",
         },
-        {"nama": "Radar rantai & memecoin (GMGN)", "status": "paper", "sumber": "radar lokal Webdock"},
+        {"nama": "Radar rantai & memecoin (GMGN)", "status": "aktif", "sumber": "radar lokal Webdock (filter V/L >= 3x & 0 HP)"},
         {
             "nama": "FOMO Family (LP Army kasus BAGSPAY)",
             "status": "rencana",
@@ -98,13 +103,13 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
         },
     ],
     "polymarket": [
-        {"nama": "Momentum 5m (arm A)", "status": "paper", "sumber": "shadow summary poly-pilot"},
-        {"nama": "Kandidat (arm B)", "status": "paper", "sumber": "shadow summary poly-paper-candidate"},
+        {"nama": "Momentum 5m (arm A)", "status": "rencana", "sumber": "shadow summary poly-pilot (underdog win-rate rendah — dihentikan)"},
+        {"nama": "Kandidat (arm B)", "status": "rencana", "sumber": "shadow summary poly-paper-candidate (slippage di bawah BE — dihentikan)"},
         {"nama": "Fade (arm C)", "status": "paper", "sumber": "shadow summary poly-paper-fade"},
         {
             "nama": "Favorit 0,70–0,95 (arm D)",
-            "status": "paper",
-            "sumber": "shadow summary poly-paper-favorite",
+            "status": "aktif",
+            "sumber": "shadow summary poly-paper-favorite (win-rate 82,35%, profitabel)",
         },
     ],
 }

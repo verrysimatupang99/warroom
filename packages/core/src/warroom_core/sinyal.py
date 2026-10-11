@@ -203,12 +203,12 @@ def _confluence_gmgn(
         "Pool Layak": f"{viable}/{pools}",
         "Total Liq": f"${float(total_liq):,.0f}" if isinstance(total_liq, (int, float)) else "—",
     }
-    if vl >= 2.5 and viable >= 3:
+    if vl >= 3.0 and viable >= 5:
         verdict = "OKE"
-        alasan = "Likuiditas sangat aktif & viable pool mencukupi; layak autotrade/snipe."
+        alasan = "Likuiditas sangat aktif & viable pool mencukupi (V/L >= 3x & >= 5 pool); layak autotrade/snipe."
     elif viable > 0:
         verdict = "PANTAU"
-        alasan = "Likuiditas terdeteksi; pantau momentum volume sebelum eksekusi."
+        alasan = "Likuiditas terdeteksi; pantau momentum volume & audit rugcheck sebelum eksekusi."
     else:
         verdict = "SKIP"
         alasan = "Likuiditas pool tipis; risiko slippage dan rug pull tinggi."
@@ -248,7 +248,7 @@ def _confluence_lp(
 
 
 def _confluence_polymarket(
-    *, winRate: Any, breakEven: Any, n: Any, need: Any, terverifikasi: bool
+    *, winRate: Any, breakEven: Any, n: Any, need: Any, terverifikasi: bool, rule: str | None = None
 ) -> tuple[list[str], dict[str, str], str, str]:
     num_win = float(winRate) if isinstance(winRate, (int, float)) else None
     num_be = float(breakEven) if isinstance(breakEven, (int, float)) else None
@@ -267,9 +267,16 @@ def _confluence_polymarket(
         "Sampel": f"{n}/{need}" if n and need else str(n or "—"),
         "Status Edge": "Terverifikasi" if terverifikasi else "Eksplorasi",
     }
-    if terverifikasi:
+    rule_str = (rule or "").lower()
+    if "momentum" in rule_str or "candidate" in rule_str or "kandidat" in rule_str:
+        verdict = "SKIP"
+        alasan = "Arm underdog/momentum dihentikan: win-rate di bawah break-even dan slippage membakar modal."
+    elif terverifikasi:
         verdict = "OKE"
         alasan = "Edge terverifikasi secara statistik dengan split beku (ADR-003)."
+    elif ("favorit" in rule_str or "favorite" in rule_str or "arm d" in rule_str) and num_win and num_win >= 75.0:
+        verdict = "PANTAU"
+        alasan = "Arm D Favorit berkinerja profitabel (WR >= 75%); lanjutkan pengumpulan sampel split beku."
     else:
         verdict = "PANTAU"
         alasan = "Klaim eksplorasi paper; teruskan shadow testing hingga split beku."
@@ -386,7 +393,12 @@ def _polymarket(s: SASession) -> SinyalPasar:
     alat_mentah = str(v.get("verdict_alat") or "")
     alat = alat_mentah if terverifikasi else ("EKSPLORASI" if alat_mentah else alat_mentah)
     p_conf, p_met, p_verd, p_als = _confluence_polymarket(
-        winRate=win, breakEven=be, n=v.get("n"), need=v.get("nNeeded"), terverifikasi=terverifikasi
+        winRate=win,
+        breakEven=be,
+        n=v.get("n"),
+        need=v.get("nNeeded"),
+        terverifikasi=terverifikasi,
+        rule=str(v.get("rule") or ""),
     )
     return SinyalPasar(
         pasar="polymarket", label="Polymarket (favorit 5m)", ada=True,
