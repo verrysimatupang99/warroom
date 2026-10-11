@@ -148,10 +148,12 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
-		padding: 0.5rem 0.85rem;
-		background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-		backdrop-filter: blur(8px);
+		padding: 0.5rem 1rem;
+		background: color-mix(in srgb, var(--color-bg) 84%, transparent);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
 		border-bottom: 1px solid var(--color-line);
+		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
 	}
 	.kiri {
 		display: flex;
@@ -167,6 +169,7 @@
 	}
 	.merek span {
 		color: var(--color-accent);
+		text-shadow: 0 0 14px color-mix(in srgb, var(--color-accent) 45%, transparent);
 	}
 	.mode {
 		font-size: var(--text-10);
@@ -176,6 +179,7 @@
 		border: 1px solid var(--color-accent);
 		color: var(--color-accent);
 		border-radius: 999px;
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 	}
 	.kanan {
 		display: flex;
@@ -218,6 +222,12 @@
 	}
 	.titik.baik {
 		background: var(--color-pos);
+		box-shadow: 0 0 8px color-mix(in srgb, var(--color-pos) 80%, transparent);
+		animation: pulse-titik 2.2s infinite ease-in-out;
+	}
+	@keyframes pulse-titik {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.45; transform: scale(1.25); }
 	}
 	.titik.perhatian {
 		background: var(--color-warn);

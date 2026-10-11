@@ -37,8 +37,9 @@
 		top: 2.35rem;
 		z-index: 20;
 		border-bottom: 1px solid var(--color-line);
-		background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-		backdrop-filter: blur(8px);
+		background: color-mix(in srgb, var(--color-bg) 84%, transparent);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
 	}
 	/* Di ponsel nav-horizontal DISEMBUNYIKAN: BottomNav sudah jadi navigasi
 	   ponsel yang benar. Menampilkan keduanya = dua navigasi untuk 7 tautan
@@ -65,22 +66,26 @@
 		/* Target sentuh ≥44 px (audit QA 7 Okt: "top navigation sekitar 32 px tinggi").
 		   Ikon boleh kecil, AREA KLIK-nya yang harus besar. */
 		min-height: 44px;
-		padding: 0.35rem 0.7rem;
+		padding: 0.35rem 0.75rem;
 		border-radius: var(--radius-control);
 		font-size: var(--text-13);
 		font-weight: 500;
 		color: var(--color-text-3);
 		text-decoration: none;
 		white-space: nowrap;
-		transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+		border: 1px solid transparent;
+		transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 	}
 	.tautan:hover {
 		color: var(--color-text);
 		background: var(--color-surface-2);
+		border-color: var(--color-line-soft);
 	}
 	.tautan.aktif {
 		color: var(--color-accent);
-		background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+		background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+		border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+		box-shadow: 0 0 12px -2px color-mix(in srgb, var(--color-accent) 25%, transparent);
 		font-weight: 600;
 	}
 	.ikon {

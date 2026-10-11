@@ -537,11 +537,12 @@
 	.ticker {
 		display: flex;
 		align-items: center;
-		padding: 0.5rem 0;
+		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--garis);
-		background: var(--permukaan);
+		background: linear-gradient(180deg, color-mix(in srgb, var(--permukaan) 85%, transparent), var(--permukaan));
 		overflow: hidden;
 		white-space: nowrap;
+		box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 	}
 	.ticker-jalur {
 		display: flex;
@@ -589,6 +590,7 @@
 		border-radius: 1rem;
 		background: var(--permukaan);
 		overflow: hidden;
+		box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 	}
 	.akurasi-dalam { border-top: 1px solid var(--garis); padding: 1rem; margin: 0; }
 	.verdikt { border-radius: 0; border: none; }
@@ -596,8 +598,14 @@
 	/* Sinyal per market */
 	.sinyal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.75rem; }
 	.sinyal-kartu {
-		border: 1px solid var(--garis); border-radius: 0.75rem;
-		background: var(--permukaan); padding: 0.75rem 0.85rem;
+		border: 1px solid var(--garis); border-radius: 0.85rem;
+		background: var(--permukaan); padding: 0.85rem 1rem;
+		box-shadow: 0 2px 14px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+		transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+	}
+	.sinyal-kartu:hover {
+		border-color: color-mix(in srgb, var(--mint) 35%, var(--garis));
+		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 0 16px -4px color-mix(in srgb, var(--mint) 15%, transparent);
 	}
 	.sinyal-kartu.gagal { border-color: var(--merah); }
 	.sinyal-kepala { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.4rem; }
@@ -608,9 +616,9 @@
 		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
 		color: var(--redup);
 	}
-	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); }
+	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); background: color-mix(in srgb, var(--kuning) 8%, transparent); }
 	.mode-badge.mode-historis { color: var(--redup); border-style: dashed; }
-	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); }
+	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
 	.sinyal-sumber { font-size: 0.66rem; color: var(--redup); margin: 0 0 0.35rem; }
 	.lihat-semua {
 		font-size: 0.7rem; color: var(--mint); text-decoration: none; white-space: nowrap;
@@ -709,10 +717,13 @@
 		border-radius: 14px;
 		padding: 1.5rem 1.5rem 1.35rem;
 		background: var(--permukaan);
+		position: relative;
 	}
 	.verdikt.ada {
 		border-color: color-mix(in srgb, var(--mint) 45%, var(--garis));
-		background: linear-gradient(180deg, color-mix(in srgb, var(--mint) 8%, var(--permukaan)), var(--permukaan));
+		background: radial-gradient(circle at 10% -20%, color-mix(in srgb, var(--mint) 12%, transparent), transparent 70%),
+			linear-gradient(180deg, color-mix(in srgb, var(--mint) 8%, var(--permukaan)), var(--permukaan));
+		box-shadow: 0 0 24px -6px color-mix(in srgb, var(--mint) 15%, transparent);
 	}
 	.verdikt.diam {
 		border-color: var(--garis);
