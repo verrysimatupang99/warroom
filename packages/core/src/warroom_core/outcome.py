@@ -27,10 +27,10 @@ from typing import Any
 __all__ = [
     "REASON_LAYAK",
     "HasilPasar",
-    "baca_hasil",
-    "hanya_layak_dagang",
+    "read_outcome",
+    "tradable_only",
     "label_keputusan",
-    "ringkas_dataset",
+    "summarize_dataset",
 ]
 
 # Alasan keputusan yang berarti "strategi MEMANG mau masuk". Selain ini adalah keputusan
@@ -100,7 +100,7 @@ def _menang_dari_market(m: dict[str, Any]) -> str | None:
     return str(outcomes[idx])
 
 
-def baca_hasil(path: str | Path, *, maks_baris: int | None = None) -> dict[tuple[str, int], HasilPasar]:
+def read_outcome(path: str | Path, *, maks_baris: int | None = None) -> dict[tuple[str, int], HasilPasar]:
     """Pindai satu berkas events-*.jsonl(.gz); kembalikan hasil per (coin, wts).
 
     Hanya event ``kind == "http"`` yang URL-nya Gamma dan body-nya memuat market tertutup
@@ -193,7 +193,7 @@ def label_keputusan(path: str | Path, hasil: dict[tuple[str, int], HasilPasar]) 
     return baris_keluar
 
 
-def hanya_layak_dagang(baris: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def tradable_only(baris: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Saring ke keputusan yang strategi MEMANG mau masuk (lihat REASON_LAYAK).
 
     Ini penjaga terpenting modul ini. Tanpa saringan ini, keputusan yang sengaja ditolak
@@ -202,7 +202,7 @@ def hanya_layak_dagang(baris: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [r for r in baris if str(r.get("reason")) in REASON_LAYAK]
 
 
-def ringkas_dataset(root: str | Path, *, layak_saja: bool = True) -> dict[str, Any]:
+def summarize_dataset(root: str | Path, *, layak_saja: bool = True) -> dict[str, Any]:
     """Ringkas satu direktori run: berapa hasil terbaca, berapa keputusan bisa dilabeli.
 
     DUA LINTASAN — penting: resolusi datang SETELAH keputusannya, dan berkas dirotasi
@@ -217,14 +217,14 @@ def ringkas_dataset(root: str | Path, *, layak_saja: bool = True) -> dict[str, A
     # Lintasan 1: kumpulkan SEMUA resolusi dulu.
     semua_hasil: dict[tuple[str, int], HasilPasar] = {}
     for b in berkas:
-        semua_hasil.update(baca_hasil(b))
+        semua_hasil.update(read_outcome(b))
 
     # Lintasan 2: labeli keputusan dengan peta resolusi yang lengkap.
     semua_label: list[dict[str, Any]] = []
     for b in berkas:
         semua_label.extend(label_keputusan(b, semua_hasil))
 
-    layak = hanya_layak_dagang(semua_label)
+    layak = tradable_only(semua_label)
     dipakai = layak if layak_saja else semua_label
 
     per_partisi: dict[str, int] = {}

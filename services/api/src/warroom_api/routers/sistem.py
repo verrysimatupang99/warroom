@@ -130,7 +130,7 @@ def design_tokens(user: Annotated[User, Depends(auth.current_user)]) -> dict[str
 
 
 @router.get("/api/v1/docs")
-def docs_daftar(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+def docs_list(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
     """Daftar catatan (docs/belajar/*.md) — judul dari baris `# ` pertama.
 
     Catatan hidup di repo sebagai markdown. Alih-alih menyalinnya ke DB (sumber

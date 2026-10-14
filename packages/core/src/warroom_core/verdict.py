@@ -40,9 +40,9 @@ from typing import Any
 
 from sqlalchemy.orm import Session as SASession
 
-from warroom_core.market_signal import PASAR, sinyal_terbaik_per_pasar
+from warroom_core.market_signal import PASAR, best_signal_per_market
 
-__all__ = ["Verdict", "verdict_semua_pasar", "verdict_pasar"]
+__all__ = ["Verdict", "all_market_verdicts", "market_verdict"]
 
 # Tingkat pakem → urutan. Dipakai memutuskan apakah bukti sudah cukup untuk promosi.
 _TINGKAT_URUT = {"INSUFFICIENT": 0, "DIRECTIONAL": 1, "PRELIMINARY": 2, "TUNING": 3}
@@ -236,7 +236,7 @@ def _execution_state(s: SASession, pasar: str) -> tuple[str, str | None]:
     return "paper", None
 
 
-def verdict_pasar(s: SASession, sp: Any) -> Verdict:
+def market_verdict(s: SASession, sp: Any) -> Verdict:
     """Verdict kanonik dari satu SinyalPasar + fakta pendukungnya."""
     pasar = sp.pasar
     label = sp.label
@@ -381,7 +381,7 @@ def _biaya_pasar(s: SASession, pasar: str) -> dict[str, Any]:
     }
 
 
-def verdict_semua_pasar(
+def all_market_verdicts(
     s: SASession, *, split_terverifikasi: bool = False
 ) -> list[Verdict]:
     """Verdict kanonik untuk semua pasar, urut sesuai PASAR.
@@ -391,7 +391,7 @@ def verdict_semua_pasar(
     lalu diteruskan — verdict/sinyal tidak query splits sendiri (fail-closed: False).
     """
     urutan = {k: i for i, (k, _l, _s) in enumerate(PASAR)}
-    keluar = [verdict_pasar(s, sp) for sp in sinyal_terbaik_per_pasar(
+    keluar = [market_verdict(s, sp) for sp in best_signal_per_market(
         s, split_terverifikasi=split_terverifikasi)]
     keluar.sort(key=lambda v: urutan.get(v.pasar, 99))
     return keluar

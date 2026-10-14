@@ -47,7 +47,7 @@ def test_proposal_ditolak_di_luar_batas_terlihat_di_api(client, make_user) -> No
     _, sid = make_user("p5-viewer2", role="viewer")
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        autonomy.usulkan(
+        autonomy.propose(
             s, "agent.weights.book", 0.602, alasan="patch agen",
             evidence={"n": 340, "win": 305, "be": 0.8675},
         )
@@ -83,7 +83,7 @@ def test_apply_dan_rollback_proposal_lewat_api(client, make_user, db) -> None:
         # gate menolak usulan — jadi tes ini butuh split yang benar-benar ada.
         s.add(FrozenSplit(id="uji-api", dataset="uji", source="/tmp", files_json=[], manifest_hash="x"))
         autonomy.seed_parameters(s)
-        autonomy.usulkan(
+        autonomy.propose(
             s, "agent.threshold", 0.86, alasan="ubah",
             evidence={"n": 500, "win": 420, "be": 0.77, "split": "frozen:uji-api"},
         )

@@ -11,10 +11,10 @@ from typing import Any
 from sqlalchemy import func, select
 from warroom_core.db.session import SASession
 
-__all__ = ["provider_ringkas"]
+__all__ = ["provider_summary"]
 
 
-def provider_ringkas(s: SASession) -> list[dict[str, Any]]:
+def provider_summary(s: SASession) -> list[dict[str, Any]]:
     """Kesehatan per provider dari `llm_calls` — satu tempat (dipakai ai/status & llm-console).
 
     Tanpa penghitung di memori: `ok_rate` dihitung dari jumlah baris, `error_terakhir`

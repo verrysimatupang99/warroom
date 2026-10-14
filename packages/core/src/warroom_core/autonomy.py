@@ -29,7 +29,7 @@ from warroom_core.gate import (
     GATE_DEFAULT_MIN_N,
     GateInput,
     evaluate,
-    kebijakan_dari_evidence,
+    policy_from_evidence,
 )
 
 __all__ = [
@@ -37,12 +37,12 @@ __all__ = [
     "KEPUTUSAN_AI",
     "SEED",
     "kill_switch_aktif",
-    "putuskan_usulan",
+    "decide_proposal",
     "rollback",
     "seed_parameters",
     "set_kill_switch",
-    "terapkan",
-    "usulkan",
+    "apply_proposal",
+    "propose",
 ]
 
 KEPUTUSAN_AI = Literal["diterapkan", "ditolak", "butuh_manusia", "prohibited"]
@@ -131,7 +131,7 @@ def _sanitasi_split(s: SASession, evidence: dict[str, Any] | None) -> str | None
     return None
 
 
-def putuskan_usulan(
+def decide_proposal(
     s: SASession,
     nama: str,
     nilai_baru: Any,
@@ -161,7 +161,7 @@ def putuskan_usulan(
         # "frozen:<id>" hanya bermakna bila id itu terdaftar. Kalau tidak terdaftar, buang
         # labelnya supaya gate menolak — bukan meloloskan split yang dikarang (ADR-003).
         split_ev = _sanitasi_split(s, evidence)
-        ci_ev, deff_ev = kebijakan_dari_evidence(evidence)
+        ci_ev, deff_ev = policy_from_evidence(evidence)
         g = evaluate(
             GateInput(
                 n=int(evidence["n"]),
@@ -178,7 +178,7 @@ def putuskan_usulan(
     return "diterapkan", "paper & non-gate: boleh diterapkan otomatis"
 
 
-def usulkan(
+def propose(
     s: SASession,
     nama: str,
     nilai_baru: Any,
@@ -188,12 +188,12 @@ def usulkan(
     actor: str = "learner",
     auto: bool = True,
 ) -> dict[str, Any]:
-    """Catat usulan, putuskan, dan (bila boleh) terapkan. Selalu meninggalkan jejak."""
+    """Catat usulan, putuskan, dan (bila boleh) apply_proposal. Selalu meninggalkan jejak."""
     p = s.scalar(select(Parameter).where(Parameter.name == nama))
     if p is None:
         raise ValueError(f"parameter '{nama}' tidak terdaftar")
     # Pagar kill switch (temuan 5 Okt 2026): saklar aktif ATAU tak terbaca → tidak ada
-    # usulan sama sekali. Pagar ini di dalam `usulkan` supaya pemanggil yang lupa memeriksa
+    # usulan sama sekali. Pagar ini di dalam `propose` supaya pemanggil yang lupa memeriksa
     # sendiri (mis. jalur baru) tetap gagal-tertutup.
     if kill_switch_aktif(s):
         return {
@@ -202,12 +202,12 @@ def usulkan(
             "proposal_id": None,
             "gate": "",
         }
-    keputusan, sebab = putuskan_usulan(s, nama, nilai_baru, evidence=evidence)
+    keputusan, sebab = decide_proposal(s, nama, nilai_baru, evidence=evidence)
 
     verdict_gate = ""
     if evidence and all(k in evidence for k in ("n", "win", "be")):
         split_ev = _sanitasi_split(s, evidence)
-        ci_ev, deff_ev = kebijakan_dari_evidence(evidence)
+        ci_ev, deff_ev = policy_from_evidence(evidence)
         verdict_gate = evaluate(
             GateInput(
                 n=int(evidence["n"]),
@@ -260,7 +260,7 @@ def usulkan(
     return {"keputusan": keputusan, "sebab": sebab, "proposal_id": pr.id, "gate": verdict_gate}
 
 
-def terapkan(s: SASession, proposal_id: int, *, actor: str = "owner") -> bool:
+def apply_proposal(s: SASession, proposal_id: int, *, actor: str = "owner") -> bool:
     """Terapkan usulan yang menunggu manusia (mis. scope live). Mencatat aktor."""
     pr = s.get(Proposal, proposal_id)
     if pr is None or pr.status != "butuh_manusia":

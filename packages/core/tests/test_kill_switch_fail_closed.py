@@ -74,7 +74,7 @@ def test_usulan_tidak_jalan_bila_saklar_tak_terbaca(db_siap) -> None:
             )
         )
     with session_scope() as s:
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s,
             "agent.threshold",
             0.86,

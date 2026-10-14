@@ -48,16 +48,16 @@ def test_seed_mendaftarkan_parameter_dan_tidak_menimpa_nilai_yang_ada(db) -> Non
 def test_parameter_gate_dan_locked_prohibited(db) -> None:
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        assert autonomy.putuskan_usulan(s, "gate.min_n", 10)[0] == "prohibited"
-        assert autonomy.putuskan_usulan(s, "mode", "live")[0] == "prohibited"
-        assert autonomy.putuskan_usulan(s, "gate.ci", 0.9)[0] == "prohibited"
+        assert autonomy.decide_proposal(s, "gate.min_n", 10)[0] == "prohibited"
+        assert autonomy.decide_proposal(s, "mode", "live")[0] == "prohibited"
+        assert autonomy.decide_proposal(s, "gate.ci", 0.9)[0] == "prohibited"
 
 
 def test_di_luar_batas_ditolak_dengan_alasan_tercatat(db) -> None:
     """Bukti nyata: weights.book 0,602 di luar batas 0,6."""
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s, "agent.weights.book", 0.602,
             alasan="patch agen", evidence={"n": 340, "win": 305, "be": 0.8675},
         )
@@ -72,7 +72,7 @@ def test_di_luar_batas_ditolak_dengan_alasan_tercatat(db) -> None:
 def test_bukti_kurang_ditolak(db) -> None:
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(s, "agent.threshold", 0.8, alasan="tanpa bukti")
+        hasil = autonomy.propose(s, "agent.threshold", 0.8, alasan="tanpa bukti")
     assert hasil["keputusan"] == "ditolak"
     assert "bukti kurang" in hasil["sebab"]
 
@@ -81,7 +81,7 @@ def test_bukti_tanpa_split_beku_ditolak_gate(db) -> None:
     """Log agen = rentang bergulir, bukan split beku → gate menolak (disengaja)."""
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s, "agent.threshold", 0.8,
             alasan="patch agen",
             evidence={"n": 340, "win": 305, "be": 0.8675, "sumber": "agent-lessons.jsonl"},
@@ -96,7 +96,7 @@ def test_bukti_tanpa_split_beku_ditolak_gate(db) -> None:
 def test_usulan_dalam_batas_dengan_bukti_beku_diterapkan_dan_tercatat(db) -> None:
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s, "agent.threshold", 0.86,
             alasan="kencangkan setelah gate gagal",
             evidence={"n": 500, "win": 420, "be": 0.77, "ci": 0.90, "split": _split_beku(s)},
@@ -118,7 +118,7 @@ def test_evidence_lemah_masih_diterapkan_tapi_gate_tercatat_gagal(db) -> None:
     """Angka di bawah BE tidak menghalangi perubahan *kencang*; yang penting keputusan tercatat."""
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s, "agent.threshold", 0.88,
             alasan="kencangkan karena gate gagal",
             evidence={"n": 300, "win": 237, "be": 0.77, "ci": 0.90, "split": _split_beku(s)},
@@ -134,7 +134,7 @@ def test_evidence_lemah_masih_diterapkan_tapi_gate_tercatat_gagal(db) -> None:
 def test_rollback_mengembalikan_nilai_dan_tercatat(db) -> None:
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        autonomy.usulkan(
+        autonomy.propose(
             s, "agent.threshold", 0.86, alasan="ubah",
             evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)},
         )
@@ -156,13 +156,13 @@ def test_scope_live_butuh_manusia_lalu_diterapkan_oleh_owner(db) -> None:
         # sizeUsd scope paper; kita ubah scope-nya jadi live untuk menguji jalur "butuh manusia"
         p = s.scalar(select(Parameter).where(Parameter.name == "risk.sizeUsd"))
         p.scope = "live"
-        hasil = autonomy.usulkan(s, "risk.sizeUsd", 7,
+        hasil = autonomy.propose(s, "risk.sizeUsd", 7,
                                 alasan="naikkan ukuran", evidence={"n": 500, "win": 420, "be": 0.77})
         assert hasil["keputusan"] == "butuh_manusia"
         pid = hasil["proposal_id"]
 
     with session_scope() as s:
-        assert autonomy.terapkan(s, pid, actor="owner") is True
+        assert autonomy.apply_proposal(s, pid, actor="owner") is True
     with session_scope() as s:
         p = s.scalar(select(Parameter).where(Parameter.name == "risk.sizeUsd"))
         pr = s.get(Proposal, pid)
@@ -187,7 +187,7 @@ def test_hash_konfigurasi_berubah_saat_parameter_berubah(db) -> None:
         autonomy.seed_parameters(s)
         h1 = autonomy.hash_konfigurasi(s)
     with session_scope() as s:
-        autonomy.usulkan(s, "agent.threshold", 0.86, alasan="x",
+        autonomy.propose(s, "agent.threshold", 0.86, alasan="x",
                          evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)})
         h2 = autonomy.hash_konfigurasi(s)
     assert h1 != h2
@@ -217,7 +217,7 @@ def test_handler_learner_menolak_saat_kill_switch(db) -> None:
 def test_terapkan_menolak_usulan_yang_ditolak(db) -> None:
     with session_scope() as s:
         autonomy.seed_parameters(s)
-        hasil = autonomy.usulkan(
+        hasil = autonomy.propose(
             s, "agent.threshold", 0.99,
             alasan="terlalu tinggi",
             evidence={"n": 500, "win": 420, "be": 0.77, "split": _split_beku(s)},
@@ -225,4 +225,4 @@ def test_terapkan_menolak_usulan_yang_ditolak(db) -> None:
         assert hasil["keputusan"] == "ditolak"
         pid = hasil["proposal_id"]
     with session_scope() as s:
-        assert autonomy.terapkan(s, pid, actor="owner") is False
+        assert autonomy.apply_proposal(s, pid, actor="owner") is False

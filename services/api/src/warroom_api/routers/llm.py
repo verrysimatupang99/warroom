@@ -18,7 +18,7 @@ from warroom_core.db import User, session_scope
 
 from warroom_api import auth, limits
 from warroom_api.areas import AREA_KEYS, latest_facts
-from warroom_api.providers import provider_ringkas
+from warroom_api.providers import provider_summary
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ def llm_console(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, 
 
     with session_scope() as s:
         total = s.scalar(select(func.count()).select_from(LLMCall)) or 0
-        per_provider = provider_ringkas(s)
+        per_provider = provider_summary(s)
         per_peran = [
             {"role": r, "n": n, "gagal": g}
             for (r, n, g) in s.execute(

@@ -12,7 +12,7 @@ Satu celah, dua gejala nyata yang lolos dari tes yang ada
      `dedupe`, atau `dashboard`. Padahal modul P6 menuntut owner+grant+gate
      (`/live/action` → 409) untuk hal yang menyentuh eksekusi; endpoint ini hanya
      butuh peran `operator`, tanpa grant, tanpa gate, tanpa pembatas laju.
-  B. Biner yang dipakai tidak pernah diuji apa adanya. `jalankan_kering_kedalaman`
+  B. Biner yang dipakai tidak pernah diuji apa adanya. `run_dry_depth`
      memakai `$WARROOM_DOMAIN_HOME/.venv/bin/lt` saja (live.py:241) — jalur yang
      di host ini TIDAK ADA (`/home/admin/live-trading/.venv` sudah tidak ada),
      padahal `lt` tersedia di venv worker (`/home/admin/warroom/.venv/bin/lt`) dan
