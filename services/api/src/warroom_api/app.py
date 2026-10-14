@@ -9,26 +9,22 @@ Aturan yang dikodekan: setiap angka berasal dari tabel `facts` (punya `fact_id`,
 
 from __future__ import annotations
 
-import hmac
 import os
-from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select
-from warroom_core import prompts_dir
-from warroom_core.db import User, session_scope
+from warroom_core.db import User
 
-from warroom_api import auth, limits, live
-from warroom_api.areas import AREA_KEYS, latest_facts
+from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
-from warroom_api.providers import provider_ringkas as _provider_ringkas
 from warroom_api.routers import alert as alert_router
 from warroom_api.routers import auth as auth_router
 from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
+from warroom_api.routers import live as live_router
+from warroom_api.routers import llm as llm_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
@@ -121,252 +117,11 @@ def create_app() -> FastAPI:
     # --- alert & notifier (W5) ---
     app.include_router(alert_router.router)
 
-    # --- P6: kesiapan live + grant -------------------------------------------------------
+    # --- P6: kesiapan live + grant ---
+    app.include_router(live_router.router)
 
-    @app.get("/api/v1/live/arming")
-    def live_arming(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        return live.arming_status().to_dict()
-
-    @app.get("/api/v1/live/grants")
-    def live_grants(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        from warroom_core.db import Grant
-
-        with session_scope() as s:
-            rows = s.scalars(select(Grant).order_by(Grant.granted_at.desc()).limit(100)).all()
-            data = [
-                {
-                    "id": g.id,
-                    "scope": g.scope,
-                    "oleh": g.granted_by,
-                    "message_id": g.message_id,
-                    "alasan": g.reason,
-                    "diberikan": g.granted_at.isoformat() if g.granted_at else None,
-                    "kedaluwarsa": g.expires_at.isoformat() if g.expires_at else None,
-                    "dicabut": g.revoked_at.isoformat() if g.revoked_at else None,
-                }
-                for g in rows
-            ]
-        return {"grants": data, "count": len(data), "scope_dikenal": list(live.SCOPE_DIKENAL)}
-
-    @app.post("/api/v1/live/grant")
-    def live_grant(
-        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
-    ) -> dict[str, Any]:
-        try:
-            with session_scope() as s:
-                hasil = live.grant_baru(
-                    s,
-                    scope=str(body.get("scope", "")),
-                    granted_by=user.username,
-                    message_id=str(body.get("message_id", "")),
-                    reason=str(body.get("reason", "")),
-                    ttl_s=body.get("ttl_s", 3600),
-                )
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-        return {"ok": True, **hasil}
-
-    @app.post("/api/v1/live/action")
-    def live_action(
-        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
-    ) -> dict[str, Any]:
-        """Tidak pernah mengeksekusi apa pun. Hanya memeriksa grant → 409 bila kurang."""
-        scope = str(body.get("scope", ""))
-        with session_scope() as s:
-            kurang = live.scope_kurang(s, scope)
-        if kurang:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "aksi": scope,
-                    "kurang": kurang,
-                    "catatan": "eksekusi nyata tetap milik owner di luar repo ini",
-                },
-            )
-        return {
-            "ok": True,
-            "scope": scope,
-            "catatan": "grant lengkap; tidak ada aksi yang dijalankan oleh API ini",
-        }
-
-    @app.post("/api/v1/live/dry-run")
-    def live_dry_run(
-        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
-    ) -> dict[str, Any]:
-        """Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3.
-
-        Hanya subperintah yang di-allowlist yang diterima. Subperintah lain → **422**,
-        bukan 200-dengan-pesan-gagal: permintaannya memang tidak sah, dan pemanggil
-        tidak boleh menganggapnya berhasil. (Temuan audit 5 Okt 2026.)
-        """
-        sub = str(body.get("subperintah", "depth"))
-        if sub not in live.SUBPERINTAH_DRY_RUN_DIIZINKAN:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "code": "subperintah_ditolak",
-                    "message": (
-                        f"subperintah '{sub}' tidak diizinkan untuk uji kering; "
-                        f"pilihan: {', '.join(sorted(live.SUBPERINTAH_DRY_RUN_DIIZINKAN))}"
-                    ),
-                },
-            )
-        return live.jalankan_kering_kedalaman(sub)
-
-    # --- P3: LLM gateway (konsol, prompt, narasi) ----------------------------------------
-
-    @app.get("/api/v1/ai/llm-console")
-    def llm_console(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        """Kesehatan provider dari `llm_calls` — tanpa perhitungan manual."""
-        from warroom_core.db import LLMCall
-
-        with session_scope() as s:
-            total = s.scalar(select(func.count()).select_from(LLMCall)) or 0
-            per_provider = _provider_ringkas(s)
-            per_peran = [
-                {"role": r, "n": n, "gagal": g}
-                for (r, n, g) in s.execute(
-                    select(LLMCall.role, func.count(), func.count().filter(LLMCall.ok.is_(False)))
-                    .group_by(LLMCall.role)
-                ).all()
-            ]
-            biaya = float(s.scalar(select(func.coalesce(func.sum(LLMCall.cost_usd), 0))) or 0)
-        fallback_rate = (
-            round(sum(p["fallback"] for p in per_provider) / total, 4) if total else None
-        )
-        return {
-            "total_panggilan": total,
-            "fallback_rate": fallback_rate,
-            "biaya_usd": biaya,
-            "per_provider": per_provider,
-            "per_peran": per_peran,
-            "catatan": "angka dihitung dari tabel llm_calls, bukan penghitung di memori",
-        }
-
-    @app.get("/api/v1/ai/prompts")
-    def ai_prompts(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        from warroom_core.db import Prompt
-
-        with session_scope() as s:
-            rows = s.scalars(select(Prompt).order_by(Prompt.role, Prompt.version)).all()
-            data = [
-                {"role": p.role, "versi": p.version, "aktif": p.active,
-                 "skema": bool(p.schema_json), "contoh": len(p.contoh_json or [])}
-                for p in rows
-            ]
-        return {"prompts": data, "count": len(data)}
-
-    @app.post("/api/v1/ai/narrate")
-    def ai_narrate(
-        body: dict[str, Any],
-        request: Request,
-        user: Annotated[User, Depends(auth.require_role("operator"))],
-    ) -> dict[str, Any]:
-        """Narasi ber-grounding dari fakta di DB. Tanpa fakta → `insufficient`, bukan tebakan."""
-        if not NARRATE_LIMITER.izinkan(_kunci_klien(request)):
-            raise HTTPException(status_code=429, detail="terlalu banyak permintaan narasi; coba lagi nanti")
-        from warroom_llm import CallRequest, FactRef, Gateway
-        from warroom_llm.config import default_config
-        from warroom_llm.prompts import PromptRegistry
-
-        area = str(body.get("area", "crypto"))
-        kunci = AREA_KEYS.get(area, ())
-        with session_scope() as s:
-            terbaru = latest_facts(s)
-            dipakai = [terbaru[k] for k in kunci if k in terbaru][:8]
-            fakta = [
-                FactRef(fact_id=f.id, label=f"F{i + 1}",
-                        text=f"{f.key}={str(f.value_json)[:80]} (sumber={f.source}, umur_s="
-                             f"{int((datetime.now(UTC) - f.observed_at).total_seconds())})")
-                for i, f in enumerate(dipakai)
-            ]
-        gw = Gateway(config=default_config(), prompts=PromptRegistry.from_dir(str(prompts_dir())))
-        hasil = gw.call(
-            CallRequest(
-                role="narrator",
-                user=str(body.get("pertanyaan", f"Ringkas 2 kalimat untuk area {area}.")),
-                facts=tuple(fakta),
-                min_facts=1,
-                use_cache=bool(body.get("cache", True)),
-            )
-        )
-        return {
-            "status": hasil.status,
-            "provider": hasil.provider,
-            "model": hasil.model,
-            "fallback_from": hasil.fallback_from,
-            "prompt_version": hasil.prompt_version,
-            "latency_ms": hasil.latency_ms,
-            "fact_ids": list(hasil.fact_ids),
-            "output": hasil.output,
-            "error_code": hasil.error_code,
-            "catatan": "semua angka di keluaran harus berasal dari fact_ids di atas",
-        }
-
-    @app.post("/api/v1/ai/verifier")
-    def ai_verifier(
-        body: dict[str, Any],
-        request: Request,
-        user: Annotated[User | None, Depends(auth.optional_user)],
-    ) -> dict[str, Any]:
-        """Penilai kedua untuk kartu pod (P3-T5).
-
-        Dipanggil **hanya** dari proses lokal: token layanan (`WARROOM_SERVICE_TOKEN`)
-        atau berasal dari 127.0.0.1. Jalur sesi pengguna **wajib** peran `operator` —
-        temuan audit 5 Okt 2026: sebelumnya `viewer` pun bisa memanggil, dan endpoint
-        ini membakar kuota LLM berbayar. Setiap jalur dibatasi laju.
-        """
-        if not VERIFIER_LIMITER.izinkan(_kunci_klien(request)):
-            raise HTTPException(status_code=429, detail="terlalu banyak permintaan verifier; coba lagi nanti")
-        token_env = os.environ.get("WARROOM_SERVICE_TOKEN", "")
-        token_kirim = request.headers.get("x-warroom-token", "")
-        dari_lokal = request.client is not None and request.client.host in {"127.0.0.1", "::1"}
-        token_sah = bool(token_env) and hmac.compare_digest(token_env, token_kirim)
-        # Sesi pengguna: wajib peran operator. Token/lokal: tanpa peran (proses internal).
-        sesi_berwenang = user is not None and auth.has_role(user, "operator")
-        if not sesi_berwenang and not token_sah and not dari_lokal:
-            raise HTTPException(
-                status_code=401,
-                detail={
-                    "code": "unauthenticated",
-                    "message": "butuh sesi operator, token layanan, atau lokal",
-                },
-            )
-        klaim = [str(k) for k in (body.get("klaim") or [])][:12]
-        if not klaim:
-            raise HTTPException(
-                status_code=422,
-                detail={"code": "klaim_kosong", "message": "kirim daftar `klaim` ringkas"},
-            )
-        from warroom_llm import CallRequest, FactRef, Gateway
-        from warroom_llm.config import default_config
-        from warroom_llm.prompts import PromptRegistry
-
-        gw = Gateway(config=default_config(), prompts=PromptRegistry.from_dir(str(prompts_dir())))
-        fakta = tuple(
-            FactRef(fact_id=int(f["id"]), label=f"F{i + 1}",
-                    text=f"{f['key']}={str(f['value_json'])[:80]} (sumber={f['source']})")
-            for i, f in enumerate(body.get("fakta") or [])
-            if isinstance(f, dict) and "id" in f and "key" in f
-        )
-        hasil = gw.call(
-            CallRequest(
-                role="verifier",
-                user=f"Klaim pod {body.get('nama', '?')}: " + " | ".join(klaim),
-                facts=fakta,
-                min_facts=int(body.get("min_facts", 0)),
-                use_cache=bool(body.get("cache", True)),
-            )
-        )
-        return {
-            "status": hasil.status,
-            "setuju": (hasil.output or {}).get("setuju"),
-            "catatan": (hasil.output or {}).get("catatan"),
-            "provider": hasil.provider,
-            "fallback_from": hasil.fallback_from,
-            "fact_ids": list(hasil.fact_ids),
-            "error_code": hasil.error_code,
-        }
+    # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
+    app.include_router(llm_router.router)
 
     return app
 
