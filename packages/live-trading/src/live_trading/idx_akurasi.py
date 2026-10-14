@@ -25,13 +25,13 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .pakem import nilai_pakem, ringkas_r
+from .pakem import evaluate_pakem, summarize_r
 
 __all__ = [
     "SETUP_MIN_UNTUK_TAYANG",
-    "baca_ledger",
-    "hitung_akurasi",
-    "ringkas_akurasi",
+    "read_ledger",
+    "compute_accuracy",
+    "summarize_accuracy",
 ]
 
 # Setup dengan lebih sedikit baris tuntas disembunyikan dari panel — bukan karena tak
@@ -47,7 +47,7 @@ RESULT_TUNTAS = {"TP1", "TP2", "SL", "EXIT", "WIN", "LOSS", "TIMEOUT"}
 RESULT_AMBIGU = {"AMBIGUOUS"}
 
 
-def baca_ledger(path: str | Path) -> list[dict[str, Any]]:
+def read_ledger(path: str | Path) -> list[dict[str, Any]]:
     """Baca tabel `signals`. Berkas/tabel tidak ada → list kosong (bukan error 500)."""
     p = Path(path)
     if not p.is_file():
@@ -66,7 +66,7 @@ def _hari(iso: str | None) -> str:
     return (iso or "")[:10]
 
 
-def hitung_akurasi(
+def compute_accuracy(
     rows: list[dict[str, Any]],
     *,
     setup_min: int = SETUP_MIN_UNTUK_TAYANG,
@@ -99,8 +99,8 @@ def hitung_akurasi(
             for r in baris
             if r.get("net_r") is not None
         ]
-        pk = nilai_pakem(closes, kunci_r="r", kunci_tanggal="closed_at", biaya_tercatat=True)
-        ringkas = ringkas_r(rs)
+        pk = evaluate_pakem(closes, kunci_r="r", kunci_tanggal="closed_at", biaya_tercatat=True)
+        ringkas = summarize_r(rs)
         return {
             "setup": nama,
             "n": ringkas["n"],
@@ -157,12 +157,12 @@ def hitung_akurasi(
     }
 
 
-def ringkas_akurasi(path: str | Path, *, setup_min: int = SETUP_MIN_UNTUK_TAYANG) -> dict[str, Any]:
+def summarize_accuracy(path: str | Path, *, setup_min: int = SETUP_MIN_UNTUK_TAYANG) -> dict[str, Any]:
     """Titik masuk snapshot: baca ledger → hitung → sertakan jejak sumber."""
-    rows = baca_ledger(path)
+    rows = read_ledger(path)
     if not rows:
         return {"tersedia": False, "alasan": f"ledger tidak terbaca: {path}"}
-    hasil = hitung_akurasi(rows, setup_min=setup_min)
+    hasil = compute_accuracy(rows, setup_min=setup_min)
     hasil["tersedia"] = True
     hasil["sumber"] = str(path)
     return hasil

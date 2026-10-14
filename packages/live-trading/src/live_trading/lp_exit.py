@@ -5,9 +5,9 @@ Konteks (temuan 10 Okt): folder `~/gmgn-scan/` sudah tidak ada, sehingga
 Fungsi ini merekonstruksi perilaku yang diuji — bukan karangan baru:
 
 - pool hilang (row None) → KELUAR
-- dump 5m ≤ -8% → KELUAR (sama seperti gate `skor_pool` di `lp_mark.py`)
+- dump 5m ≤ -8% → KELUAR (sama seperti gate `score_pool` di `lp_mark.py`)
 - IL 50/50 < -5% → KELUAR "IL"
-- V/L < 2.0 → KELUAR "layu" (sama seperti gate `skor_pool`)
+- V/L < 2.0 → KELUAR "layu" (sama seperti gate `score_pool`)
 - fee taksiran ≥ 5% notional → KELUAR "target"
 - umur > 14 hari → KELUAR "umur"
 - selain itu → TAHAN

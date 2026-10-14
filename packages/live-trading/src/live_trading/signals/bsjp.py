@@ -52,7 +52,7 @@ from typing import Any
 
 from live_trading.collectors.idx import _kode_bersih  # normalisasi .JK (satu implementasi)
 
-__all__ = ["PARAM", "KandidatBSJP", "PeringkatBSJP", "susun_peringkat"]
+__all__ = ["PARAM", "BsjpCandidate", "PeringkatBSJP", "rank"]
 
 # Parameter filter — disalin apa adanya dari idx_bsjp_watch.py (Tencent). Jangan diubah tanpa
 # mencatat ulang hasil walk-forward-nya di sumber.
@@ -86,7 +86,7 @@ def _angka(v: Any) -> float | None:
 
 
 @dataclass
-class KandidatBSJP:
+class BsjpCandidate:
     """Satu kandidat BSJP. `net_est_pct` = estimasi dari SUMBER, bukan hitungan War Room.
 
     Field lama (nama/bucket/skor/wr_event/potensi/drawdown) tetap dipertahankan supaya UI dan
@@ -122,7 +122,7 @@ class KandidatBSJP:
 class PeringkatBSJP:
     mode: str                          # "terukur" (dihitung di sini) | "bersumber" | "proksi"
     ada: bool
-    kandidat: list[KandidatBSJP] = field(default_factory=list)
+    kandidat: list[BsjpCandidate] = field(default_factory=list)
     edge_rata_pct: float | None = None  # HANYA terisi di mode "terukur"
     n_sampel: int = 0
     strong: int = 0
@@ -156,7 +156,7 @@ class PeringkatBSJP:
 
 def _baris_ke_kandidat_tera(
     r: dict[str, Any], riwayat: dict[str, dict[str, Any]], p: dict[str, Any]
-) -> tuple[KandidatBSJP | None, str]:
+) -> tuple[BsjpCandidate | None, str]:
     """Terapkan filter BSJP teruji ke satu baris pemindai.
 
     Mengembalikan ``(kandidat, "")`` bila lolos, atau ``(None, alasan_tolak)`` bila tidak.
@@ -165,7 +165,7 @@ def _baris_ke_kandidat_tera(
     if not ticker:
         return None, "tanpa ticker"
     # Buang sufiks .JK (universe Tencent menulis 'CAMP.JK'). Tanpa ini, `riwayat.get(ticker)`
-    # tidak menemukan kunci 'CAMP' dari ambil_riwayat — SMA10 hilang, kandidat ditolak
+    # tidak menemukan kunci 'CAMP' dari fetch_history — SMA10 hilang, kandidat ditolak
     # tanpa sebab yang terlihat.
     ticker = _kode_bersih(ticker)
     close = _angka(r.get("close") or r.get("last") or r.get("price"))
@@ -217,7 +217,7 @@ def _baris_ke_kandidat_tera(
     catatan.append(f"SMA10 dari {sumber_sma or 'tidak dicatat'}")
 
     return (
-        KandidatBSJP(
+        BsjpCandidate(
             ticker=ticker,
             tier=tier,
             nama=str(r.get("nama") or r.get("stock_name") or ""),
@@ -240,7 +240,7 @@ def _baris_ke_kandidat_tera(
     )
 
 
-def susun_peringkat(
+def rank(
     screener_rows: list[dict[str, Any]] | None,
     tv_rows: list[dict[str, Any]] | None,
     *,
@@ -292,7 +292,7 @@ def susun_peringkat(
                 "sumber": str(r.get("sumber_sma") or "TradingView"),
             }
 
-    kandidat: list[KandidatBSJP] = []
+    kandidat: list[BsjpCandidate] = []
     ditolak = 0
     for r in gabung.values():
         k, _alasan = _baris_ke_kandidat_tera(r, riwayat_pakai, p)

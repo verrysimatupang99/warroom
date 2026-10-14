@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import pytest
 
-from live_trading.execution.keputusan import Konteks, jalur_untuk, putuskan_masuk
+from live_trading.execution.keputusan import Konteks, decide_entry, jalur_untuk
 
 
 @pytest.fixture(autouse=True)
@@ -36,8 +36,8 @@ KANDIDAT = {
 
 def test_keputusan_identik_paper_dan_live() -> None:
     """Inti 1:1: mode hanya mengubah TUJUAN, bukan isi keputusan."""
-    k_paper = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, mode="paper", slot_tersisa=3))
-    k_live = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, mode="live", slot_tersisa=3))
+    k_paper = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, mode="paper", slot_tersisa=3))
+    k_live = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, mode="live", slot_tersisa=3))
 
     assert k_paper.masuk == k_live.masuk
     assert k_paper.size_usd == k_live.size_usd, "ukuran harus identik — bukan dihitung ulang"
@@ -50,33 +50,33 @@ def test_keputusan_identik_paper_dan_live() -> None:
 
 
 def test_jejak_merekam_urutan_langkah() -> None:
-    k = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=3))
+    k = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=3))
     assert k.jejak[0] == "kandidat diterima"
     assert any("field lengkap" in j for j in k.jejak)
     assert any("gerbang risiko" in j for j in k.jejak)
 
 
 def test_kandidat_tidak_lengkap_ditolak() -> None:
-    k = putuskan_masuk({"pair": "BTCUSDT"}, Konteks(equity_usd=100.0))
+    k = decide_entry({"pair": "BTCUSDT"}, Konteks(equity_usd=100.0))
     assert k.masuk is False
     assert "tidak lengkap" in k.alasan
 
 
 def test_slot_penuh_ditolak() -> None:
-    k = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=0))
+    k = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=0))
     assert k.masuk is False
     assert "slot" in k.alasan
 
 
 def test_biaya_terukur_masuk_ke_keputusan() -> None:
     """Biaya terukur (P2) harus dibawa di keputusan, bukan dihitung ulang di eksekutor."""
-    murah = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=3))
-    mahal = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=25.0, slot_tersisa=3))
+    murah = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=10.0, slot_tersisa=3))
+    mahal = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=25.0, slot_tersisa=3))
     assert murah.cost_bps == 10.0 and mahal.cost_bps == 25.0
 
 
 def test_tanpa_biaya_terukur_tetap_jalan_dengan_asumsi() -> None:
     """Buku tak terbaca (fee_bps=None) tidak boleh memblokir; jatuh ke asumsi, bukan gagal."""
-    k = putuskan_masuk(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=None, slot_tersisa=3))
+    k = decide_entry(KANDIDAT, Konteks(equity_usd=100.0, fee_bps=None, slot_tersisa=3))
     assert k.masuk is True
     assert k.cost_bps is None

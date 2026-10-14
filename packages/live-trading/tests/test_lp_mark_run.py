@@ -30,7 +30,7 @@ def test_hitung_menulis_ledger_dan_pakem(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         R, "_harga_pool", lambda alamat, rantai=None: {"harga_usd": 1.21, "vl": 3.0, "liq_usd": 80_000}
     )
-    laporan = R.hitung_semua(state_path=state, state_dir=tmp_path, kini=1_000_000.0 + 2 * 86400)
+    laporan = R.compute_all(state_path=state, state_dir=tmp_path, kini=1_000_000.0 + 2 * 86400)
     assert laporan["status"] == "ok"
     m = laporan["mark"][0]
     assert m["status"] == "dinilai" and m["symbol"] == "UBI"
@@ -48,7 +48,7 @@ def test_hitung_menulis_ledger_dan_pakem(tmp_path: Path, monkeypatch) -> None:
 def test_pool_tak_terbaca_tidak_dikarang(tmp_path: Path, monkeypatch) -> None:
     state = _state_lp(tmp_path, symbol="X", address="0xdead", entry_price=1.0, entry_ts=1.0, notional_usd=10)
     monkeypatch.setattr(R, "_harga_pool", lambda alamat, rantai=None: None)
-    laporan = R.hitung_semua(state_path=state, state_dir=tmp_path)
+    laporan = R.compute_all(state_path=state, state_dir=tmp_path)
     assert laporan["mark"][0]["status"] == "pasar-tak-terbaca"
     assert not (tmp_path / "lp_ledger.jsonl").exists(), "gagal baca ≠ boleh menulis baris kosong"
 
@@ -56,11 +56,11 @@ def test_pool_tak_terbaca_tidak_dikarang(tmp_path: Path, monkeypatch) -> None:
 def test_tanpa_posisi_jujur(tmp_path: Path) -> None:
     p = tmp_path / "kosong.json"
     p.write_text(json.dumps({"positions": []}), encoding="utf-8")
-    laporan = R.hitung_semua(state_path=p, state_dir=tmp_path)
+    laporan = R.compute_all(state_path=p, state_dir=tmp_path)
     assert laporan["status"] == "tidak-ada-posisi"
     assert "lp_paper" in laporan["alasan"]
 
 
 def test_laporan_panel_belum_ada(tmp_path: Path) -> None:
-    laporan = R.laporan_lp_mark(tmp_path)
+    laporan = R.lp_mark_report(tmp_path)
     assert laporan["status"] == "belum-ada" and laporan["mark"] == []

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class HasilAnalis:
+class AnalysisResult:
     nama: str
     status: str  # hijau | kuning | merah | abu
     fakta: list[str] = field(default_factory=list)
@@ -26,9 +26,9 @@ class LaporanPod:
     pod: str
     status: str
     ringkas: list[str] = field(default_factory=list)
-    analis: list[HasilAnalis] = field(default_factory=list)
+    analis: list[AnalysisResult] = field(default_factory=list)
 
 
-def _rangkum(analis: list[HasilAnalis]) -> str:
+def _rangkum(analis: list[AnalysisResult]) -> str:
     order = {"merah": 3, "kuning": 2, "abu": 1, "hijau": 0}
     return max(analis, key=lambda a: order.get(a.status, 0)).status if analis else "abu"

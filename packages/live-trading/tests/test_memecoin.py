@@ -18,7 +18,7 @@ from live_trading.collectors.memecoin import (
     TIDAK_TERSEDIA,
     VENUE,
     klasifikasi_venue,
-    pilih_venue,
+    select_venue,
     skrining,
 )
 
@@ -78,29 +78,29 @@ def test_pilih_venue_urut_volume_bukan_likuiditas() -> None:
         _p("solana", "pumpfun", liq=50_000_000, v24=0.5, alamat="MATI"),
         _p("solana", "pumpfun", liq=30_000, v24=900_000, alamat="HIDUP"),
     ]
-    hasil = pilih_venue(pairs, "pumpfun")
+    hasil = select_venue(pairs, "pumpfun")
     assert hasil[0]["pairAddress"] == "HIDUP"
     assert [x["pairAddress"] for x in hasil] == ["HIDUP", "MATI"]
 
 
 def test_pilih_venue_membuang_volume_nol() -> None:
     pairs = [_p("solana", "pumpfun", liq=1_000_000, v24=0, alamat="BENAR-BENAR-MATI")]
-    assert pilih_venue(pairs, "pumpfun") == []
+    assert select_venue(pairs, "pumpfun") == []
 
 
 def test_pilih_venue_membuang_yang_bukan_venue_itu() -> None:
     pairs = [_p("solana", "raydium", 1000, 5000), _p("solana", "pumpfun", 1000, 5000)]
-    assert [x["dexId"] for x in pilih_venue(pairs, "pumpfun")] == ["pumpfun"]
+    assert [x["dexId"] for x in select_venue(pairs, "pumpfun")] == ["pumpfun"]
 
 
 def test_pilih_venue_batas_jumlah() -> None:
     pairs = [_p("solana", "pumpfun", 1000, 100 + i * 10, alamat=f"A{i}") for i in range(9)]
-    assert len(pilih_venue(pairs, "pumpfun", limit=3)) == 3
-    assert pilih_venue(pairs, "pumpfun", limit=3)[0]["pairAddress"] == "A8"
+    assert len(select_venue(pairs, "pumpfun", limit=3)) == 3
+    assert select_venue(pairs, "pumpfun", limit=3)[0]["pairAddress"] == "A8"
 
 
 def test_pilih_venue_nama_tak_dikenal_kosong() -> None:
-    assert pilih_venue([_p("solana", "pumpfun", 1, 1)], "tidak-ada") == []
+    assert select_venue([_p("solana", "pumpfun", 1, 1)], "tidak-ada") == []
 
 
 def test_skrining_melabeli_tiap_venue(tmp_path: Path) -> None:

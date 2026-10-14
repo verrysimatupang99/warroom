@@ -327,7 +327,7 @@ def ekskursi(row: dict[str, Any], klines: list[list[Any]], now: dt.datetime | No
     return {"r_mfe": round((entry - mfe) / risk, 3), "r_mae": round((entry - mae) / risk, 3)}
 
 
-def rows_masuk_pasar(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def rows_entering_market(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Konversi baris ke skenario masuk di harga pasar.
 
     Dipakai bersama oleh pengukuran hidup dan backtest, supaya keduanya mengukur hal
@@ -560,7 +560,7 @@ def report(
         "lolos": _ringkas(lolos),
         "ditolak_bayangan": _ringkas(ditolak),
         # Pembanding: kalau kandidat yang tidak pernah terisi kita masuki di harga pasar.
-        "masuk_pasar": _ringkas(rows_masuk_pasar(rows)),
+        "masuk_pasar": _ringkas(rows_entering_market(rows)),
         "per_aturan": aturan,
         "per_agent": atribusi_agent(rows),
         "rows": rows,

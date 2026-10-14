@@ -21,7 +21,7 @@ def jalankan(cek: list[tuple[str, float, float]]) -> list[str]:
     return [f"AWAS {len(cek) - len(basi)}/{len(cek)}", *basi]
 
 
-def cek_produksi(home: Path | None = None) -> list[tuple[str, float, float]]:
+def check_production(home: Path | None = None) -> list[tuple[str, float, float]]:
     h = Path(home or Path.home())
     return [
         ("snapshot", umur(h / "live-trading/state/snapshot.json"), 1200.0),
@@ -34,5 +34,5 @@ def cek_produksi(home: Path | None = None) -> list[tuple[str, float, float]]:
 
 
 if __name__ == "__main__":
-    for baris in jalankan(cek_produksi()):
+    for baris in jalankan(check_production()):
         print(baris)

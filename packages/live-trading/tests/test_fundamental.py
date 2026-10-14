@@ -20,8 +20,8 @@ from live_trading.fundamental import (
     JENIS_BANK,
     JENIS_UMUM,
     FundamentalEmiten,
-    baca_fundamental,
     deteksi_jenis,
+    read_fundamental,
 )
 
 # Bentuk nyata ANTM Q2 2026 (disederhanakan, nilai asli).
@@ -76,7 +76,7 @@ BBRI = {
 
 def test_blok_angka_langsung_terbaca() -> None:
     """Penjaga utama #1: blok berupa ANGKA tidak boleh terbaca None."""
-    f = baca_fundamental(ANTM)
+    f = read_fundamental(ANTM)
     assert f.pendapatan == 33_390_942_000_000.0
     assert f.laba_bruto == 5_234_283_000_000.0
     assert f.laba_bersih == 3_248_746_000_000.0
@@ -85,19 +85,19 @@ def test_blok_angka_langsung_terbaca() -> None:
 
 def test_blok_dict_bersarang_terbaca() -> None:
     """Penjaga #1 sisi lain: blok dict bersarang juga harus terbaca."""
-    f = baca_fundamental(BBRI)
+    f = read_fundamental(BBRI)
     assert f.pendapatan == 40_160_669_000_000.0
     assert f.laba_bersih == 15_550_000_000_000.0
 
 
 def test_eps_bersarang_dua_lapis() -> None:
     """Penjaga #2: EPS harus diambil dari sub-blok 'dasar', bukan dari dict terluar."""
-    assert baca_fundamental(ANTM).eps == 124.08
+    assert read_fundamental(ANTM).eps == 124.08
 
 
 def test_bank_tidak_punya_laba_bruto_dan_itu_benar() -> None:
     """Penjaga #3: None bukan kegagalan — bank memang tidak punya laba bruto."""
-    f = baca_fundamental(BBRI)
+    f = read_fundamental(BBRI)
     assert f.jenis == JENIS_BANK
     assert f.laba_bruto is None
     assert any("laba bruto" in c for c in f.catatan)
@@ -112,7 +112,7 @@ def test_jenis_dideteksi_dari_blok_yang_ada() -> None:
 
 def test_eps_mencurigakan_ditandai() -> None:
     """Penjaga #4: EPS 0,0001 dengan laba 15,55 T WAJIB bertanda."""
-    f = baca_fundamental(BBRI)
+    f = read_fundamental(BBRI)
     assert f.eps == 0.0001, "nilai sumber dibiarkan apa adanya"
     assert any("mencurigakan" in c for c in f.catatan), "EPS tak wajar wajib ditandai"
 
@@ -124,38 +124,38 @@ def test_eps_nol_ditandai() -> None:
             {"label": "Q2", "data": {"laba_rugi": 1e12, "laba_rugi_per_saham": {"total": 0.0}}}
         ],
     }
-    f = baca_fundamental(payload)
+    f = read_fundamental(payload)
     assert f.eps == 0.0
     assert any("mencurigakan" in c for c in f.catatan)
 
 
 def test_eps_wajar_tidak_ditandai() -> None:
-    f = baca_fundamental(ANTM)
+    f = read_fundamental(ANTM)
     assert f.eps == 124.08
     assert not any("mencurigakan" in c for c in f.catatan)
 
 
 def test_tanpa_item_mengembalikan_kosong_bukan_angka_nol() -> None:
     """None != 0. Laporan kosong tidak boleh jadi 'laba nol'."""
-    f = baca_fundamental({"stock_code": "X", "items": []})
+    f = read_fundamental({"stock_code": "X", "items": []})
     assert f.ada is False
     assert f.laba_bersih is None
     assert any("kosong" in c for c in f.catatan)
 
 
 def test_payload_none_aman() -> None:
-    f = baca_fundamental(None)
+    f = read_fundamental(None)
     assert isinstance(f, FundamentalEmiten)
     assert f.ada is False
 
 
 def test_bentuk_data_tidak_dikenali() -> None:
     payload = {"stock_code": "X", "items": [{"label": "Q1", "data": "bukan dict"}]}
-    f = baca_fundamental(payload)
+    f = read_fundamental(payload)
     assert f.ada is False
     assert any("tidak dikenali" in c for c in f.catatan)
 
 
 def test_jumlah_kuartal_tercatat() -> None:
-    assert baca_fundamental(ANTM).jumlah_kuartal == 12
-    assert baca_fundamental(ANTM).label == "Q2 2026"
+    assert read_fundamental(ANTM).jumlah_kuartal == 12
+    assert read_fundamental(ANTM).label == "Q2 2026"

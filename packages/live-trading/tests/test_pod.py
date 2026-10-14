@@ -75,7 +75,7 @@ def test_nilai_parse_json_berisik() -> None:
     asli = nilai.tanya
     nilai.tanya = lambda *a, **k: 'nih bos {"setuju": false, "catatan": "kurang data"} sip'
     try:
-        v = nilai.nilai_pod("x", ["a"])
+        v = nilai.evaluate_pod("x", ["a"])
         assert v == {"setuju": False, "catatan": "kurang data"}
     finally:
         nilai.tanya = asli
@@ -87,7 +87,7 @@ def test_nilai_gagal_none() -> None:
     asli = nilai.tanya
     nilai.tanya = lambda *a, **k: None
     try:
-        assert nilai.nilai_pod("x", ["a"]) is None
+        assert nilai.evaluate_pod("x", ["a"]) is None
     finally:
         nilai.tanya = asli
 

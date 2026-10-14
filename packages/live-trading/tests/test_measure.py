@@ -512,7 +512,7 @@ def test_rows_masuk_pasar_melewati_baris_tanpa_harga() -> None:
             "hasil_pasar": "sl",
         },
     ]
-    hasil = measure.rows_masuk_pasar(rows)
+    hasil = measure.rows_entering_market(rows)
 
     assert len(hasil) == 1
     assert hasil[0]["entry"] == 102.0

@@ -38,7 +38,7 @@ def test_mark_posisi_menghitung_pnl_dan_hold():
         "notional_usd": 30.0,
         "vl_at_entry": 4.83,
     }
-    m = M.mark_posisi(pos, harga_sekarang=1.21, vl_sekarang=3.0, fee_tier=0.01, kini=kini)
+    m = M.mark_position(pos, harga_sekarang=1.21, vl_sekarang=3.0, fee_tier=0.01, kini=kini)
     assert m["status"] == "dinilai"
     assert abs(m["umur_hari"] - 2.0) < 1e-9
     # fee = 30 * 3.0 * 0.01 * 2 = 1.8
@@ -52,7 +52,7 @@ def test_mark_posisi_menghitung_pnl_dan_hold():
 
 
 def test_mark_tanpa_harga_jujur():
-    m = M.mark_posisi({"symbol": "X", "entry_price": 0}, harga_sekarang=1.0, vl_sekarang=3.0, fee_tier=0.01)
+    m = M.mark_position({"symbol": "X", "entry_price": 0}, harga_sekarang=1.0, vl_sekarang=3.0, fee_tier=0.01)
     assert m["status"] == "tidak-ada-harga"
     assert "jangan dikarang" in m["alasan"]
 
@@ -60,10 +60,10 @@ def test_mark_tanpa_harga_jujur():
 def test_skor_pool_gate_sama_dengan_lp_paper():
     bagus = {"fee_ratio": 4.0, "liq": 200_000, "holders": 5000, "price_5m": 1.0,
              "rug": 0.05, "bundler": 0.05, "insider": 0.02, "top10": 0.10}
-    s = M.skor_pool(bagus)
+    s = M.score_pool(bagus)
     assert s["lolos"] is True and s["skor"] > 50
     jelek = dict(bagus, fee_ratio=0.5, liq=10_000, holders=100, price_5m=-20.0)
-    s2 = M.skor_pool(jelek)
+    s2 = M.score_pool(jelek)
     assert s2["lolos"] is False
     assert any("V/L" in g for g in s2["gagal"])
     assert any("liq" in g for g in s2["gagal"])
@@ -73,8 +73,8 @@ def test_skor_pool_gate_sama_dengan_lp_paper():
 
 def test_catat_mark_append(tmp_path: Path):
     p = tmp_path / "lp_ledger.jsonl"
-    M.catat_mark(p, {"symbol": "A", "ts": 1.0, "status": "dinilai", "pnl_pct": 1.0})
-    M.catat_mark(p, {"symbol": "A", "ts": 2.0, "status": "dinilai", "pnl_pct": 2.0})
+    M.record_mark(p, {"symbol": "A", "ts": 1.0, "status": "dinilai", "pnl_pct": 1.0})
+    M.record_mark(p, {"symbol": "A", "ts": 2.0, "status": "dinilai", "pnl_pct": 2.0})
     baris = [json.loads(ln) for ln in p.read_text().splitlines()]
     assert len(baris) == 2 and baris[0]["pnl_pct"] == 1.0
 
@@ -89,7 +89,7 @@ def test_nilai_pakem_lp_menghitung_hari():
         baris.append({"symbol": "A", "ts": hari0 + d * 86400, "status": "dinilai", "pnl_pct": 0.5})
     for d in range(15, 40):  # total 40 hari
         baris.append({"symbol": "A", "ts": hari0 + d * 86400, "status": "dinilai", "pnl_pct": -0.2})
-    hasil = M.nilai_pakem_lp(baris)
+    hasil = M.evaluate_pakem_lp(baris)
     # 40 hari unik → PRELIMINARY (30–99), meskipun barisnya 43
     assert hasil.n_hari == 40
     assert hasil.tingkat == "PRELIMINARY"

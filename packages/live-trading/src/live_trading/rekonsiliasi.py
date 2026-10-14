@@ -35,7 +35,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-__all__ = ["rekonstruksi_posisi", "rekonsiliasi_watchlist"]
+__all__ = ["reconstruct_position", "rekonsiliasi_watchlist"]
 
 _KLINE = "https://www.okx.com/api/v5/market/candles?instId={pair}&bar=1H&limit=100"
 _STATUS_TERBUKA = {"still_open", "open", "pending"}
@@ -92,7 +92,7 @@ def _zona(entry_zone: Any) -> tuple[float, float] | None:
     return (min(a, b), max(a, b))
 
 
-def rekonstruksi_posisi(pos: dict[str, Any], *, ambil_klines=_klines) -> dict[str, Any] | None:
+def reconstruct_position(pos: dict[str, Any], *, ambil_klines=_klines) -> dict[str, Any] | None:
     """Rekonstruksi satu posisi terbuka; ``None`` bila bukan kandidat/tak bisa dinilai."""
     zona = _zona(pos.get("entry_zone"))
     if zona is None or pos.get("date_added") is None:
@@ -197,7 +197,7 @@ def rekonsiliasi_watchlist(state_dir: Path, *, ambil_klines=_klines) -> dict[str
     gagal: list[dict[str, str]] = []
     for it in terbuka:
         try:
-            hasil = rekonstruksi_posisi(it, ambil_klines=ambil_klines)
+            hasil = reconstruct_position(it, ambil_klines=ambil_klines)
         except Exception as exc:  # noqa: BLE001 — jaringan gagal bukan alasan mengarang
             gagal.append({"signal_id": str(it.get("signal_id")), "alasan": f"{type(exc).__name__}: {exc}"})
             continue

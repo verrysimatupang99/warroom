@@ -35,8 +35,8 @@ def _buat(db: Path, baris: list[tuple]) -> None:
 
 
 def test_ledger_tidak_ada_bukan_error(tmp_path: Path):
-    assert A.baca_ledger(tmp_path / "hilang.db") == []
-    r = A.ringkas_akurasi(tmp_path / "hilang.db")
+    assert A.read_ledger(tmp_path / "hilang.db") == []
+    r = A.summarize_accuracy(tmp_path / "hilang.db")
     assert r["tersedia"] is False and "tidak terbaca" in r["alasan"]
 
 
@@ -55,7 +55,7 @@ def test_metrik_hanya_dari_tuntas(tmp_path: Path):
         # ambigu → terhitung terpisah, tidak masuk win/loss
         ("e8", "AAAH", "BSJP_STRONG", "CLOSED", "2026-09-22T09:00+07:00", "AMBIGUOUS", 0.0, 0.0, "v2"),
     ])
-    h = A.hitung_akurasi(A.baca_ledger(db), setup_min=1)
+    h = A.compute_accuracy(A.read_ledger(db), setup_min=1)
     assert h["tuntas"] == 5 and h["belum_tuntas"] == 2 and h["ambigu"] == 1
     s = h["per_setup"]["BSJP_STRONG"]
     assert s["n"] == 5, "ambigu & belum tuntas tidak boleh ikut"
@@ -73,7 +73,7 @@ def test_pakem_pakai_hari_independen(tmp_path: Path):
         hari = ["2026-09-18", "2026-09-19", "2026-09-22", "2026-09-23"][i % 4]
         baris.append((f"e{i}", "AAAA", "BSJP_STRONG", "CLOSED", f"{hari}T09:00+07:00", "TP1", 1.0, 0.0, "v2"))
     _buat(db, baris)
-    h = A.hitung_akurasi(A.baca_ledger(db), setup_min=1)
+    h = A.compute_accuracy(A.read_ledger(db), setup_min=1)
     s = h["per_setup"]["BSJP_STRONG"]
     assert s["n"] == 20 and s["n_hari"] == 4
     assert s["pakem"] == "INSUFFICIENT"
@@ -83,7 +83,7 @@ def test_pakem_pakai_hari_independen(tmp_path: Path):
 def test_setup_kecil_tidak_ditampilkan_sebagai_akurasi(tmp_path: Path):
     db = tmp_path / "l.db"
     _buat(db, [("e1", "AAAA", "BSJP_ARA", "CLOSED", "2026-09-18T09:00+07:00", "TP1", 1.0, 0.0, "v2")])
-    h = A.hitung_akurasi(A.baca_ledger(db))
+    h = A.compute_accuracy(A.read_ledger(db))
     s = h["per_setup"]["BSJP_ARA"]
     assert s["pakem"] == "INSUFFICIENT"
     assert s["winrate_pct"] is None, "n kecil jangan tampil seperti akurasi"
@@ -98,7 +98,7 @@ def test_bsjp_gabungan_dihitung(tmp_path: Path):
     for i in range(3):
         b.append((f"b{i}", "Y", "BSJP_STRONG", "CLOSED", f"2026-09-2{i}T09:00+07:00", "SL", -1.0, 0.0, "v2"))
     _buat(db, b)
-    h = A.hitung_akurasi(A.baca_ledger(db), setup_min=1)
+    h = A.compute_accuracy(A.read_ledger(db), setup_min=1)
     g = h["bsjp_gabungan"]
     assert g["n"] == 6 and g["total_r"] == 3 * 0.5 + 3 * -1.0
 
@@ -110,7 +110,7 @@ def test_angka_cocok_dengan_drift_tencent(tmp_path: Path):
         import pytest
 
         pytest.skip("ledger produksi belum diimpor")
-    h = A.ringkas_akurasi(ledger)
+    h = A.summarize_accuracy(ledger)
     if not h.get("tersedia"):
         import pytest
 
@@ -137,7 +137,7 @@ def test_timeout_masuk_tuntas(tmp_path: Path):
         ("e2", "B", "INTRADAY", "CLOSED", "2026-09-21T11:00+07:00", "TIMEOUT", -0.6, 0.0, "v3"),
         ("e3", "C", "INTRADAY", "CLOSED", "2026-09-22T10:00+07:00", "SL", -1.0, 0.0, "v3"),
     ])
-    h = A.hitung_akurasi(A.baca_ledger(db), setup_min=1)
+    h = A.compute_accuracy(A.read_ledger(db), setup_min=1)
     s = h["per_setup"]["INTRADAY"]
     assert s["n"] == 3
     assert abs(s["mean_r"] - (2.0 - 0.6 - 1.0) / 3) < 1e-3  # dibulatkan 4 desimal
@@ -151,7 +151,7 @@ def test_angka_intraday_cocok_dengan_drift(tmp_path: Path):
         import pytest
 
         pytest.skip("ledger produksi belum diimpor")
-    h = A.ringkas_akurasi(ledger)
+    h = A.summarize_accuracy(ledger)
     if not h.get("tersedia"):
         import pytest
 

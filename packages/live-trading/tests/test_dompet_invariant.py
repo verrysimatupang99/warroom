@@ -50,7 +50,7 @@ def test_invariant_terbit_dan_mengklasifikasi(tmp_path: Path) -> None:
             ("a6", "BIKE.JK", "ARA_HUNTER", "CREATED", None, None, None, "2026-09-24T10:03"),
         ],
     )
-    d = dompet.ringkas_semua_dompet(tmp_path)["pasar"]["idx"]
+    d = dompet.summarize_all_wallets(tmp_path)["pasar"]["idx"]
     inv = d["invariant"]
     assert inv["model_breach"] is True
     assert inv["pelanggaran_1r"] == 3, "3 trade di luar kelas wajar"
@@ -79,7 +79,7 @@ def test_invariant_tenang_bila_semua_wajar(tmp_path: Path) -> None:
             ("b2", "BBBB.JK", "BSJP", "CLOSED", "SL", -1.02, "2026-10-01T09:00", "2026-09-30T15:00"),
         ],
     )
-    d = dompet.ringkas_semua_dompet(tmp_path)["pasar"]["idx"]
+    d = dompet.summarize_all_wallets(tmp_path)["pasar"]["idx"]
     assert d["invariant"]["model_breach"] is False
     assert d["invariant"]["pelanggaran_1r"] == 0
     assert "terpenuhi" in d["invariant"]["penjelasan"]

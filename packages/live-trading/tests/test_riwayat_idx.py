@@ -33,7 +33,7 @@ def _baris(ticker: str, hari: str, close: float, vwap: float, vol: float, n: int
 
 def test_sma10_hanya_bila_10_hari_atau_lebih() -> None:
     """Sembilan hari bukan cukup: sma10 harus None, bukan rata-rata 9 hari."""
-    r = R.RiwayatTicker(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
+    r = R.TickerHistory(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
     r.hari = [f"2026-09-{d:02d}" for d in range(1, 10)]
     r.close = [100.0 + i for i in range(9)]
     r.vwap = list(r.close)
@@ -46,7 +46,7 @@ def test_sma10_hanya_bila_10_hari_atau_lebih() -> None:
 
 def test_sma10_benar_untuk_10_hari() -> None:
     """SMA10 = rata-rata 10 close terakhir."""
-    r = R.RiwayatTicker(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
+    r = R.TickerHistory(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
     r.hari = [f"2026-09-{d:02d}" for d in range(1, 11)]
     r.close = [float(100 + i * 10) for i in range(10)]  # 100..190
     r.vwap = list(r.close)
@@ -58,7 +58,7 @@ def test_sma10_benar_untuk_10_hari() -> None:
 
 def test_vavg10_membuang_hari_terakhir() -> None:
     """Volume hari berjalan belum lengkap — memasukkannya mengecilkan rel-vol tanpa sebab."""
-    r = R.RiwayatTicker(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
+    r = R.TickerHistory(ticker="AAA", hari=[], close=[], vwap=[], volume=[])
     r.hari = [f"2026-09-{d:02d}" for d in range(1, 12)]  # 11 hari
     r.close = [100.0] * 11
     r.vwap = list(r.close)
@@ -76,7 +76,7 @@ def test_ssh_gagal_mengembalikan_kosong_bukan_exception(monkeypatch) -> None:
         raise subprocess.TimeoutExpired(cmd="ssh", timeout=1)
 
     monkeypatch.setattr(R.subprocess, "run", _boom)
-    assert R.ambil_riwayat(["ANTM"]) == {}
+    assert R.fetch_history(["ANTM"]) == {}
 
 
 def test_json_rusak_mengembalikan_kosong(monkeypatch) -> None:
@@ -86,12 +86,12 @@ def test_json_rusak_mengembalikan_kosong(monkeypatch) -> None:
         stderr = ""
 
     monkeypatch.setattr(R.subprocess, "run", lambda *a, **k: _P())
-    assert R.ambil_riwayat(["ANTM"]) == {}
+    assert R.fetch_history(["ANTM"]) == {}
 
 
 def test_tanpa_ticker_mengembalikan_kosong() -> None:
-    assert R.ambil_riwayat([]) == {}
-    assert R.ambil_riwayat(["", "  "]) == {}
+    assert R.fetch_history([]) == {}
+    assert R.fetch_history(["", "  "]) == {}
 
 
 def test_batch_dipecah_saat_melebihi_batas(monkeypatch) -> None:
@@ -102,7 +102,7 @@ def test_batch_dipecah_saat_melebihi_batas(monkeypatch) -> None:
         panggilan.append(list(tickers))
         return {}
 
-    monkeypatch.setattr(R, "ambil_riwayat", _palsu)
+    monkeypatch.setattr(R, "fetch_history", _palsu)
     # Panggil lewat fungsi asli dengan memulihkan referensi setelah patch:
     # di sini cukup uji logika pemecahan pada level modul.
     bersih = [f"T{i:02d}" for i in range(57)]
@@ -126,7 +126,7 @@ def test_parsing_dan_urut_menaik(monkeypatch) -> None:
         stderr = ""
 
     monkeypatch.setattr(R.subprocess, "run", lambda *a, **k: _P())
-    hasil = R.ambil_riwayat(["ANTM"])
+    hasil = R.fetch_history(["ANTM"])
     assert "ANTM" in hasil
     v = hasil["ANTM"]
     assert v.hari == sorted(v.hari), "hari harus urut menaik untuk SMA yang benar"
@@ -138,7 +138,7 @@ def test_parsing_dan_urut_menaik(monkeypatch) -> None:
 )
 def test_integrasi_nyata_opsional() -> None:
     """Uji asap terhadap arsip nyata. Dilewati otomatis bila kunci tidak tersedia."""
-    hasil = R.ambil_riwayat(["ANTM"], timeout_s=60)
+    hasil = R.fetch_history(["ANTM"], timeout_s=60)
     if not hasil:  # jaringan/daemon bisa tidak terjangkau; itu bukan kegagalan kode
         pytest.skip("arsip tidak terjangkau dari sini")
     v = hasil["ANTM"]
@@ -168,7 +168,7 @@ def test_sufiks_jk_dinormalkan_di_kueri(monkeypatch) -> None:
         return _P()
 
     monkeypatch.setattr(R.subprocess, "run", _tangkap)
-    R.ambil_riwayat(["CAMP.JK"])
+    R.fetch_history(["CAMP.JK"])
 
     assert ditangkap, "subprocess.run harus dipanggil"
     kirim = ditangkap[0]

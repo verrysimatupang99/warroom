@@ -61,13 +61,13 @@ def _backtest_panel(settings: Any) -> dict[str, Any] | None:
     """Ringkas hasil backtest tersimpan — tanpa jaringan, hanya membaca berkas."""
     from . import backtest
 
-    rows = backtest.muat_rows(settings, 300) or backtest.muat_rows(settings, 150)
+    rows = backtest.load_rows(settings, 300) or backtest.load_rows(settings, 150)
     if not rows:
         return None
     a = backtest.aggregate(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
     b = backtest.bandingkan(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
-    kl = backtest.uji_klaster(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
-    nol = backtest.uji_klaster_nol(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
+    kl = backtest.test_cluster(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
+    nol = backtest.test_cluster_null(rows, fee_per_sisi=backtest.FEE_PER_SISI_DEFAULT)
     return {
         "n": a["n_kandidat"],
         "terisi_pct": a["fill_rate_pct"],
@@ -501,10 +501,10 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             riwayat: dict[str, dict] = {}
             try:
                 if calon:
-                    riwayat = {t: v.to_dict() for t, v in riwayat_idx.ambil_riwayat(calon).items()}
+                    riwayat = {t: v.to_dict() for t, v in riwayat_idx.fetch_history(calon).items()}
             except Exception as exc:  # noqa: BLE001 — SMA10 opsional; BSJP tetap jalan tanpa itu
                 log.warning("bsjp: riwayat SMA10 gagal: %s", exc)
-            snap["bagian"]["bsjp"] = bsjp.susun_peringkat(
+            snap["bagian"]["bsjp"] = bsjp.rank(
                 scr_rows, tv_rows, riwayat=riwayat
             ).to_dict()
         except Exception as exc:  # noqa: BLE001
@@ -659,7 +659,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     try:
         from . import idx_akurasi as _ia
 
-        ak = _ia.ringkas_akurasi(s.state_dir / "idx_ledger.db")
+        ak = _ia.summarize_accuracy(s.state_dir / "idx_ledger.db")
         marker_p = s.state_dir / "idx_ledger_sumber.json"
         if marker_p.is_file():
             try:
@@ -687,12 +687,12 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         snap["pasar_akurasi"] = _pasar.ringkas_akurasi_pasar(s.state_dir)
         # Skor bandarmologi (adopsi pola ihsgscreener): satu angka 0–100 per emiten,
         # komponennya diaudit. Butuh `bagian.bandarmologi` — ada hanya saat use_network.
-        snap["bandarmologi_skor"] = _bs.skor_bandarmologi(snap.get("bagian") or {})
+        snap["bandarmologi_skor"] = _bs.bandarmologi_score(snap.get("bagian") or {})
         # Dompet paper Rp 10 juta per market (7 Okt): ukuran yang bisa dibandingkan
         # antar-market — R tidak bisa dibandingkan, rupiah bisa.
         from . import dompet as _dompet
 
-        snap["dompet"] = _dompet.ringkas_semua_dompet(s.state_dir)
+        snap["dompet"] = _dompet.summarize_all_wallets(s.state_dir)
         # Verifikasi silang LP vs API publik (jawaban "data kita vs internet live").
         # Berat (3 panggilan HTTP/pool) → hanya saat use_network, dan gagal = ditandai.
         if use_network:
@@ -738,7 +738,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             from live_trading.pods import nilai as _nilai
             from live_trading.pods import poly as _pp
 
-            snap["pod_llm"] = _nilai.nilai_semua(
+            snap["pod_llm"] = _nilai.evaluate_all(
                 {
                     n: [r for r in m.lead(snap).ringkas]
                     for n, m in (

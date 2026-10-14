@@ -28,8 +28,8 @@ from typing import Any
 __all__ = [
     "WALLET_IDR",
     "kurs_usd_idr",
-    "ringkas_dompet",
-    "ringkas_semua_dompet",
+    "summarize_wallet",
+    "summarize_all_wallets",
 ]
 
 WALLET_IDR = 10_000_000.0
@@ -102,7 +102,7 @@ def _ledger(path: Path) -> list[dict[str, Any]]:
     return out
 
 
-def ringkas_dompet(
+def summarize_wallet(
     state_dir: Path,
     *,
     market: str,
@@ -285,7 +285,7 @@ def _dompet_forex(state_dir: Path, kurs: float | None) -> dict[str, Any]:
     }
 
 
-def ringkas_semua_dompet(state_dir: Path) -> dict[str, Any]:
+def summarize_all_wallets(state_dir: Path) -> dict[str, Any]:
     """Dompet Rp 10 juta untuk SEMUA market — satu kurs, satu aturan risiko."""
     kurs, asal_kurs = kurs_usd_idr(state_dir)
     keluaran: dict[str, Any] = {}
@@ -296,7 +296,7 @@ def ringkas_semua_dompet(state_dir: Path) -> dict[str, Any]:
         ("polymarket", "state/polymarket_equity.jsonl"),
     ):
         try:
-            keluaran[market] = ringkas_dompet(state_dir, market=market, kurs=kurs, sumber=sumber)
+            keluaran[market] = summarize_wallet(state_dir, market=market, kurs=kurs, sumber=sumber)
         except Exception as exc:  # noqa: BLE001 — satu market jangan menjatuhkan yang lain
             keluaran[market] = {"market": market, "tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
     for nama, fn in (("forex", _dompet_forex), ("idx", _dompet_idx),

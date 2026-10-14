@@ -27,13 +27,13 @@ def _ledger(state: Path, nama: str, baris: list[dict]) -> None:
 
 def test_tanpa_kurs_tidak_mengarang(tmp_path: Path):
     _ledger(tmp_path, "crypto_equity.jsonl", [{"signal_id": "a", "r": 1.0, "closed_at": "2026-10-01"}])
-    out = dp.ringkas_dompet(tmp_path, market="crypto", kurs=None, sumber="uji")
+    out = dp.summarize_wallet(tmp_path, market="crypto", kurs=None, sumber="uji")
     assert out["tersedia"] is False
     assert "kurs" in out["alasan"].lower()
 
 
 def test_ledger_kosong_bukan_nol(tmp_path: Path):
-    out = dp.ringkas_dompet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
+    out = dp.summarize_wallet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
     assert out["tersedia"] is False
     assert out["alasan"]
 
@@ -48,7 +48,7 @@ def test_hitung_saldo_dan_tanpa_compounding(tmp_path: Path):
             {"signal_id": "b", "r": -0.5, "closed_at": "2026-10-02T00:00:00+00:00"},
         ],
     )
-    out = dp.ringkas_dompet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
+    out = dp.summarize_wallet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
     assert out["tersedia"] is True
     unit = 10_000_000 / 17000
     assert abs(out["saldo_awal_unit"] - unit) < 0.01
@@ -66,7 +66,7 @@ def test_saldo_boleh_minus(tmp_path: Path):
         "idx_equity.jsonl",
         [{"signal_id": str(i), "r": -1.0, "closed_at": f"2026-10-0{i}T00:00:00+00:00"} for i in range(1, 6)],
     )
-    out = dp.ringkas_dompet(tmp_path, market="idx", kurs=17000.0, risk_pct=30.0, sumber="uji")
+    out = dp.summarize_wallet(tmp_path, market="idx", kurs=17000.0, risk_pct=30.0, sumber="uji")
     assert out["tersedia"] is True
     assert out["pnl_idr"] < 0
     assert out["pnl_pct"] < -100  # lebih rugi daripada modal → minus, dan itu ditampilkan
@@ -74,15 +74,15 @@ def test_saldo_boleh_minus(tmp_path: Path):
 
 def test_pnL_idr_mengikuti_kurs(tmp_path: Path):
     _ledger(tmp_path, "crypto_equity.jsonl", [{"signal_id": "a", "r": 2.0, "closed_at": "2026-10-01"}])
-    a = dp.ringkas_dompet(tmp_path, market="crypto", kurs=16000.0, sumber="uji")
-    b = dp.ringkas_dompet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
+    a = dp.summarize_wallet(tmp_path, market="crypto", kurs=16000.0, sumber="uji")
+    b = dp.summarize_wallet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
     # saldo unit berbeda (kurs), tapi PnL rupiah = r × 1% × 10jt → sama
     assert abs(a["pnl_idr"] - b["pnl_idr"]) < 1.0
 
 
 def test_biaya_tidak_tercatat_dinyatakan(tmp_path: Path):
     _ledger(tmp_path, "crypto_equity.jsonl", [{"signal_id": "a", "r": 1.0, "closed_at": "2026-10-01"}])
-    out = dp.ringkas_dompet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
+    out = dp.summarize_wallet(tmp_path, market="crypto", kurs=17000.0, sumber="uji")
     assert out["biaya_tercatat"] is False
     assert any("bruto" in c for c in out["catatan"])
 
@@ -109,7 +109,7 @@ def test_gmgn_mark_terakhir_bukan_penjumlahan(tmp_path: Path):
          "pnl_usd": -1.05, "ts": "2026-10-03T00:00:00+00:00"},
     ]
     _ledger(tmp_path, "lp_ledger.jsonl", baris)
-    out = dompet.ringkas_semua_dompet(tmp_path)["pasar"]["gmgn"]
+    out = dompet.summarize_all_wallets(tmp_path)["pasar"]["gmgn"]
     assert out["tersedia"] is True
     assert out["trade"] == 1, "tiga mark = SATU posisi"
     assert out["mark_baris"] == 3
