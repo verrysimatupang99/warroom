@@ -1205,13 +1205,13 @@ def handler_retensi(s: SASession, job: Job) -> str:
     Simpan `keep_versi` versi terbaru per (kind,key). Default TIDAK menghapus `events`
     (jejak audit) — operator bisa menyalakannya lewat payload hapus_events=true.
     """
-    from warroom_core import retensi
+    from warroom_core import retention
 
-    hasil = retensi.jalankan(
+    hasil = retention.jalankan(
         s,
-        keep_versi=int(job.payload_json.get("keep_versi", retensi.KEEP_VERSI_DEFAULT)),
-        events_hari=int(job.payload_json.get("events_hari", retensi.EVENTS_HARI_DEFAULT)),
-        llm_call_hari=int(job.payload_json.get("llm_call_hari", retensi.LLM_CALL_HARI_DEFAULT)),
+        keep_versi=int(job.payload_json.get("keep_versi", retention.KEEP_VERSI_DEFAULT)),
+        events_hari=int(job.payload_json.get("events_hari", retention.EVENTS_HARI_DEFAULT)),
+        llm_call_hari=int(job.payload_json.get("llm_call_hari", retention.LLM_CALL_HARI_DEFAULT)),
         hapus_events=bool(job.payload_json.get("hapus_events", False)),
         hapus_llm_calls=bool(job.payload_json.get("hapus_llm_calls", True)),
     )

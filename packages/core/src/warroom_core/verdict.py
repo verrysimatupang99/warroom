@@ -40,7 +40,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session as SASession
 
-from warroom_core.sinyal import PASAR, sinyal_terbaik_per_pasar
+from warroom_core.market_signal import PASAR, sinyal_terbaik_per_pasar
 
 __all__ = ["Verdict", "verdict_semua_pasar", "verdict_pasar"]
 

@@ -33,7 +33,7 @@ def _fakta(s, kind, key, value, ttl=3600):
 
 
 def _sinyal(pasar="polymarket", ada=True, terverifikasi=False, status_data="ada"):
-    from warroom_core.sinyal import SinyalPasar
+    from warroom_core.market_signal import SinyalPasar
 
     label = {"polymarket": "Polymarket (favorit 5m)", "crypto": "Crypto (SMC)"}.get(pasar, pasar)
     return SinyalPasar(

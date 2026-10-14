@@ -3,7 +3,7 @@
 KENAPA INI ADA
 --------------
 `SinyalPasar` adalah kontrak UI yang dipakai Home (satu sinyal terbaik per pasar).
-Bentuknya ditulis DUA kali: dataclass Python di `warroom_core.sinyal` dan interface
+Bentuknya ditulis DUA kali: dataclass Python di `warroom_core.market_signal` dan interface
 TypeScript di `apps/web/src/lib/api/types.ts`. Kalau salah satu menambah/menghapus
 field tanpa yang lain, TypeScript tetap kompilasi (field hilang jadi `undefined`
 saat runtime) dan UI menampilkan `—` tanpa sebab yang terlihat — kelas bug yang
@@ -18,7 +18,7 @@ import re
 from dataclasses import fields
 from pathlib import Path
 
-from warroom_core.sinyal import SinyalPasar
+from warroom_core.market_signal import SinyalPasar
 
 # packages/core/tests/ -> repo root -> apps/web/src/lib/api/types.ts
 _ROOT = Path(__file__).resolve().parents[3]
@@ -48,7 +48,7 @@ def test_field_sinyal_pasar_sama_di_backend_dan_frontend() -> None:
         "Kontrak SinyalPasar drift antara backend dan frontend.\n"
         f"  Hanya di Python : {sorted(py - ts)}\n"
         f"  Hanya di TS     : {sorted(ts - py)}\n"
-        "Perbarui packages/core/src/warroom_core/sinyal.py DAN "
+        "Perbarui packages/core/src/warroom_core/market_signal.py DAN "
         "apps/web/src/lib/api/types.ts bersamaan."
     )
 

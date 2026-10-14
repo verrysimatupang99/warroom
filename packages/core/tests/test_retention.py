@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import func, select
-from warroom_core import retensi
+from warroom_core import retention
 from warroom_core.db import Event, Fact, session_scope
 
 
@@ -41,7 +41,7 @@ def test_rencana_tidak_menghapus(db) -> None:
         for m in range(10):
             _fact(s, "uji", "kunci-a", m, float(m))
     with session_scope() as s:
-        r = retensi.rencana(s, keep_versi=3)
+        r = retention.rencana(s, keep_versi=3)
         assert r["facts"] == 7  # 10 versi - 3 yang disimpan
     with session_scope() as s:
         from sqlalchemy import func, select
@@ -54,7 +54,7 @@ def test_jalankan_menyimpan_versi_terbaru(db) -> None:
         for m in range(10):
             _fact(s, "uji", "kunci-a", m, float(m))  # menit_lalu menurun = makin baru
     with session_scope() as s:
-        hasil = retensi.jalankan(s, keep_versi=3, hapus_events=False)
+        hasil = retention.jalankan(s, keep_versi=3, hapus_events=False)
         assert hasil["dihapus"]["facts"] == 7
     with session_scope() as s:
         from sqlalchemy import select
@@ -72,7 +72,7 @@ def test_kunci_berbeda_dihitung_terpisah(db) -> None:
         for m in range(5):
             _fact(s, "uji", "kunci-b", m, float(100 + m))
     with session_scope() as s:
-        hasil = retensi.jalankan(s, keep_versi=2, hapus_events=False)
+        hasil = retention.jalankan(s, keep_versi=2, hapus_events=False)
         assert hasil["dihapus"]["facts"] == 6  # (5-2) × 2 kunci
     with session_scope() as s:
         from sqlalchemy import func, select
@@ -102,7 +102,7 @@ def test_fact_yang_dirujuk_event_TIDAK_dihapus(db) -> None:
         tertua_id = tertua.id
 
     with session_scope() as s:
-        retensi.jalankan(s, keep_versi=3, hapus_events=False)
+        retention.jalankan(s, keep_versi=3, hapus_events=False)
     with session_scope() as s:
         # fakta yang dirujuk masih ada walau versinya sudah tua
         assert s.get(Fact, tertua_id) is not None
@@ -127,14 +127,14 @@ def test_events_audit_tidak_dihapus_kecuali_diminta(db) -> None:
             )
         )
     with session_scope() as s:
-        retensi.jalankan(s, events_hari=30, hapus_events=False)
+        retention.jalankan(s, events_hari=30, hapus_events=False)
     with session_scope() as s:
         from sqlalchemy import func, select
 
         assert s.scalar(select(func.count()).select_from(Event).where(Event.type == "uji.lama")) == 1
 
     with session_scope() as s:
-        hasil = retensi.jalankan(s, events_hari=30, hapus_events=True)
+        hasil = retention.jalankan(s, events_hari=30, hapus_events=True)
         assert hasil["dihapus"]["events"] == 1
 
 
@@ -147,7 +147,7 @@ def test_alert_sudah_diack_tua_dibuang(db) -> None:
     from datetime import UTC, datetime, timedelta
 
     from warroom_core.db import Alert, session_scope
-    from warroom_core.retensi import jalankan, rencana
+    from warroom_core.retention import jalankan, rencana
 
     lama = datetime.now(UTC) - timedelta(days=40)
     with session_scope() as s:
@@ -168,7 +168,7 @@ def test_alert_belum_diack_selamanya_dipertahankan(db) -> None:
     from datetime import UTC, datetime, timedelta
 
     from warroom_core.db import Alert, session_scope
-    from warroom_core.retensi import rencana
+    from warroom_core.retention import rencana
 
     sangat_lama = datetime.now(UTC) - timedelta(days=365)
     with session_scope() as s:

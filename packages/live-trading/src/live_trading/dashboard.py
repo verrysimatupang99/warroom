@@ -696,7 +696,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         # Verifikasi silang LP vs API publik (jawaban "data kita vs internet live").
         # Berat (3 panggilan HTTP/pool) → hanya saat use_network, dan gagal = ditandai.
         if use_network:
-            from . import lp_verifikasi as _lpv
+            from . import lp_verification as _lpv
 
             try:
                 snap["lp_verifikasi"] = _lpv.pool_contoh()

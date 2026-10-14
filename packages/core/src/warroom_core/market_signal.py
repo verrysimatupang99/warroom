@@ -408,7 +408,7 @@ def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> SinyalPas
     # `terverifikasi` HANYA dari hasil verifikasi hash yang diteruskan pemanggil
     # (splits.verifikasi: id terdaftar DAN sha256 berkas cocok). Label "frozen:<id>"
     # saja tidak cukup — id terdaftar tapi berkas berubah = False. Default False
-    # (fail-closed); sinyal.py tidak query DB sendiri.
+    # (fail-closed); market_signal.py tidak query DB sendiri.
     terverifikasi = split is not None and split != "" and bool(split_terverifikasi)
     win = v.get("winRate")
     be = v.get("breakEven_pct")
