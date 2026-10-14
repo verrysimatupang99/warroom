@@ -22,18 +22,31 @@ from typing import Literal
 
 __all__ = [
     "DEFAULT_CI",
+    "DEFAULT_DEFF",
     "DEFAULT_MIN_N",
+    "GATE_DEFAULT_CI",
+    "GATE_DEFAULT_MIN_N",
+    "GATE_TOOL_CI",
     "GateInput",
     "GateResult",
     "PakemTingkat",
     "evaluate",
+    "kebijakan_dari_evidence",
     "required_n",
     "tingkat_pakem",
     "wilson_interval",
 ]
 
-DEFAULT_CI = 0.90
-DEFAULT_MIN_N = 30
+# Sumber tunggal default CI & deff (nilai efektif TETAP — hanya satukan sumber).
+# GATE_DEFAULT_CI: default gate platform (0,90). GATE_TOOL_CI: kebijakan alat Poly
+# (Wilson 95% + koreksi klaster) untuk fakta verdict-sync — bukan default gate.
+GATE_DEFAULT_CI = 0.90
+GATE_TOOL_CI = 0.95
+GATE_DEFAULT_MIN_N = 30
+DEFAULT_DEFF = 1.0
+# Alias kompatibilitas — pemanggil lama (DEFAULT_CI/DEFAULT_MIN_N) tetap jalan.
+DEFAULT_CI = GATE_DEFAULT_CI
+DEFAULT_MIN_N = GATE_DEFAULT_MIN_N
 
 Verdict = Literal["lolos", "gagal", "insufficient"]
 
@@ -83,7 +96,7 @@ def _z_for(ci: float) -> float:
     )
 
 
-def wilson_interval(win: int, n: int, ci: float = DEFAULT_CI) -> tuple[float, float]:
+def wilson_interval(win: int, n: int, ci: float = GATE_DEFAULT_CI) -> tuple[float, float]:
     """Interval Wilson dua sisi untuk proporsi ``win/n``.
 
     Dipakai (bukan Wald) karena benar di dekat 0/1 dan pada n kecil — persis rentang
@@ -121,9 +134,9 @@ def _lolos_at(n: int, p: float, be: float, ci: float, deff: float = 1.0) -> bool
 def required_n(
     be: float,
     win_rate: float,
-    ci: float = DEFAULT_CI,
+    ci: float = GATE_DEFAULT_CI,
     n_max: int = 200_000,
-    deff: float = 1.0,
+    deff: float = DEFAULT_DEFF,
 ) -> int | None:
     """Jumlah sampel terkecil agar ``ci_low > be`` pada win rate yang diamati.
 
@@ -163,16 +176,29 @@ class GateInput:
     n: int
     win: int
     be: float
-    ci: float = DEFAULT_CI
-    min_n: int = DEFAULT_MIN_N
+    ci: float = GATE_DEFAULT_CI
+    min_n: int = GATE_DEFAULT_MIN_N
     split: str | None = None
     # Koreksi klaster (design effect). Harus >= 1: nilai di bawah 1 akan mempersempit CI
     # (arah melonggarkan) dan ditolak. Nilai > 1 memperlebar CI — arah konservatif.
-    deff: float = 1.0
+    deff: float = DEFAULT_DEFF
     # Label sumber hasil. "eksplorasi" tidak boleh dipromosikan lewat gate ini.
     label: Literal["konfirmasi", "eksplorasi"] = "konfirmasi"
     subject: str = ""
     rule: str = ""
+
+
+def kebijakan_dari_evidence(evidence: dict | None) -> tuple[float, float]:
+    """Kebijakan (ci, deff) dari evidence — ci & deff SELALU berpasangan.
+
+    Aturan: ci default GATE_DEFAULT_CI; deff diteruskan apa adanya (default
+    DEFAULT_DEFF); deff < 1 TETAP DITOLAK oleh evaluate (arah melonggarkan).
+    Learner WAJIB memakai helper ini supaya tidak menimpa ci tanpa deff.
+    """
+    ev = evidence or {}
+    ci = float(ev.get("ci", GATE_DEFAULT_CI))
+    deff = float(ev.get("deff", DEFAULT_DEFF))
+    return ci, deff
 
 
 @dataclass(frozen=True)
@@ -188,8 +214,8 @@ class GateResult:
     policy_version: str = "gate/0.2.0"
     notes: list[str] = field(default_factory=list)
     # Kebijakan yang dipakai saat menilai — dikembalikan supaya UI bisa melabelinya.
-    ci: float = DEFAULT_CI
-    deff: float = 1.0
+    ci: float = GATE_DEFAULT_CI
+    deff: float = DEFAULT_DEFF
 
     @property
     def lolos(self) -> bool:

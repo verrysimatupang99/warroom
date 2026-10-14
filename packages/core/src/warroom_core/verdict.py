@@ -381,9 +381,17 @@ def _biaya_pasar(s: SASession, pasar: str) -> dict[str, Any]:
     }
 
 
-def verdict_semua_pasar(s: SASession) -> list[Verdict]:
-    """Verdict kanonik untuk semua pasar, urut sesuai PASAR."""
+def verdict_semua_pasar(
+    s: SASession, *, split_terverifikasi: bool = False
+) -> list[Verdict]:
+    """Verdict kanonik untuk semua pasar, urut sesuai PASAR.
+
+    `split_terverifikasi` = hasil verifikasi hash split (`splits.verifikasi`: id
+    terdaftar DAN sha256 berkas cocok) yang dihitung lapisan pemanggil (API/worker)
+    lalu diteruskan — verdict/sinyal tidak query splits sendiri (fail-closed: False).
+    """
     urutan = {k: i for i, (k, _l, _s) in enumerate(PASAR)}
-    keluar = [verdict_pasar(s, sp) for sp in sinyal_terbaik_per_pasar(s)]
+    keluar = [verdict_pasar(s, sp) for sp in sinyal_terbaik_per_pasar(
+        s, split_terverifikasi=split_terverifikasi)]
     keluar.sort(key=lambda v: urutan.get(v.pasar, 99))
     return keluar

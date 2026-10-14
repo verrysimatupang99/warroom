@@ -38,6 +38,8 @@ if [[ -d build ]]; then
 	cp -a build "$BACKUP_DIR/"
 	echo "backup build lama -> $BACKUP_DIR"
 fi
+# Retensi backup: simpan 10 terbaru agar disk tak penuh (prune 2026-10-13).
+find /home/admin/warroom/backups -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -r | tail -n +11 | xargs -r rm -rf
 
 # 2) Build. Skrip npm juga menulis build/build-id.txt + build-id.js (identitas build).
 npm run build

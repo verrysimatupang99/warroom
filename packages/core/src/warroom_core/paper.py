@@ -24,6 +24,8 @@ class PaperExecutor:
     """Paper-only executor; it has no venue client and cannot place orders."""
 
     def __init__(self, policy: RiskPolicy) -> None:
+        if policy is None:
+            raise ValueError("policy wajib eksplisit (config kosong ditolak)")
         self.policy = policy
         self.records: list[PaperRecord] = []
         self._seen: set[str] = set()

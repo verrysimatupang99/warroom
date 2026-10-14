@@ -24,7 +24,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 
 from warroom_core.db import Event, Parameter, Proposal
-from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
+from warroom_core.gate import (
+    GATE_DEFAULT_CI,
+    GATE_DEFAULT_MIN_N,
+    GateInput,
+    evaluate,
+    kebijakan_dari_evidence,
+)
 
 __all__ = [
     "GATE_TERLARANG",
@@ -69,8 +75,8 @@ SEED: tuple[Seed, ...] = (
     Seed("risk.sizeUsd", 5.0, (1.0, 10.0), "paper", False, "ukuran per entry (USD)"),
     Seed("risk.maxOpen", 1, (1, 4), "paper", False, "posisi terbuka bersamaan"),
     Seed("mode", "paper", None, "live", True, "mode eksekusi — hanya owner"),
-    Seed("gate.min_n", DEFAULT_MIN_N, None, "live", True, "ambang gate — hanya manusia"),
-    Seed("gate.ci", DEFAULT_CI, None, "live", True, "tingkat kepercayaan gate — hanya manusia"),
+    Seed("gate.min_n", GATE_DEFAULT_MIN_N, None, "live", True, "ambang gate — hanya manusia"),
+    Seed("gate.ci", GATE_DEFAULT_CI, None, "live", True, "tingkat kepercayaan gate — hanya manusia"),
     Seed("ai.kill_switch", False, None, "platform", False, "true = semua peran tulis AI berhenti"),
 )
 
@@ -155,12 +161,14 @@ def putuskan_usulan(
         # "frozen:<id>" hanya bermakna bila id itu terdaftar. Kalau tidak terdaftar, buang
         # labelnya supaya gate menolak — bukan meloloskan split yang dikarang (ADR-003).
         split_ev = _sanitasi_split(s, evidence)
+        ci_ev, deff_ev = kebijakan_dari_evidence(evidence)
         g = evaluate(
             GateInput(
                 n=int(evidence["n"]),
                 win=int(evidence["win"]),
                 be=float(evidence["be"]),
-                ci=float(evidence.get("ci", DEFAULT_CI)),
+                ci=ci_ev,
+                deff=deff_ev,
                 split=split_ev,
                 label=evidence.get("label", "konfirmasi"),
             )
@@ -199,12 +207,14 @@ def usulkan(
     verdict_gate = ""
     if evidence and all(k in evidence for k in ("n", "win", "be")):
         split_ev = _sanitasi_split(s, evidence)
+        ci_ev, deff_ev = kebijakan_dari_evidence(evidence)
         verdict_gate = evaluate(
             GateInput(
                 n=int(evidence["n"]),
                 win=int(evidence["win"]),
                 be=float(evidence["be"]),
-                ci=float(evidence.get("ci", DEFAULT_CI)),
+                ci=ci_ev,
+                deff=deff_ev,
                 split=split_ev,
                 label=evidence.get("label", "konfirmasi"),
             )

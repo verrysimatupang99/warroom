@@ -70,6 +70,30 @@ def test_polymarket_klaim_tanpa_split_tidak_terverifikasi(db) -> None:
 
 
 def test_polymarket_dengan_split_terverifikasi(db) -> None:
+    """Split yang LOLOS verifikasi hash (id terdaftar + sha256 cocok) = terverifikasi.
+
+    Hasil verifikasi dihitung lapisan pemanggil (splits.verifikasi) lalu diteruskan
+    sebagai parameter — sinyal.py tidak query DB sendiri.
+    """
+    with session_scope() as s:
+        _fakta(s, "poly.verdict", "verdict", {
+            "winRate": 80.0, "breakEven_pct": 76.66, "verdict_alat": "EDGE",
+            "split": "frozen:poly-paired-abc", "rule": "favorit btc/eth",
+        })
+    with session_scope() as s:
+        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s, split_terverifikasi=True)}
+    p = rows["polymarket"]
+    assert p.terverifikasi is True
+    assert "frozen:poly-paired-abc" in p.catatan_kejujuran
+    assert p.tier == "EDGE"
+    assert p.arah == "BELI"
+
+
+def test_polymarket_split_mentah_tanpa_verifikasi_tetap_eksplorasi(db) -> None:
+    """Label split saja TIDAK cukup: tanpa hasil verifikasi hash, tetap eksplorasi.
+
+    Regresi inti — `bool(split)` mentah tidak boleh lagi meloloskan `terverifikasi`.
+    """
     with session_scope() as s:
         _fakta(s, "poly.verdict", "verdict", {
             "winRate": 80.0, "breakEven_pct": 76.66, "verdict_alat": "EDGE",
@@ -78,8 +102,49 @@ def test_polymarket_dengan_split_terverifikasi(db) -> None:
     with session_scope() as s:
         rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
     p = rows["polymarket"]
-    assert p.terverifikasi is True
-    assert "frozen:poly-paired-abc" in p.catatan_kejujuran
+    assert p.terverifikasi is False
+    assert p.tier == "EKSPLORASI"
+    assert p.arah == "TAHAN"
+    assert "BELUM TERVERIFIKASI" in p.catatan_kejujuran
+
+
+def test_polymarket_hash_berbeda_tidak_terverifikasi(db, tmp_path) -> None:
+    """Split id TERDAFTAR tapi berkas berubah (sha256 beda) → terverifikasi False.
+
+    Simulasi ujung-ke-ujung seperti lapisan pemanggil: bekukan dataset sungguhan,
+    ubah berkasnya, hitung splits.verifikasi, teruskan hasilnya ke sinyal.
+    """
+    import gzip
+    import json
+
+    from warroom_core import splits
+
+    d = tmp_path / "auto-uji-hash"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "manifest.json").write_text(json.dumps({"codeHashes": {"recorder": "abc"}}),
+                                      encoding="utf-8")
+    with gzip.open(d / "events-0000.jsonl.gz", "wt", encoding="utf-8") as fh:
+        fh.write(json.dumps({"kind": "decision", "side": "Up", "token": "1"}) + "\n")
+        fh.write(json.dumps({"kind": "resolution", "outcome": "won", "token": "1"}) + "\n")
+    with session_scope() as s:
+        hasil = splits.bekukan(s, dataset="paired", root=d, created_by="uji")
+    # berkas berubah SETELAH dibekukan → hash tidak cocok lagi
+    with gzip.open(d / "events-0000.jsonl.gz", "at", encoding="utf-8") as fh:
+        fh.write(json.dumps({"kind": "resolution", "outcome": "won", "token": "2"}) + "\n")
+    with session_scope() as s:
+        cocok = splits.verifikasi(s, hasil["id"])["cocok"]
+    assert cocok is False, "pra-kondisi: verifikasi hash harus gagal setelah berkas diubah"
+    with session_scope() as s:
+        _fakta(s, "poly.verdict", "verdict", {
+            "winRate": 80.0, "breakEven_pct": 76.66, "verdict_alat": "EDGE",
+            "split": hasil["split"], "rule": "favorit btc/eth",
+        })
+    with session_scope() as s:
+        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s, split_terverifikasi=cocok)}
+    p = rows["polymarket"]
+    assert p.terverifikasi is False
+    assert p.tier == "EKSPLORASI", "hash beda = belum terverifikasi, label EDGE dilarang"
+    assert p.arah == "TAHAN"
 
 
 def test_lp_sorot_yang_harus_keluar(db) -> None:

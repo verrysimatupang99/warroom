@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core import autonomy
 from warroom_core.db import Alert, Event, Fact, Heartbeat, Job, Service
+from warroom_core.gate import DEFAULT_DEFF, GATE_DEFAULT_MIN_N, GATE_TOOL_CI
 from warroom_notifier.dispatch import kirim_tertunda
 
 from warroom_worker import schedule
@@ -376,9 +377,10 @@ def handler_verdict_sync(s: SASession, job: Job) -> str:
         "n": d.get("n"),
         "win": d.get("wins"),
         "be": (float(d.get("breakEven") or 0.0)) / 100.0,
-        "ci": 0.95,
-        "deff": d.get("deff") or 1.0,
-        "min_n": 30,
+        # Kebijakan alat Poly (Wilson 95% + koreksi klaster) — sumber tunggal di gate core.
+        "ci": GATE_TOOL_CI,
+        "deff": d.get("deff") or DEFAULT_DEFF,
+        "min_n": GATE_DEFAULT_MIN_N,
         "split": None,
         "rule": "favorit btc/eth (band 0,70–0,95)",
         # Untuk tampilan + audit — nilai mentah alat, bukan hitungan ulang.

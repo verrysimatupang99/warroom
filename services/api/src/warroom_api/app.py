@@ -50,6 +50,33 @@ def _kunci_klien(request: Request) -> str:
     return "lokal"
 
 
+def _split_poly_terverifikasi(s: Any) -> bool:
+    """Hasil verifikasi hash split pada fakta `poly.verdict` (True = lolos hash).
+
+    Lapisan API yang punya sesi DB menghitung ini via `splits.verifikasi` (id
+    terdaftar DAN sha256 berkas cocok) lalu meneruskannya ke `sinyal`/`verdict`
+    sebagai parameter — modul murni itu tidak query splits sendiri. Gagal baca /
+    tidak ada split / tidak cocok → False (fail-closed).
+    """
+    try:
+        from warroom_core import splits as _splits
+
+        row = s.scalars(
+            select(Fact)
+            .where(Fact.kind == "poly.verdict", Fact.key == "verdict")
+            .order_by(Fact.observed_at.desc())
+            .limit(1)
+        ).first()
+        nilai = row.value_json if row is not None else None
+        split = nilai.get("split") if isinstance(nilai, dict) else None
+        if not split:
+            return False
+        if _splits.split_untuk_gate(s, str(split)) is None:
+            return False
+        return bool(_splits.verifikasi(s, str(split)).get("cocok"))
+    except Exception:
+        return False
+
 # --- skema permintaan/balasan ----------------------------------------------------------
 
 
@@ -408,8 +435,11 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/gate/evaluate")
     def gate_evaluate(body: GateBody, user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        # "frozen:<id>" hanya label sampai id-nya dicek. Tanpa ini, siapa pun bisa menulis
-        # split beku SETELAH melihat hasil — gate jadi upacara tanpa isi (ADR-003, P1).
+        # "frozen:<id>" hanya label sampai isi berkasnya dicek (sha256 via
+        # splits.verifikasi: id terdaftar DAN berkas cocok). Id terdaftar tapi
+        # berkas berubah/hilang = 422 — bukan lolos. Tanpa ini, siapa pun bisa
+        # memakai split basi SETELAH melihat hasil — gate jadi upacara tanpa isi
+        # (ADR-003, P1; diperketat verifikasi hash 12 Okt).
         if body.split and body.split.startswith("frozen:"):
             from warroom_core import splits as _splits
 
@@ -424,6 +454,22 @@ def create_app() -> FastAPI:
                                 "via POST /api/v1/datasets/freeze, jangan mengarang id"
                             ),
                             "split": body.split,
+                        },
+                    )
+                hasil_verifikasi = _splits.verifikasi(s, body.split)
+                if not hasil_verifikasi.get("cocok"):
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "code": "split_tidak_cocok",
+                            "message": (
+                                "split beku tidak cocok dengan yang dibekukan "
+                                "(berkas berubah/hilang sejak dibekukan) — bekukan ulang "
+                                "via POST /api/v1/datasets/freeze"
+                            ),
+                            "split": body.split,
+                            "berubah": hasil_verifikasi.get("berubah"),
+                            "hilang": hasil_verifikasi.get("hilang"),
                         },
                     )
         r = evaluate(
@@ -478,8 +524,9 @@ def create_app() -> FastAPI:
         from warroom_core.sinyal import sinyal_per_pasar, sinyal_terbaik_per_pasar
 
         with session_scope() as s:
-            daftar = sinyal_per_pasar(s, maks=maks)
-            rows = sinyal_terbaik_per_pasar(s)
+            terverifikasi = _split_poly_terverifikasi(s)
+            daftar = sinyal_per_pasar(s, maks=maks, split_terverifikasi=terverifikasi)
+            rows = sinyal_terbaik_per_pasar(s, split_terverifikasi=terverifikasi)
         return {
             "sinyal": [r.to_dict() for r in rows],          # bentuk lama (kompatibel)
             "pasar": [d.to_dict() for d in daftar],          # bentuk baru (Home)
@@ -498,7 +545,7 @@ def create_app() -> FastAPI:
         from warroom_core.verdict import verdict_semua_pasar
 
         with session_scope() as s:
-            rows = verdict_semua_pasar(s)
+            rows = verdict_semua_pasar(s, split_terverifikasi=_split_poly_terverifikasi(s))
         return {
             "verdict": [v.to_dict() for v in rows],
             "dibuat": datetime.now(UTC).isoformat(),
