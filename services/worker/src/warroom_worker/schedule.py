@@ -183,7 +183,7 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="narasi narrator Polymarket dari akurasi per arm (win-rate entri, fees dibebankan).",
     ),
     JobSpec(
-        name="rekonsiliasi-crypto",
+        name="reconcile-crypto",
         interval_s=3600,
         enabled=True,
         # Tiap jam: menutup posisi menggantung yang tertinggal dari `watchlist-sync`
@@ -286,7 +286,7 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
-        name="retensi",
+        name="retention",
         interval_s=86400,
         enabled=True,
         # Simpan 3 versi terbaru per kunci. `events` (jejak audit) TIDAK dihapus secara
