@@ -26,20 +26,20 @@ Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
 
 ```bash
 # layanan
-systemctl status warroom-api warroom-worker warroom-web caddy
+systemctl status warroom-api warroom-worker warroom-web nginx
 journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # suite penuh: 761 tes (audit 8 Okt 2026)
-cd apps/web && npm run test                            # 9 berkas, 35 vitest
-npx playwright test                                    # 27 e2e (butuh web+caddy hidup + e2e.env)
+uv run ruff check . && uv run pytest -q                # suite penuh: 815 tes (audit ulang 14 Okt 2026)
+cd apps/web && npm run test                            # 9 berkas, 36 vitest
+npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
-# domain (dari ~/live-trading)
-uv run ruff check . && uv run pytest                   # 219 tes domain
+# domain (anggota workspace: packages/live-trading/)
+uv run pytest packages/live-trading -q                 # tes domain, dijalankan dari root repo
 ```
 
-Angka di atas = kondisi per 8 Okt 2026 (`docs/overnight-production-readiness-audit-2026-10-08.md`).
+Angka di atas = kondisi per 14 Okt 2026 (diverifikasi ulang lewat `ruff`/`pytest`/`npm run test`).
 Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
 Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
 
