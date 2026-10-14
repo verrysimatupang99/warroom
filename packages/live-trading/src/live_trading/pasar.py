@@ -68,14 +68,19 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
         },
     ],
     "idx": [
-        {"nama": "ARA Hunter", "status": "aktif", "sumber": "ledger idx616 (grader v3)"},
+        # Status IDX dikoreksi 14 Okt dari BUKTI ledger (bukan dari kenyamanan tampilan):
+        #   BSJP_STRONG +20,51R (n=26) & BSJP_ARA +6,84R (n=19) -> aktif
+        #   ARA_HUNTER -139,08R (n=198) -> dihentikan (menghabiskan dompet)
+        #   INTRADAY -0,38R (n=35)      -> dihentikan (praktis datar)
+        # Seleksi mengikuti live_trading.strategi_terpilih (poin 3 & 4).
+        {"nama": "ARA Hunter", "status": "dihentikan", "sumber": "ledger idx616 (grader v3): -139,08R"},
         {
             "nama": "BSJP (Beli Sore Jual Pagi)",
             "status": "aktif",
-            "sumber": "walk-forward Tencent + peringkat lokal",
+            "sumber": "walk-forward Tencent + peringkat lokal (+20,51R BSJP_STRONG)",
         },
-        {"nama": "Scalping INTRADAY", "status": "aktif", "sumber": "ledger idx616 (grader v3)"},
-        {"nama": "Bandarmologi (broker summary, ATS)", "status": "aktif", "sumber": "Arjum + screener lokal"},
+        {"nama": "Scalping INTRADAY", "status": "dihentikan", "sumber": "ledger idx616 (grader v3): -0,38R"},
+        {"nama": "Bandarmologi (broker summary, ATS)", "status": "paper", "sumber": "Arjum + screener lokal"},
     ],
     "forex": [
         {
