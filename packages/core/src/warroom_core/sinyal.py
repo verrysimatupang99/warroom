@@ -153,7 +153,15 @@ def _format_harga_ringkas(n: float | int | None) -> str:
 
 
 def _confluence_crypto(
-    *, pair: str | None, arah: str | None, entry: Any, sl: Any, tp1: Any, skor: int | None, tier: str | None, rules_gagal: list[Any]
+    *,
+    pair: str | None,
+    arah: str | None,
+    entry: Any,
+    sl: Any,
+    tp1: Any,
+    skor: int | None,
+    tier: str | None,
+    rules_gagal: list[Any],
 ) -> tuple[list[str], dict[str, str], str, str]:
     num_e = float(entry) if isinstance(entry, (int, float)) and entry > 0 else None
     num_sl = float(sl) if isinstance(sl, (int, float)) and sl > 0 else None
@@ -205,7 +213,10 @@ def _confluence_gmgn(
     }
     if vl >= 3.0 and viable >= 5:
         verdict = "OKE"
-        alasan = "Likuiditas sangat aktif & viable pool mencukupi (V/L >= 3x & >= 5 pool); layak autotrade/snipe."
+        alasan = (
+            "Likuiditas sangat aktif & viable pool mencukupi "
+            "(V/L >= 3x & >= 5 pool); layak autotrade/snipe."
+        )
     elif viable > 0:
         verdict = "PANTAU"
         alasan = "Likuiditas terdeteksi; pantau momentum volume & audit rugcheck sebelum eksekusi."
@@ -253,18 +264,25 @@ def _confluence_polymarket(
     num_win = float(winRate) if isinstance(winRate, (int, float)) else None
     num_be = float(breakEven) if isinstance(breakEven, (int, float)) else None
 
-    win_str = f"{num_win:.1f}%" if num_win is not None else "Favorit"
-    edge_str = f"+{num_win - num_be:.2f}%" if num_win and num_be else "Positif"
+    # Falsy-zero dilarang: 0 adalah angka valid (0% win-rate, n=0), hanya None yang
+    # berarti "tak ada data" → tampilkan n/a + alasan, bukan angka karangan.
+    win_str = f"{num_win:.1f}%" if num_win is not None else "n/a (belum ada win-rate)"
+    if num_win is not None and num_be is not None:
+        edge_str = f"+{num_win - num_be:.2f}%"
+    else:
+        edge_str = "n/a (butuh win-rate + break-even)"
+    n_str = str(n) if n is not None else "n/a"
+    need_str = str(need) if need is not None else "n/a"
 
     confluence = [
         f"📊 Implied Prob: Win-rate {win_str} (rentang 0.70–0.95)",
         f"🎯 Margin Edge: {edge_str} di atas break-even",
-        f"⏱️ Sampel Uji: n={n or '—'} trade terevaluasi",
+        f"⏱️ Sampel Uji: n={n_str} trade terevaluasi",
     ]
     metrics = {
-        "Win-Rate": f"{num_win:.1f}%" if num_win is not None else "—",
-        "Break-Even": f"{num_be:.1f}%" if num_be is not None else "—",
-        "Sampel": f"{n}/{need}" if n and need else str(n or "—"),
+        "Win-Rate": f"{num_win:.1f}%" if num_win is not None else "n/a",
+        "Break-Even": f"{num_be:.1f}%" if num_be is not None else "n/a",
+        "Sampel": f"{n_str}/{need_str}" if n is not None or need is not None else "n/a",
         "Status Edge": "Terverifikasi" if terverifikasi else "Eksplorasi",
     }
     rule_str = (rule or "").lower()
@@ -274,7 +292,11 @@ def _confluence_polymarket(
     elif terverifikasi:
         verdict = "OKE"
         alasan = "Edge terverifikasi secara statistik dengan split beku (ADR-003)."
-    elif ("favorit" in rule_str or "favorite" in rule_str or "arm d" in rule_str) and num_win and num_win >= 75.0:
+    elif (
+        ("favorit" in rule_str or "favorite" in rule_str or "arm d" in rule_str)
+        and num_win is not None
+        and num_win >= 75.0
+    ):
         verdict = "PANTAU"
         alasan = "Arm D Favorit berkinerja profitabel (WR >= 75%); lanjutkan pengumpulan sampel split beku."
     else:
@@ -361,8 +383,9 @@ def _crypto(s: SASession) -> SinyalPasar:
         ),
         terverifikasi=False,
         catatan_kejujuran=(
-            "Skor = aturan yang lolos, BUKAN edge terbukti. Sampel layak-dagang masih 47 "
-            "peluang (win-rate 14,8%, di bawah break-even) — belum cukup untuk promosi."
+            "Skor = aturan yang lolos, BUKAN edge terbukti. "
+            f"{len(kandidat)} peluang terpindai; win-rate layak-dagang n/a "
+            "(belum ada evaluasi hasil posisi paper) — belum cukup untuk promosi."
         ),
         umur_s=_umur(observed), sumber_fakta="snapshot/kandidat",
         dibuat_pada=_waktu_kandidat(terbaru) if terbaru else None,
@@ -373,7 +396,7 @@ def _crypto(s: SASession) -> SinyalPasar:
     )
 
 
-def _polymarket(s: SASession) -> SinyalPasar:
+def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> SinyalPasar:
     v, observed = _ambil(s, "poly.verdict", "verdict")
     if not isinstance(v, dict):
         return SinyalPasar(
@@ -382,7 +405,11 @@ def _polymarket(s: SASession) -> SinyalPasar:
             alasan="Belum ada verdict.", catatan_kejujuran="Verdict dihitung tiap jam.",
         )
     split = v.get("split")
-    terverifikasi = bool(split)
+    # `terverifikasi` HANYA dari hasil verifikasi hash yang diteruskan pemanggil
+    # (splits.verifikasi: id terdaftar DAN sha256 berkas cocok). Label "frozen:<id>"
+    # saja tidak cukup — id terdaftar tapi berkas berubah = False. Default False
+    # (fail-closed); sinyal.py tidak query DB sendiri.
+    terverifikasi = split is not None and split != "" and bool(split_terverifikasi)
     win = v.get("winRate")
     be = v.get("breakEven_pct")
     # KONTRADIKSI YANG DIPERBAIKI (audit QA putaran 2, 7 Okt): `verdict_alat` dari sumber
@@ -400,6 +427,19 @@ def _polymarket(s: SASession) -> SinyalPasar:
         terverifikasi=terverifikasi,
         rule=str(v.get("rule") or ""),
     )
+    if terverifikasi:
+        catatan = f"Split beku terverifikasi: {split}"
+    elif split:
+        catatan = (
+            f"BELUM TERVERIFIKASI: split {split} belum lolos verifikasi hash "
+            "(id tak terdaftar atau berkas berubah sejak dibekukan) — klaim eksplorasi, "
+            "bukan edge yang lolos gate."
+        )
+    else:
+        catatan = (
+            "BELUM TERVERIFIKASI: split masih kosong — belum lewat split beku, jadi ini "
+            "klaim eksplorasi, bukan edge yang lolos gate."
+        )
     return SinyalPasar(
         pasar="polymarket", label="Polymarket (favorit 5m)", ada=True,
         arah="BELI" if alat == "EDGE" else "TAHAN",
@@ -407,16 +447,12 @@ def _polymarket(s: SASession) -> SinyalPasar:
         skor=round(float(win)) if isinstance(win, (int, float)) else None,
         tier=alat,
         alasan=(
-            f"win-rate {win}% vs break-even {be}% "
-            f"(CI95 {v.get('ci95')}); butuh n≈{v.get('nNeeded')}"
+            f"win-rate {'n/a (belum ada win-rate)' if win is None else f'{win}%'} "
+            f"vs break-even {'n/a' if be is None else f'{be}%'} "
+            f"(CI95 {v.get('ci95')}); butuh n≈{v.get('nNeeded') if v.get('nNeeded') is not None else 'n/a'}"
         ),
         terverifikasi=terverifikasi,
-        catatan_kejujuran=(
-            "BELUM TERVERIFIKASI: split masih kosong — belum lewat split beku, jadi ini "
-            "klaim eksplorasi, bukan edge yang lolos gate."
-            if not terverifikasi else
-            f"Split beku: {split}"
-        ),
+        catatan_kejujuran=catatan,
         umur_s=_umur(observed), sumber_fakta="poly.verdict/verdict",
         dibuat_pada=observed.isoformat() if observed else None,
         umur_sinyal_s=_umur(observed),
@@ -778,7 +814,9 @@ def _verdict_terakhir(s: SASession) -> str | None:
     return str((f.value_json[-1] or {}).get("ts") or "") or None
 
 
-def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
+def sinyal_per_pasar(
+    s: SASession, *, maks: int = 3, split_terverifikasi: bool = False
+) -> list[DaftarSinyal]:
     """Untuk tiap pasar: daftar sinyal (maks `maks` ditampilkan) + status jujur.
 
     Home hanya butuh 3 terbaik per pasar + tautan ke halaman pasar — bukan seluruh
@@ -792,7 +830,7 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
 
     # Pasar lain: pakai sinyal terbaik (bentuk lama) sebagai satu kartu, plus penanda
     # "kosong/gagal" yang sama tegasnya.
-    for sp in sinyal_terbaik_per_pasar(s):
+    for sp in sinyal_terbaik_per_pasar(s, split_terverifikasi=split_terverifikasi):
         if sp.pasar == "crypto":
             continue
         sumber_pasar = {
@@ -857,12 +895,12 @@ def sinyal_per_pasar(s: SASession, *, maks: int = 3) -> list[DaftarSinyal]:
     return keluar
 
 
-def sinyal_terbaik_per_pasar(s: SASession) -> list[SinyalPasar]:
+def sinyal_terbaik_per_pasar(s: SASession, *, split_terverifikasi: bool = False) -> list[SinyalPasar]:
     """Satu sinyal terbaik per pasar, urut sesuai PASAR. Selalu mengembalikan semua pasar
     (yang kosong pun), supaya UI tidak perlu tahu pasar mana yang kebetulan ada."""
     keluar: list[SinyalPasar] = [
         _crypto(s),
-        _polymarket(s),
+        _polymarket(s, split_terverifikasi=split_terverifikasi),
         _gmgn(s),
         _lp(s),
         _idx(s),

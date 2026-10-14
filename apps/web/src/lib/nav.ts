@@ -178,7 +178,11 @@ export const PENGALIHAN: Record<string, string> = {
 	'/bukti': '/riset?sub=bukti'
 };
 
-/** Bottom tab mobile: 5 utama */
+/** Bottom tab mobile: 5 slot penuh + menu "Lainnya" (BottomNav).
+ *  Riset & Info TIDAK masuk slot — dijangkau lewat "Lainnya" bersama Forex & GMGN
+ *  (10 Okt 2026). Alasan: 7–9 sel selebar jempol berdesakan di 360px; 5 primer +
+ *  overflow satu ketuk menjaga target sentuh & keterbacaan label. NavBar desktop
+ *  tetap menampilkan kesembilan area tanpa overflow. */
 export const TAB_MOBILE = ['/', '/crypto', '/polymarket', '/idx', '/sistem'];
 
 export function areaDariJalur(jalur: string): Area | null {

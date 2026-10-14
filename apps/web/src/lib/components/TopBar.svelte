@@ -10,7 +10,8 @@
 	//   - Aksen tunggal: mint. Status buruk = merah, perhatian = kuning.
 	import { jamWIB, umurDetik } from '$lib/format';
 	import { live } from '$lib/api/live.svelte';
-	import { getAlerts, getKesegaran } from '$lib/api/client';
+	import { getAlerts, getKesegaran, getLiveArming } from '$lib/api/client';
+	import type { LiveArming } from '$lib/api/types';
 
 	let jam = $state(jamWIB());
 	$effect(() => {
@@ -19,6 +20,9 @@
 	});
 
 	let total = $state<number | null>(null);
+	/** Mode eksekusi dari API (`/api/v1/live/arming`) — SATU-SATUNYA sumber badge mode.
+	 *  null = belum tahu/gagal fetch → badge disembunyikan (jujur, bukan dikarang). */
+	let arming = $state<LiveArming | null>(null);
 	/** Fakta basi + sebabnya — QA putaran 2: "status basi perlu dijelaskan dengan
 	 *  sumber dan timestamp yang lebih langsung", bukan hanya jumlah di header. */
 	let basiDaftar = $state<{ kind: string; key: string; umur_s: number | null; ttl_s: number | null; sumber: string }[]>([]);
@@ -27,7 +31,7 @@
 	let alert = $state<number | null>(null);
 
 	async function muat() {
-		const [k, a] = await Promise.allSettled([getKesegaran(), getAlerts()]);
+		const [k, a, m] = await Promise.allSettled([getKesegaran(), getAlerts(), getLiveArming()]);
 		if (k.status === 'fulfilled') {
 			total = k.value.count;
 			const b = k.value.facts.filter((x) => x.status === 'basi');
@@ -41,6 +45,7 @@
 			}));
 		}
 		if (a.status === 'fulfilled') alert = a.value.terbuka;
+		if (m.status === 'fulfilled') arming = m.value;
 	}
 	$effect(() => {
 		void muat();
@@ -58,7 +63,9 @@
 <header class="topbar" data-testid="topbar">
 	<div class="kiri">
 		<span class="merek">War<span>Room</span></span>
-		<span class="mode">PAPER</span>
+		{#if arming !== null}
+			<span class="mode" title={arming.detail}>{arming.armed ? 'LIVE' : 'PAPER'}</span>
+		{/if}
 	</div>
 
 	<div class="kanan">

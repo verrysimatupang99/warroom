@@ -83,13 +83,13 @@
 	});
 	const anak = $derived(area?.anak.find((a) => a.slug === sub) ?? area?.anak[0] ?? null);
 
-	function pilihSub(s: string) {
-		if (typeof window !== 'undefined') {
-			// replaceState:false supaya Back/Forward peramban menelusuri tab (dulu true,
-			// sehingga riwayat tab tidak terbentuk dan Back melompat keluar area).
-			void goto(`?sub=${s}`, { keepFocus: true, noScroll: true });
-		}
+function pilihSub(s: string) {
+	if (typeof window !== 'undefined') {
+		// replaceState:true — disamakan dengan rute sistem & riset (10 Okt 2026):
+		// ganti tab tak menumpuk riwayat; Back selalu keluar area, seragam di semua halaman.
+		void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
 	}
+}
 
 	const topikArea: Record<string, string[]> = {
 		crypto: ['signal.', 'verdict.', 'trade.', 'gate.', 'llm.'],

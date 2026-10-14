@@ -61,20 +61,49 @@ class MarketData:
 
 @dataclass(frozen=True, slots=True)
 class RiskPolicy:
+    """Batas risiko konservatif untuk gate paper.
+
+    Alasan nilai default (relatif terhadap ``risk_usd=50``):
+    - ``max_position_usd=50`` (1x risiko): satu posisi tak boleh melebihi
+      risiko satu trade — book paper default datar, tanpa scaling.
+    - ``max_open_exposure_usd=200`` (4x risiko): maksimal ~4 posisi
+      full-risk yang terbuka bersamaan.
+    - ``max_daily_loss_usd=150`` (3x risiko): rem harian setelah kira-kira
+      tiga kali loss penuh.
+    - ``max_correlated_exposure_usd=100`` (2x risiko): keranjang berkorelasi
+      dibatasi lebih ketat daripada total eksposur terbuka.
+
+    ``None`` tidak lagi diterima: batas ``None`` dulu berarti "tanpa batas"
+    (unlimited) dan itu berbahaya — konfigurasi kosong/lolos-diam-diam harus
+    gagal eksplisit di konstruksi, bukan di evaluasi.
+    """
     max_age_s: float = 120.0
     max_spread_bps: float = 50.0
     min_liquidity_usd: float = 0.0
     risk_usd: float = 50.0
     kill_switch: bool = False
-    max_daily_loss_usd: float | None = None
+    max_daily_loss_usd: float = 150.0
     daily_loss_usd: float = 0.0
-    max_open_exposure_usd: float | None = None
+    max_open_exposure_usd: float = 200.0
     open_exposure_usd: float = 0.0
-    max_correlated_exposure_usd: float | None = None
+    max_correlated_exposure_usd: float = 100.0
     correlated_exposure_usd: float = 0.0
-    max_position_usd: float | None = None
+    max_position_usd: float = 50.0
     fee_bps: float = 5.0
     slippage_bps: float = 5.0
+    def __post_init__(self) -> None:
+        for name in (
+            "risk_usd",
+            "max_daily_loss_usd",
+            "max_open_exposure_usd",
+            "max_correlated_exposure_usd",
+            "max_position_usd",
+        ):
+            value = getattr(self, name)
+            if value is None:
+                raise ValueError(f"{name} wajib eksplisit (None berarti unlimited — ditolak)")
+            if value <= 0:
+                raise ValueError(f"{name} harus > 0, dapat {value!r}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,10 +124,7 @@ def evaluate_risk(
     t = now or datetime.now(UTC)
     if policy.kill_switch:
         return Decision(False, "kill_switch")
-    if (
-        policy.max_daily_loss_usd is not None
-        and policy.daily_loss_usd >= policy.max_daily_loss_usd
-    ):
+    if policy.daily_loss_usd >= policy.max_daily_loss_usd:
         return Decision(False, "daily_loss_limit")
     if signal.mode != "paper":
         return Decision(False, "live_mode_blocked")
@@ -112,16 +138,10 @@ def evaluate_risk(
         return Decision(False, "spread_too_wide")
     if data.liquidity_usd is not None and data.liquidity_usd < policy.min_liquidity_usd:
         return Decision(False, "liquidity_too_low")
-    if (
-        policy.max_open_exposure_usd is not None
-        and policy.open_exposure_usd + policy.risk_usd > policy.max_open_exposure_usd
-    ):
+    if policy.open_exposure_usd + policy.risk_usd > policy.max_open_exposure_usd:
         return Decision(False, "open_exposure_limit")
-    if (
-        policy.max_correlated_exposure_usd is not None
-        and policy.correlated_exposure_usd + policy.risk_usd > policy.max_correlated_exposure_usd
-    ):
+    if policy.correlated_exposure_usd + policy.risk_usd > policy.max_correlated_exposure_usd:
         return Decision(False, "correlated_exposure_limit")
-    if policy.max_position_usd is not None and policy.risk_usd > policy.max_position_usd:
+    if policy.risk_usd > policy.max_position_usd:
         return Decision(False, "position_size_limit")
     return Decision(True, "allowed", policy.risk_usd)

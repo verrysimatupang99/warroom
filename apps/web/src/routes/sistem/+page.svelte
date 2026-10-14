@@ -35,22 +35,24 @@
 	import EventFeed from '$lib/components/EventFeed.svelte';
 	import ProposalCard from '$lib/components/ProposalCard.svelte';
 
-	const area = AREAS.find((a) => a.kunci === 'sistem')!;
-	let sub = $state(page.url.searchParams.get('sub') ?? 'layanan');
+const area = AREAS.find((a) => a.kunci === 'sistem')!;
+// URL = satu-satunya sumber kebenaran (SSOT), sama seperti AreaView & riset
+// (10 Okt 2026). Dulu `sub` disimpan sebagai $state dengan efek sinkron satu arah
+// tanpa cabang else, sehingga Back ke URL tanpa `?sub=` membuat tab macet di nilai
+// sebelumnya — URL dan isi saling tak cocok. Turunan ini menghapus kelas bug itu.
+const sub = $derived.by(() => {
+	const s = page.url.searchParams.get('sub');
+	if (s && area.anak.some((a) => a.slug === s)) return s;
+	return 'layanan';
+});
 
-	$effect(() => {
-		const s = page.url.searchParams.get('sub');
-		if (s && area.anak.some((a) => a.slug === s)) {
-			sub = s;
-		}
-	});
-
-	function pilihSub(s: string) {
-		sub = s;
-		if (typeof window !== 'undefined') {
-			void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
-		}
+function pilihSub(s: string) {
+	// replaceState:true — ganti tab tak menumpuk riwayat; Back selalu keluar halaman,
+	// seragam dengan AreaView & riset.
+	if (typeof window !== 'undefined') {
+		void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
 	}
+}
 
 	let areas = $state<AreasPayload | null>(null);
 	let kesegaran = $state<KesegaranPayload | null>(null);

@@ -90,15 +90,45 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(dk.hex(), hash_hex)
 
 
-def verify_totp(secret: str | None, code: str | None) -> bool:
-    """TOTP opsional: bila pengguna belum punya secret, tidak ada kode yang diminta."""
+def _totp_matched_counter(secret: str, code: str, *, for_time: datetime | None = None) -> int | None:
+    """Counter TOTP yang cocok dengan ``code`` dalam jendela ±1, atau None.
+
+    Dibandingkan via ``TOTP.at`` per offset (setara ``valid_window=1``) supaya
+    counter yang cocok bisa disimpan untuk anti-replay.
+    """
+    import pyotp
+
+    totp = pyotp.TOTP(secret)
+    now = for_time or datetime.now(UTC)
+    base = totp.timecode(now)
+    # Cocok tertinggi dulu: bila dua counter berdekatan menghasilkan kode sama,
+    # simpan yang termaju supaya jendela mundur langsung tertutup.
+    for offset in (1, 0, -1):
+        if hmac.compare_digest(str(code), str(totp.at(now, offset))):
+            return base + offset
+    return None
+
+
+def verify_totp(
+    secret: str | None,
+    code: str | None,
+    last_counter: int | None = None,
+    *,
+    for_time: datetime | None = None,
+) -> bool:
+    """TOTP opsional: bila pengguna belum punya secret, tidak ada kode yang diminta.
+
+    Bila ``last_counter`` diberikan, kode yang counter-nya <= nilai tersimpan
+    ditolak (anti-replay: kode yang sama tidak bisa dipakai dua kali).
+    """
     if not secret:
         return True
     if not code:
         return False
-    import pyotp
-
-    return bool(pyotp.TOTP(secret).verify(code, valid_window=1))
+    matched = _totp_matched_counter(secret, code, for_time=for_time)
+    if matched is None:
+        return False
+    return last_counter is None or matched > last_counter
 
 
 def issue_session(s: SASession, user: User, *, now: datetime | None = None) -> SessionRow:
@@ -191,16 +221,29 @@ def login(username: str, password: str, totp_code: str | None = None) -> str | N
 
     Pesan gagal **tidak** membedakan "pengguna tidak ada" dan "sandi salah".
     Mitigasi enumerasi waktu: selalu jalankan verifikasi scrypt meskipun pengguna tidak ada.
+    Anti-replay TOTP: counter kode yang cocok disimpan di ``users.totp_last_counter``
+    dalam transaksi yang sama dengan pembuatan sesi.
     """
     with session_scope() as s:
-        user = s.scalar(select(User).where(User.username == username))
+        stmt = select(User).where(User.username == username)
+        # Kunci baris supaya dua login bersamaan tidak bisa memakai kode yang sama.
+        # SQLite (dev) tidak kenal FOR UPDATE — penguncian hanya di Postgres.
+        bind = s.get_bind()
+        if bind is not None and bind.dialect.name == "postgresql":
+            stmt = stmt.with_for_update()
+        user = s.scalar(stmt)
         if user is None or not user.active:
             verify_password(password, _DUMMY_HASH)
             return None
         if not verify_password(password, user.pass_hash):
             return None
-        if not verify_totp(user.totp_secret_enc, totp_code):
-            return None
+        if user.totp_secret_enc:
+            matched = _totp_matched_counter(user.totp_secret_enc, totp_code or "")
+            if matched is None:
+                return None
+            if user.totp_last_counter is not None and matched <= user.totp_last_counter:
+                return None
+            user.totp_last_counter = matched
         return issue_session(s, user).id
 
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-	// Bottom tab mobile: 5 utama + "Lainnya" untuk IDX/Forex (blueprint §4).
+	// Bottom tab mobile: 5 primer (TAB_MOBILE) + "Lainnya" berisi Forex, GMGN,
+	// Riset & Info (10 Okt 2026 — slot penuh, overflow dipilih supaya sel tidak berdesakan).
 	import { AREAS, TAB_MOBILE } from '$lib/nav';
 
 	interface Props {

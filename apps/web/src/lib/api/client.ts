@@ -18,6 +18,7 @@ import type {
 	Kejadian,
 	Kesehatan,
 	KesegaranPayload,
+	LiveArming,
 	MasukanGate,
 	PasarRingkasPayload,
 	ResearchRecordsPayload,
@@ -197,4 +198,15 @@ export async function getVerdict(): Promise<{ verdict: VerdictPasar[]; aturan: R
 	const res = await fetch(urlApi('/api/v1/verdict'), { credentials: 'include' });
 	if (!res.ok) throw new Error(`verdict HTTP ${res.status}`);
 	return (await res.json()) as { verdict: VerdictPasar[]; aturan: Record<string, unknown> };
+}
+/** Status arming live — SATU-SATUNYA sumber badge mode global di UI (armed = LIVE, else PAPER).
+ *  Gagal fetch = null (jujur: badge disembunyikan, bukan dikarang). */
+export async function getLiveArming(): Promise<LiveArming | null> {
+	try {
+		const res = await fetch(urlApi('/api/v1/live/arming'), { credentials: 'include' });
+		if (!res.ok) return null;
+		return (await res.json()) as LiveArming;
+	} catch {
+		return null;
+	}
 }
