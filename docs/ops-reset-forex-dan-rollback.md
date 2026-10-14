@@ -2,53 +2,63 @@
 
 ## Apa yang dilakukan
 
-Owner minta semua market direset dari 0 (poin 2). Reset berhasil untuk market yang
-penulisnya di dalam sistem: **crypto, idx, gmgn**. **Forex** sempat "balik" karena
-timer lokal menarik ulang jurnal dari Tencent.
+Owner minta semua market direset dari 0 (poin 2). Hasil akhir:
 
-### Akar forex
+| Market | Status |
+|---|---|
+| crypto | **bersih dari 0** ✓ |
+| idx | **bersih dari 0** ✓ |
+| gmgn | **bersih dari 0** ✓ |
+| forex | **bersih dari 0** ✓ (lihat catatan timer di bawah) |
+| polymarket | **tidak direset** — milik service `poly-pilot` terpisah |
+
+## Akar forex
+
 `~/.config/systemd/user/forex-refresh.timer` (tiap 30 menit) menjalankan
 `~/warroom/scripts/forex_refresh.sh`, yang **menyalin baca-saja** jurnal dari server
 Tencent (`ubuntu@43.155.219.37:~/.hermes/trading-journal/`) ke
-`state/forex_journal.json`. Karena jurnal Tencent masih berisi trade lama, file lokal
-selalu kembali tiap 30 menit -> reset tak bertahan.
+`state/forex_journal.json`. Karena jurnal Tencent masih berisi trade lama
+(7 XAUUSD + 19 multipair), file lokal **selalu kembali** tiap 30 menit -> reset tak
+bertahan.
 
-### Yang dikerjakan
-1. **Disable** `forex-refresh.timer` (hapus symlink di `timers.target.wants/`).
-   Symlink asal disimpan untuk rollback (lihat bawah).
-2. **Reset** ulang -> `forex_journal.json` diarsipkan ke
-   `state/arsip/20261014T221803Z/`, forex bersih (dompet `tersedia=False` = Rp 10 jt).
+## PELAJARAN PENTING: hapus symlink TIDAK cukup
+
+Percobaan pertama: menghapus symlink di `timers.target.wants/` — **GAGAL**. Timer
+yang sedang aktif **tetap menembak** (bukti log: `[22:19:40Z] SEGAR xau 0->7 mp 0->19`
+– file kosong jadi 7 lagi, walau symlink sudah hilang). Menghapus symlink hanya
+mencegah auto-start **setelah reboot**, bukan menghentikan timer yang jalan.
+
+Cara yang **benar**:
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/$(id -u)   # WAJIB; tanpa ini "Failed to connect to bus"
+systemctl --user stop forex-refresh.timer       # hentikan yang sedang jalan
+systemctl --user disable forex-refresh.timer    # jangan auto-start
+systemctl --user daemon-reload
+systemctl --user is-active forex-refresh.timer  # -> inactive
+```
+
+**Catatan `systemctl --user` dari sesi agen:** gagal dengan `XDG_RUNTIME_DIR` kosong
+("Failed to connect to bus: No medium found"). Setel `XDG_RUNTIME_DIR=/run/user/$(id -u)`
+eksplisit -> **berhasil**. Ini juga berlaku untuk `infra-watchdog` dan timer user lain.
 
 ## Rollback (menyalakan lagi timer forex)
 
 ```bash
-# Kembalikan symlink (pulihkan auto-start timer)
-cp -a /tmp/forex-timer-rollback.link \
-      ~/.config/systemd/user/timers.target.wants/forex-refresh.timer
-systemctl --user daemon-reload
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+systemctl --user enable forex-refresh.timer
 systemctl --user start forex-refresh.timer
+systemctl --user is-active forex-refresh.timer   # -> active
 ```
 
-Bila `/tmp/forex-timer-rollback.link` sudah hilang (tmp dibersihkan), buat ulang:
-
-```bash
-ln -s /home/admin/.config/systemd/user/forex-refresh.timer \
-      ~/.config/systemd/user/timers.target.wants/forex-refresh.timer
-systemctl --user daemon-reload
-systemctl --user start forex-refresh.timer
-```
-
-## Kalau mau forex IKUT ter-reset sampai sumbernya
+## Kalau mau forex tetap dari 0 SETELAH timer dinyalakan lagi
 
 Timer lokal hanya menyalin. Sumber sebenarnya ada di Tencent:
 `ubuntu@43.155.219.37:~/.hermes/trading-journal/{xauusd_journal,multipair_journal}.json`.
 
-Agar forex benar-benar dari 0 **dan tetap begitu** setelah timer dinyalakan lagi,
-jurnal di Tencent harus direset/diarsipkan lebih dulu. Itu menyentuh Tencent —
-**butuh keputusan eksplisit owner** (batasan proyek: jangan sentuh Tencent tanpa izin).
+Selama jurnal Tencent masih berisi trade lama, menyalakan timer akan mengembalikan
+trade itu. Agar forex benar-benar nol secara permanen, jurnal di Tencent harus
+direset/diarsipkan — **itu menyentuh Tencent, butuh keputusan eksplisit owner**
+(batasan proyek).
 
-## Catatan tentang `systemctl --user`
-
-Dari sesi agen, `systemctl --user` gagal ("Failed to connect to bus: No medium found").
-Karena itu disable dilakukan lewat **file symlink**, yang efeknya sama. Verifikasi:
-`ls ~/.config/systemd/user/timers.target.wants/forex-refresh.timer` -> harus kosong.
+Ringkas: **timer mati = forex tetap nol. Timer hidup = forex kembali berisi trade Tencent.**
