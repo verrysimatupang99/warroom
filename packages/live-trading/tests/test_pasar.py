@@ -117,3 +117,12 @@ def test_pakem_bukan_r_hitung_entri(tmp_path: Path):
     assert h["tingkat"] == "PRELIMINARY"
     assert h["n_hari"] is None
     assert any("hari" in c for c in h["catatan"])
+
+
+def test_idx_strategi_merugi_tidak_aktif() -> None:
+    """Bukti 14 Okt: ARA_HUNTER (-139R) & INTRADAY (-0,38R) TIDAK boleh "aktif"."""
+    from live_trading.pasar import STRATEGI_PASAR
+    idx = {s["nama"]: s["status"] for s in STRATEGI_PASAR["idx"]}
+    assert idx["ARA Hunter"] != "aktif", "ARA_HUNTER merugi -139R, jangan tampak aktif"
+    assert idx["Scalping INTRADAY"] != "aktif", "INTRADAY -0,38R, jangan tampak aktif"
+    assert "BSJP (Beli Sore Jual Pagi)" in idx and idx["BSJP (Beli Sore Jual Pagi)"] == "aktif"
