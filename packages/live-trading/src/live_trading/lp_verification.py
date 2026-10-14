@@ -17,7 +17,7 @@ import json
 import urllib.request
 from typing import Any
 
-__all__ = ["verifikasi_pool", "pool_contoh", "AMBANG_SELISIH_PCT"]
+__all__ = ["verify_pool", "pool_contoh", "AMBANG_SELISIH_PCT"]
 
 # Selisih harga antar sumber di atas ini dianggap "perlu dilihat" — bukan otomatis salah,
 # karena metodologi agregator berbeda (bukti riset 6 Okt: TVL MET-USDC beda 18%).
@@ -106,7 +106,7 @@ def _kesimpulan(harga_sah: list[Any], hasil: dict[str, Any]) -> str:
     return "SEBAGIAN"
 
 
-def verifikasi_pool(pool: dict[str, Any], *, ambil=_get) -> dict[str, Any]:
+def verify_pool(pool: dict[str, Any], *, ambil=_get) -> dict[str, Any]:
     """Panggil semua sumber untuk satu pool; bandingkan harga; jangan mengarang bila gagal."""
     alamat, chain = pool["alamat"], pool["chain"]
     hasil: dict[str, Any] = {"nama": pool["nama"], "chain": chain, "alamat": alamat, "sumber": {}}
@@ -158,7 +158,7 @@ def verifikasi_pool(pool: dict[str, Any], *, ambil=_get) -> dict[str, Any]:
 
 def pool_contoh() -> dict[str, Any]:
     """Verifikasi semua pool acuan — inilah jawaban 'data kita vs internet live'."""
-    hasil = [verifikasi_pool(p) for p in POOL_CONTOH]
+    hasil = [verify_pool(p) for p in POOL_CONTOH]
     return {
         "jumlah": len(hasil),
         "sepakat": sum(1 for h in hasil if h.get("sepakat")),

@@ -38,7 +38,7 @@ HARI = 1758902400  # 2026-09-26T20:00:00Z
 def test_fill_lalu_sl_konservatif():
     """Candle menyentuh SL dan TP1 sekaligus → dihitung SL (tidak menyenangkan diri)."""
     k = _k([HARI, HARI + 3600], [0.150, 0.158], [0.1460, 0.139])
-    out = rk.rekonstruksi_posisi(_pos(), ambil_klines=lambda *a, **kw: k)
+    out = rk.reconstruct_position(_pos(), ambil_klines=lambda *a, **kw: k)
     assert out is not None
     assert out["status"] == "closed_SL" and out["r"] == -1.0
     assert out["source"] == "rekonsiliasi"
@@ -47,7 +47,7 @@ def test_fill_lalu_sl_konservatif():
 
 def test_tidak_pernah_fill_expired_r0():
     k = _k([HARI, HARI + 3600], [0.170, 0.171], [0.160, 0.161])
-    out = rk.rekonstruksi_posisi(_pos(), ambil_klines=lambda *a, **kw: k)
+    out = rk.reconstruct_position(_pos(), ambil_klines=lambda *a, **kw: k)
     assert out is not None
     assert out["status"] == "expired" and out["r"] == 0.0
     assert out["note"].startswith("REKONSILIASI")
@@ -56,12 +56,12 @@ def test_tidak_pernah_fill_expired_r0():
 def test_masih_jalan_tidak_dipaksa():
     """Sudah terisi tapi belum kena level → None (jangan tutup paksa)."""
     k = _k([HARI, HARI + 3600], [0.150, 0.152], [0.1460, 0.145])
-    assert rk.rekonstruksi_posisi(_pos(), ambil_klines=lambda *a, **kw: k) is None
+    assert rk.reconstruct_position(_pos(), ambil_klines=lambda *a, **kw: k) is None
 
 
 def test_tp2_diakui():
     k = _k([HARI, HARI + 3600], [0.150, 0.162], [0.1460, 0.149])
-    out = rk.rekonstruksi_posisi(_pos(), ambil_klines=lambda *a, **kw: k)
+    out = rk.reconstruct_position(_pos(), ambil_klines=lambda *a, **kw: k)
     assert out is not None and out["status"] == "closed_TP2" and out["r"] == 2.0
 
 

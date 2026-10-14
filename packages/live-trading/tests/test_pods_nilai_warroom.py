@@ -48,7 +48,7 @@ def warroom_palsu(monkeypatch: pytest.MonkeyPatch):
 def test_pakai_war_room_saat_aktif(warroom_palsu, monkeypatch: pytest.MonkeyPatch) -> None:
     jawaban, dipanggil = warroom_palsu
     monkeypatch.setattr(nilai, "tanya", lambda *a, **k: pytest.fail("jalur lokal tidak boleh dipakai"))
-    hasil = nilai.nilai_pod("alpha", ["n=120", "win=71%"])
+    hasil = nilai.evaluate_pod("alpha", ["n=120", "win=71%"])
     assert hasil == {"setuju": True, "catatan": "dari war room"}
     assert dipanggil and dipanggil[0]["path"] == "/api/v1/ai/verifier"
     assert dipanggil[0]["body"]["nama"] == "alpha"
@@ -59,7 +59,7 @@ def test_pakai_war_room_saat_aktif(warroom_palsu, monkeypatch: pytest.MonkeyPatc
 def test_kirim_token_layanan_bila_ada(warroom_palsu, monkeypatch: pytest.MonkeyPatch) -> None:
     _, dipanggil = warroom_palsu
     monkeypatch.setenv("WARROOM_SERVICE_TOKEN", "token-uji")
-    nilai.nilai_pod("alpha", ["n=1"])
+    nilai.evaluate_pod("alpha", ["n=1"])
     assert dipanggil[0]["token"] == "token-uji"
 
 
@@ -68,7 +68,7 @@ def test_fallback_lokal_saat_layanan_mati(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setenv("WARROOM_AI_URL", "http://127.0.0.1:9")  # port discard: pasti gagal
     lokal = '{"setuju": false, "catatan": "lokal"}'
     monkeypatch.setattr(nilai, "tanya", lambda *a, **k: lokal)
-    assert nilai.nilai_pod("beta", ["n=10"]) == {"setuju": False, "catatan": "lokal"}
+    assert nilai.evaluate_pod("beta", ["n=10"]) == {"setuju": False, "catatan": "lokal"}
 
 
 def test_tanpa_url_perilaku_lama(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -76,7 +76,7 @@ def test_tanpa_url_perilaku_lama(monkeypatch: pytest.MonkeyPatch) -> None:
     dipanggil: list[str] = []
     lokal = '{"setuju": true, "catatan": "x"}'
     monkeypatch.setattr(nilai, "tanya", lambda prompt, *a, **k: dipanggil.append(prompt) or lokal)
-    assert nilai.nilai_pod("gamma", ["n=5"]) == {"setuju": True, "catatan": "x"}
+    assert nilai.evaluate_pod("gamma", ["n=5"]) == {"setuju": True, "catatan": "x"}
     assert len(dipanggil) == 1
 
 
@@ -85,4 +85,4 @@ def test_status_tidak_ok_diabaikan(warroom_palsu, monkeypatch: pytest.MonkeyPatc
     jawaban.update({"status": "insufficient", "setuju": None, "catatan": None})
     lokal = '{"setuju": true, "catatan": "lokal"}'
     monkeypatch.setattr(nilai, "tanya", lambda *a, **k: lokal)
-    assert nilai.nilai_pod("delta", ["n=7"]) == {"setuju": True, "catatan": "lokal"}
+    assert nilai.evaluate_pod("delta", ["n=7"]) == {"setuju": True, "catatan": "lokal"}

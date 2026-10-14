@@ -218,7 +218,7 @@ def mark_pool(alamat: str, rantai: str | None = None) -> dict[str, Any] | None:
     }
 
 
-def pilih_pool(
+def select_pool(
     pairs: list[dict[str, Any]], limit: int = 6, rantai: str | None = None
 ) -> list[dict[str, Any]]:
     """Buang pool tanpa volume, saring per rantai, lalu urutkan menurun **berdasarkan volume**.
@@ -260,7 +260,7 @@ def lp_cari(kata: str, limit: int = 6, rantai: str | None = None) -> list[dict[s
 
     d = _get(f"/latest/dex/search?q={_quote(kata)}")
     out: list[dict[str, Any]] = []
-    for p in pilih_pool(d.get("pairs") or [], limit, rantai):
+    for p in select_pool(d.get("pairs") or [], limit, rantai):
         bt = (p.get("baseToken") or {}).get("symbol") or "?"
         qt = (p.get("quoteToken") or {}).get("symbol") or "?"
         out.append(

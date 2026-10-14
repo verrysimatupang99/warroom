@@ -291,7 +291,7 @@ def _blok(sel: list[dict[str, Any]], *, fee_per_sisi: float = 0.0) -> dict[str, 
     }
 
 
-def uji_beda(a: list[float], b: list[float]) -> dict[str, Any]:
+def test_difference(a: list[float], b: list[float]) -> dict[str, Any]:
     """Uji Welch: apakah dua kelompok benar-benar berbeda, bukan cuma beda dari nol.
 
     t-statistik biasa hanya menjawab "apakah rata-ratanya di atas nol". Itu BUKAN
@@ -334,7 +334,7 @@ def bandingkan(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI
 
     lolos = bersih([r for r in dinilai if r.get("allowed")])
     ditolak = bersih([r for r in dinilai if not r.get("allowed")])
-    hasil: dict[str, Any] = {"lolos_vs_ditolak": uji_beda(lolos, ditolak)}
+    hasil: dict[str, Any] = {"lolos_vs_ditolak": test_difference(lolos, ditolak)}
     hasil["lolos_vs_ditolak"]["n_lolos"] = len(lolos)
     hasil["lolos_vs_ditolak"]["n_ditolak"] = len(ditolak)
 
@@ -342,24 +342,24 @@ def bandingkan(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI
     for nama in sorted({r2 for r in dinilai for r2 in (r.get("rules_gagal") or [])}):
         gagal = bersih([r for r in dinilai if nama in (r.get("rules_gagal") or [])])
         lolos_saja = bersih([r for r in dinilai if not r.get("rules_gagal")])
-        per_aturan[nama] = uji_beda(gagal, lolos_saja)
+        per_aturan[nama] = test_difference(gagal, lolos_saja)
         per_aturan[nama]["n_gagal"] = len(gagal)
     hasil["per_aturan"] = per_aturan
     return hasil
 
 
-def rows_masuk_pasar(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def rows_entering_market(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Baris sintetis untuk skenario masuk di harga pasar, supaya bisa dinilai _blok yang sama.
 
     Tinggal di ``measure`` (bukan di ``backtest``) supaya pengukuran hidup dan backtest
     memakai konversi yang sama persis.
     """
-    from .measure import rows_masuk_pasar as _impl
+    from .measure import rows_entering_market as _impl
 
     return _impl(rows)
 
 
-def uji_klaster(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI_DEFAULT) -> dict[str, Any]:
+def test_cluster(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI_DEFAULT) -> dict[str, Any]:
     """Uji beda yang tahan korelasi: satu pair = satu unit, bukan satu kandidat = satu unit.
 
     Kandidat dalam satu pair saling berkorelasi (rezim pasar yang sama, level yang sama),
@@ -402,7 +402,7 @@ def uji_klaster(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SIS
     }
 
 
-def uji_klaster_aturan(
+def test_cluster_rules(
     rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI_DEFAULT
 ) -> dict[str, dict[str, Any]]:
     """Uji klaster per aturan: kandidat yang gagal aturan itu vs yang lolos semua gate.
@@ -457,7 +457,7 @@ def uji_klaster_aturan(
     return keluar
 
 
-def uji_klaster_nol(
+def test_cluster_null(
     rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI_DEFAULT
 ) -> dict[str, Any]:
     """Apakah aliran kandidat sendiri punya edge? Satu pair = satu unit, diuji terhadap nol.
@@ -545,7 +545,7 @@ def aggregate(rows: list[dict[str, Any]], *, fee_per_sisi: float = FEE_PER_SISI_
         "semua": _blok(dinilai, fee_per_sisi=fee_per_sisi),
         # Pembanding yang lebih penting daripada gate: menunggu harga datang ke POI
         # membuang ~38% kandidat. Apakah penantian itu sepadan, diukur di sini.
-        "masuk_pasar": _blok(rows_masuk_pasar(dinilai), fee_per_sisi=fee_per_sisi),
+        "masuk_pasar": _blok(rows_entering_market(dinilai), fee_per_sisi=fee_per_sisi),
         # Biaya per trade tetap dalam satuan R, imbalannya dua kali: apakah target 2R
         # lebih baik daripada 1R pada biaya yang sama?
         "target_2r": _blok(rows_target_2r(dinilai), fee_per_sisi=fee_per_sisi),
@@ -573,7 +573,7 @@ def _nama_berkas(
     return f"backtest-{days}d.jsonl"
 
 
-def simpan_rows(
+def save_rows(
     settings: Settings,
     rows: list[dict[str, Any]],
     days: int,
@@ -597,7 +597,7 @@ def simpan_rows(
     return path
 
 
-def muat_rows(
+def load_rows(
     settings: Settings,
     days: int,
     offset_days: int = 0,
@@ -667,5 +667,5 @@ def run(
 
     hasil = aggregate(semua, fee_per_sisi=fee_per_sisi)
     hasil["rows"] = semua
-    simpan_rows(settings, semua, days, offset_days, hold_h, isi_penetrasi_bps, paksa_tag)
+    save_rows(settings, semua, days, offset_days, hold_h, isi_penetrasi_bps, paksa_tag)
     return hasil

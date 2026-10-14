@@ -1137,9 +1137,9 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
 
                 # Jalur keputusan TUNGGAL (paper & live). Ukuran/SL/TP dari sini, bukan
                 # dihitung ulang di eksekutor — itu yang membuat paper benar-benar 1:1.
-                from live_trading.execution.keputusan import Konteks, jalur_untuk, putuskan_masuk
+                from live_trading.execution.keputusan import Konteks, decide_entry, jalur_untuk
 
-                kep = putuskan_masuk(
+                kep = decide_entry(
                     {**r, "atr": atr, "tp1": tp1, "tp2": tp2},
                     Konteks(
                         equity_usd=stg.equity_usd,

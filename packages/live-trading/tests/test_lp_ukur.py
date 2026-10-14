@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 
-from live_trading.collectors.dexscreen import pilih_pool, ukur_lp
+from live_trading.collectors.dexscreen import select_pool, ukur_lp
 
 SEKARANG = time.time()
 
@@ -140,14 +140,14 @@ def test_urutkan_berdasarkan_volume_bukan_likuiditas() -> None:
         _pool_ringkas("DEAD", 50_000_000, 0.31),  # likuiditas raksasa, volume hampir mati
         _pool_ringkas("HIDUP", 81_000, 104_000),  # likuiditas kecil, volume besar
     ]
-    hasil = pilih_pool(dari_cari)
+    hasil = select_pool(dari_cari)
     assert hasil[0]["pairAddress"] == "HIDUP"
     assert [p["pairAddress"] for p in hasil] == ["HIDUP", "DEAD"]
     assert ukur_lp(hasil[1])["kualitas"] == "pool-mati"
 
 
 def test_pool_tanpa_volume_dibuang() -> None:
-    assert pilih_pool([_pool_ringkas("A", 10_000, 0)]) == []
+    assert select_pool([_pool_ringkas("A", 10_000, 0)]) == []
 
 
 def test_penyaringan_rantai() -> None:
@@ -156,18 +156,18 @@ def test_penyaringan_rantai() -> None:
         {**_pool_ringkas("BASE1", 500_000, 900_000), "chainId": "base"},
         {**_pool_ringkas("SOL1", 81_000, 104_000), "chainId": "solana"},
     ]
-    assert [p["pairAddress"] for p in pilih_pool(campur, rantai="solana")] == ["SOL1"]
-    assert [p["pairAddress"] for p in pilih_pool(campur, rantai="base")] == ["BASE1"]
-    assert len(pilih_pool(campur)) == 2  # tanpa penyaring = keduanya
+    assert [p["pairAddress"] for p in select_pool(campur, rantai="solana")] == ["SOL1"]
+    assert [p["pairAddress"] for p in select_pool(campur, rantai="base")] == ["BASE1"]
+    assert len(select_pool(campur)) == 2  # tanpa penyaring = keduanya
 
 
 def test_penyaringan_rantai_tidak_peka_huruf_besar_kecil() -> None:
     a = [_pool_ringkas("S1", 10_000, 5_000)]
     a[0]["chainId"] = "Solana"
-    assert len(pilih_pool(a, rantai="solana")) == 1
+    assert len(select_pool(a, rantai="solana")) == 1
 
 
 def test_batas_jumlah_pool() -> None:
     banyak = [_pool_ringkas(f"P{i}", 10_000, 1_000 + i) for i in range(10)]
-    hasil = pilih_pool(banyak, limit=3)
+    hasil = select_pool(banyak, limit=3)
     assert [p["pairAddress"] for p in hasil] == ["P9", "P8", "P7"]

@@ -43,7 +43,7 @@ from live_trading.collectors.idx import _kode_bersih  # normalisasi .JK (satu im
 
 log = logging.getLogger(__name__)
 
-__all__ = ["RiwayatTicker", "ambil_riwayat", "SMA_HARI_DEFAULT"]
+__all__ = ["TickerHistory", "fetch_history", "SMA_HARI_DEFAULT"]
 
 SMA_HARI_DEFAULT = 10
 # Kunci + host dibaca dari lingkungan; jangan di-hardcode ke dalam kode yang di-commit.
@@ -86,7 +86,7 @@ SELECT t.ticker, agg.hari, t.price, t.lot, agg.rid
 
 
 @dataclass
-class RiwayatTicker:
+class TickerHistory:
     """Riwayat harian satu emiten, plus turunannya (SMA10, rata-rata volume)."""
 
     ticker: str
@@ -113,7 +113,7 @@ class RiwayatTicker:
         }
 
 
-def _hitung_turunan(r: RiwayatTicker) -> RiwayatTicker:
+def _hitung_turunan(r: TickerHistory) -> TickerHistory:
     if r.cukup:
         r.sma10 = sum(r.close[-SMA_HARI_DEFAULT:]) / SMA_HARI_DEFAULT
         # Rata-rata volume 10 hari SEBELUM hari terakhir — hari ini belum selesai,
@@ -124,7 +124,7 @@ def _hitung_turunan(r: RiwayatTicker) -> RiwayatTicker:
     return r
 
 
-def ambil_riwayat(
+def fetch_history(
     tickers: list[str],
     *,
     ssh_key: str = SSH_KEY_DEFAULT,
@@ -133,7 +133,7 @@ def ambil_riwayat(
     hari_lookback: int = 45,
     timeout_s: int = 90,
     maks_per_panggilan: int = 15,
-) -> dict[str, RiwayatTicker]:
+) -> dict[str, TickerHistory]:
     """Ambil close harian + SMA10 untuk ``tickers`` dari arsip tick di Tencent.
 
     ``maks_per_panggilan`` ada karena alasan terukur: satu kueri ``ticker IN (...)`` dengan
@@ -141,7 +141,7 @@ def ambil_riwayat(
     batch kecil membuat setiap panggilan selesai jauh di bawah batas waktu. Nilai 15 dipilih
     dari pengukuran, bukan tebakan.
 
-    Mengembalikan ``{ticker: RiwayatTicker}``; ticker tanpa cukup hari tetap ada di hasil
+    Mengembalikan ``{ticker: TickerHistory}``; ticker tanpa cukup hari tetap ada di hasil
     tetapi ``sma10``-nya ``None`` — pemanggil yang memutuskan, bukan fungsi ini.
     """
     if not tickers:
@@ -154,11 +154,11 @@ def ambil_riwayat(
     if not bersih:
         return {}
     if len(bersih) > maks_per_panggilan:
-        gabung: dict[str, RiwayatTicker] = {}
+        gabung: dict[str, TickerHistory] = {}
         for i in range(0, len(bersih), maks_per_panggilan):
             bagian = bersih[i:i + maks_per_panggilan]
             gabung.update(
-                ambil_riwayat(
+                fetch_history(
                     bagian, ssh_key=ssh_key, ssh_host=ssh_host, db=db,
                     hari_lookback=hari_lookback, timeout_s=timeout_s,
                     maks_per_panggilan=maks_per_panggilan,
@@ -214,23 +214,23 @@ def ambil_riwayat(
             perintah, input=skrip, capture_output=True, text=True, timeout=timeout_s
         )
     except subprocess.TimeoutExpired:
-        log.warning("ambil_riwayat: timeout %ss", timeout_s)
+        log.warning("fetch_history: timeout %ss", timeout_s)
         return {}
     if hasil.returncode != 0:
-        log.warning("ambil_riwayat: ssh gagal rc=%s: %s", hasil.returncode, hasil.stderr[:200])
+        log.warning("fetch_history: ssh gagal rc=%s: %s", hasil.returncode, hasil.stderr[:200])
         return {}
     try:
         baris = json.loads(hasil.stdout.strip() or "[]")
     except json.JSONDecodeError as exc:
-        log.warning("ambil_riwayat: keluaran bukan JSON: %s", exc)
+        log.warning("fetch_history: keluaran bukan JSON: %s", exc)
         return {}
 
-    kumpul: dict[str, RiwayatTicker] = {}
+    kumpul: dict[str, TickerHistory] = {}
     for tkr, hari, close, vwap, vol, _n in baris:
         if close is None:
             continue
         r = kumpul.setdefault(
-            str(tkr).upper(), RiwayatTicker(ticker=str(tkr).upper(), hari=[], close=[],
+            str(tkr).upper(), TickerHistory(ticker=str(tkr).upper(), hari=[], close=[],
                                             vwap=[], volume=[])
         )
         r.hari.append(str(hari))

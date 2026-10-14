@@ -8,7 +8,7 @@ memutuskan, dan paper/live hanya berbeda di bagian *mengirim order*.
 
 Kontrak:
 
-    putuskan_masuk(kandidat, konteks) -> Keputusan
+    decide_entry(kandidat, konteks) -> Keputusan
     lalu:
         paper: kirim_ke_paper(keputusan)
         live : kirim_ke_live(keputusan)      # belum ada, sengaja
@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
-__all__ = ["Keputusan", "Konteks", "putuskan_masuk", "jalur_untuk"]
+__all__ = ["Keputusan", "Konteks", "decide_entry", "jalur_untuk"]
 
 Mode = Literal["paper", "live"]
 
@@ -66,7 +66,7 @@ class Keputusan:
         return asdict(self)
 
 
-def putuskan_masuk(kandidat: dict[str, Any], konteks: Konteks) -> Keputusan:
+def decide_entry(kandidat: dict[str, Any], konteks: Konteks) -> Keputusan:
     """SATU-SATUNYA tempat keputusan masuk dibuat.
 
     Urutan langkah dipakai bersama paper & live; ``jejak`` merekamnya supaya bisa dibandingkan

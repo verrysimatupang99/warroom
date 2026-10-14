@@ -18,7 +18,7 @@ def test_sakit_sebut_nama():
 
 def test_cek_produksi_menyertakan_radar_lokal(tmp_path):
     """Radar lokal (recreate 6 Okt) dipantau lewat state/radar_state.json."""
-    cek = w.cek_produksi(home=tmp_path)
+    cek = w.check_production(home=tmp_path)
     nama = [n for n, _, _ in cek]
     assert "radar_lokal" in nama
     batas = {n: b for n, _, b in cek}

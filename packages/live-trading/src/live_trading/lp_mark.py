@@ -29,12 +29,12 @@ from typing import Any
 
 __all__ = [
     "IL_RUMUS",
-    "catat_mark",
+    "record_mark",
     "fee_terkumpul",
     "il_5050",
-    "mark_posisi",
-    "nilai_pakem_lp",
-    "skor_pool",
+    "mark_position",
+    "evaluate_pakem_lp",
+    "score_pool",
 ]
 
 # Rumus IL 50/50 — sama dengan lp_paper.il_5050 dan lp_positions (satu kebenaran).
@@ -67,7 +67,7 @@ def fee_terkumpul(
     return notional_usd * vl * fee_tier * hari
 
 
-def skor_pool(pool: dict[str, Any]) -> dict[str, Any]:
+def score_pool(pool: dict[str, Any]) -> dict[str, Any]:
     """Skor kelayakan pool dari data gmgn-cli (bukan selera).
 
     Komponen dan bobotnya mengikuti `lp_paper.gate` supaya ambangnya konsisten:
@@ -117,7 +117,7 @@ def skor_pool(pool: dict[str, Any]) -> dict[str, Any]:
     return {"skor": skor, "gagal": gagal, "lolos": not gagal}
 
 
-def mark_posisi(
+def mark_position(
     pos: dict[str, Any],
     *,
     harga_sekarang: float,
@@ -169,7 +169,7 @@ def mark_posisi(
     }
 
 
-def catat_mark(ledger_path: str | Path, baris: dict[str, Any]) -> None:
+def record_mark(ledger_path: str | Path, baris: dict[str, Any]) -> None:
     """Append satu baris mark ke ledger jsonl (jejak waktu, tidak ditimpa)."""
     p = Path(ledger_path)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -177,13 +177,13 @@ def catat_mark(ledger_path: str | Path, baris: dict[str, Any]) -> None:
         f.write(json.dumps(baris, ensure_ascii=False) + "\n")
 
 
-def nilai_pakem_lp(baris_ledger: list[dict[str, Any]]):
+def evaluate_pakem_lp(baris_ledger: list[dict[str, Any]]):
     """Nilai jejak LP terhadap pakem bukti — n = hari unik, bukan jumlah baris.
 
     Satu baris ledger = satu mark (bisa beberapa per hari). Yang dinilai adalah
     **hari**, karena keputusan LP berjalan harian (fee & IL berakumulasi harian).
     """
-    from .pakem import nilai_pakem
+    from .pakem import evaluate_pakem
 
     # Ambil mark terakhir per posisi per hari sebagai satu pengamatan harian.
     terakhir: dict[tuple[str, str], dict[str, Any]] = {}
@@ -206,4 +206,4 @@ def nilai_pakem_lp(baris_ledger: list[dict[str, Any]]):
         {"r": (b.get("pnl_pct") or 0) / 100.0, "closed_at": _hari(b)}
         for b in pengamatan
     ]
-    return nilai_pakem(closes, biaya_tercatat=True)
+    return evaluate_pakem(closes, biaya_tercatat=True)

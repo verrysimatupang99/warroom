@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Any
 
-__all__ = ["skor_bandarmologi", "skor_dari_hasil"]
+__all__ = ["bandarmologi_score", "score_from_outcome"]
 
 # Bobot komponen (total 100). Angka dipilih dari yang paling langsung bermakna:
 # rasio ATS beli/jual adalah sinyal agresivitas; frekuensi menunjukkan siapa yang ramai.
@@ -45,7 +45,7 @@ def _bagian_rasio(beli: float, jual: float) -> float:
     return beli / total
 
 
-def skor_dari_hasil(hasil: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def score_from_outcome(hasil: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Hitung skor per emiten dari `bagian.bandarmologi.hasil`.
 
     Bentuk keluaran sengaja datar supaya UI tidak perlu tahu apa-apa:
@@ -129,11 +129,11 @@ def skor_dari_hasil(hasil: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return keluaran
 
 
-def skor_bandarmologi(bagian: dict[str, Any]) -> dict[str, Any]:
+def bandarmologi_score(bagian: dict[str, Any]) -> dict[str, Any]:
     """Skor untuk seluruh radar hari ini, dari ``bagian.bandarmologi`` snapshot."""
     bandar = (bagian or {}).get("bandarmologi") or {}
     hasil = bandar.get("hasil") or []
-    skor = skor_dari_hasil(hasil)
+    skor = score_from_outcome(hasil)
     return {
         "tersedia": bool(skor),
         "alasan": None if skor else (bandar.get("error") or "belum ada broker summary pada snapshot"),

@@ -364,7 +364,7 @@ def cmd_lp_mark(args: argparse.Namespace) -> int:
     from . import lp_mark_run
 
     s = get_settings()
-    laporan = lp_mark_run.jalankan_lp_mark(s.state_dir, state_path=args.state)
+    laporan = lp_mark_run.run_lp_mark(s.state_dir, state_path=args.state)
     if laporan.get("status") == "tidak-ada-posisi":
         print(f"  {laporan.get('alasan')}")
         return 1
@@ -849,12 +849,12 @@ def _cetak_sweep(rows: list[dict[str, Any]]) -> None:
     Bukan 'aturan mana yang berguna', tapi 'pada biaya berapa edge ini masih hidup'.
     Dengan R yang tipis, biaya menentukan hidup-mati, dan itu terlihat di sini.
     """
-    from .backtest import aggregate, uji_klaster_nol
+    from .backtest import aggregate, test_cluster_null
 
     print("\n  SENSITIVITAS BIAYA — edge aliran kandidat (uji klaster, satu pair = satu unit)")
     print(f"    {'biaya/sisi':<12} {'rata-rata':>10} {'t':>7}   putusan")
     for bps in (0.0, 1.0, 2.0, 3.0, 5.0, 7.0):
-        nol = uji_klaster_nol(rows, fee_per_sisi=bps / 10000)
+        nol = test_cluster_null(rows, fee_per_sisi=bps / 10000)
         if nol.get("rata_r") is None:
             continue
         print(f"    {bps:>6.1f} bps   {nol['rata_r']:>+9.4f}R {nol['t']:>+7.2f}   {nol['keterangan']}")
@@ -867,18 +867,18 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     from .backtest import (
         aggregate,
         bandingkan,
-        muat_rows,
+        load_rows,
         run,
-        uji_klaster,
-        uji_klaster_aturan,
-        uji_klaster_nol,
+        test_cluster,
+        test_cluster_null,
+        test_cluster_rules,
     )
     from .signals.engine import top_pairs
 
     s = get_settings()
     fee = args.biaya_bps / 10000
     if args.dari_berkas:
-        rows = muat_rows(s, args.days, args.offset, args.hold, args.penetrasi_bps or 0.0)
+        rows = load_rows(s, args.days, args.offset, args.hold, args.penetrasi_bps or 0.0)
         if not rows:
             print(f"  tidak ada berkas backtest-{args.days}d.jsonl — jalankan tanpa --dari-berkas dulu")
             return 1
@@ -886,9 +886,9 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         _cetak_backtest(aggregate(rows, fee_per_sisi=fee))
         _cetak_banding(
             bandingkan(rows, fee_per_sisi=fee),
-            uji_klaster(rows, fee_per_sisi=fee),
-            uji_klaster_aturan(rows, fee_per_sisi=fee),
-            uji_klaster_nol(rows, fee_per_sisi=fee),
+            test_cluster(rows, fee_per_sisi=fee),
+            test_cluster_rules(rows, fee_per_sisi=fee),
+            test_cluster_null(rows, fee_per_sisi=fee),
         )
         if args.sweep_biaya:
             _cetak_sweep(rows)
@@ -920,9 +920,9 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     _cetak_backtest(hasil)
     _cetak_banding(
         bandingkan(hasil["rows"], fee_per_sisi=fee),
-        uji_klaster(hasil["rows"], fee_per_sisi=fee),
-        uji_klaster_aturan(hasil["rows"], fee_per_sisi=fee),
-        uji_klaster_nol(hasil["rows"], fee_per_sisi=fee),
+        test_cluster(hasil["rows"], fee_per_sisi=fee),
+        test_cluster_rules(hasil["rows"], fee_per_sisi=fee),
+        test_cluster_null(hasil["rows"], fee_per_sisi=fee),
     )
     return 0
 

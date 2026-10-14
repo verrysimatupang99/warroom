@@ -78,7 +78,7 @@ def tanya(prompt: str, model: str = MODEL_ANALIS, timeout: int = 45) -> str | No
         return None
 
 
-def nilai_pod(nama: str, ringkas: list[str]) -> dict[str, Any] | None:
+def evaluate_pod(nama: str, ringkas: list[str]) -> dict[str, Any] | None:
     """Minta penilai kedua atas ringkasan lead. Kembali {setuju, catatan} atau None.
 
     Urutan: layanan AI War Room (bila `WARROOM_AI_URL` disetel) → gateway lokal nutaraline.
@@ -103,10 +103,10 @@ def nilai_pod(nama: str, ringkas: list[str]) -> dict[str, Any] | None:
     return None
 
 
-def nilai_semua(laporan: dict[str, list[str]]) -> dict[str, dict[str, Any]]:
+def evaluate_all(laporan: dict[str, list[str]]) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for nama, ringkas in laporan.items():
-        v = nilai_pod(nama, ringkas)
+        v = evaluate_pod(nama, ringkas)
         if v:
             out[nama] = v
     return out

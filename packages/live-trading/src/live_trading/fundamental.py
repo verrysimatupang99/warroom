@@ -40,7 +40,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-__all__ = ["FundamentalEmiten", "baca_fundamental", "JENIS_BANK", "JENIS_UMUM"]
+__all__ = ["FundamentalEmiten", "read_fundamental", "JENIS_BANK", "JENIS_UMUM"]
 
 JENIS_BANK = "bank"
 JENIS_UMUM = "umum"
@@ -171,7 +171,7 @@ def deteksi_jenis(data: dict[str, Any]) -> str:
     return JENIS_UMUM
 
 
-def baca_fundamental(payload: dict[str, Any] | None) -> FundamentalEmiten:
+def read_fundamental(payload: dict[str, Any] | None) -> FundamentalEmiten:
     """Baca payload ``/api/financial-statements/<KODE>`` menjadi satu ringkasan kuartal.
 
     Mengembalikan kuartal TERBARU (item pertama — server menyusunnya terbaru-dulu).

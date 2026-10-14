@@ -33,7 +33,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from .pakem import AMBANG_DIRECTIONAL, AMBANG_PRELIMINARY, AMBANG_TUNING, nilai_pakem, wilson_interval
+from .pakem import AMBANG_DIRECTIONAL, AMBANG_PRELIMINARY, AMBANG_TUNING, evaluate_pakem, wilson_interval
 
 __all__ = [
     "STRATEGI_PASAR",
@@ -218,7 +218,7 @@ def _baris_akurasi(
     biaya_tercatat: bool | None = None,
 ) -> dict[str, Any]:
     """Satu baris akurasi (market/setup) memakai pakem yang sama dengan IDX."""
-    hasil = nilai_pakem(seri, kunci_r=kunci_r, kunci_tanggal=kunci_tanggal, biaya_tercatat=biaya_tercatat)
+    hasil = evaluate_pakem(seri, kunci_r=kunci_r, kunci_tanggal=kunci_tanggal, biaya_tercatat=biaya_tercatat)
     d = hasil.as_dict()
     d["nama"] = nama
     # Ratakan ringkas (n, mean_r, winrate_pct, …) ke tingkat atas supaya UI tinggal baca

@@ -209,18 +209,18 @@ def test_aturan_dinilai_setelah_biaya_bukan_sebelum() -> None:
 
 def test_uji_beda_membedakan_kelompok() -> None:
     """Yang kita punya bukan 'apakah rata-ratanya > 0', tapi 'apakah dua kelompok berbeda'."""
-    sama = backtest.uji_beda([1.0, -1.0] * 50, [1.0, -1.0] * 50)
+    sama = backtest.test_difference([1.0, -1.0] * 50, [1.0, -1.0] * 50)
     assert sama["beda_r"] == 0.0
     assert sama["keterangan"] == "tidak bisa dibedakan dari derau"
 
-    beda = backtest.uji_beda([1.0, 1.1, 0.9] * 20, [-1.0, -1.1, -0.9] * 20)
+    beda = backtest.test_difference([1.0, 1.1, 0.9] * 20, [-1.0, -1.1, -0.9] * 20)
     assert beda["beda_r"] == 2.0
     assert beda["t"] is not None and beda["t"] > 2
     assert beda["keterangan"] == "beda nyata"
 
 
 def test_uji_beda_ragam_nol_tidak_meledak() -> None:
-    sama = backtest.uji_beda([1.0, 1.0, 1.0], [1.0, 1.0, 1.0])
+    sama = backtest.test_difference([1.0, 1.0, 1.0], [1.0, 1.0, 1.0])
     assert sama["keterangan"] == "ragam nol"
 
 
@@ -252,7 +252,7 @@ def test_uji_klaster_menghitung_per_pair_bukan_per_kandidat() -> None:
                 }
             )
 
-    hasil = backtest.uji_klaster(rows, fee_per_sisi=0.0)
+    hasil = backtest.test_cluster(rows, fee_per_sisi=0.0)
 
     assert hasil["n_pair"] == 3, "tiga pair, bukan seratus kandidat"
     # selisih per pair: (1.0 - -1.0)=2.0 ; (-1.0 - -1.0)=0.0 ; (0.5 - -1.0)=1.5
@@ -261,7 +261,7 @@ def test_uji_klaster_menghitung_per_pair_bukan_per_kandidat() -> None:
 
 def test_uji_klaster_pair_terlalu_sedikit_tidak_mengklaim() -> None:
     rows = [{"pair": "A", "allowed": True, "hasil": "tp1", "r": 1.0, "entry": 100.0, "sl": 99.0}]
-    assert backtest.uji_klaster(rows)["keterangan"] == "pair terlalu sedikit"
+    assert backtest.test_cluster(rows)["keterangan"] == "pair terlalu sedikit"
 
 
 def get_settings_palsu():

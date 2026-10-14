@@ -201,7 +201,7 @@ def seri_broker(acc: dict[str, Any]) -> list[dict[str, Any]]:
     return [per_tanggal[t] for t in sorted(per_tanggal)]
 
 
-def uji_riwayat(
+def test_history(
     acc: dict[str, Any],
     hist: dict[str, Any],
     horizon_hari: tuple[int, ...] = (5, 10, 20),

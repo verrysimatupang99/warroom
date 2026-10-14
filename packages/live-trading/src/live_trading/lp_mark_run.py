@@ -26,7 +26,7 @@ from typing import Any
 
 from . import lp_mark
 
-__all__ = ["baca_posisi", "hitung_semua", "jalankan_lp_mark", "laporan_lp_mark"]
+__all__ = ["read_positions", "compute_all", "run_lp_mark", "lp_mark_report"]
 
 FEE_TIER_BAWAAN = 0.01  # asumsi konservatif, selalu dilabeli taksiran
 STATE_LP_PAPER = "~/live-trading/state/lp_paper_state.json"
@@ -34,7 +34,7 @@ LEDGER_LP = "lp_ledger.jsonl"
 MARK_LP = "lp_mark_terakhir.json"
 
 
-def baca_posisi(path: str | Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def read_positions(path: str | Path) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Baca state LP paper; (meta, daftar posisi). Berkas hilang → kosong, bukan error."""
     p = Path(str(path)).expanduser()
     try:
@@ -53,7 +53,7 @@ def _harga_pool(alamat: str, rantai: str | None = None) -> dict[str, Any] | None
     return dexscreen.mark_pool(alamat, rantai=rantai)
 
 
-def hitung_semua(
+def compute_all(
     *,
     state_path: str | Path,
     state_dir: str | Path,
@@ -63,7 +63,7 @@ def hitung_semua(
 ) -> dict[str, Any]:
     """Mark semua posisi terbuka; kembalikan laporan + tulis ledger bila diminta."""
     t = time.time() if kini is None else kini
-    meta, posisi = baca_posisi(state_path)
+    meta, posisi = read_positions(state_path)
     if not posisi:
         return {
             "status": "tidak-ada-posisi",
@@ -89,7 +89,7 @@ def hitung_semua(
                 }
             )
             continue
-        m = lp_mark.mark_posisi(
+        m = lp_mark.mark_position(
             p,
             harga_sekarang=float(pasar["harga_usd"]),
             vl_sekarang=float(pasar.get("vl") or 0.0),
@@ -102,7 +102,7 @@ def hitung_semua(
         m["chg_h24"] = pasar.get("chg_h24")
         hasil.append(m)
         if tulis_ledger and m.get("status") == "dinilai":
-            lp_mark.catat_mark(ledger_path, m)
+            lp_mark.record_mark(ledger_path, m)
 
     # Pakem atas seluruh jejak (termasuk baris lama) — n = hari unik.
     pakem = None
@@ -115,7 +115,7 @@ def hitung_semua(
                 continue
         # tambahkan mark sesi ini supaya pakem mencerminkan keadaan terbaru
         baris.extend([m for m in hasil if m.get("status") == "dinilai" and m.get("ts") == t])
-        hasil_pakem = lp_mark.nilai_pakem_lp(baris)
+        hasil_pakem = lp_mark.evaluate_pakem_lp(baris)
         pakem = hasil_pakem.as_dict()
 
     dinilai = [m for m in hasil if m.get("status") == "dinilai"]
@@ -143,7 +143,7 @@ def hitung_semua(
     return ringkas
 
 
-def laporan_lp_mark(state_dir: str | Path) -> dict[str, Any]:
+def lp_mark_report(state_dir: str | Path) -> dict[str, Any]:
     """Baca mark terakhir untuk panel (tanpa jaringan). Tidak ada → jujur 'belum ada'."""
     p = Path(state_dir) / MARK_LP
     try:
@@ -152,6 +152,6 @@ def laporan_lp_mark(state_dir: str | Path) -> dict[str, Any]:
         return {"status": "belum-ada", "mark": [], "pakem": None}
 
 
-def jalankan_lp_mark(state_dir: str | Path, state_path: str | Path = STATE_LP_PAPER) -> dict[str, Any]:
+def run_lp_mark(state_dir: str | Path, state_path: str | Path = STATE_LP_PAPER) -> dict[str, Any]:
     """Titik masuk worker/cron: mark + ledger + pakem."""
-    return hitung_semua(state_path=state_path, state_dir=state_dir)
+    return compute_all(state_path=state_path, state_dir=state_dir)

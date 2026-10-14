@@ -59,7 +59,7 @@ def klasifikasi_venue(chain: str | None, dex: str | None) -> str | None:
     return None
 
 
-def pilih_venue(pairs: list[dict[str, Any]], venue: str, limit: int = 5) -> list[dict[str, Any]]:
+def select_venue(pairs: list[dict[str, Any]], venue: str, limit: int = 5) -> list[dict[str, Any]]:
     """Saring pool yang termasuk venue tertentu, lalu urutkan menurun **berdasarkan volume**.
 
     Volume, bukan likuiditas — pelajaran yang sama seperti penyaring LP: pool dengan likuiditas
@@ -156,7 +156,7 @@ def skrining(
         try:
             payload = ambil(venue)
             pairs = payload.get("pairs") if isinstance(payload, dict) else payload
-            hasil[venue] = [_ringkas(x, venue) for x in pilih_venue(pairs or [], venue, per_venue)]
+            hasil[venue] = [_ringkas(x, venue) for x in select_venue(pairs or [], venue, per_venue)]
         except Exception as exc:  # noqa: BLE001 — satu venue gagal jangan menjatuhkan sisanya
             galat.append(f"{venue}: {type(exc).__name__}")
             hasil[venue] = []
