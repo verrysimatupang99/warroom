@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from warroom_core.db import Fact, session_scope
-from warroom_core.sinyal import PASAR, sinyal_terbaik_per_pasar
+from warroom_core.market_signal import PASAR, sinyal_terbaik_per_pasar
 
 
 def _fakta(s, kind: str, key: str, value) -> None:
@@ -73,7 +73,7 @@ def test_polymarket_dengan_split_terverifikasi(db) -> None:
     """Split yang LOLOS verifikasi hash (id terdaftar + sha256 cocok) = terverifikasi.
 
     Hasil verifikasi dihitung lapisan pemanggil (splits.verifikasi) lalu diteruskan
-    sebagai parameter — sinyal.py tidak query DB sendiri.
+    sebagai parameter — market_signal.py tidak query DB sendiri.
     """
     with session_scope() as s:
         _fakta(s, "poly.verdict", "verdict", {

@@ -153,7 +153,7 @@ def sinyal_per_pasar(
     setup yang cocok — ini hasil kerja sistem) · **gagal** (sumber tak terbaca /
     mesin mati — JANGAN pernah ditulis "tidak ada sinyal").
     """
-    from warroom_core.sinyal import sinyal_per_pasar, sinyal_terbaik_per_pasar
+    from warroom_core.market_signal import sinyal_per_pasar, sinyal_terbaik_per_pasar
 
     with session_scope() as s:
         terverifikasi = _split_poly_terverifikasi(s)
