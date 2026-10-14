@@ -19,10 +19,10 @@
 		status?: string | null;
 		cache?: boolean;
 		onulang?: (() => void) | null;
-		/** Bisa dilipat (revisi pemilik 7 Okt untuk "Kejadian Area"). Bila true, isi blok
+		/** Bisa dilipat (revisi pemilik 7 Okt untuk "EventItem Area"). Bila true, isi blok
 		 *  disembunyikan sampai diklik — kepala tetap tampil supaya orang tahu ada apa. */
 		lipat?: boolean;
-		/** Awal keadaan terlipat (dipakai Kejadian yang defaultnya tertutup). */
+		/** Awal keadaan terlipat (dipakai EventItem yang defaultnya tertutup). */
 		lipatAwal?: boolean;
 		children?: Snippet;
 	}

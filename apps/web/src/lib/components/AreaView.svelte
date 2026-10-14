@@ -34,9 +34,9 @@
 	import Istilah from './Istilah.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
-	import SinyalPasar from './SinyalPasar.svelte';
+	import MarketSignal from './MarketSignal.svelte';
 	import { getEvents, getVerdict } from '$lib/api/client';
-	import type { Fakta, Kejadian, VerdictPasar } from '$lib/api/types';
+	import type { Fact, EventItem, MarketVerdict } from '$lib/api/types';
 
 	interface Props {
 		kunci: string;
@@ -105,7 +105,7 @@ function pilihSub(s: string) {
 	// menjanjikan "aliran SSE terfilter" padahal isinya mustahil terisi (menyesatkan).
 	// Verdict KANONIK (audit QA 7 Okt): headline keputusan per pasar datang dari backend,
 	// bukan disusun UI dari beberapa angka. Satu panggilan, dipakai semua area.
-	let verdictSemua = $state<VerdictPasar[]>([]);
+	let verdictSemua = $state<MarketVerdict[]>([]);
 	$effect(() => {
 		let batal = false;
 		void (async () => {
@@ -122,7 +122,7 @@ function pilihSub(s: string) {
 	});
 	const verdictArea = $derived(verdictSemua.find((v) => v.pasar === kunci) ?? null);
 
-	let kejadianRiw = $state<Kejadian[]>([]);
+	let kejadianRiw = $state<EventItem[]>([]);
 	$effect(() => {
 		let batal = false;
 		// Backfill DISARING ke prefiks area. Tanpa filter, 120 kejadian terakhir hampir
@@ -143,7 +143,7 @@ function pilihSub(s: string) {
 	});
 	const kejadianGabung = $derived.by(() => {
 		const seen = new Set<number>();
-		const out: Kejadian[] = [];
+		const out: EventItem[] = [];
 		for (const k of [...live.kejadian, ...kejadianRiw]) {
 			const id = Number(k.id);
 			if (Number.isFinite(id) && id > 0) {
@@ -194,7 +194,7 @@ function pilihSub(s: string) {
 
 	let tampilRaw = $state(false);
 
-	function temukanFakta(facts: Fakta[], key: string): Fakta | null {
+	function temukanFakta(facts: Fact[], key: string): Fact | null {
 		return facts.find((f) => f.key === key) ?? null;
 	}
 
@@ -361,7 +361,7 @@ function pilihSub(s: string) {
 			class="rounded-control border border-line bg-surface px-3 py-1.5 text-11 text-text-3 hover:text-text hover:border-line-soft transition-colors"
 			onclick={() => (tampilRaw = !tampilRaw)}
 		>
-			{tampilRaw ? 'Tutup Inspeksi Mentah' : '🔍 Inspeksi Fakta Mentah'}
+			{tampilRaw ? 'Tutup Inspeksi Mentah' : '🔍 Inspeksi Fact Mentah'}
 		</button>
 	</div>
 
@@ -728,7 +728,7 @@ function pilihSub(s: string) {
 
 							{#if sub === 'setup'}
 								<!-- Kandidat "layar besar" (SignalCard) HANYA di tab Setup.
-								     Di Cockpit ini duplikat dengan tabel SinyalPasar dan membuat kedua
+								     Di Cockpit ini duplikat dengan tabel MarketSignal dan membuat kedua
 								     tab terasa sama (keluhan pemilik 7 Okt: "apa pembedanya?"). -->
 								<div class="permukaan-2 rounded-card border border-line p-3">
 									<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -851,7 +851,7 @@ function pilihSub(s: string) {
 							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC.
 							     HANYA di Setup — supaya Cockpit (ringkasan) tidak berisi tabel panjang. -->
 							{#if sub === 'setup'}
-								<SinyalPasar
+								<MarketSignal
 									pasar="crypto"
 									judul="Sinyal & Entry Setup (Crypto)"
 									subjudul="Verdict gate SMC terakhir — skor = aturan lolos, bukan edge terbukti"
@@ -1307,7 +1307,7 @@ function pilihSub(s: string) {
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
-									<h3 class="text-14 font-medium text-text">Kesehatan Jalur Data &amp; Integrasi Bursa</h3>
+									<h3 class="text-14 font-medium text-text">Health Jalur Data &amp; Integrasi Bursa</h3>
 									<p class="text-11 text-text-3">Status koneksi real-time ke data provider dan latency audit</p>
 								</div>
 								<span class="rounded bg-pos/10 px-2 py-0.5 text-11 font-mono text-pos border border-pos/30">
@@ -2085,7 +2085,7 @@ function pilihSub(s: string) {
 
 				<!-- Sinyal & entry setup IDX (6 Okt): ARA/BSJP/INTRADAY dari ledger mesin -->
 				{#if sub === 'bsjp' || sub === 'sinyal'}
-					<SinyalPasar
+					<MarketSignal
 						pasar="idx"
 						judul="Sinyal & Entry Setup (IDX)"
 						subjudul={(sub === 'sinyal' || !sub ? 'LANGKAH 3 · ' : '') + 'Catatan transaksi mesin 616: ARA, BSJP, Scalping — harga masuk/keluar, hasil per transaksi'}
@@ -2722,7 +2722,7 @@ function pilihSub(s: string) {
 						<ZonaAktif blok={forexSinyalObj} />
 
 						<!-- Sinyal & entry setup forex (6 Okt): XAUUSD 4-agen + multi-pair, dari jurnal Tencent -->
-						<SinyalPasar
+						<MarketSignal
 							pasar="forex"
 							judul="Sinyal & Entry Setup (Forex)"
 							subjudul="Jurnal mesin XAUUSD (SMC 4-agen) + NAS100/EURUSD (FVG/OB 1H) — zona entry khas SMC"
@@ -3013,7 +3013,7 @@ function pilihSub(s: string) {
 							</div>
 							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">GMGN / FOMO</b> — pemindaian token baru + safety gate (bundler, dev hold, entrapment).</p>
 							<!-- Status hasil apa adanya (perbaikan per-halaman 10 Okt): kartu "PAPER JALAN"
-							     hijau dulu berdiri sendiri, jadi terlihat lebih baik dari kenyataan. Fakta
+							     hijau dulu berdiri sendiri, jadi terlihat lebih baik dari kenyataan. Fact
 							     snapshot/gmgn TIDAK punya vonis gate (tak ada kata lolos/ditolak/gate), dan
 							     statnya masih posisi TERBUKA (closed=0) — jadi ditulis apa adanya di sini. -->
 							{#if gmgnSnapStats?.length}
@@ -3102,7 +3102,7 @@ function pilihSub(s: string) {
 
 
 				<!-- Penjelasan LP: Robinhood Chain vs Meteora (riset 7 Okt) + verifikasi live.
-				     Fakta yang membingungkan banyak orang dijelaskan di sini dengan bukti. -->
+				     Fact yang membingungkan banyak orang dijelaskan di sini dengan bukti. -->
 				{#if sub === 'radar' || !sub}
 					<div class="space-y-3">
 						<!-- Jawaban satu baris (pertanyaan langsung pemilik 7 Okt): "aslinya kita
@@ -3746,7 +3746,7 @@ function pilihSub(s: string) {
 					{/if}
 
 					<!-- Tabel Data Mentah -->
-					<Block judul="Daftar Fakta Area" deskripsi={`${data.facts.length} fakta · sumber & umur ditampilkan apa adanya`}>
+					<Block judul="Daftar Fact Area" deskripsi={`${data.facts.length} fakta · sumber & umur ditampilkan apa adanya`}>
 						<DataTable
 							kolom={kolomFakta}
 							baris={barisFakta}
@@ -3757,7 +3757,7 @@ function pilihSub(s: string) {
 				</div>
 			{/if}
 
-			<!-- Aliran Kejadian SSE untuk Area ini.
+			<!-- Aliran EventItem SSE untuk Area ini.
 			     Revisi pemilik 7 Okt: "kejadian area cardnya di collaps aja toh itu 3 tombolnya
 			     ga berfungsi juga". Dua hal yang diperbaiki:
 			     (1) blok ini TERLIPAT secara default — bukan karena isinya rusak, tapi karena
@@ -3767,7 +3767,7 @@ function pilihSub(s: string) {
 			         filter di EventFeed hanya dirender bila ada LEBIH DARI SATU tipe kejadian —
 			         tombol yang tidak mungkin mengubah apa pun tidak lagi dipajang. -->
 			<Block
-				judul="Kejadian Area"
+				judul="EventItem Area"
 				deskripsi={`Aliran SSE terfilter topik area · ${kejadianArea.length} kejadian`}
 				lipat
 				lipatAwal

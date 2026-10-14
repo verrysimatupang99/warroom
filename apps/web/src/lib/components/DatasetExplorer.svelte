@@ -3,12 +3,12 @@
 	// + cakupan baca `poly.akses/cakupan`. Semua angka apa adanya dari fakta; direktori yang
 	// tidak terbaca tampil sebagai statusnya (mis. `tidak-izin`), bukan nol.
 	// Unduh sampel belum diekspos: butuh allowlist baca di sisi host (checklist go/no-go C4).
-	import type { Fakta } from '$lib/api/types';
+	import type { Fact } from '$lib/api/types';
 	import EmptyState from './EmptyState.svelte';
 
 	interface Props {
-		recorder: Fakta | null;
-		cakupan: Fakta | null;
+		recorder: Fact | null;
+		cakupan: Fact | null;
 	}
 	let { recorder, cakupan }: Props = $props();
 
@@ -75,7 +75,7 @@
 	{#if !recorder && !cakupan}
 		<EmptyState
 			judul="Katalog dataset belum ada"
-			pesan="Fakta poly.dataset/recorder dan poly.akses/cakupan belum diterbitkan job poly-sync."
+			pesan="Fact poly.dataset/recorder dan poly.akses/cakupan belum diterbitkan job poly-sync."
 		/>
 	{:else}
 		<div class="grid gap-2 sm:grid-cols-3">

@@ -23,7 +23,7 @@
 	/** Mode eksekusi dari API (`/api/v1/live/arming`) — SATU-SATUNYA sumber badge mode.
 	 *  null = belum tahu/gagal fetch → badge disembunyikan (jujur, bukan dikarang). */
 	let arming = $state<LiveArming | null>(null);
-	/** Fakta basi + sebabnya — QA putaran 2: "status basi perlu dijelaskan dengan
+	/** Fact basi + sebabnya — QA putaran 2: "status basi perlu dijelaskan dengan
 	 *  sumber dan timestamp yang lebih langsung", bukan hanya jumlah di header. */
 	let basiDaftar = $state<{ kind: string; key: string; umur_s: number | null; ttl_s: number | null; sumber: string }[]>([]);
 	let basiTerbuka = $state(false);
@@ -101,7 +101,7 @@
 
 		<span class="stat angka" aria-label="jam WIB">{jam} <span class="wib">WIB</span></span>
 
-		<a class="stat" href="/sistem?sub=event" aria-label="Notifikasi & kejadian" title="Kejadian">
+		<a class="stat" href="/sistem?sub=event" aria-label="Notifikasi & kejadian" title="EventItem">
 			<Ikon nama="lonceng" ukuran={15} />
 		</a>
 	</div>

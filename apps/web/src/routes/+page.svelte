@@ -11,18 +11,18 @@
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
 	import { getArea, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
-	import type { AreaPayload, DaftarSinyalPasar, LiveArming, PasarRingkasPayload, SinyalPasar, SinyalPayload, VerdictPasar } from '$lib/api/types';
+	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
 
-	let sinyal = $state<SinyalPayload | null>(null);
+	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
-	let akurasi = $state<PasarRingkasPayload | null>(null);
+	let akurasi = $state<MarketSummaryPayload | null>(null);
 	let galat = $state<string | null>(null);
 	// Sumber data tiap pasar (revisi pemilik 7 Okt): satu tempat, tidak perlu ditebak.
 	let sumber = $state<{ pasar: string; label: string; sumber: string; keterangan: string }[]>([]);
 	// Verdict kanonik (audit QA 7 Okt) — dipakai agar Home TIDAK menyusun kesimpulan sendiri.
-	let verdictSemua = $state<VerdictPasar[]>([]);
+	let verdictSemua = $state<MarketVerdict[]>([]);
 	// Mode eksekusi global dari API arming — SATU-SATUNYA sumber badge mode di header Home.
 	let arming = $state<LiveArming | null>(null);
 async function muat() {
@@ -53,15 +53,15 @@ async function muat() {
 
 	const daftar = $derived(sinyal?.sinyal ?? []);
 	const pasarDaftar = $derived(sinyal?.pasar ?? []);
-	// Kejujuran per kartu: SinyalPasar (daftar) membawa `terverifikasi`, `catatan_kejujuran`,
-	// `umur_sinyal_s`, `dibuat_pada` — DaftarSinyalPasar (pasar) belum. Gabungkan per pasar supaya
+	// Kejujuran per kartu: MarketSignal (daftar) membawa `terverifikasi`, `catatan_kejujuran`,
+	// `umur_sinyal_s`, `dibuat_pada` — MarketSignalList (pasar) belum. Gabungkan per pasar supaya
 	// tiap kartu menampilkan status verifikasi + umur SINYALNYA (bukan umur fakta crypto).
 	const jujurPerPasar = $derived.by(() => {
-		const m = new Map<string, SinyalPasar>();
+		const m = new Map<string, MarketSignal>();
 		for (const s of sinyal?.sinyal ?? []) m.set(s.pasar, s);
 		return m;
 	});
-	const kartuJujur = (p: DaftarSinyalPasar) => {
+	const kartuJujur = (p: MarketSignalList) => {
 		const s = jujurPerPasar.get(p.pasar);
 		const terverifikasi = p.terverifikasi ?? s?.terverifikasi ?? null;
 		const catatan = p.catatan_kejujuran || s?.catatan_kejujuran || '';
@@ -162,7 +162,7 @@ async function muat() {
 	// PELUANG" tak memberi harga masuk. Angka ditampilkan apa adanya; yang tidak
 	// ada tidak dikarang (mis. forex/idx yang belum punya sinyal).
 	type Setup = { label: string; nilai: string; nada?: 'masuk' | 'stop' | 'target' | 'netral' };
-	const setupDari = (s: SinyalPasar): Setup[] => {
+	const setupDari = (s: MarketSignal): Setup[] => {
 		const d = (s.detail ?? {}) as Record<string, unknown>;
 		const out: Setup[] = [];
 		const num = (v: unknown) => (typeof v === 'number' ? v : null);
@@ -211,7 +211,7 @@ async function muat() {
 			if (out.length) return out;
 		}
 
-		// Fallback ke detail dari bentuk legacy (daftar/SinyalPasar) bila pasar non-crypto
+		// Fallback ke detail dari bentuk legacy (daftar/MarketSignal) bila pasar non-crypto
 		const sp = daftar.find((r) => r.ada && r.pasar === pasarTeratas.pasar);
 		return sp ? setupDari(sp) : [];
 	});

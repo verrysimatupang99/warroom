@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import DatasetExplorer from './DatasetExplorer.svelte';
-import type { Fakta } from '$lib/api/types';
+import type { Fact } from '$lib/api/types';
 
-function fakta(kind: string, key: string, value: unknown): Fakta {
+function fakta(kind: string, key: string, value: unknown): Fact {
 	return {
 		fact_id: 1,
 		kind,

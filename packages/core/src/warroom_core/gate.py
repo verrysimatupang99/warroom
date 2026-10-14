@@ -29,11 +29,11 @@ __all__ = [
     "GATE_TOOL_CI",
     "GateInput",
     "GateResult",
-    "PakemTingkat",
+    "PakemLevel",
     "evaluate",
     "policy_from_evidence",
     "required_n",
-    "tingkat_pakem",
+    "pakem_level",
     "wilson_interval",
 ]
 
@@ -230,7 +230,7 @@ class GateResult:
         UI wajib menampilkan keduanya — jangan sampai n besar terbaca "hampir lolos"
         padahal yang kurang bukan sampel.
         """
-        return tingkat_pakem(self.n_efektif)
+        return pakem_level(self.n_efektif)
 
     @property
     def n_efektif(self) -> int:
@@ -242,7 +242,7 @@ class GateResult:
         return self.n
 
 
-class PakemTingkat:
+class PakemLevel:
     """Ambang pakem bukti (satu sumber untuk gate, UI, dan learner)."""
 
     DIRECTIONAL = 10
@@ -250,18 +250,18 @@ class PakemTingkat:
     TUNING = 100
 
 
-def tingkat_pakem(n_efektif: int) -> str:
+def pakem_level(n_efektif: int) -> str:
     """Kematangan sampel: INSUFFICIENT · DIRECTIONAL · PRELIMINARY · TUNING.
 
     Ambang disepakati owner 6 Okt 2026 (diangkat dari Tencent
     `signal-performance-validation`): <10 insufficient · 10–29 directional ·
     ≥30 preliminary · ≥100 tuning. Pakai **n efektif** (setelah deff), bukan n mentah.
     """
-    if n_efektif < PakemTingkat.DIRECTIONAL:
+    if n_efektif < PakemLevel.DIRECTIONAL:
         return "INSUFFICIENT"
-    if n_efektif < PakemTingkat.PRELIMINARY:
+    if n_efektif < PakemLevel.PRELIMINARY:
         return "DIRECTIONAL"
-    if n_efektif < PakemTingkat.TUNING:
+    if n_efektif < PakemLevel.TUNING:
         return "PRELIMINARY"
     return "TUNING"
 

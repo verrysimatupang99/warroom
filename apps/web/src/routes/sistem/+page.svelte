@@ -16,12 +16,12 @@
 		rollbackProposal
 	} from '$lib/api/client';
 	import type {
-		AiConsole,
+		LlmConsole,
 		AlertsPayload,
-		Aku,
+		Me,
 		AreasPayload,
-		Kesehatan,
-		KesegaranPayload,
+		Health,
+		FreshnessPayload,
 		Proposal
 	} from '$lib/api/types';
 	import { page } from '$app/state';
@@ -55,15 +55,15 @@ function pilihSub(s: string) {
 }
 
 	let areas = $state<AreasPayload | null>(null);
-	let kesegaran = $state<KesegaranPayload | null>(null);
-	let sehat = $state<Kesehatan | null>(null);
+	let kesegaran = $state<FreshnessPayload | null>(null);
+	let sehat = $state<Health | null>(null);
 	let metrik = $state<string | null>(null);
 	let galatMetrik = $state<string | null>(null);
-	let aiKonsol = $state<AiConsole | null>(null);
+	let aiKonsol = $state<LlmConsole | null>(null);
 	let alerts = $state<AlertsPayload | null>(null);
-	let aku = $state<Aku | null>(null);
+	let aku = $state<Me | null>(null);
 	let proposals = $state<Proposal[] | null>(null);
-	// Fakta `lpagent` (kind sendiri) — dari /api/v1/areas/sistem. Telemetri pool
+	// Fact `lpagent` (kind sendiri) — dari /api/v1/areas/sistem. Telemetri pool
 	// Solana/Meteora via LP Agent Open API; tanpa kunci isinya jujur 'menunggu-kunci'.
 	let lpagent = $state<Record<string, any> | null>(null);
 	let aksiGalat = $state<string | null>(null);
@@ -86,7 +86,7 @@ function pilihSub(s: string) {
 		if (al.status === 'fulfilled') alerts = al.value;
 		if (ak.status === 'fulfilled') aku = ak.value;
 		if (pr.status === 'fulfilled') proposals = pr.value.proposals;
-		// Fakta lpagent datang lewat area 'sistem' (kind `lpagent`). Gagal → tetap null,
+		// Fact lpagent datang lewat area 'sistem' (kind `lpagent`). Gagal → tetap null,
 		// halaman menampilkan 'belum ada fakta', bukan mengarang daftar pool.
 		try {
 			const sys = await getArea('sistem');
@@ -175,7 +175,7 @@ function pilihSub(s: string) {
 		</Block>
 	{:else if sub === 'mesin'}
 		<!-- Mesin = sumber data PIHAK KETIGA (bukan berkas lokal). Saat ini LP Agent
-		     (telemetri pool Solana/Meteora). Fakta `lpagent` diterbitkan job
+		     (telemetri pool Solana/Meteora). Fact `lpagent` diterbitkan job
 		     `lpagent-sync`; tanpa kunci isinya jujur 'menunggu-kunci' — halaman ini
 		     menampilkan apa adanya, tidak pernah mengarang daftar pool. -->
 		{#if lpagent}
@@ -404,7 +404,7 @@ function pilihSub(s: string) {
 		</Block>
 	{:else if sub === 'ai'}
 		<Block
-			judul="Kesehatan provider"
+			judul="Health provider"
 			deskripsi="Dari llm_calls — provider mana yang gagal, kode apa, seberapa lambat"
 			memuat={memuat && !aiKonsol}
 			kosong={!aiKonsol || aiKonsol.per_provider.length === 0}
@@ -449,7 +449,7 @@ function pilihSub(s: string) {
 		</Block>
 		<Block
 			judul="LLMConsole"
-			deskripsi="Kesehatan provider, latensi, biaya, fallback"
+			deskripsi="Health provider, latensi, biaya, fallback"
 			memuat={memuat && !metrik}
 			galat={galatMetrik}
 			kosong={barisLlm.length === 0}

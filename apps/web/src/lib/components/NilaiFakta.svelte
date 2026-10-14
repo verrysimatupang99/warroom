@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Render satu fakta secara generik: angka → ubin, array/objek-of-objek → tabel, sisanya →
 	// nilai mentah di drawer. Tidak ada nilai turunan yang dikarang.
-	import type { Fakta } from '$lib/api/types';
+	import type { Fact } from '$lib/api/types';
 	import { tilesDari, tabelDari, seriDari, ringkasNilai } from '$lib/nilai';
 	import { waktuWIB } from '$lib/format';
 	import MetricTile from './MetricTile.svelte';
@@ -9,7 +9,7 @@
 	import Drawer from './Drawer.svelte';
 
 	interface Props {
-		fakta: Fakta;
+		fakta: Fact;
 		filterKunci?: string;
 	}
 	let { fakta, filterKunci }: Props = $props();

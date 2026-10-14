@@ -1,8 +1,8 @@
-"""Penjaga drift kontrak: bentuk `SinyalPasar` backend harus sama dengan tipe TS frontend.
+"""Penjaga drift kontrak: bentuk `MarketSignal` backend harus sama dengan tipe TS frontend.
 
 KENAPA INI ADA
 --------------
-`SinyalPasar` adalah kontrak UI yang dipakai Home (satu sinyal terbaik per pasar).
+`MarketSignal` adalah kontrak UI yang dipakai Home (satu sinyal terbaik per pasar).
 Bentuknya ditulis DUA kali: dataclass Python di `warroom_core.market_signal` dan interface
 TypeScript di `apps/web/src/lib/api/types.ts`. Kalau salah satu menambah/menghapus
 field tanpa yang lain, TypeScript tetap kompilasi (field hilang jadi `undefined`
@@ -18,7 +18,7 @@ import re
 from dataclasses import fields
 from pathlib import Path
 
-from warroom_core.market_signal import SinyalPasar
+from warroom_core.market_signal import MarketSignal
 
 # packages/core/tests/ -> repo root -> apps/web/src/lib/api/types.ts
 _ROOT = Path(__file__).resolve().parents[3]
@@ -42,10 +42,10 @@ def _field_ts(interface: str) -> set[str]:
 
 
 def test_field_sinyal_pasar_sama_di_backend_dan_frontend() -> None:
-    py = {f.name for f in fields(SinyalPasar)}
-    ts = _field_ts("SinyalPasar")
+    py = {f.name for f in fields(MarketSignal)}
+    ts = _field_ts("MarketSignal")
     assert py == ts, (
-        "Kontrak SinyalPasar drift antara backend dan frontend.\n"
+        "Kontrak MarketSignal drift antara backend dan frontend.\n"
         f"  Hanya di Python : {sorted(py - ts)}\n"
         f"  Hanya di TS     : {sorted(ts - py)}\n"
         "Perbarui packages/core/src/warroom_core/market_signal.py DAN "

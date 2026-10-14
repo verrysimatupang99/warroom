@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session as SASession
 
 from warroom_core.db import Fact
 
-__all__ = ["DaftarSinyal", "SinyalPasar", "signals_per_market", "best_signal_per_market", "PASAR"]
+__all__ = ["MarketSignalList", "MarketSignal", "signals_per_market", "best_signal_per_market", "PASAR"]
 
 # Urutan + label pasar yang ditampilkan di Home. Satu sumber supaya UI dan API tidak
 # berbeda definisi (pelajaran yang sama dengan nav.ts).
@@ -46,7 +46,7 @@ _TIER_RANK = {"PREMIUM": 3, "EDGE": 3, "STANDAR": 2, "KANDIDAT": 2, "SKIP": 1, "
 
 
 @dataclass
-class SinyalPasar:
+class MarketSignal:
     """Satu sinyal terbaik untuk satu pasar. Bentuk seragam untuk semua pasar."""
 
     pasar: str
@@ -339,10 +339,10 @@ def _confluence_forex(
     return confluence, metrics, "PANTAU", "Eksekusi paper; pantau spread bursa sebelum masuk."
 
 
-def _crypto(s: SASession) -> SinyalPasar:
+def _crypto(s: SASession) -> MarketSignal:
     kandidat, observed = _ambil(s, "snapshot", "kandidat")
     if not isinstance(kandidat, list) or not kandidat:
-        return SinyalPasar(
+        return MarketSignal(
             pasar="crypto", label="Crypto (SMC)", ada=False, sumber_fakta="snapshot/kandidat",
             umur_s=_umur(observed),
             alasan="Belum ada kandidat dari pemindaian SMC.",
@@ -372,7 +372,7 @@ def _crypto(s: SASession) -> SinyalPasar:
         entry=terbaik.get("entry"), sl=terbaik.get("sl"), tp1=terbaik.get("tp1"),
         skor=skor, tier=tier, rules_gagal=gagal,
     )
-    return SinyalPasar(
+    return MarketSignal(
         pasar="crypto", label="Crypto (SMC)", ada=True,
         arah=str(terbaik.get("direction") or terbaik.get("arah") or "").upper() or None,
         subjek=str(terbaik.get("pair") or "") or None,
@@ -396,10 +396,10 @@ def _crypto(s: SASession) -> SinyalPasar:
     )
 
 
-def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> SinyalPasar:
+def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> MarketSignal:
     v, observed = _ambil(s, "poly.verdict", "verdict")
     if not isinstance(v, dict):
-        return SinyalPasar(
+        return MarketSignal(
             pasar="polymarket", label="Polymarket (favorit 5m)", ada=False,
             sumber_fakta="poly.verdict/verdict", umur_s=_umur(observed),
             alasan="Belum ada verdict.", catatan_kejujuran="Verdict dihitung tiap jam.",
@@ -440,7 +440,7 @@ def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> SinyalPas
             "BELUM TERVERIFIKASI: split masih kosong — belum lewat split beku, jadi ini "
             "klaim eksplorasi, bukan edge yang lolos gate."
         )
-    return SinyalPasar(
+    return MarketSignal(
         pasar="polymarket", label="Polymarket (favorit 5m)", ada=True,
         arah="BELI" if alat == "EDGE" else "TAHAN",
         subjek=str(v.get("rule") or "favorit"),
@@ -463,7 +463,7 @@ def _polymarket(s: SASession, *, split_terverifikasi: bool = False) -> SinyalPas
     )
 
 
-def _gmgn(s: SASession) -> SinyalPasar:
+def _gmgn(s: SASession) -> MarketSignal:
     # Radar ditulis job `gmgn-sync` dengan kind `gmgn` (bukan `snapshot`), dan daftar
     # jendelanya bernama `chains` (bukan `state`). Salah kind/nama = kartu "TIDAK ADA"
     # palsu di Home padahal radar hidup — ditemukan & diperbaiki 6 Okt.
@@ -479,7 +479,7 @@ def _gmgn(s: SASession) -> SinyalPasar:
         chains = (r or {}).get("chains") if isinstance(r, dict) else None
         state = chains if isinstance(chains, list) else state
     if not isinstance(state, list) or not state:
-        return SinyalPasar(
+        return MarketSignal(
             pasar="gmgn", label="DEX / Memecoin (GMGN)", ada=False, sumber_fakta="gmgn/radar",
             umur_s=_umur(observed), alasan="Belum ada data radar.",
             catatan_kejujuran="Radar butuh cache GMGN; kosong berarti belum ditarik.",
@@ -500,7 +500,7 @@ def _gmgn(s: SASession) -> SinyalPasar:
         window=str(terbaik.get("window") or ""),
         total_liq=terbaik.get("total_liq"),
     )
-    return SinyalPasar(
+    return MarketSignal(
         pasar="gmgn", label="DEX / Memecoin (GMGN)", ada=True,
         arah="PANTAU", subjek=str(terbaik.get("chain") or ""),
         skor=round(100 * viable / pools) if pools else None,
@@ -523,11 +523,11 @@ def _gmgn(s: SASession) -> SinyalPasar:
     )
 
 
-def _lp(s: SASession) -> SinyalPasar:
+def _lp(s: SASession) -> MarketSignal:
     r, observed = _ambil(s, "snapshot", "lp_paper")
     posisi = (r or {}).get("posisi") if isinstance(r, dict) else None
     if not isinstance(posisi, list) or not posisi:
-        return SinyalPasar(
+        return MarketSignal(
             pasar="lp", label="LP / Yield", ada=False, sumber_fakta="snapshot/lp_paper",
             umur_s=_umur(observed), alasan="Tidak ada posisi LP paper aktif.",
             catatan_kejujuran="Kapasitas LP kecil; kosong berarti belum ada kandidat.",
@@ -541,7 +541,7 @@ def _lp(s: SASession) -> SinyalPasar:
         umur_hari=sorotan.get("umur"),
         lp_verdict=str(sorotan.get("verdict") or "PANTAU"),
     )
-    return SinyalPasar(
+    return MarketSignal(
         pasar="lp", label="LP / Yield", ada=True,
         arah=str(sorotan.get("verdict") or "PANTAU"), subjek=str(sorotan.get("symbol") or ""),
         skor=None,
@@ -569,7 +569,7 @@ def _dari_fakta_sinyal(
     key: str,
     sumber: str,
     catatan: str,
-) -> SinyalPasar | None:
+) -> MarketSignal | None:
     """Sinyal terbaik dari fakta ``*_sinyal`` (diterbitkan pasar.py): entry teratas + waktu.
 
     Dipakai IDX & Forex — sebelumnya keduanya selalu "TIDAK ADA" di Home karena hanya
@@ -601,7 +601,7 @@ def _dari_fakta_sinyal(
             entry=pertama.get("entry"), sl=pertama.get("sl"), tp1=pertama.get("tp1"),
         )
 
-    return SinyalPasar(
+    return MarketSignal(
         pasar=pasar, label=label, ada=True,
         arah=arah, subjek=subjek, skor=None,
         tier=str(pertama.get("setup") or pertama.get("tier") or ""),
@@ -624,7 +624,7 @@ def _dari_fakta_sinyal(
     )
 
 
-def _idx(s: SASession) -> SinyalPasar:
+def _idx(s: SASession) -> MarketSignal:
     hasil = _dari_fakta_sinyal(
         s, pasar="idx", label="IDX (bandarmologi/BSJP)", key="idx_sinyal",
         sumber="snapshot/idx_sinyal",
@@ -639,7 +639,7 @@ def _idx(s: SASession) -> SinyalPasar:
     )
 
 
-def _forex(s: SASession) -> SinyalPasar:
+def _forex(s: SASession) -> MarketSignal:
     hasil = _dari_fakta_sinyal(
         s, pasar="forex", label="Forex", key="forex_sinyal",
         sumber="snapshot/forex_sinyal",
@@ -651,10 +651,10 @@ def _forex(s: SASession) -> SinyalPasar:
     return hasil or _kosong("forex", "Forex", "snapshot/forex_sinyal", s, "Belum ada sinyal Forex.")
 
 
-def _kosong(pasar: str, label: str, sumber: str, s: SASession, alasan: str) -> SinyalPasar:
+def _kosong(pasar: str, label: str, sumber: str, s: SASession, alasan: str) -> MarketSignal:
     kind, _, key = sumber.partition("/") if "/" in sumber else (sumber, "", "")
     _, observed = _ambil(s, kind, key) if key else (None, None)
-    return SinyalPasar(
+    return MarketSignal(
         pasar=pasar, label=label, ada=False, sumber_fakta=sumber, umur_s=_umur(observed),
         alasan=alasan,
         catatan_kejujuran="Pasar ini belum punya sinyal — ditampilkan apa adanya, bukan angka 0.",
@@ -662,7 +662,7 @@ def _kosong(pasar: str, label: str, sumber: str, s: SASession, alasan: str) -> S
 
 
 @dataclass
-class DaftarSinyal:
+class MarketSignalList:
     """Kumpulan sinyal SATU pasar untuk Home (maks 3 ditampilkan + tautan ke halaman)."""
 
     pasar: str
@@ -698,7 +698,7 @@ def _rute_pasar(pasar: str) -> str:
     }.get(pasar, f"/{pasar}")
 
 
-def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
+def _kandidat_crypto(s: SASession, maks: int = 12) -> MarketSignalList:
     """Sinyal crypto AKTIF dari fakta `signal/*` (kind signal) — urut skor aturan.
 
     Dipisah tegas: tidak ada fakta sama sekali BISA berarti (a) mesin baru selesai dan
@@ -768,7 +768,7 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
         )
     if sinyal:
         terbaik = sinyal[0]
-        return DaftarSinyal(
+        return MarketSignalList(
             pasar="crypto", label="Crypto (SMC)", status_data="ada",
             rute=_rute_pasar("crypto"), jumlah=len(hidup), sinyal=sinyal,
             sumber="OKX", mode="PAPER",
@@ -781,7 +781,7 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
     # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
     dari_verdict = _umur_iso(_verdict_terakhir(s))
     if dari_verdict is not None and dari_verdict <= 6 * 3600:
-        return DaftarSinyal(
+        return MarketSignalList(
             pasar="crypto", label="Crypto (SMC)", status_data="kosong", rute=_rute_pasar("crypto"),
             alasan=(
                 f"Pemindaian berjalan (verdict terakhir {int(dari_verdict / 60)} menit lalu) "
@@ -790,7 +790,7 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> DaftarSinyal:
             autotrade_verdict="SKIP",
             alasan_eksekusi="Tidak ada setup yang lolos filter strategi saat ini.",
         )
-    return DaftarSinyal(
+    return MarketSignalList(
         pasar="crypto", label="Crypto (SMC)", status_data="gagal", rute=_rute_pasar("crypto"),
         alasan=(
             "GAGAL SISTEM: tidak ada jejak pemindaian terbaru di ledger gate — "
@@ -816,14 +816,14 @@ def _verdict_terakhir(s: SASession) -> str | None:
 
 def signals_per_market(
     s: SASession, *, maks: int = 3, split_terverifikasi: bool = False
-) -> list[DaftarSinyal]:
+) -> list[MarketSignalList]:
     """Untuk tiap pasar: daftar sinyal (maks `maks` ditampilkan) + status jujur.
 
     Home hanya butuh 3 terbaik per pasar + tautan ke halaman pasar — bukan seluruh
     riwayat. Pasar yang sinyalnya lebih dari `maks` mengembalikan `jumlah` penuh supaya
     UI bisa menulis "lihat semua (N)".
     """
-    keluar: list[DaftarSinyal] = []
+    keluar: list[MarketSignalList] = []
     urutan = {k: i for i, (k, _l, _s) in enumerate(PASAR)}
     crypto = _kandidat_crypto(s, maks=maks)
     keluar.append(crypto)
@@ -850,7 +850,7 @@ def signals_per_market(
         }.get(sp.pasar, ("—", "PAPER", ""))
         if sp.ada:
             keluar.append(
-                DaftarSinyal(
+                MarketSignalList(
                     pasar=sp.pasar, label=sp.label, status_data="ada", rute=_rute_pasar(sp.pasar),
                     jumlah=1, sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
                     confluence=sp.confluence,
@@ -883,7 +883,7 @@ def signals_per_market(
             )
         else:
             keluar.append(
-                DaftarSinyal(
+                MarketSignalList(
                     pasar=sp.pasar, label=sp.label, status_data="kosong", rute=_rute_pasar(sp.pasar),
                     alasan=sp.alasan, jumlah=0,
                     sumber=sumber_pasar[0], mode=sumber_pasar[1], catatan_mode=sumber_pasar[2],
@@ -895,10 +895,10 @@ def signals_per_market(
     return keluar
 
 
-def best_signal_per_market(s: SASession, *, split_terverifikasi: bool = False) -> list[SinyalPasar]:
+def best_signal_per_market(s: SASession, *, split_terverifikasi: bool = False) -> list[MarketSignal]:
     """Satu sinyal terbaik per pasar, urut sesuai PASAR. Selalu mengembalikan semua pasar
     (yang kosong pun), supaya UI tidak perlu tahu pasar mana yang kebetulan ada."""
-    keluar: list[SinyalPasar] = [
+    keluar: list[MarketSignal] = [
         _crypto(s),
         _polymarket(s, split_terverifikasi=split_terverifikasi),
         _gmgn(s),

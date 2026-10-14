@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Blok gate: hanya dievaluasi bila ada fakta verdict/gate yang benar-benar memuat n/win/be.
 	// Tidak ada fakta → EmptyState (gate tidak pernah menebak dari nol).
-	import type { AreaPayload, HasilGate, MasukanGate } from '$lib/api/types';
+	import type { AreaPayload, GateResult, GateInput } from '$lib/api/types';
 	import { nilaiGate } from '$lib/api/client';
 	import GateMeter from './GateMeter.svelte';
 
@@ -10,7 +10,7 @@
 	}
 	let { data }: Props = $props();
 
-	const masukan = $derived.by<MasukanGate | null>(() => {
+	const masukan = $derived.by<GateInput | null>(() => {
 		for (const f of data.facts) {
 			if (f.key !== 'verdict' && f.key !== 'gate') continue;
 			const v = f.value as Record<string, unknown> | null;
@@ -35,11 +35,11 @@
 		return null;
 	});
 
-	let hasil = $state<HasilGate | null>(null);
+	let hasil = $state<GateResult | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(false);
 
-	async function nilai(m: MasukanGate) {
+	async function nilai(m: GateInput) {
 		memuat = true;
 		try {
 			hasil = await nilaiGate(m);

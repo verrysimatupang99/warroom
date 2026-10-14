@@ -8,7 +8,7 @@ export type StatusKesegaran = 'segar' | 'basi';
 export type SourceState = 'fresh' | 'stale' | 'degraded' | 'unknown';
 export type Peran = 'viewer' | 'operator' | 'owner';
 
-export interface Fakta {
+export interface Fact {
 	fact_id: number;
 	kind: string;
 	key: string;
@@ -30,11 +30,11 @@ export interface AreaPayload {
 	kunci_hilang?: string[];
 	/** only emitted by the area endpoint when facts exist */
 	areas?: string[];
-	facts: Fakta[];
+	facts: Fact[];
 	data: Record<string, unknown>;
 }
 
-export interface BarisKesegaran {
+export interface FreshnessRow {
 	kind: string;
 	key: string;
 	source: string;
@@ -44,13 +44,13 @@ export interface BarisKesegaran {
 	status: StatusKesegaran;
 }
 
-export interface KesegaranPayload {
-	facts: BarisKesegaran[];
+export interface FreshnessPayload {
+	facts: FreshnessRow[];
 	count: number;
 	checked_at: string;
 }
 
-export interface RingkasArea {
+export interface AreaSummary {
 	area: string;
 	fakta: number;
 	hilang: number;
@@ -60,10 +60,10 @@ export interface RingkasArea {
 }
 
 export interface AreasPayload {
-	areas: RingkasArea[];
+	areas: AreaSummary[];
 }
 
-export interface FaktaSatu {
+export interface SingleFact {
 	kind: string;
 	key: string;
 	facts: {
@@ -76,7 +76,7 @@ export interface FaktaSatu {
 	}[];
 }
 
-export interface HasilGate {
+export interface GateResult {
 	verdict: 'lolos' | 'gagal' | 'insufficient';
 	reason: string;
 	ci_low: number;
@@ -97,7 +97,7 @@ export interface HasilGate {
 	n_efektif?: number;
 }
 
-export interface MasukanGate {
+export interface GateInput {
 	n: number;
 	win: number;
 	be: number;
@@ -113,20 +113,20 @@ export interface MasukanGate {
 	rule?: string;
 }
 
-export interface Kesehatan {
+export interface Health {
 	status: 'ok' | 'degraded';
 	db: boolean;
 	time: string;
 	user: string;
 }
 
-export interface Aku {
+export interface Me {
 	username: string;
 	role: Peran;
 }
 
 /** Satu kejadian SSE (`/api/v1/stream`). */
-export interface Kejadian {
+export interface EventItem {
 	id: number;
 	type: string;
 	actor: string | null;
@@ -135,7 +135,7 @@ export interface Kejadian {
 	fact_ids: unknown;
 	created_at: string | null;
 }
-export interface ProviderSehat {
+export interface ProviderHealth {
 	provider: string;
 	n: number;
 	ok: number;
@@ -149,11 +149,11 @@ export interface ProviderSehat {
 	error_terakhir: string | null;
 }
 
-export interface AiConsole {
+export interface LlmConsole {
 	total_panggilan: number;
 	fallback_rate: number | null;
 	biaya_usd: number;
-	per_provider: ProviderSehat[];
+	per_provider: ProviderHealth[];
 	per_peran: { role: string; n: number; gagal: number }[];
 	catatan: string;
 }
@@ -206,7 +206,7 @@ export interface ProposalsPayload {
 /** Satu sinyal terbaik untuk satu pasar (GET /api/v1/sinyal/per-pasar, 5 Okt 2026).
  * `skor` = None berarti tidak ada angka (BUKAN 0). `terverifikasi` = sudah lewat split beku;
  * selama false, sinyal ini klaim eksplorasi dan UI wajib menampilkannya apa adanya. */
-export interface SinyalPasar {
+export interface MarketSignal {
 	pasar: string;
 	label: string;
 	ada: boolean;
@@ -232,7 +232,7 @@ export interface SinyalPasar {
 	alasan_eksekusi: string;
 }
 
-export interface SinyalItem {
+export interface SignalItem {
 	pair: string | null;
 	arah: string | null;
 	tier: string | null;
@@ -255,7 +255,7 @@ export interface SinyalItem {
 }
 
 /** Sinyal satu pasar untuk Home: maks 3 + status jujur (ada/kosong/gagal). */
-export interface DaftarSinyalPasar {
+export interface MarketSignalList {
 	pasar: string;
 	label: string;
 	/** "ada" = ada sinyal · "kosong" = mesin hidup tapi tak ada setup cocok ·
@@ -270,12 +270,12 @@ export interface DaftarSinyalPasar {
 	mode?: 'LIVE' | 'PAPER' | 'HISTORIS';
 	catatan_mode?: string;
 	/** Status verifikasi split beku — opsional supaya tetap kompatibel bila backend
-	 *  belum mengirimnya; UI menggabungkan dari SinyalPasar (daftar) per pasar. */
+	 *  belum mengirimnya; UI menggabungkan dari MarketSignal (daftar) per pasar. */
 	terverifikasi?: boolean;
 	catatan_kejujuran?: string;
 	umur_sinyal_s?: number | null;
 	dibuat_pada?: string | null;
-	sinyal: SinyalItem[];
+	sinyal: SignalItem[];
 	confluence?: string[];
 	metrics?: Record<string, unknown>;
 	autotrade_verdict?: 'OKE' | 'PANTAU' | 'SKIP' | string;
@@ -290,15 +290,15 @@ export interface LiveArming {
 	detail: string;
 }
 
-export interface SinyalPayload {
-	sinyal: SinyalPasar[];
-	pasar?: DaftarSinyalPasar[];
+export interface SignalPayload {
+	sinyal: MarketSignal[];
+	pasar?: MarketSignalList[];
 	count: number;
 	ada: number;
 }
 
 /** Ringkas akurasi+PnL per market (endpoint /pasar/ringkas) — angka apa adanya dari fakta. */
-export interface BarisPasarRingkas {
+export interface MarketSummaryRow {
 	pasar: string;
 	label: string;
 	tersedia: boolean;
@@ -374,15 +374,15 @@ export interface ResearchRecordsPayload {
 	count: number;
 }
 
-export interface PasarRingkasPayload {
-	pasar: Record<string, BarisPasarRingkas>;
+export interface MarketSummaryPayload {
+	pasar: Record<string, MarketSummaryRow>;
 	standar: string | null;
 	sumber: string;
 }
 
-/** Fakta `poly.dataset/recorder` — katalog dataset Polymarket (P4-T3). Bentuk longgar: hanya
+/** Fact `poly.dataset/recorder` — katalog dataset Polymarket (P4-T3). Bentuk longgar: hanya
  * field yang benar-benar dikirim sumber yang ditampilkan. */
-export interface FaktaDataset {
+export interface FactDataset {
 	paired?: { path?: string; bytes?: number; files?: number; [k: string]: unknown };
 	labels?: { [k: string]: unknown };
 	[k: string]: unknown;
@@ -410,14 +410,14 @@ export interface DocsPayload {
 }
 
 /** `GET /api/v1/docs/{slug}` — isi satu catatan (markdown mentah). */
-export interface DocIsi {
+export interface DocContent {
 	slug: string;
 	judul: string;
 	isi: string;
 }
 
 /** Verdict KANONIK per pasar (audit QA 7 Okt) — backend yang memutuskan, UI merender. */
-export interface VerdictPasar {
+export interface MarketVerdict {
 	pasar: string;
 	label: string;
 	signal_state: 'none' | 'candidate' | 'confirmed';

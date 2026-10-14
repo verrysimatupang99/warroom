@@ -166,15 +166,15 @@ def test_pakem_bukti_pada_n_efektif() -> None:
     n=4133 dengan deff=1.345 → n efektif ≈ 3073 → TUNING; tanpa koreksi tetap TUNING
     (n mentah lebih besar). Yang penting: pakem TIDAK memakai n mentah saat deff>1.
     """
-    from warroom_core.gate import tingkat_pakem
+    from warroom_core.gate import pakem_level
 
-    assert tingkat_pakem(0) == "INSUFFICIENT"
-    assert tingkat_pakem(9) == "INSUFFICIENT"
-    assert tingkat_pakem(10) == "DIRECTIONAL"
-    assert tingkat_pakem(29) == "DIRECTIONAL"
-    assert tingkat_pakem(30) == "PRELIMINARY"
-    assert tingkat_pakem(99) == "PRELIMINARY"
-    assert tingkat_pakem(100) == "TUNING"
+    assert pakem_level(0) == "INSUFFICIENT"
+    assert pakem_level(9) == "INSUFFICIENT"
+    assert pakem_level(10) == "DIRECTIONAL"
+    assert pakem_level(29) == "DIRECTIONAL"
+    assert pakem_level(30) == "PRELIMINARY"
+    assert pakem_level(99) == "PRELIMINARY"
+    assert pakem_level(100) == "TUNING"
 
     r = evaluate(GateInput(n=4133, win=3234, be=0.7666, deff=1.345, ci=0.95, split="frozen:x"))
     assert r.n_efektif == round(4133 / 1.345)

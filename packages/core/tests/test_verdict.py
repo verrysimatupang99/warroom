@@ -33,10 +33,10 @@ def _fakta(s, kind, key, value, ttl=3600):
 
 
 def _sinyal(pasar="polymarket", ada=True, terverifikasi=False, status_data="ada"):
-    from warroom_core.market_signal import SinyalPasar
+    from warroom_core.market_signal import MarketSignal
 
     label = {"polymarket": "Polymarket (favorit 5m)", "crypto": "Crypto (SMC)"}.get(pasar, pasar)
-    return SinyalPasar(
+    return MarketSignal(
         pasar=pasar, label=label, ada=ada, subjek="favorit", arah="BELI",
         skor=78, tier="EDGE", terverifikasi=terverifikasi, status_data=status_data,
     )
