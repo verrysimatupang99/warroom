@@ -4,7 +4,7 @@
 	// (tanpa parser berat) supaya tidak menambah ketergantungan; yang penting
 	// isinya bisa dibaca dan ditelusuri.
 	import { getDoc, getDocs } from '$lib/api/client';
-	import type { DocIsi, DocsPayload } from '$lib/api/types';
+	import type { DocContent, DocsPayload } from '$lib/api/types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import NavInfo from '$lib/components/NavInfo.svelte';
@@ -13,7 +13,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 
 	let daftar = $state<DocsPayload | null>(null);
-	let isi = $state<DocIsi | null>(null);
+	let isi = $state<DocContent | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 	let memuatIsi = $state(false);

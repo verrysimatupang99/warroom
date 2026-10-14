@@ -1,12 +1,12 @@
 <script lang="ts">
 	// Feed kejadian bertipe dengan filter. Waktu ditampilkan WIB; payload dipadatkan.
-	import type { Kejadian } from '$lib/api/types';
+	import type { EventItem } from '$lib/api/types';
 	import { teksNilai, waktuWIB } from '$lib/format';
 	import EmptyState from './EmptyState.svelte';
 	import Skeleton from './Skeleton.svelte';
 
 	interface Props {
-		kejadian: Kejadian[];
+		kejadian: EventItem[];
 		memuat?: boolean;
 		galat?: string | null;
 		onulang?: (() => void) | null;

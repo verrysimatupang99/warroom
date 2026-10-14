@@ -1,14 +1,14 @@
 <script lang="ts">
 	// GateMeter: progres `n` vs `n` dibutuhkan + pita CI vs garis BE. Angka apa adanya dari
 	// `/api/v1/gate/evaluate`; `required_n` null berarti menambah sampel tidak akan meloloskan.
-	import type { HasilGate } from '$lib/api/types';
+	import type { GateResult } from '$lib/api/types';
 	import { bulat, persen } from '$lib/format';
 	import EmptyState from './EmptyState.svelte';
 	import ErrorState from './ErrorState.svelte';
 	import Skeleton from './Skeleton.svelte';
 
 	interface Props {
-		hasil: HasilGate | null;
+		hasil: GateResult | null;
 		memuat?: boolean;
 		galat?: string | null;
 		onulang?: (() => void) | null;

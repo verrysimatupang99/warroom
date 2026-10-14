@@ -10,10 +10,10 @@
 	 * (`/api/v1/verdict`). Jadi tidak mungkin lagi kartu di halaman ini bilang "terbukti"
 	 * sementara bagian gate di bawahnya bilang "belum lolos".
 	 */
-	import type { VerdictPasar } from '$lib/api/types';
+	import type { MarketVerdict } from '$lib/api/types';
 
 	interface Props {
-		verdict?: VerdictPasar | null;
+		verdict?: MarketVerdict | null;
 	}
 	let { verdict = null }: Props = $props();
 

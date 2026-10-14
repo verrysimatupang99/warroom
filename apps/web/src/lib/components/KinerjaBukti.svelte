@@ -15,13 +15,13 @@
 	 * bukan 0. Populasi (denominator) WAJIB disebut di tiap baris — pelajaran dari
 	 * temuan "n=12 vs n=16" pada audit sebelumnya.
 	 */
-	import type { PasarRingkasPayload, ResearchRunDetail, ResearchRunSummary } from '$lib/api/types';
+	import type { MarketSummaryPayload, ResearchRunDetail, ResearchRunSummary } from '$lib/api/types';
 	import { getResearchRun } from '$lib/api/client';
 	import { angka, umurDetik } from '$lib/format';
 
 	interface Props {
 		/** Payload /api/v1/pasar/ringkas (berisi blok `bukti` per pasar). */
-		akurasi?: PasarRingkasPayload | null;
+		akurasi?: MarketSummaryPayload | null;
 		/** Umur data (detik) untuk keterangan kesegaran; null = tidak diketahui. */
 		umurData?: number | null;
 		/** Latest immutable research registrations, if available. */

@@ -26,7 +26,7 @@ from typing import Any
 
 __all__ = [
     "REASON_LAYAK",
-    "HasilPasar",
+    "MarketOutcome",
     "read_outcome",
     "tradable_only",
     "label_keputusan",
@@ -43,7 +43,7 @@ REASON_LAYAK = ("quote_eligible",)
 
 
 @dataclass
-class HasilPasar:
+class MarketOutcome:
     """Satu resolusi pasar 5 menit."""
 
     slug: str
@@ -100,7 +100,7 @@ def _menang_dari_market(m: dict[str, Any]) -> str | None:
     return str(outcomes[idx])
 
 
-def read_outcome(path: str | Path, *, maks_baris: int | None = None) -> dict[tuple[str, int], HasilPasar]:
+def read_outcome(path: str | Path, *, maks_baris: int | None = None) -> dict[tuple[str, int], MarketOutcome]:
     """Pindai satu berkas events-*.jsonl(.gz); kembalikan hasil per (coin, wts).
 
     Hanya event ``kind == "http"`` yang URL-nya Gamma dan body-nya memuat market tertutup
@@ -109,7 +109,7 @@ def read_outcome(path: str | Path, *, maks_baris: int | None = None) -> dict[tup
     """
     p = Path(path)
     pembuka = gzip.open if p.suffix == ".gz" else open
-    hasil: dict[tuple[str, int], HasilPasar] = {}
+    hasil: dict[tuple[str, int], MarketOutcome] = {}
     with pembuka(p, "rt", encoding="utf-8", errors="replace") as fh:  # type: ignore[operator]
         for i, baris in enumerate(fh):
             if maks_baris is not None and i >= maks_baris:
@@ -144,14 +144,14 @@ def read_outcome(path: str | Path, *, maks_baris: int | None = None) -> dict[tup
                     if menang is None:
                         continue
                     coin, wts = kunci
-                    hasil[(coin, wts)] = HasilPasar(
+                    hasil[(coin, wts)] = MarketOutcome(
                         slug=slug, coin=coin, wts=wts, menang=menang,
                         status=status, teresolusi=bool(m.get("closed")) or status == "resolved",
                     )
     return hasil
 
 
-def label_keputusan(path: str | Path, hasil: dict[tuple[str, int], HasilPasar]) -> list[dict[str, Any]]:
+def label_keputusan(path: str | Path, hasil: dict[tuple[str, int], MarketOutcome]) -> list[dict[str, Any]]:
     """Gabungkan keputusan (yang punya side+token) dengan hasil → baris ber-label.
 
     Satu keputusan dihitung MENANG bila `side`-nya sama dengan hasil pasar. Keputusan tanpa
@@ -215,7 +215,7 @@ def summarize_dataset(root: str | Path, *, layak_saja: bool = True) -> dict[str,
         return {"error": f"tidak ada events-*.jsonl di {d}"}
 
     # Lintasan 1: kumpulkan SEMUA resolusi dulu.
-    semua_hasil: dict[tuple[str, int], HasilPasar] = {}
+    semua_hasil: dict[tuple[str, int], MarketOutcome] = {}
     for b in berkas:
         semua_hasil.update(read_outcome(b))
 

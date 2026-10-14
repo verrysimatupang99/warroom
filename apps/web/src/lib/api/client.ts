@@ -5,27 +5,27 @@
  */
 import { env as envPublik } from '$env/dynamic/public';
 import type {
-	AiConsole,
+	LlmConsole,
 	AlertsPayload,
 	AreaPayload,
 	AreasPayload,
-	Aku,
-	DocIsi,
+	Me,
+	DocContent,
 	DocsPayload,
-	FaktaSatu,
-	VerdictPasar,
-	HasilGate,
-	Kejadian,
-	Kesehatan,
-	KesegaranPayload,
+	SingleFact,
+	MarketVerdict,
+	GateResult,
+	EventItem,
+	Health,
+	FreshnessPayload,
 	LiveArming,
-	MasukanGate,
-	PasarRingkasPayload,
+	GateInput,
+	MarketSummaryPayload,
 	ResearchRecordsPayload,
 	ResearchRunDetail,
 	ResearchRunsPayload,
 	ProposalsPayload,
-	SinyalPayload
+	SignalPayload
 } from './types';
 
 export class ApiError extends Error {
@@ -102,20 +102,20 @@ async function minta<T>(jalur: string, init: RequestInit = {}): Promise<T> {
 	}
 }
 
-export const getKesehatan = () => minta<Kesehatan>('/api/v1/health');
-export const getKesegaran = () => minta<KesegaranPayload>('/api/v1/freshness');
+export const getKesehatan = () => minta<Health>('/api/v1/health');
+export const getKesegaran = () => minta<FreshnessPayload>('/api/v1/freshness');
 export const getAreas = () => minta<AreasPayload>('/api/v1/areas');
 export const getArea = (area: string) => minta<AreaPayload>(`/api/v1/${encodeURIComponent(area)}`);
-export const getAku = () => minta<Aku>('/api/v1/auth/me');
+export const getAku = () => minta<Me>('/api/v1/auth/me');
 export const getFakta = (kind: string, key: string, riwayat = 20) =>
-	minta<FaktaSatu>(
+	minta<SingleFact>(
 		`/api/v1/facts/${encodeURIComponent(kind)}/${encodeURIComponent(key)}?riwayat=${riwayat}`
 	);
-export const nilaiGate = (masukan: MasukanGate) =>
-	minta<HasilGate>('/api/v1/gate/evaluate', { method: 'POST', body: JSON.stringify(masukan) });
+export const nilaiGate = (masukan: GateInput) =>
+	minta<GateResult>('/api/v1/gate/evaluate', { method: 'POST', body: JSON.stringify(masukan) });
 
-/** Kesehatan provider LLM (W6): dari tabel `llm_calls`, tanpa penghitung di memori. */
-export const getAiConsole = () => minta<AiConsole>('/api/v1/ai/llm-console');
+/** Health provider LLM (W6): dari tabel `llm_calls`, tanpa penghitung di memori. */
+export const getAiConsole = () => minta<LlmConsole>('/api/v1/ai/llm-console');
 
 /** Alert terbuka + status transport (W5). Transport kosong tidak pernah diklaim terkirim. */
 export const getAlerts = () => minta<AlertsPayload>('/api/v1/alerts');
@@ -155,9 +155,9 @@ export const basisApi = BASE;
 
 /** Sinyal terbaik per pasar untuk Home (5 Okt 2026). Selalu mengembalikan SEMUA pasar —
  * yang kosong pun, supaya kartu tidak hilang diam-diam. */
-export const getSinyalPerPasar = () => minta<SinyalPayload>('/api/v1/sinyal/per-pasar');
+export const getSinyalPerPasar = () => minta<SignalPayload>('/api/v1/sinyal/per-pasar');
 /** Ringkas akurasi+PnL per market untuk Home — dari fakta pasar_akurasi/idx_akurasi. */
-export const getPasarRingkas = () => minta<PasarRingkasPayload>('/api/v1/pasar/ringkas');
+export const getPasarRingkas = () => minta<MarketSummaryPayload>('/api/v1/pasar/ringkas');
 /** Read-only research catalog and immutable provenance. */
 export const getResearchRuns = (researchKey?: string) =>
 	minta<ResearchRunsPayload>(`/api/v1/research/runs${researchKey ? `?research_key=${encodeURIComponent(researchKey)}` : ''}`);
@@ -167,16 +167,16 @@ export const getResearchRecords = (id: string) => minta<ResearchRecordsPayload>(
 export const getDocs = () => minta<DocsPayload>('/api/v1/docs');
 
 /** Isi satu catatan menurut slug. */
-export const getDoc = (slug: string) => minta<DocIsi>(`/api/v1/docs/${encodeURIComponent(slug)}`);
+export const getDoc = (slug: string) => minta<DocContent>(`/api/v1/docs/${encodeURIComponent(slug)}`);
 
-/** Kejadian terakhir (backfill panel Kejadian Area). SSE hanya mengirim yang BARU. */
-export async function getEvents(limit = 120, tipe?: string): Promise<Kejadian[]> {
+/** EventItem terakhir (backfill panel EventItem Area). SSE hanya mengirim yang BARU. */
+export async function getEvents(limit = 120, tipe?: string): Promise<EventItem[]> {
 	// `tipe` boleh daftar dipisah koma (mis. 'trade.,signal.,verdict.').
 	const q = new URLSearchParams({ limit: String(limit) });
 	if (tipe) q.set('tipe', tipe);
 	const res = await fetch(urlApi(`/api/v1/events?${q}`), { credentials: 'include' });
 	if (!res.ok) throw new Error(`events HTTP ${res.status}`);
-	const j = (await res.json()) as { events: Kejadian[] };
+	const j = (await res.json()) as { events: EventItem[] };
 	return j.events ?? [];
 }
 
@@ -194,10 +194,10 @@ export async function getSumber(): Promise<{
 }
 
 /** Verdict kanonik semua pasar — satu sumber keputusan (audit QA 7 Okt). */
-export async function getVerdict(): Promise<{ verdict: VerdictPasar[]; aturan: Record<string, unknown> }> {
+export async function getVerdict(): Promise<{ verdict: MarketVerdict[]; aturan: Record<string, unknown> }> {
 	const res = await fetch(urlApi('/api/v1/verdict'), { credentials: 'include' });
 	if (!res.ok) throw new Error(`verdict HTTP ${res.status}`);
-	return (await res.json()) as { verdict: VerdictPasar[]; aturan: Record<string, unknown> };
+	return (await res.json()) as { verdict: MarketVerdict[]; aturan: Record<string, unknown> };
 }
 /** Status arming live — SATU-SATUNYA sumber badge mode global di UI (armed = LIVE, else PAPER).
  *  Gagal fetch = null (jujur: badge disembunyikan, bukan dikarang). */

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import GateMeter from './GateMeter.svelte';
-import type { HasilGate } from '$lib/api/types';
+import type { GateResult } from '$lib/api/types';
 
-const hasil: HasilGate = {
+const hasil: GateResult = {
 	verdict: 'gagal',
 	reason: 'batas bawah CI (76,96%) belum melewati BE (77,00%)',
 	ci_low: 0.7696,

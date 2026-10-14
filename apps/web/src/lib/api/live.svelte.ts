@@ -5,7 +5,7 @@
  * dinamis (mis. `snapshot.published`, `job.ran`) yang tidak bisa didengar EventSource tanpa
  * daftar nama tetap. Parser manual juga memberi kontrol koneksi/putus → fallback polling.
  */
-import type { Kejadian } from './types';
+import type { EventItem } from './types';
 import { getKesegaran, urlApi } from './client';
 
 export type StatusLive = 'menyambung' | 'live' | 'polling' | 'n/a';
@@ -17,7 +17,7 @@ const POLL_MS = 15000;
 
 class StoreLive {
 	status = $state<StatusLive>('menyambung');
-	kejadian = $state<Kejadian[]>([]);
+	kejadian = $state<EventItem[]>([]);
 	idTerakhir = $state<number | null>(null);
 	terakhirPoll = $state<string | null>(null);
 	pesan = $state<string | null>(null);
@@ -124,10 +124,10 @@ class StoreLive {
 		}
 		// Pesan sambutan `{ok:true}` tidak punya tipe → bukan kejadian domain.
 		if (tipe === null) return;
-		const isi = (payload ?? {}) as Partial<Kejadian> & { id?: number };
+		const isi = (payload ?? {}) as Partial<EventItem> & { id?: number };
 		const kid = typeof isi.id === 'number' ? isi.id : id;
 		if (kid != null) this.idTerakhir = kid;
-		const kj: Kejadian = {
+		const kj: EventItem = {
 			id: kid ?? 0,
 			type: tipe,
 			actor: isi.actor ?? null,
@@ -171,8 +171,8 @@ class StoreLive {
 		this.#lupakanPolling();
 	}
 
-	/** Kejadian difilter berdasarkan prefiks tipe (mis. `alert.`). */
-	berdasarkanTopik(prefiks: string[]): Kejadian[] {
+	/** EventItem difilter berdasarkan prefiks tipe (mis. `alert.`). */
+	berdasarkanTopik(prefiks: string[]): EventItem[] {
 		if (!prefiks.length) return this.kejadian;
 		return this.kejadian.filter((k) => prefiks.some((p) => k.type.startsWith(p)));
 	}

@@ -10,7 +10,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { getArea, getPasarRingkas, getResearchRuns } from '$lib/api/client';
-	import type { AreaPayload, Fakta, PasarRingkasPayload, ResearchRunSummary } from '$lib/api/types';
+	import type { AreaPayload, Fact, MarketSummaryPayload, ResearchRunSummary } from '$lib/api/types';
 	import { AREAS } from '$lib/nav';
 	import { umurDetik, angka, waktuWIB } from '$lib/format';
 	import SubNav from '$lib/components/SubNav.svelte';
@@ -22,7 +22,7 @@
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
-	let pasarRingkas = $state<PasarRingkasPayload | null>(null);
+	let pasarRingkas = $state<MarketSummaryPayload | null>(null);
 	let risetRuns = $state<ResearchRunSummary[]>([]);
 	async function muatBukti() {
 		const [ringkas, runs] = await Promise.allSettled([getPasarRingkas(), getResearchRuns()]);
@@ -180,7 +180,7 @@ function pilihSub(s: string) {
 				<div class="stat"><span class="label">Max DD</span><b class="angka">{stats.max_drawdown_r != null ? `${angka(stats.max_drawdown_r)} R` : '—'}</b></div>
 			</section>
 		{:else}
-			<EmptyState judul="Belum ada statistik" pesan="Fakta equity belum tersedia." />
+			<EmptyState judul="Belum ada statistik" pesan="Fact equity belum tersedia." />
 		{/if}
 
 		<section class="kartu" aria-label="Trade terakhir">

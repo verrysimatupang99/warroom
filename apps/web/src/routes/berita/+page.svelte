@@ -3,7 +3,7 @@
 	// Hanya judul + tautan + waktu + sumber. Ringkasan TIDAK disalin utuh (hak cipta
 	// penerbit) — kita menautkan ke artikel aslinya.
 	import { getArea } from '$lib/api/client';
-	import type { AreaPayload, Fakta } from '$lib/api/types';
+	import type { AreaPayload, Fact } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
 	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
@@ -29,7 +29,7 @@
 		return () => clearInterval(t);
 	});
 
-	const fakta = (key: string): Fakta | null => forex?.facts.find((f) => f.key === key) ?? null;
+	const fakta = (key: string): Fact | null => forex?.facts.find((f) => f.key === key) ?? null;
 	type NewsBagian = {
 		tersedia?: boolean;
 		sumber_data?: string;

@@ -237,7 +237,7 @@ def _execution_state(s: SASession, pasar: str) -> tuple[str, str | None]:
 
 
 def market_verdict(s: SASession, sp: Any) -> Verdict:
-    """Verdict kanonik dari satu SinyalPasar + fakta pendukungnya."""
+    """Verdict kanonik dari satu MarketSignal + fakta pendukungnya."""
     pasar = sp.pasar
     label = sp.label
 

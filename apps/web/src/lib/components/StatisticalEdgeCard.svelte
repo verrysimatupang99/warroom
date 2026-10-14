@@ -3,7 +3,7 @@
 	// Menjelaskan secara visual apakah strategi memiliki keunggulan matematis (Edge)
 	// yang terbukti secara statistik (Wilson CI95% > Break-Even).
 	import { angka } from '$lib/format';
-	import type { VerdictPasar } from '$lib/api/types';
+	import type { MarketVerdict } from '$lib/api/types';
 	import Istilah from './Istilah.svelte';
 
 	interface VerdictData {
@@ -24,7 +24,7 @@
 	interface Props {
 		verdict?: VerdictData | null;
 		/** Verdict kanonik backend; bila ada, ini satu-satunya sumber status promosi. */
-		canonical?: VerdictPasar | null;
+		canonical?: MarketVerdict | null;
 		judul?: string;
 	}
 
