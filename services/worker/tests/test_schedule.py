@@ -39,7 +39,7 @@ _JOB_BERAT = (
     "poly-sync",         # membaca /var/lib lewat sudo
     "verdict-sync",      # menjalankan alat Poly lewat sudo (baca-saja)
     "llm-brief",         # memanggil provider LLM sungguhan (biaya + jaringan)
-    "rekonsiliasi-crypto",  # memanggil candle MEXC (jaringan)
+    "reconcile-crypto",  # memanggil candle MEXC (jaringan)
     "llm-brief-crypto",  # idem (per market, 6 Okt)
     "llm-brief-forex",
     "llm-brief-idx",
@@ -52,7 +52,7 @@ _JOB_BERAT = (
     "signal-sync",  # membaca ledger domain + MEMBUAT alert (bisa memicu kirim Telegram)
     "paper-eval",
     "paper-scan",
-    "retensi",  # menghapus baris `facts` di DB nyata — bukan untuk tes
+    "retention",  # menghapus baris `facts` di DB nyata — bukan untuk tes
 )
 
 
@@ -78,8 +78,8 @@ def test_daftar_job_idempoten(db) -> None:
         "publish-facts", "freshness", "notify", "refresh-snapshot", "radar-update", "lp-mark",
         "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
-        "paper-scan", "retensi", "source-health", "llm-brief-crypto", "llm-brief-forex",
-        "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket", "rekonsiliasi-crypto",
+        "paper-scan", "retention", "source-health", "llm-brief-crypto", "llm-brief-forex",
+        "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket", "reconcile-crypto",
         "lpagent-sync",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"

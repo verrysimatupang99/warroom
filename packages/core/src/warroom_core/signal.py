@@ -2,6 +2,18 @@
 
 This is intentionally market-neutral and paper-only. Market adapters and
 strategies can depend on the shape without gaining execution authority.
+
+Batas peran (jangan tertukar dengan `market_signal.py`):
+- `signal.py` (INI)      : kontrak *generik* untuk satu sinyal paper — `MarketData`,
+  `Signal`, `RiskPolicy`, `evaluate_risk`. Dipakai paper-engine, strategy,
+  adapters, notifier. Market-neutral, tak tahu pasar apa pun.
+- `market_signal.py`     : "sinyal terbaik PER PASAR" untuk Home/UI (`SinyalPasar`,
+  `best_signal_per_market`) — lapisan di ATAS kontrak ini.
+- `verdict.py`           : verdict kanonik per pasar (`market_verdict`), lapisan
+  di atas `market_signal.py`.
+
+Jadi ketiganya BUKAN duplikasi: tiga lapisan berbeda (kontrak → sinyal-UI →
+verdict). Lihat docs/adr/penamaan-kode-bahasa-inggris.md.
 """
 
 from __future__ import annotations

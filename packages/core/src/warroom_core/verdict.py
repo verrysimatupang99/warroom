@@ -1,5 +1,8 @@
 """Verdict kanonik per pasar — SATU sumber keputusan untuk seluruh UI (audit QA 7 Okt).
 
+Batas peran: lapisan TERATAS dari rantai sinyal — di atas `signal.py` (kontrak paper)
+dan `market_signal.py` (sinyal per pasar). Lihat docstring `signal.py` untuk peta.
+
 MASALAH YANG DIJAWAB
 --------------------
 Audit eksternal menemukan dua kelas kebingungan yang berulang:

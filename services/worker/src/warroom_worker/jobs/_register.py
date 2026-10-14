@@ -55,7 +55,7 @@ def register_handlers() -> dict[str, Any]:
             "reconcile": handler_reconcile,
             "gmgn-sync": handler_gmgn_sync,
             "lpagent-sync": handler_lpagent_sync,
-            "rekonsiliasi-crypto": handler_rekonsiliasi_crypto,
+            "reconcile-crypto": handler_rekonsiliasi_crypto,
             "signal-sync": handler_signal_sync,
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
@@ -67,7 +67,7 @@ def register_handlers() -> dict[str, Any]:
             "llm-brief-polymarket": handler_llm_brief,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
-            "retensi": handler_retensi,
+            "retention": handler_retensi,
             "source-health": handler_source_health,
         }
     )
