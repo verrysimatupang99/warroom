@@ -15,15 +15,17 @@ from warroom_worker.jobs import register_handlers
 
 @pytest.fixture(autouse=True)
 def _bersihkan(db):
+    from sqlalchemy import delete as sa_delete
     from warroom_core.db import Strategy
 
     with session_scope() as s:
         for row in s.scalars(select(Job)).all():
             s.delete(row)
-        s.query(Fact).delete()
-        s.query(Event).delete()
-        s.query(Alert).delete()
-        s.query(Strategy).delete()
+        # Pakai DELETE core (bukan Query.delete()) agar tidak memicu SAWarning
+        # "expected to delete N row(s); 0 were matched" saat tabel kosong, dan
+        # aman bila suite dijalankan dengan -W error.
+        for model in (Fact, Event, Alert, Strategy):
+            s.execute(sa_delete(model))
     register_handlers()
     yield
 
