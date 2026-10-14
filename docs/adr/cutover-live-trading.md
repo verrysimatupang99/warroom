@@ -44,6 +44,17 @@ SUDAH memakai venv warroom.
 `systemctl --user` dari sesi agen gagal ("Failed to connect to bus"). Owner perlu
 menjalankan langkah 1 di sesi login.
 
+## Cara cepat
+
+```
+bash ~/warroom/ops/cutover-live-trading.sh
+```
+
+Skrip menjalankan langkah 0-4 di atas dengan **konfirmasi di tiap langkah
+destruktif** dan **guard** (berhenti bila masih ada unit menyentuh venv lama).
+Tidak menyentuh `state/`/`secrets/`/`backups/`. Bila dijalankan dari sesi tanpa
+bus user, ia berhenti di Prakondisi (exit 1) tanpa mengubah apa pun.
+
 ## Risiko bila salah
 
 - Menghapus `.venv` sebelum migrasi → `infra-watchdog` mati (hanya watchdog,
