@@ -24,7 +24,6 @@ bukan endpoint publik (403 "tidak dibuka"), jangan ditebak-tebak lagi.
 import datetime
 import json
 import os
-import time
 import urllib.error
 import urllib.request
 
@@ -39,8 +38,10 @@ def _load_key():
     try:
         with open(DEFAULT_KEY_PATH) as f:
             return f.read().strip()
-    except FileNotFoundError:
-        raise RuntimeError("ARJUM_API_KEY tidak diset dan " + DEFAULT_KEY_PATH + " tidak ada")
+    except FileNotFoundError as err:
+        raise RuntimeError(
+            "ARJUM_API_KEY tidak diset dan " + DEFAULT_KEY_PATH + " tidak ada"
+        ) from err
 
 
 _last_rate = {"limit": None, "remaining": None}  # hanya untuk kompatibilitas import lama
@@ -50,7 +51,7 @@ RATE_STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".arj
 
 
 def _wib_today():
-    return (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
+    return (datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
 
 
 def _load_state():
@@ -110,7 +111,13 @@ def rate_status():
     state = _load_state()
     limit = state.get("limit") or DAILY_LIMIT
     used = state.get("used", 0) if state.get("date") == _wib_today() else 0
-    return {"limit": limit, "remaining": max(0, limit - used), "source": "header-sync" if state.get("date") == _wib_today() and state.get("used") else "local"}
+    return {
+        "limit": limit,
+        "remaining": max(0, limit - used),
+        "source": "header-sync"
+        if state.get("date") == _wib_today() and state.get("used")
+        else "local",
+    }
 
 
 def get(path, params=None, timeout=20):
@@ -151,8 +158,10 @@ def search(q):
 
 def screener_latest(limit=None, bucket=None):
     params = {}
-    if limit: params["limit"] = limit
-    if bucket: params["bucket"] = bucket
+    if limit:
+        params["limit"] = limit
+    if bucket:
+        params["bucket"] = bucket
     return get("/api/screener/latest", params or None)
 
 

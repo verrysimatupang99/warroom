@@ -29,6 +29,7 @@ import sys
 # Versi lokal War Room: path skrip = folder modul ini (dulu hardcoded /home/ubuntu)
 sys.path.insert(0, '/home/admin/warroom/packages/live-trading/idx616/scripts')
 from idx616_ledger import DB, con
+
 try:
     from arjum_pool import pool_history
 except Exception:  # tanpa kunci arjum: grader jatuh ke fallback bila ada
@@ -41,6 +42,13 @@ try:
 except Exception:
     WS_DB = '/home/ubuntu/.hermes/cron/state/arjum_trades.db'
 GRADER_VERSION = "v3-ara-intraday"
+
+# Batas waktu scalping intraday (jam, WIB). Docstring modul & _minute_bars menyebut
+# "sampai 15:49"; kode memakai f"{SCALP_TIMEOUT}:59" sehingga nilai yang benar adalah
+# "15:48" (menit terakhir sebelum 15:49). Sebelumnya konstanta ini TIDAK PERNAH
+# didefinisikan -> NameError laten, hanya muncul saat ada bar intraday untuk digrade.
+# Nilai ditarik dari docstring, bukan dikarang; koreksi bila owner punya definisi lain.
+SCALP_TIMEOUT = "15:48"
 
 
 def _bars(ticker):
@@ -140,7 +148,9 @@ def _minute_bars(ticker, sig_date, sig_time):
         minute = str(r['ts'])[:16]  # 'YYYY-MM-DD HH:MM'
         p = float(r['price'])
         b = bars.setdefault(minute, {'ts': minute, 'high': p, 'low': p, 'open': p, 'close': p})
-        b['high'] = max(b['high'], p); b['low'] = min(b['low'], p); b['close'] = p
+        b['high'] = max(b['high'], p)
+        b['low'] = min(b['low'], p)
+        b['close'] = p
     return sorted(bars.values(), key=lambda b: b['ts'])
 
 
@@ -247,7 +257,7 @@ def main():
                 "net_r=?,note=?,graded_at=?,grader_version=? WHERE event_id=?",
                 (upd['status'], upd['filled_at'], upd['closed_at'], upd['result'],
                  upd['net_r'], upd['note'][:300],
-                 dt.datetime.now(dt.timezone.utc).isoformat(),
+                 dt.datetime.now(dt.UTC).isoformat(),
                  GRADER_VERSION, r['event_id']))
             cc.commit()
             cc.close()

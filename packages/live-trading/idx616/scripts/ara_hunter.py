@@ -17,11 +17,11 @@ Upgrade 7 Sep 2026 (user request "intensif + model gratisan terbaik"):
 Usage: ara_hunter.py [--min-chg 2] [--min-rvol 2] [--min-adx 15] [--min-value 10e9] [--top 15] [--post]
 """
 import argparse
-import datetime
-from idx_clock import now_wib
 import json
 import re
 import sys
+
+from idx_clock import now_wib
 
 TV_URL = "https://scanner.tradingview.com/indonesia/scan"
 TV_HEADERS = {"origin": "https://www.tradingview.com", "referer": "https://www.tradingview.com/"}
@@ -73,7 +73,8 @@ def llm_commentary(hits):
             "max_tokens": 2000,
             "messages": [{"role": "user", "content":
                 "Kamu analis scalping saham IDX. Untuk tiap saham berikut (sym, harga, chg%, rel_vol, ADX), "
-                "tulis SATU kalimat singkat dan spesifik soal momentum/risk scalping-nya dalam Bahasa Indonesia. "
+                "tulis SATU kalimat singkat dan spesifik soal momentum/risk scalping-nya dalam "
+                "Bahasa Indonesia. "
                 "JANGAN menulis proses berpikir. Format ketat: 'SYM: kalimat' satu per baris, "
                 "tanpa header, tanpa disclaimer, tanpa pemanis.\n"
                 + json.dumps(data)}],
@@ -153,7 +154,8 @@ def main():
         return 0
     comments = llm_commentary(hits)
     lines = [f"🏹 *ARA HUNTER* — {now} WIB",
-             "Resep: chg >=5% · rel vol >=3x · ADX>15 · value >=Rp1B — walk-forward verified 11 Sep (+1.00% net/trade, exit open T+1)",
+             "Resep: chg >=5% · rel vol >=3x · ADX>15 · value >=Rp1B — walk-forward "
+             "verified 11 Sep (+1.00% net/trade, exit open T+1)",
              "─────────────────────"]
     for x in hits:
         e = "🟢" if (x["change_pct"] or 0) >= 5 else "⚪"

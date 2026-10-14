@@ -71,10 +71,10 @@ def _cache_key(endpoint, *args, **kwargs):
 
 def _log_audit(endpoint, code, status, source):
     """JSONL append per-call — transparansi per cron job."""
-    today = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
+    today = (datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
     path = LOG_DIR / f"arjum_audit_{today}.jsonl"
     rec = {
-        "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "ts": datetime.datetime.now(datetime.UTC).isoformat(),
         "endpoint": endpoint,
         "code": code,
         "status": status,        # "hit" | "fetch" | "skip_low_quota" | "err"
@@ -301,8 +301,10 @@ def pool_financial_statements(code, statement=None, limit=None):
         # tidak lewat cache (param variasi) — bypass
         from arjum_client import get as _get
         params = {}
-        if statement: params["statement"] = statement
-        if limit: params["limit"] = limit
+        if statement:
+            params["statement"] = statement
+        if limit:
+            params["limit"] = limit
         return _get(f"/api/financial-statements/{code.upper()}", params)
     return _cached_or_fetch("financial_statements", _c.financial_statements_proxy, code)
 
@@ -311,10 +313,14 @@ def pool_insiders(code, page=1, page_size=10, action_type=None, start_date=None,
     """Paged + filter insider trading. Tidak di-cache (variasi param banyak)."""
     from arjum_client import get as _get
     params = {"page": page, "page_size": page_size}
-    if action_type: params["action_type"] = action_type
-    if start_date: params["start_date"] = start_date
-    if sort: params["sort"] = sort
-    if badges: params["badges"] = badges
+    if action_type:
+        params["action_type"] = action_type
+    if start_date:
+        params["start_date"] = start_date
+    if sort:
+        params["sort"] = sort
+    if badges:
+        params["badges"] = badges
     return _get(f"/api/insiders/{code.upper()}", params)
 
 
@@ -323,8 +329,10 @@ def pool_market_cap(page=1, per_page=25, sort=None, sector=None):
     if any([page != 1, per_page != 25, sort, sector]):
         from arjum_client import get as _get
         params = {"page": page, "per_page": per_page}
-        if sort: params["sort"] = sort
-        if sector: params["sector"] = sector
+        if sort:
+            params["sort"] = sort
+        if sector:
+            params["sector"] = sector
         return _get("/api/market-cap", params)
     return _cached_or_fetch("market_cap", _c.market_cap_proxy)
 
@@ -333,7 +341,8 @@ def pool_market_cap(page=1, per_page=25, sort=None, sector=None):
 def audit_summary(date=None):
     """Summary audit per tanggal (default hari ini WIB)."""
     if date is None:
-        date = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
+        date = (datetime.datetime.now(datetime.UTC) + \
+                datetime.timedelta(hours=7)).strftime("%Y-%m-%d")
     path = LOG_DIR / f"arjum_audit_{date}.jsonl"
     if not path.exists():
         return {"date": date, "calls": 0, "by_endpoint": {}, "hits": 0, "fetches": 0, "skips": 0, "errs": 0}

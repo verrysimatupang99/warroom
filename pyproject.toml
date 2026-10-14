@@ -36,14 +36,16 @@ dev = [
     "ruff>=0.7,<1",
     "pytest>=8.3,<9",
     "pytest-asyncio>=0.24,<1",
+    "autopep8>=2.3.2",
 ]
 
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-# vendor/ + crypto/ = kode warisan Tencent. idx616/ (mesin kanonik IDX 616) dikecualikan
-# sementara dari lint karena masih membawa 137 format legacy (semicolon, non-PEP8 indent)
-# menunggu refactor terarah pada sprint IDX. .venv-merge = env uji F3.
+# vendor/ + crypto/ = kode warisan Tencent. idx616/ kini IKUT lint (14 Okt 2026) —
+# sebelumnya dikecualikan dan menyembunyikan bug nyata (F821 `SCALP_TIMEOUT` yang tak
+# pernah terdefinisi di grader intraday). 137 format legacy sudah dirapikan.
+# vendor/ & crypto/ tetap dikecualikan (kode warisan, di luar cakupan). .venv-merge = env uji F3.
 extend-exclude = [
     ".venv",
     ".venv-merge",
@@ -51,7 +53,6 @@ extend-exclude = [
     "node_modules",
     "packages/live-trading/vendor",
     "packages/live-trading/crypto",
-    "packages/live-trading/idx616",
 ]
 
 [tool.ruff.lint]
