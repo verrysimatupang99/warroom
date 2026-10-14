@@ -11,6 +11,23 @@ from ..risk import RiskGate
 from .format import MODEL_POD, _wib, e, log
 from .html_parts import _arti, _card, _lencana, _sumber
 
+
+def _pesan_error(exc: BaseException) -> str:
+    """Pesan error yang SELALU informatif — jangan pernah hasilkan 'None'.
+
+    Bug 14 Okt: _pesan_error(exc) -> "X: None" bila str(exc) kosong,
+    sehingga bagian dashboard yang gagal tak bisa didiagnosis dari snapshot.
+    """
+    import traceback
+
+    pesan = str(exc).strip() or repr(exc)
+    tb = traceback.extract_tb(exc.__traceback__)
+    if tb:
+        lokasi = tb[-1]
+        return f"{type(exc).__name__}: {pesan} ({lokasi.filename.split('/')[-1]}:{lokasi.lineno})"
+    return f"{type(exc).__name__}: {pesan}"
+
+
 GMGN_DIR = Path.home() / "gmgn-paper" / "state"
 
 
@@ -24,7 +41,7 @@ _ASETS_DIR = _FRONTEND_DIR / "assets"
 
 def _backtest_panel(settings: Any) -> dict[str, Any] | None:
     """Ringkas hasil backtest tersimpan — tanpa jaringan, hanya membaca berkas."""
-    from . import backtest
+    from .. import backtest
 
     rows = backtest.load_rows(settings, 300) or backtest.load_rows(settings, 150)
     if not rows:
@@ -384,21 +401,21 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
 
     if use_network:
         try:
-            from .collectors.crypto import CryptoCollector
+            from ..collectors.crypto import CryptoCollector
 
             snap["bagian"]["crypto"] = CryptoCollector(s).digest()
         except Exception as exc:  # noqa: BLE001 — dashboard jangan mati karena satu bagian
-            snap["bagian"]["crypto"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["crypto"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors.idx import ArjumCollector
+            from ..collectors.idx import ArjumCollector
 
             col = ArjumCollector(s)
             scr = col.screener(limit=5)
             baris = (scr.get("rows") or [])[:5]
             cross = []
             try:
-                from .collectors.idx_check import gabungkan, tv_snapshot
+                from ..collectors.idx_check import gabungkan, tv_snapshot
 
                 cross = gabungkan(baris, tv_snapshot([str(r.get("stock_code", "")) for r in baris]))
             except Exception as exc:  # noqa: BLE001 — cross-check opsional, jangan matikan panel
@@ -410,44 +427,44 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 "cross_check": cross,
             }
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["idx"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["idx"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors.forex import ForexCollector
+            from ..collectors.forex import ForexCollector
 
             snap["bagian"]["forex"] = ForexCollector(s).structure("60", 120)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["forex"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["forex"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import macro
+            from ..collectors import macro
 
             # Gerbang stand-down: event berdampak tinggi dalam 60 menit ke depan.
             snap["bagian"]["macro"] = macro.MacroCollector(s).snapshot(s.state_dir)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["macro"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["macro"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import news
+            from ..collectors import news
 
             # Berita kripto (RSS publik, tanpa kuota). Judul + tautan saja.
             snap["bagian"]["news"] = news.snapshot(s)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["news"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["news"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import hyperliquid
+            from ..collectors import hyperliquid
 
             snap["bagian"]["hyperliquid"] = hyperliquid.snapshot(s, top=5)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["hyperliquid"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["hyperliquid"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import idx_tv
+            from ..collectors import idx_tv
 
             snap["bagian"]["idx_tv"] = idx_tv.summary(idx_tv.screen(uptrend_only=True, limit=5))
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["idx_tv"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["idx_tv"] = {"error": _pesan_error(exc)}
 
         try:
             # BSJP (beli sore jual pagi): peringkat kandidat tahan semalam, memakai filter
@@ -455,8 +472,8 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             # tick Arjum (collectors/riwayat_idx.py) supaya TIDAK menambah panggilan kuota REST.
             # Angka net-nya BERSUMBER dari walk-forward Tencent, bukan hitungan ulang di sini —
             # `terverifikasi_di_warroom=False` dan catatan_kejujuran wajib ikut tampil.
-            from .collectors import riwayat_idx
-            from .signals import bsjp
+            from ..collectors import riwayat_idx
+            from ..signals import bsjp
 
             scr_rows = (snap["bagian"].get("idx") or {}).get("rows") or []
             tv_rows = (snap["bagian"].get("idx_tv") or {}).get("rows") or []
@@ -473,10 +490,10 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 scr_rows, tv_rows, riwayat=riwayat
             ).to_dict()
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["bsjp"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["bsjp"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import dexscreen
+            from ..collectors import dexscreen
 
             gshadow = []
             try:
@@ -485,15 +502,15 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 gshadow = []
             snap["bagian"]["dex"] = dexscreen.snapshot(s.state_dir, gshadow)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["dex"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["dex"] = {"error": _pesan_error(exc)}
 
         try:
-            from . import lp_positions
+            from .. import lp_positions
 
             # Posisi LP nyata yang dicatat + kolam kandidat Solana (discovery).
             # Dua hal yang sengaja dipisah: `posisi` = uang betul-betul diparkir,
             # `kandidat` = layar pencarian. Mencampur keduanya = cara medsos mengelabui.
-            from .collectors import dexscreen
+            from ..collectors import dexscreen
 
             laporan_lp = lp_positions.laporan(s.state_dir)
             try:
@@ -509,29 +526,29 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 ],
             }
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["lp"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["lp"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import idx616
+            from ..collectors import idx616
 
             snap["bagian"]["idx616"] = idx616.snapshot(s.state_dir)
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["idx616"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["idx616"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import crypto as _crypto
-            from .collectors import overextended
+            from ..collectors import crypto as _crypto
+            from ..collectors import overextended
 
             # Selalu disertai hasil uji edge-nya — label "overextended" saja tidak pernah cukup.
             snap["bagian"]["overextended"] = overextended.snapshot(
                 _crypto.DEFAULT_PAIRS, s.state_dir
             )
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["overextended"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["overextended"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import bandarmologi
-            from .collectors.idx import ArjumCollector
+            from ..collectors import bandarmologi
+            from ..collectors.idx import ArjumCollector
 
             # Broker-flow IDX. Kuota Arjum 6000/hari untuk SELURUH pemakaian, jadi kandidat
             # diambil dari screener (1 panggilan) lalu dibatasi 4 ticker — dan hasilnya
@@ -543,10 +560,10 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 _kode, s.state_dir, maks_ticker=4, ambil=_ac.broker_summary
             )
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["bandarmologi"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["bandarmologi"] = {"error": _pesan_error(exc)}
 
         try:
-            from .collectors import dexscreen, memecoin
+            from ..collectors import dexscreen, memecoin
 
             # Sumber memecoin (Pumpfun / DEX Solana / Robinhood). Label aslinya dipertahankan:
             # data mentah, bukan rekomendasi — tidak ada track record yang bisa diverifikasi.
@@ -554,7 +571,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 s.state_dir, per_venue=5, ambil=dexscreen.cari_pool
             )
         except Exception as exc:  # noqa: BLE001
-            snap["bagian"]["memecoin"] = {"error": f"{type(exc).__name__}: {exc}"}
+            snap["bagian"]["memecoin"] = {"error": _pesan_error(exc)}
 
     # posisi & ledger dari berkas (tanpa jaringan)
     p = s.state_dir / "paper_positions.json"
@@ -574,7 +591,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         "terakhir": rows[-3:],
     }
     try:
-        from . import equity as _equity
+        from .. import equity as _equity
 
         c = _equity.curve(s)
         snap["equity"] = {"stats": c["stats"], "points": c["points"][-12:]}
@@ -622,7 +639,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     # Akurasi IDX per setup — dari ledger mesin (impor 6 Okt, beku). Lokal, tanpa jaringan,
     # jadi tetap tampil saat offline; jejak sumber dibaca dari berkas marker.
     try:
-        from . import idx_akurasi as _ia
+        from .. import idx_akurasi as _ia
 
         ak = _ia.summarize_accuracy(s.state_dir / "idx_ledger.db")
         marker_p = s.state_dir / "idx_ledger_sumber.json"
@@ -633,7 +650,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
                 ak["impor"] = None
         snap["idx_akurasi"] = ak
     except Exception as exc:  # noqa: BLE001 — satu panel jangan menjatuhkan snapshot
-        snap["idx_akurasi"] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+        snap["idx_akurasi"] = {"tersedia": False, "alasan": _pesan_error(exc)}
 
     if use_network:
         snap["radar"] = _radar_panel(state_dir=s.state_dir)
@@ -643,8 +660,8 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     # Per-market signal & accuracy engine (6 Okt): sinyal+entry setup khas tiap market,
     # akurasi+pakem satu standar. Lokal & offline-safe — tetap tampil saat jaringan mati.
     try:
-        from . import bandarmologi_skor as _bs
-        from . import pasar as _pasar
+        from .. import bandarmologi_skor as _bs
+        from .. import pasar as _pasar
 
         snap["crypto_sinyal"] = _pasar.ringkas_crypto_sinyal(s.state_dir)
         snap["forex_sinyal"] = _pasar.ringkas_forex_sinyal(s.state_dir)
@@ -655,20 +672,20 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
         snap["bandarmologi_skor"] = _bs.bandarmologi_score(snap.get("bagian") or {})
         # Dompet paper Rp 10 juta per market (7 Okt): ukuran yang bisa dibandingkan
         # antar-market — R tidak bisa dibandingkan, rupiah bisa.
-        from . import dompet as _dompet
+        from .. import dompet as _dompet
 
         snap["dompet"] = _dompet.summarize_all_wallets(s.state_dir)
         # Verifikasi silang LP vs API publik (jawaban "data kita vs internet live").
         # Berat (3 panggilan HTTP/pool) → hanya saat use_network, dan gagal = ditandai.
         if use_network:
-            from . import lp_verification as _lpv
+            from .. import lp_verification as _lpv
 
             try:
                 snap["lp_verifikasi"] = _lpv.pool_contoh()
             except Exception as exc:  # noqa: BLE001 — verifikasi opsional
-                snap["lp_verifikasi"] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+                snap["lp_verifikasi"] = {"tersedia": False, "alasan": _pesan_error(exc)}
     except Exception as exc:  # noqa: BLE001 — satu panel jangan menjatuhkan snapshot
-        kosong = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
+        kosong = {"tersedia": False, "alasan": _pesan_error(exc)}
         snap["crypto_sinyal"] = dict(kosong)
         snap["forex_sinyal"] = dict(kosong)
         snap["idx_sinyal"] = dict(kosong)
@@ -679,7 +696,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
 
     # kandidat & pengukuran (berkas; pengukuran butuh jaringan untuk melacak hasil)
     try:
-        from . import measure
+        from .. import measure
 
         snap["kandidat"] = measure.load_verdicts(s)[-8:]
         if use_network:
@@ -687,7 +704,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             snap["pengukuran"] = {k: v for k, v in rep.items() if k != "rows"}
     except Exception as exc:  # noqa: BLE001 — dashboard jangan mati karena satu bagian
         snap["kandidat"] = []
-        snap["pengukuran"] = {"error": f"{type(exc).__name__}: {exc}"}
+        snap["pengukuran"] = {"error": _pesan_error(exc)}
 
     try:
         snap["backtest"] = _backtest_panel(s)
