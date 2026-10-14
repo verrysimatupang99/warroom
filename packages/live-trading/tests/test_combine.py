@@ -85,12 +85,12 @@ def test_poly_empat_arm(tmp_path):
                                  "wins": i, "losses": 0, "open": 0,
                                  "updated": "2026-09-29T13:00:00"}), encoding="utf-8")
         arms.append(f"arm{i}")
-    saved = dash._POLY_ARMS
-    dash._POLY_ARMS = {a: str(tmp_path / f"{a}.json") for a in arms}
+    saved = dash.panels._POLY_ARMS
+    dash.panels._POLY_ARMS = {a: str(tmp_path / f"{a}.json") for a in arms}
     try:
         p = dash._poly_panel()
     finally:
-        dash._POLY_ARMS = saved
+        dash.panels._POLY_ARMS = saved
     assert p["tersedia"] is True and len(p["arms"]) == 2
     assert p["total_pnl"] == 5.0
 
