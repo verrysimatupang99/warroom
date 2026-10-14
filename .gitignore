@@ -34,3 +34,7 @@ qa-hasil/
 
 # env uji F3 (merge)
 .venv-merge/
+
+# Tangkapan layar bukti P2 — biner, churn tinggi, bukan sumber.
+# Disimpan lokal/arsip saja; jangan commit PNG ke riwayat git.
+docs/bukti-p2/
