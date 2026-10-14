@@ -1253,7 +1253,7 @@
     "/api/v1/docs": {
       "get": {
         "description": "Daftar catatan (docs/belajar/*.md) — judul dari baris `# ` pertama.\n\nCatatan hidup di repo sebagai markdown. Alih-alih menyalinnya ke DB (sumber\nkedua yang bisa menyimpang), endpoint ini MEMBACA berkasnya langsung.",
-        "operationId": "docs_daftar_api_v1_docs_get",
+        "operationId": "docs_list_api_v1_docs_get",
         "parameters": [
           {
             "in": "cookie",
@@ -1278,7 +1278,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Docs Daftar Api V1 Docs Get",
+                  "title": "Response Docs List Api V1 Docs Get",
                   "type": "object"
                 }
               }
@@ -1296,7 +1296,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Docs Daftar"
+        "summary": "Docs List"
       }
     },
     "/api/v1/docs/{slug}": {
@@ -2806,7 +2806,7 @@
     "/api/v1/sinyal/per-pasar": {
       "get": {
         "description": "Sinyal per pasar untuk Home: maks `maks` terbaik + status jujur per pasar.\n\n`status_data` tegas: **ada** (ada sinyal) · **kosong** (mesin hidup, tak ada\nsetup yang cocok — ini hasil kerja sistem) · **gagal** (sumber tak terbaca /\nmesin mati — JANGAN pernah ditulis \"tidak ada sinyal\").",
-        "operationId": "sinyal_per_pasar_api_v1_sinyal_per_pasar_get",
+        "operationId": "signals_per_market_api_v1_sinyal_per_pasar_get",
         "parameters": [
           {
             "description": "sinyal terbaik per pasar (Home: 3)",
@@ -2845,7 +2845,7 @@
               "application/json": {
                 "schema": {
                   "additionalProperties": true,
-                  "title": "Response Sinyal Per Pasar Api V1 Sinyal Per Pasar Get",
+                  "title": "Response Signals Per Market Api V1 Sinyal Per Pasar Get",
                   "type": "object"
                 }
               }
@@ -2863,7 +2863,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Sinyal Per Pasar"
+        "summary": "Signals Per Market"
       }
     },
     "/api/v1/sistem": {

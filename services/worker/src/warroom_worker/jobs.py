@@ -674,7 +674,7 @@ def _alert(
 
 
 def handler_learner(s: SASession, job: Job) -> str:
-    """Learner harian berbatas: baca bukti nyata, usulkan dalam batas, catat keputusan (P5-T2).
+    """Learner harian berbatas: baca bukti nyata, propose dalam batas, catat keputusan (P5-T2).
 
     Sumber bukti: log pelajaran agen Polymarket (baca-saja). Bukti dipetakan ke parameter
     registry; usulan di luar batas ditolak **dengan alasan**, dan yang menyentuh gate/live
@@ -728,7 +728,7 @@ def handler_learner(s: SASession, job: Job) -> str:
         for nama_param, nilai in kandidat:
             if ev["n"] is None:
                 continue
-            hasil = autonomy.usulkan(
+            hasil = autonomy.propose(
                 s,
                 nama_param,
                 nilai,

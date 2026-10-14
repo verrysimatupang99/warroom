@@ -14,7 +14,7 @@ from warroom_core import autonomy
 from warroom_core.db import User, session_scope
 
 from warroom_api import auth
-from warroom_api.providers import provider_ringkas
+from warroom_api.providers import provider_summary
 
 router = APIRouter()
 
@@ -80,7 +80,7 @@ def proposal_apply(
     pid: int, user: Annotated[User, Depends(auth.require_role("owner"))]
 ) -> dict[str, Any]:
     with session_scope() as s:
-        ok = autonomy.terapkan(s, pid, actor=user.username)
+        ok = autonomy.apply_proposal(s, pid, actor=user.username)
     if not ok:
         raise HTTPException(
             status_code=409,
@@ -113,7 +113,7 @@ def ai_status(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, An
             or 0,
             "panggilan_llm": s.scalar(select(func.count()).select_from(LLMCall)) or 0,
             # Kesehatan provider (W6): mana yang gagal dan dengan kode apa.
-            "provider": provider_ringkas(s),
+            "provider": provider_summary(s),
         }
 
 

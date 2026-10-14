@@ -143,7 +143,7 @@ def gate_evaluate(body: GateBody, user: Annotated[User, Depends(auth.current_use
 
 
 @router.get("/api/v1/sinyal/per-pasar")
-def sinyal_per_pasar(
+def signals_per_market(
     user: Annotated[User, Depends(auth.current_user)],
     maks: int = Query(3, ge=1, le=20, description="sinyal terbaik per pasar (Home: 3)"),
 ) -> dict[str, Any]:
@@ -153,12 +153,12 @@ def sinyal_per_pasar(
     setup yang cocok — ini hasil kerja sistem) · **gagal** (sumber tak terbaca /
     mesin mati — JANGAN pernah ditulis "tidak ada sinyal").
     """
-    from warroom_core.market_signal import sinyal_per_pasar, sinyal_terbaik_per_pasar
+    from warroom_core.market_signal import best_signal_per_market, signals_per_market
 
     with session_scope() as s:
         terverifikasi = _split_poly_terverifikasi(s)
-        daftar = sinyal_per_pasar(s, maks=maks, split_terverifikasi=terverifikasi)
-        rows = sinyal_terbaik_per_pasar(s, split_terverifikasi=terverifikasi)
+        daftar = signals_per_market(s, maks=maks, split_terverifikasi=terverifikasi)
+        rows = best_signal_per_market(s, split_terverifikasi=terverifikasi)
     return {
         "sinyal": [r.to_dict() for r in rows],          # bentuk lama (kompatibel)
         "pasar": [d.to_dict() for d in daftar],          # bentuk baru (Home)
@@ -175,10 +175,10 @@ def verdict_semua(user: Annotated[User, Depends(auth.current_user)]) -> dict[str
     (kartu bilang "EDGE TERBUKTI", gate bilang "split belum beku"). Backend
     mengeluarkan lima state + headline + alasan blokir; UI hanya merender.
     """
-    from warroom_core.verdict import verdict_semua_pasar
+    from warroom_core.verdict import all_market_verdicts
 
     with session_scope() as s:
-        rows = verdict_semua_pasar(s, split_terverifikasi=_split_poly_terverifikasi(s))
+        rows = all_market_verdicts(s, split_terverifikasi=_split_poly_terverifikasi(s))
     return {
         "verdict": [v.to_dict() for v in rows],
         "dibuat": datetime.now(UTC).isoformat(),

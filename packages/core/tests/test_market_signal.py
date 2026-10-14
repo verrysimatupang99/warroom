@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from warroom_core.db import Fact, session_scope
-from warroom_core.market_signal import PASAR, sinyal_terbaik_per_pasar
+from warroom_core.market_signal import PASAR, best_signal_per_market
 
 
 def _fakta(s, kind: str, key: str, value) -> None:
@@ -24,7 +24,7 @@ def _fakta(s, kind: str, key: str, value) -> None:
 def test_selalu_semua_pasar(db) -> None:
     """Tanpa fakta apa pun, semua pasar tetap muncul — sebagai 'tidak ada', bukan hilang."""
     with session_scope() as s:
-        rows = sinyal_terbaik_per_pasar(s)
+        rows = best_signal_per_market(s)
     assert len(rows) == len(PASAR)
     assert {r.pasar for r in rows} == {k for k, _l, _s in PASAR}
     assert all(r.ada is False for r in rows)
@@ -40,7 +40,7 @@ def test_crypto_pilih_premium_dan_skor_dari_aturan(db) -> None:
              "tp1": 2.2, "rules": [{"ok": True, "rule": "a"}, {"ok": True, "rule": "b"}]},
         ])
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     c = rows["crypto"]
     assert c.ada is True
     assert c.subjek == "BAGUSUSDT", "PREMIUM harus menang atas SKIP"
@@ -57,7 +57,7 @@ def test_polymarket_klaim_tanpa_split_tidak_terverifikasi(db) -> None:
             "nNeeded": 7392, "verdict_alat": "EDGE", "split": None, "rule": "favorit btc/eth",
         })
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     p = rows["polymarket"]
     assert p.ada is True
     assert p.terverifikasi is False
@@ -81,7 +81,7 @@ def test_polymarket_dengan_split_terverifikasi(db) -> None:
             "split": "frozen:poly-paired-abc", "rule": "favorit btc/eth",
         })
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s, split_terverifikasi=True)}
+        rows = {r.pasar: r for r in best_signal_per_market(s, split_terverifikasi=True)}
     p = rows["polymarket"]
     assert p.terverifikasi is True
     assert "frozen:poly-paired-abc" in p.catatan_kejujuran
@@ -100,7 +100,7 @@ def test_polymarket_split_mentah_tanpa_verifikasi_tetap_eksplorasi(db) -> None:
             "split": "frozen:poly-paired-abc", "rule": "favorit btc/eth",
         })
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     p = rows["polymarket"]
     assert p.terverifikasi is False
     assert p.tier == "EKSPLORASI"
@@ -140,7 +140,7 @@ def test_polymarket_hash_berbeda_tidak_terverifikasi(db, tmp_path) -> None:
             "split": hasil["split"], "rule": "favorit btc/eth",
         })
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s, split_terverifikasi=cocok)}
+        rows = {r.pasar: r for r in best_signal_per_market(s, split_terverifikasi=cocok)}
     p = rows["polymarket"]
     assert p.terverifikasi is False
     assert p.tier == "EKSPLORASI", "hash beda = belum terverifikasi, label EDGE dilarang"
@@ -155,7 +155,7 @@ def test_lp_sorot_yang_harus_keluar(db) -> None:
             {"symbol": "BAHAYA", "verdict": "KELUAR", "alasan": "IL -9% terlalu dalam", "notional": 30.0},
         ]})
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     lp = rows["lp"]
     assert lp.subjek == "BAHAYA"
     assert lp.arah == "KELUAR"
@@ -163,7 +163,7 @@ def test_lp_sorot_yang_harus_keluar(db) -> None:
 
 def test_idx_dan_forex_kosong_menyebut_alasan(db) -> None:
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     assert "BSJP" in rows["idx"].alasan
     assert rows["forex"].ada is False
 
@@ -212,7 +212,7 @@ def test_crypto_membawa_waktu_sinyal_terbaru(db) -> None:
             )
         )
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
     crypto = rows["crypto"]
     assert crypto.dibuat_pada == "2026-10-06T13:00:00+00:00"
     assert crypto.umur_sinyal_s is not None and crypto.umur_sinyal_s > 0
@@ -272,7 +272,7 @@ def test_idx_forex_membawa_entry_dan_waktu(db) -> None:
             )
         )
     with session_scope() as s:
-        rows = {r.pasar: r for r in sinyal_terbaik_per_pasar(s)}
+        rows = {r.pasar: r for r in best_signal_per_market(s)}
 
     idx = rows["idx"]
     assert idx.ada is True

@@ -23,7 +23,7 @@ from sqlalchemy import delete, func, select
 
 from warroom_core.db import Alert, Event, Fact, LLMCall
 
-__all__ = ["bersihkan_rujukan_yatim", "rencana", "jalankan"]
+__all__ = ["prune_orphan_refs", "rencana", "jalankan"]
 
 # Batas konservatif: simpan versi terbaru per kunci walau berapa pun umurnya.
 KEEP_VERSI_DEFAULT = 3
@@ -39,7 +39,7 @@ LLM_CALL_HARI_DEFAULT = 180
 ALERTS_HARI_DEFAULT = 14
 
 
-def bersihkan_rujukan_yatim(s: Any, *, batas: int = 5000) -> int:
+def prune_orphan_refs(s: Any, *, batas: int = 5000) -> int:
     """Kosongkan `events.fact_ids` yang menunjuk fakta sudah tidak ada.
 
     Ini BUKAN menghapus event (append-only dihormati): hanya daftar rujukannya yang
@@ -190,8 +190,8 @@ def jalankan(
         res = s.execute(delete(Fact).where(Fact.id.in_(kandidat)))
         dihapus["facts"] = res.rowcount or 0
 
-    # Bersihkan rujukan fact_id yang sudah tidak ada (lihat bersihkan_rujukan_yatim).
-    dihapus["rujukan_yatim_dibersihkan"] = bersihkan_rujukan_yatim(s)
+    # Bersihkan rujukan fact_id yang sudah tidak ada (lihat prune_orphan_refs).
+    dihapus["rujukan_yatim_dibersihkan"] = prune_orphan_refs(s)
 
     if hapus_events and r["events"]:
         batas = datetime.now(UTC) - timedelta(days=events_hari)

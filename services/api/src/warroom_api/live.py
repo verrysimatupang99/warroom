@@ -29,7 +29,7 @@ __all__ = [
     "arming_status",
     "grant_aktif",
     "grant_baru",
-    "pastikan_grant",
+    "ensure_grant",
     "scope_kurang",
 ]
 
@@ -239,7 +239,7 @@ def grant_baru(
     return {"id": g.id, "scope": g.scope, "expires_at": g.expires_at.isoformat() if g.expires_at else None}
 
 
-def pastikan_grant(s: SASession, scope: str) -> None:
+def ensure_grant(s: SASession, scope: str) -> None:
     """Lempar ValueError berisi daftar grant kurang (dipakai handler → 409)."""
     kurang = scope_kurang(s, scope)
     if kurang:
@@ -270,7 +270,7 @@ def _lt_bin() -> Path:
     return Path(os.environ.get("WARROOM_DOMAIN_HOME", str(Path.home() / "live-trading"))) / ".venv/bin/lt"
 
 
-def jalankan_kering_kedalaman(subperintah: str = "depth", *, timeout_s: int = 120) -> dict[str, Any]:
+def run_dry_depth(subperintah: str = "depth", *, timeout_s: int = 120) -> dict[str, Any]:
     """Uji kering: ukur kedalaman buku (tanpa order), lewat CLI domain.
 
     Dipakai P6-T3. Angka yang keluar adalah hasil perintah nyata; bila gagal → status+alasan.

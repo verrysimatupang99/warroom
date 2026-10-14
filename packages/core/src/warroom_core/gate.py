@@ -31,7 +31,7 @@ __all__ = [
     "GateResult",
     "PakemTingkat",
     "evaluate",
-    "kebijakan_dari_evidence",
+    "policy_from_evidence",
     "required_n",
     "tingkat_pakem",
     "wilson_interval",
@@ -188,7 +188,7 @@ class GateInput:
     rule: str = ""
 
 
-def kebijakan_dari_evidence(evidence: dict | None) -> tuple[float, float]:
+def policy_from_evidence(evidence: dict | None) -> tuple[float, float]:
     """Kebijakan (ci, deff) dari evidence — ci & deff SELALU berpasangan.
 
     Aturan: ci default GATE_DEFAULT_CI; deff diteruskan apa adanya (default

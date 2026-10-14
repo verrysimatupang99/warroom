@@ -108,4 +108,4 @@ def live_dry_run(
                 ),
             },
         )
-    return live.jalankan_kering_kedalaman(sub)
+    return live.run_dry_depth(sub)

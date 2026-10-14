@@ -51,7 +51,7 @@ def test_parse_string_json_dan_pemenang(tmp_path: Path) -> None:
     """Bug 1: field string JSON. ["0","1"] → Down menang."""
     f = tmp_path / "events-0000.jsonl.gz"
     _tulis(f, [_gamma("btc-updown-5m-100", '["Up", "Down"]', '["0", "1"]', closed=True, status="resolved")])
-    h = outcome.baca_hasil(f)
+    h = outcome.read_outcome(f)
     assert ("btc", 100) in h
     assert h[("btc", 100)].menang == "Down"
     assert h[("btc", 100)].teresolusi is True
@@ -64,7 +64,7 @@ def test_pasar_belum_selesai_tidak_dilabeli(tmp_path: Path) -> None:
         _gamma("btc-updown-5m-200", '["Up", "Down"]', '["0.505", "0.495"]', closed=False, status=""),
         _gamma("btc-updown-5m-201", '["Up", "Down"]', '["1", "0"]', closed=True, status="resolved"),
     ])
-    h = outcome.baca_hasil(f)
+    h = outcome.read_outcome(f)
     assert ("btc", 200) not in h, "pasar yang belum selesai tidak boleh punya label"
     assert ("btc", 201) in h and h[("btc", 201)].menang == "Up"
 
@@ -76,7 +76,7 @@ def test_dua_lintasan_resolusi_di_berkas_lain(tmp_path: Path) -> None:
     _tulis(tmp_path / "events-0001.jsonl.gz", [
         _gamma("btc-updown-5m-300", '["Up", "Down"]', '["1", "0"]', closed=True, status="resolved")
     ])
-    r = outcome.ringkas_dataset(tmp_path)
+    r = outcome.summarize_dataset(tmp_path)
     assert r["hasil_pasar"] == 1
     assert r["keputusan_berlabel"] == 1
     assert r["menang"] == 1
@@ -98,7 +98,7 @@ def test_keputusan_ditolak_tidak_ikut_dihitung(tmp_path: Path) -> None:
         _gamma("btc-updown-5m-402", '["Up","Down"]', '["1","0"]', closed=True, status="resolved"),
         _gamma("btc-updown-5m-403", '["Up","Down"]', '["1","0"]', closed=True, status="resolved"),
     ])
-    r = outcome.ringkas_dataset(tmp_path)
+    r = outcome.summarize_dataset(tmp_path)
     assert r["keputusan_semua_alasan"] == 4
     assert r["keputusan_berlabel"] == 2, "hanya quote_eligible yang dihitung"
     assert r["menang"] == 1 and r["kalah"] == 1
@@ -108,4 +108,4 @@ def test_keputusan_ditolak_tidak_ikut_dihitung(tmp_path: Path) -> None:
 
 
 def test_ringkas_dataset_kosong(tmp_path: Path) -> None:
-    assert "error" in outcome.ringkas_dataset(tmp_path)
+    assert "error" in outcome.summarize_dataset(tmp_path)

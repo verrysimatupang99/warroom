@@ -14,7 +14,7 @@ Yang dijaga di sini BUKAN tampilan, melainkan ATURAN:
 from __future__ import annotations
 
 from warroom_core.db import session_scope
-from warroom_core.verdict import verdict_pasar, verdict_semua_pasar
+from warroom_core.verdict import all_market_verdicts, market_verdict
 
 
 def _fakta(s, kind, key, value, ttl=3600):
@@ -50,7 +50,7 @@ def test_polymarket_tanpa_split_tidak_boleh_promotable(db) -> None:
                 "B kandidat": {"n": 179, "n_hari": 40, "winrate_pct": 81.56,
                                "mean_r": 0.02, "total_r": 3.0, "tingkat": "TUNING"}}}}})
     with session_scope() as s:
-        v = verdict_pasar(s, _sinyal(terverifikasi=False))
+        v = market_verdict(s, _sinyal(terverifikasi=False))
     assert v.promotion_state == "blocked"
     assert v.promotable_edge is False
     assert v.blocked_reason and "split" in v.blocked_reason.lower()
@@ -65,7 +65,7 @@ def test_polymarket_dengan_split_boleh_promotable(db) -> None:
                 "B kandidat": {"n": 179, "n_hari": 40, "winrate_pct": 81.56,
                                "mean_r": 0.02, "total_r": 3.0, "tingkat": "TUNING"}}}}})
     with session_scope() as s:
-        v = verdict_pasar(s, _sinyal(terverifikasi=True))
+        v = market_verdict(s, _sinyal(terverifikasi=True))
     assert v.promotion_state == "promotable", v.blocked_reason
     assert v.promotable_edge is True and v.validated_edge is True
 
@@ -78,7 +78,7 @@ def test_bukti_insufficient_memblokir(db) -> None:
                 "SMC": {"n": 5, "n_hari": 3, "winrate_pct": 60.0, "mean_r": 0.4,
                         "total_r": 2.0, "tingkat": "INSUFFICIENT"}}}}})
     with session_scope() as s:
-        v = verdict_pasar(s, _sinyal(pasar="crypto", terverifikasi=True))
+        v = market_verdict(s, _sinyal(pasar="crypto", terverifikasi=True))
     assert v.promotion_state == "blocked"
     assert v.blocked_reason and "insufficient" in v.blocked_reason.lower()
 
@@ -96,7 +96,7 @@ def test_expectancy_negatif_memblokir_walau_pakem_matang(db) -> None:
                                             "total_r": -15.0, "tingkat": "PRELIMINARY",
                                             "total_pnl_usd": -28.46}}}}})
     with session_scope() as s:
-        v = verdict_pasar(s, _sinyal(pasar="gmgn", terverifikasi=True))
+        v = market_verdict(s, _sinyal(pasar="gmgn", terverifikasi=True))
     assert v.promotion_state == "blocked"
     assert v.blocked_reason and "PnL" in v.blocked_reason
 
@@ -111,7 +111,7 @@ def test_idx_beku_selalu_blocked(db) -> None:
         _fakta(s, "snapshot", "dompet", {"pasar": {"idx": {"invariant": {
             "pelanggaran_1r": 97, "model_breach": True, "terburuk": {"r": -13.84}}}}})
     with session_scope() as s:
-        v = verdict_pasar(s, _sinyal(pasar="idx", terverifikasi=True))
+        v = market_verdict(s, _sinyal(pasar="idx", terverifikasi=True))
     assert v.execution_state == "frozen"
     assert v.risk_state == "breach"
     assert v.promotion_state == "blocked"
@@ -121,7 +121,7 @@ def test_idx_beku_selalu_blocked(db) -> None:
 def test_verdict_selalu_punya_headline_dan_alasan(db) -> None:
     """Kontrak UI: headline selalu ada; bila blocked, alasannya wajib terisi."""
     with session_scope() as s:
-        rows = verdict_semua_pasar(s)
+        rows = all_market_verdicts(s)
     assert rows, "harus mengembalikan semua pasar"
     for v in rows:
         assert v.headline, f"{v.pasar}: headline kosong"

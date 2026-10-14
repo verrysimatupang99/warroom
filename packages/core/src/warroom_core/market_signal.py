@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session as SASession
 
 from warroom_core.db import Fact
 
-__all__ = ["DaftarSinyal", "SinyalPasar", "sinyal_per_pasar", "sinyal_terbaik_per_pasar", "PASAR"]
+__all__ = ["DaftarSinyal", "SinyalPasar", "signals_per_market", "best_signal_per_market", "PASAR"]
 
 # Urutan + label pasar yang ditampilkan di Home. Satu sumber supaya UI dan API tidak
 # berbeda definisi (pelajaran yang sama dengan nav.ts).
@@ -814,7 +814,7 @@ def _verdict_terakhir(s: SASession) -> str | None:
     return str((f.value_json[-1] or {}).get("ts") or "") or None
 
 
-def sinyal_per_pasar(
+def signals_per_market(
     s: SASession, *, maks: int = 3, split_terverifikasi: bool = False
 ) -> list[DaftarSinyal]:
     """Untuk tiap pasar: daftar sinyal (maks `maks` ditampilkan) + status jujur.
@@ -830,7 +830,7 @@ def sinyal_per_pasar(
 
     # Pasar lain: pakai sinyal terbaik (bentuk lama) sebagai satu kartu, plus penanda
     # "kosong/gagal" yang sama tegasnya.
-    for sp in sinyal_terbaik_per_pasar(s, split_terverifikasi=split_terverifikasi):
+    for sp in best_signal_per_market(s, split_terverifikasi=split_terverifikasi):
         if sp.pasar == "crypto":
             continue
         sumber_pasar = {
@@ -895,7 +895,7 @@ def sinyal_per_pasar(
     return keluar
 
 
-def sinyal_terbaik_per_pasar(s: SASession, *, split_terverifikasi: bool = False) -> list[SinyalPasar]:
+def best_signal_per_market(s: SASession, *, split_terverifikasi: bool = False) -> list[SinyalPasar]:
     """Satu sinyal terbaik per pasar, urut sesuai PASAR. Selalu mengembalikan semua pasar
     (yang kosong pun), supaya UI tidak perlu tahu pasar mana yang kebetulan ada."""
     keluar: list[SinyalPasar] = [
