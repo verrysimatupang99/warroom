@@ -16,7 +16,6 @@ from warroom_worker.jobs import register_handlers
 @pytest.fixture(autouse=True)
 def _bersihkan(db):
     from sqlalchemy import delete as sa_delete
-
     from warroom_core.db import Strategy
 
     with session_scope() as s:
