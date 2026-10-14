@@ -30,7 +30,7 @@ systemctl status warroom-api warroom-worker warroom-web nginx
 journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # suite penuh: 815 tes (audit ulang 14 Okt 2026)
+uv run ruff check . && uv run pytest -q                # suite penuh: 824 tes (audit ulang 14 Okt 2026)
 cd apps/web && npm run test                            # 9 berkas, 36 vitest
 npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
