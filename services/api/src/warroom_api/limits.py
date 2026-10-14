@@ -15,7 +15,31 @@ import time
 from collections import deque
 from threading import Lock
 
-__all__ = ["Limiter", "batas_dari_env"]
+__all__ = [
+    "Limiter",
+    "batas_dari_env",
+    "kunci_klien",
+    "buat_limiter_bawaan",
+    "LOGIN_LIMITER",
+    "NARRATE_LIMITER",
+    "VERIFIER_LIMITER",
+]
+
+
+def buat_limiter_bawaan(nama_env: str, bawaan: int) -> Limiter:
+    """Limiter dari env; nilai tak sah → bawaan (tidak bisa dimatikan)."""
+    return Limiter(batas_dari_env(nama_env, bawaan))
+
+
+def kunci_klien(request: object) -> str:
+    """Kunci pembatas per pemanggil: IP klien bila ada, selain itu 'lokal'.
+
+    Diterima sebagai `object` supaya modul ini tak bergantung pada FastAPI;
+    pemanggil meneruskan `Request` yang punya `.client.host`.
+    """
+    client = getattr(request, "client", None)
+    host = getattr(client, "host", None)
+    return host or "lokal"
 
 
 def batas_dari_env(nama: str, bawaan: int) -> int:
@@ -63,3 +87,14 @@ class Limiter:
     def reset(self) -> None:
         with self._lock:
             self._kunci.clear()
+
+
+# Singleton pembatas laju in-process (satu proses uvicorn) — temuan audit 5 Okt 2026:
+# login tanpa batas = brute force + amplifikasi scrypt (16 MiB/percobaan); verifier
+# tanpa batas = kuota LLM berbayar bisa dibakar habis. Dinaikkan lewat env boleh,
+# dimatikan tidak (nilai tak sah → bawaan). Definisi TUNGGAL di sini agar app.py dan
+# router (mis. routers/auth.py) memakai objek yang sama — penting untuk `reset()`.
+# Diletakkan SETELAH class Limiter (dipanggil saat impor).
+LOGIN_LIMITER = buat_limiter_bawaan("WARROOM_LOGIN_PER_MIN", 10)
+VERIFIER_LIMITER = buat_limiter_bawaan("WARROOM_VERIFIER_PER_MIN", 30)
+NARRATE_LIMITER = buat_limiter_bawaan("WARROOM_NARRATE_PER_MIN", 20)

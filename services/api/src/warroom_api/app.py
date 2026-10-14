@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -30,17 +30,19 @@ from warroom_api import auth, limits, live
 from warroom_api.areas import AREA_KEYS, areas_summary, facts_for_area, latest_facts
 from warroom_api.errors import install_error_handlers
 from warroom_api.metrics import collect_metrics, collect_readiness, render_prometheus
+from warroom_api.routers import auth as auth_router
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
 
-# Pembatas laju in-process (satu proses uvicorn). Diukur dari temuan audit 5 Okt 2026:
-# login tanpa batas = brute force + amplifikasi scrypt (16 MiB/percobaan); verifier
-# tanpa batas = kuota LLM berbayar bisa dibakar habis. Batas dapat dinaikkan lewat env
-# untuk operasi yang sah, tapi tidak bisa dimatikan (nilai tak sah → bawaan).
-LOGIN_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_LOGIN_PER_MIN", 10))
-VERIFIER_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_VERIFIER_PER_MIN", 30))
-NARRATE_LIMITER = limits.Limiter(limits.batas_dari_env("WARROOM_NARRATE_PER_MIN", 20))
+# Pembatas laju in-process — didefinisikan TUNGGAL di `limits` (agar router yang
+# dipisah, mis. routers/auth.py, memakai objek yang sama; penting untuk reset() uji).
+# Diukur dari temuan audit 5 Okt 2026: login tanpa batas = brute force + amplifikasi
+# scrypt (16 MiB/percobaan); verifier tanpa batas = kuota LLM berbayar bisa dibakar.
+# Batas dapat dinaikkan lewat env untuk operasi yang sah, tapi tidak bisa dimatikan.
+LOGIN_LIMITER = limits.LOGIN_LIMITER
+VERIFIER_LIMITER = limits.VERIFIER_LIMITER
+NARRATE_LIMITER = limits.NARRATE_LIMITER
 
 
 def _kunci_klien(request: Request) -> str:
@@ -78,12 +80,6 @@ def _split_poly_terverifikasi(s: Any) -> bool:
         return False
 
 # --- skema permintaan/balasan ----------------------------------------------------------
-
-
-class LoginBody(BaseModel):
-    username: str
-    password: str
-    totp: str | None = None
 
 
 class GateBody(BaseModel):
@@ -225,43 +221,8 @@ def create_app() -> FastAPI:
             allow_headers=["Content-Type", "X-Warroom-Token"],
         )
 
-    # --- auth -------------------------------------------------------------------------
-
-    @app.post("/api/v1/auth/login")
-    def login(body: LoginBody, response: Response, request: Request) -> dict[str, Any]:
-        # Batas laju per IP klien (asli, dari XFF yang ditambahkan nginx) — temuan audit 5 Okt.
-        if not LOGIN_LIMITER.izinkan(_kunci_klien(request)):
-            raise HTTPException(
-                status_code=429,
-                detail="terlalu banyak percobaan login; coba lagi nanti",
-            )
-        sid = auth.login(body.username, body.password, body.totp)
-        if sid is None:
-            raise HTTPException(status_code=401, detail="kredensial tidak sah")
-        response.set_cookie(
-            auth.COOKIE_NAME,
-            sid,
-            httponly=True,
-            samesite="lax",
-            secure=auth.cookie_secure(),  # Caddy TLS (03-backend.md §10)
-            max_age=int(auth.SESSION_TTL.total_seconds()),
-            path="/",
-        )
-        return {"ok": True}
-
-    @app.post("/api/v1/auth/logout")
-    def logout(
-        user: Annotated[User, Depends(auth.current_user)],
-        wr_session: Annotated[str | None, Cookie(alias=auth.COOKIE_NAME)] = None,
-    ) -> dict[str, Any]:
-        with session_scope() as s:
-            if wr_session:
-                auth.revoke_session(s, wr_session)
-        return {"ok": True}
-
-    @app.get("/api/v1/auth/me")
-    def me(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        return {"username": user.username, "role": user.role}
+    # --- auth ---
+    app.include_router(auth_router.router)
 
     # --- sistem -----------------------------------------------------------------------
 
