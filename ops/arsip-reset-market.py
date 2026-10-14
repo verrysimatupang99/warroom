@@ -13,6 +13,15 @@ Cara kerja (aman & reversibel):
    (perilaku `dompet.py`: ledger kosong = `tersedia=False`, saldo awal Rp 10 jt).
 3. Tidak menyentuh `secrets/`, `logs/`, `backups/`, atau kode.
 
+BATAS PENTING (ditemukan 14 Okt 2026):
+- **forex_journal.json DITULIS ULANG penulis eksternal** (cron Hermes Tencent yang masih
+  berjalan di host lain). Reset di sini menghapusnya, tetapi beberapa saat kemudian file
+  itu kembali berisi trade lama. Untuk forex: **hentikan dulu** cron Tencent penulis jurnal,
+  baru jalankan reset. Berkas di sini tak bisa menjamin forex tetap kosong.
+- **polymarket** dikelola service `poly-pilot` terpisah (`/var/lib/poly-paper-candidate`);
+  bukan milik `state/` ini. Hanya diarsipkan salinannya; reset butuh keputusan owner.
+- Market yang penulisnya DI DALAM sistem ini (crypto, idx, gmgn) terreset dengan andal.
+
 Pakai:
     python ops/arsip-reset-market.py --dry-run     # lihat rencana saja
     python ops/arsip-reset-market.py               # jalankan (minta konfirmasi)
