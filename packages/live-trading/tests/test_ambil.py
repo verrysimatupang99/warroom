@@ -94,7 +94,9 @@ def test_dashboard_tampilkan_verdict(monkeypatch) -> None:
     }
     # dashboard kini membaca panel LP langsung (bukan dari snap) supaya tak
     # menimpa fakta kinerja arm LP (temuan 10 Okt) — uji menyuntik panelnya.
-    monkeypatch.setattr(dashboard, "_lp_panel", lambda *a, **k: panel)
+    from live_trading.dashboard import page_parts
+
+    monkeypatch.setattr(page_parts, "_lp_panel", lambda *a, **k: panel)
 
     snap = {
         "mode": "paper",
