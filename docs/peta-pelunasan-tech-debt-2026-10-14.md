@@ -18,22 +18,20 @@ Ini *usulan*, bukan rencana yang sudah disetujui.
 | # | Item | Status | Sisa kerja |
 |---|------|--------|------------|
 | P0-1 | Jejak git hilang: 30 berkas live-gate hanya di working tree | **SELESAI** (PR #3 merged 14 Okt) | — |
-| P0-2 | `SAWarning` teardown `test_schedule.py:23` (DELETE 27 baris, 0 cocok) | belum | Bikin teardown eksplisit; aman terhadap `-W error` |
+| P0-2 | `SAWarning` teardown `test_schedule.py:23` (DELETE 27 baris, 0 cocok) | **SELESAI** (PR #5; diverifikasi 15 tes lulus `-W error::Warning`) | — |
 | P0-3 | `ci-local.sh` uji repo luar `~/live-trading` → merah-palsu 7 tes | **SELESAI** (PR lanjutan) | Sudah diarahkan ke `packages/live-trading`; SEMUA HIJAU |
 
-**Definisi selesai P0:** PR #3 merged ✓, `ops/ci-local.sh` hijau ✓, sisa: warning teardown.
+**Definisi selesai P0:** PR #3 merged ✓, `ops/ci-local.sh` hijau ✓, warning teardown ✓.
 
 ---
 
 ## P1 — Minggu ini (biaya perubahan nyata)
 
-| # | Item | Alasan | Ukuran keberhasilan |
-|---|------|--------|---------------------|
-| P1-1 | **Satu kontrak gate/sinyal.** `signal.py` (5,5 KB) + `sinyal.py` (39,6 KB) + `verdict.py` + `live_trading/signals/gates.py` — dua nama (EN/ID) untuk konsep nyaris sama | "Siapa pemilik runutan sinyal per pasar?" tak punya satu jawaban | Satu modul kanonik; sisanya shim terdokumentasi |
-| P1-2 | **Pecah 3 file raksasa** (bertahap, satu per PR) | `dashboard.py` 2.371 baris / 46 def, `app.py` 1.449 / 46 rute, `jobs.py` 1.325 / 37 def | Tiap file < ~600 baris; 30 `type: ignore` di dashboard turun |
-| P1-3 | **`idx616/` keluar dari pengecualian lint** | 137 format legacy; satu-satunya mesin tanpa linter | `ruff` mencakup `idx616/`; exclusion dihapus |
-
-**Urutan disarankan:** P1-2 dulu untuk `app.py` (paling sering disentuh, pemisahan per-router jelas), baru P1-1, baru P1-3.
+| # | Item | Alasan | Ukuran keberhasilan | Status |
+|---|------|--------|---------------------|--------|
+| P1-1 | **Satu kontrak gate/sinyal.** | "Siapa pemilik runutan sinyal per pasar?" tak punya satu jawaban | Satu modul kanonik; sisanya shim terdokumentasi | **SELESAI** (docstring batas peran di `signal.py`/`market_signal.py`/`verdict.py`, PR #23) |
+| P1-2 | **Pecah 3 file raksasa** | `dashboard.py` 2.371 / `app.py` 1.449 / `jobs.py` 1.325 baris | Tiap file < ~600 baris | **SELESAI** (`app.py` 373; `jobs/` & `dashboard/` jadi paket; penjaga `ops/check-file-size.py`) |
+| P1-3 | **`idx616/` keluar dari pengecualian lint** | satu-satunya mesin tanpa linter | `ruff` mencakup `idx616/` | **SELESAI** (14 Okt: ruff `idx616/` All checks passed) |
 
 ---
 
@@ -47,19 +45,28 @@ Ini *usulan*, bukan rencana yang sudah disetujui.
 
 ## P2 — Bisa dicicil (kebersihan & dokumen)
 
-| # | Item | Catatan |
-|---|------|---------|
-| P2-1 | AGENTS.md: "761 tes" → **815** | Dokumennya sendiri bilang "sumber kebenaran = output perintah" |
-| P2-2 | AGENTS.md: Caddy → **nginx** di bagian "Perintah harian" | Sudah kontradiksi internal dgn bagian Deploy |
-| P2-3 | `.venv-merge/` (216 MB) — env uji F3, vestigial | Hapus setelah F3 tuntas; sudah di `.gitignore` |
-| P2-4 | `.git` 141 MB | Setelah PNG keluar (PR #3), pantau; jangan `filter-branch` sembarangan |
+| # | Item | Status |
+|---|------|--------|
+| P2-1 | AGENTS.md: "761 tes" → **815** | **SELESAI** (14 Okt) |
+| P2-2 | AGENTS.md: Caddy → **nginx** | **SELESAI** (14 Okt) |
+| P2-3 | `.venv-merge/` (298 MB) | **SELESAI** (dihapus 14 Okt) |
+| P2-4 | `.git` 141 MB | Dipantau; **tidak** `filter-branch` sembarangan (risiko riwayat bersama) |
+
+### 🆕 Ditemukan 14 Okt (sesi lanjutan)
+
+| # | Item | Status |
+|---|------|--------|
+| P2-5 | **27 import relatif rusak** di `dashboard/panels.py` pasca-pecah `dashboard/` (PR #21) — dashboard produksi rusak senyap berhari-hari, lolos CI karena tak ada tes yang memanggil `build_snapshot` | **SELESAI** (PR #28: perbaikan + `test_dashboard_smoke.py`) |
+| P2-6 | **Job dobel jalan**: baris job nama lama (`retensi`/`rekonsiliasi-crypto`) tak terbersihkan saat rename — migrasi `c3d5e7f9a1b2` terlewat karena `ensure_jobs` sudah bikin baris baru | **SELESAI** (PR #27: migrasi `d4e6f8a0b2c3`) |
+| P2-7 | **Disk hampir penuh** (88%, 6,2 GB) | **SELESAI** sebagian (14 Okt: cache npm/pip/uv, /tmp APK, backup web lama — bebas ~600 MB+) |
 
 ---
 
 ## P3 — Opsional
 
-- Rapikan `docs/` yang menumpuk (banyak file bertanggal 08 Okt 2026 — arsipkan ke `docs/arsip/`).
-- Pertimbangkan `budget` baris per file di CI (mis. warn bila file > 800 baris) agar P1-2 tidak kambuh.
+- **SELESAI** — `docs/` bertanggal lama diarsipkan ke `docs/arsip/` (8 berkas).
+- **SELESAI** — anggaran baris per berkas di CI: `ops/check-file-size.py` (warn 800, gagal 1000).
+- **BARU** — `ops/arsip-reset-market.py` + `ops/check-db-head.py` (pencegahan migrasi tertinggal).
 
 ---
 
