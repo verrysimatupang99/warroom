@@ -37,6 +37,14 @@ Ini *usulan*, bukan rencana yang sudah disetujui.
 
 ---
 
+## 🆕 P0 — Ditemukan 14 Okt (pasca-cutover)
+
+| # | Item | Catatan |
+|---|------|---------|
+| **P0-4** | **Migrasi DB dijalankan MANUAL** — produksi tertinggal 3 revisi (`a1f2b3c4d5e6` → head) saat ditemukan; `users.totp_last_counter` (anti-replay TOTP, PR #3) tak pernah ada di DB walau kode aktif | Tambah mekanisme: `ExecStartPre` alembic **atau** langkah CI/deploy yang memaksa `upgrade head`, + tes "DB di head". Sudah diterapkan sekali (14 Okt 18:44); **cegah kambuh**. |
+
+---
+
 ## P2 — Bisa dicicil (kebersihan & dokumen)
 
 | # | Item | Catatan |

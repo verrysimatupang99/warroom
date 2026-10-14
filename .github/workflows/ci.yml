@@ -53,6 +53,8 @@ jobs:
         run: uv run python ops/check-openapi-contract.py
       - name: Anggaran baris per berkas (cegah file raksasa)
         run: uv run python ops/check-file-size.py
+      - name: Skema DB di head alembic (bila DB tersedia)
+        run: uv run python ops/check-db-head.py
       # R5: tes platform (api/worker/core) kini ikut CI. Tes ber-DB **di-skip** dengan
       # alasan jelas bila WARROOM_TEST_DB_URL tidak ada (lihat conftest.py) — jadi job ini
       # tetap hijau tanpa Postgres, dan tidak pernah berpura-pura lulus.
