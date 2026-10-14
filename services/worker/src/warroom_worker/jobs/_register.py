@@ -56,6 +56,10 @@ def register_handlers() -> dict[str, Any]:
             "gmgn-sync": handler_gmgn_sync,
             "lpagent-sync": handler_lpagent_sync,
             "reconcile-crypto": handler_rekonsiliasi_crypto,
+            # Alias nama LAMA: agar job di DB (sebelum migrasi c3d5e7f9a1b2 jalan)
+            # tetap punya handler. Tanpa ini, handler mati sampai migrasi diterapkan.
+            # Aman dihapus setelah migrasi terkonfirmasi di semua lingkungan.
+            "rekonsiliasi-crypto": handler_rekonsiliasi_crypto,
             "signal-sync": handler_signal_sync,
             "learner": handler_learner,
             "prompts-sync": handler_prompts_sync,
@@ -68,6 +72,8 @@ def register_handlers() -> dict[str, Any]:
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
             "retention": handler_retensi,
+            # Alias nama LAMA (lihat catatan di atas).
+            "retensi": handler_retensi,
             "source-health": handler_source_health,
         }
     )
