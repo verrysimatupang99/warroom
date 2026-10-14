@@ -1,6 +1,6 @@
 # ADR: Cutover `~/live-trading` — kode mati, data hidup
 
-Status: **rencana siap; eksekusi menunggu** (butuh akses `systemctl --user`).
+Status: **SELESAI** (dijalankan owner 14 Okt 2026 18:35).
 Tanggal: 14 Okt 2026.
 
 ## Ringkasan
@@ -60,3 +60,33 @@ bus user, ia berhenti di Prakondisi (exit 1) tanpa mengubah apa pun.
 - Menghapus `.venv` sebelum migrasi → `infra-watchdog` mati (hanya watchdog,
   bukan jalur trading). Dampak terbatas, tapi tetap dihindari.
 - Menghapus `state/` → KEHILANGAN DATA. Dilarang keras.
+
+## Hasil (14 Okt 2026 18:35)
+
+- `infra-watchdog.service` → venv warroom (`ops/ops-scripts/infra-watchdog.py`),
+  jalan exit 0. ✓
+- `.venv.lama`, `.venv`, `src` dihapus; arsip 114 MB di
+  `~/arsip/live-trading-kode-20261014.tar.gz`. ✓
+- `~/live-trading`: 1,7 GB → **104 MB**; `state/` (63 berkas data) utuh. ✓
+- Tak ada unit menyentuh venv lama lagi. ✓
+
+## Temuan ikutan (penting): migrasi DB produksi tertunda 3 revisi
+
+Saat verifikasi pasca-cutover, ditemukan **DB produksi masih di revisi
+`a1f2c3d4e5b6`** — padahal head `c3d5e7f9a1b2`. Tiga migrasi BELUM diterapkan:
+
+1. `f1a2b3c4d5e6` — research contracts (P1).
+2. `d2c4e6f8a0b1` — **kolom `users.totp_last_counter` (anti-replay TOTP, PR #3)**.
+3. `c3d5e7f9a1b2` — rename job (PR #23).
+
+Akibatnya PR #3 (kode anti-replay TOTP) **aktif di kode tapi tak punya kolomnya
+di DB** selama ini; dan setelah PR #23 handler job mati (diperbaiki di PR #25
+dengan alias nama lama).
+
+Karena itu `alembic upgrade head` dijalankan 14 Okt 18:44 (backup dulu:
+`~/arsip/db-pre-migrasi-20261014-1842.sql`, 200 MB). DB kini di `c3d5e7f9a1b2`.
+
+**Akar masalah proses:** migrasi DB dijalankan MANUAL; tidak ada `ExecStartPre`
+dan tidak ada di CI. Setiap PR yang menyentuh skema berisiko merge tanpa pernah
+menerapkannya. → dicatat sebagai utang (lihat peta).
+
