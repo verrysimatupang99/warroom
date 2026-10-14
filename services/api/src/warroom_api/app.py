@@ -140,9 +140,6 @@ def create_app() -> FastAPI:
             teks = render_prometheus(collect_metrics(s))
         return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
 
-    # --- governance (parameter, usulan, kill switch, events) ---
-    app.include_router(governance_router.router)
-
     # --- alert & notifier (W5) ------------------------------------------------------------
 
     @app.get("/api/v1/alerts")
