@@ -17,17 +17,18 @@ from typing import Annotated, Any
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy import func, select
-from warroom_core import autonomy, prompts_dir
+from warroom_core import prompts_dir
 from warroom_core.db import User, session_scope
-from warroom_core.db.session import SASession
 
 from warroom_api import auth, limits, live
 from warroom_api.areas import AREA_KEYS, latest_facts
 from warroom_api.errors import install_error_handlers
 from warroom_api.metrics import collect_metrics, render_prometheus
+from warroom_api.providers import provider_ringkas as _provider_ringkas
 from warroom_api.routers import auth as auth_router
 from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
+from warroom_api.routers import governance as governance_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.stream import event_stream
@@ -52,52 +53,6 @@ def _kunci_klien(request: Request) -> str:
 
 
 # --- skema permintaan/balasan ----------------------------------------------------------
-
-
-def _provider_ringkas(s: SASession) -> list[dict[str, Any]]:
-    """Kesehatan per provider dari `llm_calls` — satu tempat (dipakai ai/status & llm-console).
-
-    Tanpa penghitung di memori: `ok_rate` dihitung dari jumlah baris, `error_terakhir`
-    diambil dari baris gagal terbaru per provider (kode HTTP/kelas error, bukan tebakan).
-    """
-    from warroom_core.db import LLMCall
-
-    per = s.execute(
-        select(
-            LLMCall.provider,
-            func.count(),
-            func.count().filter(LLMCall.ok.is_(True)),
-            func.count().filter(LLMCall.ok.is_(False)),
-            func.count().filter(LLMCall.fallback_from.is_not(None)),
-            func.percentile_cont(0.5).within_group(LLMCall.latency_ms.asc().nulls_last()),
-            func.percentile_cont(0.95).within_group(LLMCall.latency_ms.asc().nulls_last()),
-            func.coalesce(func.sum(LLMCall.tokens_in), 0),
-            func.coalesce(func.sum(LLMCall.tokens_out), 0),
-        ).group_by(LLMCall.provider)
-    ).all()
-    error_terakhir: dict[str, str] = {}
-    for (p, code) in s.execute(
-        select(LLMCall.provider, LLMCall.error_code)
-        .where(LLMCall.error_code.is_not(None))
-        .order_by(LLMCall.created_at.desc(), LLMCall.id.desc())
-    ).all():
-        error_terakhir.setdefault(str(p), str(code))
-    return [
-        {
-            "provider": p,
-            "n": n,
-            "ok": ok_n,
-            "gagal": g,
-            "ok_rate": round(ok_n / n, 4) if n else None,
-            "fallback": f,
-            "p50_ms": p50,
-            "p95_ms": p95,
-            "token_in": ti,
-            "token_out": to,
-            "error_terakhir": error_terakhir.get(str(p)),
-        }
-        for (p, n, ok_n, g, f, p50, p95, ti, to) in per
-    ]
 
 
 def create_app() -> FastAPI:
@@ -139,6 +94,9 @@ def create_app() -> FastAPI:
 
     # --- fakta & area (penulis operator, baca per-area, sumber) ---
     app.include_router(fakta_router.router)
+
+    # --- governance (parameter, usulan, kill switch, events) ---
+    app.include_router(governance_router.router)
 
     # --- SSE (P1-T7) --------------------------------------------------------------------
 
@@ -182,154 +140,8 @@ def create_app() -> FastAPI:
             teks = render_prometheus(collect_metrics(s))
         return PlainTextResponse(teks, media_type="text/plain; version=0.0.4; charset=utf-8")
 
-    # --- P5: parameter, usulan, kill switch AI -------------------------------------------
-
-    @app.get("/api/v1/params")
-    def params(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        from warroom_core.db import Parameter
-
-        with session_scope() as s:
-            rows = s.scalars(select(Parameter).order_by(Parameter.name)).all()
-            data = [
-                {
-                    "nama": p.name,
-                    "nilai": p.value_json,
-                    "batas": p.bounds_json,
-                    "terkunci": p.locked,
-                    "scope": p.scope,
-                    "catatan": p.note,
-                    "diperbarui": p.updated_at.isoformat() if p.updated_at else None,
-                }
-                for p in rows
-            ]
-        return {"params": data, "count": len(data)}
-
-    @app.get("/api/v1/proposals")
-    def proposals(
-        user: Annotated[User, Depends(auth.current_user)],
-        limit: int = Query(50, ge=1, le=500),
-    ) -> dict[str, Any]:
-        from warroom_core.db import Proposal
-
-        with session_scope() as s:
-            rows = s.scalars(
-                select(Proposal).order_by(Proposal.created_at.desc()).limit(limit)
-            ).all()
-            data = [
-                {
-                    "id": pr.id,
-                    "parameter": pr.parameter_name,
-                    "dari": pr.from_json,
-                    "ke": pr.to_json,
-                    "alasan": pr.reason,
-                    "bukti": pr.evidence_json,
-                    "gate": pr.gate_verdict,
-                    "status": pr.status,
-                    "ditolak_karena": pr.rejected_reason,
-                    "diputuskan_oleh": pr.decided_by,
-                    "diterapkan_pada": pr.applied_at.isoformat() if pr.applied_at else None,
-                    "config_hash": pr.config_hash,
-                    "dibuat": pr.created_at.isoformat() if pr.created_at else None,
-                }
-                for pr in rows
-            ]
-        return {"proposals": data, "count": len(data)}
-
-    @app.post("/api/v1/proposals/{pid}/apply")
-    def proposal_apply(
-        pid: int, user: Annotated[User, Depends(auth.require_role("owner"))]
-    ) -> dict[str, Any]:
-        with session_scope() as s:
-            ok = autonomy.terapkan(s, pid, actor=user.username)
-        if not ok:
-            raise HTTPException(
-                status_code=409,
-                detail="usulan tidak bisa diterapkan (sudah diterapkan atau parameter terkunci)",
-            )
-        return {"ok": True, "oleh": user.username}
-
-    @app.post("/api/v1/proposals/{pid}/rollback")
-    def proposal_rollback(
-        pid: int, user: Annotated[User, Depends(auth.require_role("owner"))]
-    ) -> dict[str, Any]:
-        with session_scope() as s:
-            ok = autonomy.rollback(s, pid, actor=user.username)
-        if not ok:
-            raise HTTPException(status_code=409, detail="usulan belum pernah diterapkan")
-        return {"ok": True, "oleh": user.username}
-
-    @app.get("/api/v1/ai/status")
-    def ai_status(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-        from warroom_core.db import LLMCall, Proposal
-
-        with session_scope() as s:
-            return {
-                "kill_switch": autonomy.kill_switch_aktif(s),
-                "usulan_menunggu": s.scalar(
-                    select(func.count()).select_from(Proposal).where(Proposal.status == "butuh_manusia")
-                )
-                or 0,
-                "panggilan_llm": s.scalar(select(func.count()).select_from(LLMCall)) or 0,
-                # Kesehatan provider (W6): mana yang gagal dan dengan kode apa.
-                "provider": _provider_ringkas(s),
-            }
-
-    @app.post("/api/v1/ai/kill-switch")
-    def ai_kill_switch(
-        body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("owner"))]
-    ) -> dict[str, Any]:
-        aktif = bool(body.get("aktif"))
-        with session_scope() as s:
-            ok = autonomy.set_kill_switch(s, aktif, actor=user.username)
-        if not ok:
-            raise HTTPException(status_code=409, detail="parameter kill switch belum terdaftar")
-        return {"ok": True, "kill_switch": aktif, "oleh": user.username}
-
-    @app.get("/api/v1/events")
-    def events_list(
-        user: Annotated[User, Depends(auth.current_user)],
-        limit: int = Query(120, ge=1, le=500),
-        tipe: str | None = Query(
-            None,
-            description=(
-                "prefix tipe, boleh daftar dipisah koma (mis. 'trade.,signal.,verdict.'). "
-                "Dipakai panel Kejadian Area: tanpa filter, 120 baris terakhir hampir pasti "
-                "didominasi job.ran sehingga kejadian area tak pernah terlihat."
-            ),
-        ),
-    ) -> dict[str, Any]:
-        """Kejadian terakhir dari tabel `events` (append-only).
-
-        Dipakai panel "Kejadian Area": SSE hanya mengirim kejadian BARU (tanpa
-        Last-Event-ID ia mulai dari sekarang — perilaku yang benar untuk CPU/DB),
-        sehingga panel selalu kosong sampai ada kejadian baru. Backfill lewat
-        endpoint ini; angka & tipe apa adanya dari DB.
-        """
-        from warroom_core.db import Event
-
-        with session_scope() as s:
-            q = select(Event)
-            if tipe:
-                from sqlalchemy import or_
-
-                prefiks = [t.strip() for t in tipe.split(",") if t.strip()]
-                q = q.where(or_(*[Event.type.like(f"{p}%") for p in prefiks]))
-            rows = s.scalars(q.order_by(Event.id.desc()).limit(limit)).all()
-            return {
-                "events": [
-                    {
-                        "id": e.id,
-                        "type": e.type,
-                        "actor": e.actor,
-                        "severity": e.severity,
-                        "payload": e.payload_json,
-                        "fact_ids": e.fact_ids,
-                        "created_at": e.created_at.isoformat() if e.created_at else None,
-                    }
-                    for e in rows
-                ],
-                "count": len(rows),
-            }
+    # --- governance (parameter, usulan, kill switch, events) ---
+    app.include_router(governance_router.router)
 
     # --- alert & notifier (W5) ------------------------------------------------------------
 
