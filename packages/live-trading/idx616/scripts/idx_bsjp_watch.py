@@ -13,7 +13,6 @@ Dipanggil cron 15:40 WIB Sen-Kam (Jumat libur BSJP — hindari gap weekend).
 """
 import argparse
 import datetime
-import json
 import subprocess
 import sys
 
@@ -147,7 +146,23 @@ def journal_log(s):
         sys.path.insert(0, "/home/ubuntu/.hermes/scripts")
         from idx616_ledger import record_event
         from idx_clock import now_wib
-        record_event(job_id="b7e4d1a83c52", producer="idx_bsjp_watch.py", created_at=now_wib().isoformat(), ticker=f"{s['symbol']}.JK", setup=f"BSJP_{s.get('tier','ARA')}", source="bsjp_watcher", direction="LONG", entry_low=float(e), entry_high=float(e), sl=float(e*0.975), tp1=float(e*1.01), tp2=float(e*1.02), data_source="arjum_plus_market_adapter", source_timestamp=now_wib().isoformat(), note="BSJP exit is next-session open")
+        record_event(
+            job_id="b7e4d1a83c52",
+            producer="idx_bsjp_watch.py",
+            created_at=now_wib().isoformat(),
+            ticker=f"{s['symbol']}.JK",
+            setup=f"BSJP_{s.get('tier', 'ARA')}",
+            source="bsjp_watcher",
+            direction="LONG",
+            entry_low=float(e),
+            entry_high=float(e),
+            sl=float(e * 0.975),
+            tp1=float(e * 1.01),
+            tp2=float(e * 1.02),
+            data_source="arjum_plus_market_adapter",
+            source_timestamp=now_wib().isoformat(),
+            note="BSJP exit is next-session open",
+        )
     except Exception as exc:
         print(f"[ledger-warn] {s.get('symbol')}: {exc}", file=sys.stderr)
     subprocess.run(
@@ -185,8 +200,10 @@ def main():
         return 0
 
     lines = [f"🌙 *BSJP WATCHER* — {now:%a %d %b, %H:%M} WIB",
-             "Beli di close hari ini → jual di open besok 08:55-09:05 WIB (disiplin, apapun harganya)",
-             "_ARA: chg ≥2% + vol ≥1.5×avg (historical estimate, not live guarantee) · STRONG: +ext SMA10 & chg 6-12%_",
+             "Beli di close hari ini → jual di open besok 08:55-09:05 WIB "
+             "(disiplin, apapun harganya)",
+             "_ARA: chg ≥2% + vol ≥1.5×avg (historical estimate, not live guarantee) · "
+             "STRONG: +ext SMA10 & chg 6-12%_",
              "─────────────────────"]
     for s in hits:
         tier = s.get("tier", "ARA")

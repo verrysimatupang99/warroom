@@ -5,6 +5,7 @@ letak state/cache/log/data supaya skrip yang sama bisa jalan di sini tanpa
 mengubah apa pun di Tencent. Semua bisa ditimpa lewat env (IDX616_ROOT).
 """
 from __future__ import annotations
+
 import os
 from pathlib import Path
 

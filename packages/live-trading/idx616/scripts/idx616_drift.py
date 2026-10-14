@@ -22,12 +22,15 @@ import sqlite3
 import sys
 
 try:
-    from _paths import DRIFT_JSON as OUT, REGIME_JSON as REGIME_CACHE, LEDGER_DB as DB
+    from _paths import DRIFT_JSON as OUT
+    from _paths import LEDGER_DB as DB
+    from _paths import REGIME_JSON as REGIME_CACHE
 except Exception:
     DB = '/home/ubuntu/.hermes/cron/state/idx616_signal_ledger.db'
     OUT = '/home/ubuntu/.hermes/cron/state/idx616_drift.json'
     REGIME_CACHE = '/home/ubuntu/.hermes/cron/state/idx616_regime.json'
 import random
+
 random.seed(616)
 
 
@@ -58,7 +61,9 @@ def regime_map(dates):
             ihsg = yf.Ticker('^JKSE').history(period='1y')
             ma = ihsg['Close'].rolling(20).mean()
             m = {}
-            for d, (cl, ma20) in zip(ihsg.index, zip(ihsg['Close'], ma)):
+            for d, (cl, ma20) in zip(
+                ihsg.index, zip(ihsg['Close'], ma, strict=False), strict=False
+            ):
                 ds = str(d.date())
                 if ma20 == ma20:
                     m[ds] = 'risk-on' if cl >= ma20 else 'risk-off'
@@ -127,7 +132,7 @@ def main():
              'BREAKOUT': 'SCALP', 'REJECTION': 'SCALP'}.get(s.split('_')[0], s)
         by_setup.setdefault(s, []).append(r)
 
-    out = {'generated': str(dt.datetime.now(dt.timezone.utc)),
+    out = {'generated': str(dt.datetime.now(dt.UTC)),
            'setups': {}, 'alerts': []}
     for s, rs in by_setup.items():
         cl = cluster_stats(rs)

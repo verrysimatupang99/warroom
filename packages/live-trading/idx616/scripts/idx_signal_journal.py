@@ -40,7 +40,7 @@ def style_sheet(ws):
     header_font = Font(bold=True, color="FFFFFF", size=11)
     thin = Side(style="thin", color="B0B0B0")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    for col, (head, width) in enumerate(zip(HEADERS, WIDTHS), start=1):
+    for col, (head, width) in enumerate(zip(HEADERS, WIDTHS, strict=False), start=1):
         cell = ws.cell(row=1, column=col, value=head)
         cell.fill = header_fill
         cell.font = header_font
