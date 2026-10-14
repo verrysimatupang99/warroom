@@ -1,5 +1,8 @@
 """Sinyal terbaik per pasar — satu kontrak untuk seluruh UI (5 Okt 2026).
 
+Batas peran: lapisan ini di ATAS `signal.py` (kontrak paper generik) dan di BAWAH
+`verdict.py` (verdict kanonik). Lihat docstring `signal.py` untuk peta lengkap.
+
 Masalah: tiap pasar menyimpan sinyalnya dengan bentuk yang berbeda (`signal/*` untuk crypto,
 `poly.verdict` untuk Polymarket, `gmgn/radar` untuk DEX, `snapshot/lp_paper` untuk LP). Home
 yang menampilkan "sinyal tiap pasar" harus menormalkan semuanya ke satu bentuk — kalau UI
