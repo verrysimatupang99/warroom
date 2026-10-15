@@ -4,6 +4,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Event, Fact, Job
 from warroom_core.gate import DEFAULT_DEFF, GATE_DEFAULT_MIN_N, GATE_TOOL_CI
@@ -275,8 +276,23 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
         return f"ledger sinyal {d.get('status')}: {str(d.get('detail') or '')[:80]}"
 
     n_fakta = 0
+    dilewati = 0
     dikabarkan = 0
     for sg in d.get("sinyal") or []:
+        # Sinyal yang sudah pernah diterbitkan TIDAK ditulis/dikabarkan ulang. Sumber
+        # (`path#ts`) sudah mengunci identitas sinyal; tanpa ini ledger yang sama
+        # ditulis ulang tiap siklus (15 mnt) dan alert dikabarkan berulang setelah ack —
+        # di produksi: 197 alert untuk 12 sinyal unik, dan umur sinyal ikut "disegarkan"
+        # sehingga kandidat 6 jam bisa terlihat segar sampai ~12 jam.
+        sumber = f"{d.get('path')}#{sg.get('ts')}"
+        sudah = s.scalar(
+            select(Fact.id)
+            .where(Fact.kind == "signal", Fact.key == str(sg["pair"]), Fact.source == sumber)
+            .limit(1)
+        )
+        if sudah is not None:
+            dilewati += 1
+            continue
         nilai: dict[str, Any] = {
             "pair": sg["pair"],
             "arah": sg["arah"],
@@ -297,7 +313,7 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
             kind="signal",
             key=str(sg["pair"]),
             value_json=nilai,
-            source=f"{d.get('path')}#{sg.get('ts')}",
+            source=sumber,
             observed_at=datetime.now(UTC),
             ttl_s=ttl,
             hash=canonical_hash(nilai),
@@ -316,7 +332,7 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
             dikabarkan += 1
     return (
         f"ledger={d.get('path')} jendela={jam:g}j sinyal={d.get('jumlah')} "
-        f"fakta={n_fakta} dikabarkan={dikabarkan}"
+        f"baru={n_fakta} sudah_ada={dilewati} dikabarkan={dikabarkan}"
     )
 
 
