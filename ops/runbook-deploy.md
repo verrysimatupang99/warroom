@@ -143,3 +143,22 @@ bash ops/deploy-web.sh
 | `GET /api/v1/build` | **tidak** | `build_id`, `domain_version`, `time` |
 | `GET /api/v1/health` | sesi | status, db, `build_id`, user |
 | `GET /api/v1/ready` | sesi | readiness checks |
+
+## Kesiapan uang nyata (15 Okt 2026)
+
+Cek status kedua pasar kapan pun (baca-saja):
+
+    .venv/bin/python ops/persiapan-live.py            # kedua pasar
+    sudo -n .venv/bin/python ops/persiapan-live.py    # penuh (termasuk /etc)
+
+Status 15 Okt: Polymarket verdict EDGE (n=4133, EV +2,07%/stake, CI95 di atas BE)
+tapi gerbang DISARMED; crypto gerbang pun belum ada (file izin + kredensial MEXC).
+Langkah owner, berurutan:
+
+1. Polymarket: buat `/etc/poly-pilot/activation-approved` (tangan owner), top-up USDC,
+   jalankan SATU order uji kecil, cek `poly.money`/state setelahnya.
+2. Crypto: pasang `MEXC_API_KEY`/`MEXC_API_SECRET` di `/etc/warroom/crypto.env` (600),
+   buat `/etc/warroom/crypto-live-approved`, lalu satu order uji ≤ $2 via
+   `kirim_ke_live` — baca output `ops/persiapan-live.py` sampai tiap blokir hilang.
+3. Sejarah hidup: 29 Sep 2026 live Polymarket rugi −13,12 USDC (1W/10L) sebelum disarm —
+   baca `snipe-live-v1-state.json` sebelum menghidupkan ulang.
