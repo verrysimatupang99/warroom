@@ -76,7 +76,13 @@ def _pembanding_poly() -> dict:
     else:
         hasil["eksekutor_terakhir"] = "state tidak ditemukan"
     blokir = []
-    if not hasil["gerbang"]["activation_approved"]:
+    izin = hasil["gerbang"].get("activation_approved")
+    if izin == "tidak-izin":
+        blokir.append("gerbang tak terbaca tanpa sudo — jalankan precheck penuh dengan sudo")
+        hasil["siap"] = False
+        hasil["blokir"] = blokir
+        return hasil
+    if not izin:
         blokir.append("owner belum membuat /etc/poly-pilot/activation-approved")
     if hasil.get("verdict", {}).get("status_alat") != "EDGE":
         blokir.append("verdict terbaru bukan EDGE — cek fakta poly.verdict")
@@ -113,6 +119,25 @@ def _pembanding_crypto() -> dict:
     return hasil
 
 
+def _guard_kodebase() -> dict:
+    """Kode harus hidup di dalam repo /home/admin/warroom — bukan di LT_HOME.
+
+    Pelajaran 14 Okt: salinan kode luar (stale checkout) membuat job 'ok' tapi
+    jalan pakai logika lama tanpa suara. Precheck menegakkan dua hal: (1) paket
+    live_trading yang diimpor memang dari repo, (2) LT_HOME tidak lagi memuat
+    direktori kode (src/, scripts/, crypto/… — boleh berisi data: state, logs).
+    """
+    import live_trading
+
+    luar = Path(os.environ.get("WARROOM_STATE_DIR", "/home/admin/live-trading"))
+    sisa = [d for d in ("src", "scripts", "crypto", "idx616", "frontend", "vendor", "tests")
+            if (luar / d).exists()]
+    dalam = str(Path(live_trading.__file__).resolve()).startswith("/home/admin/warroom/")
+    return {"live_trading_dari": str(live_trading.__file__), "dalam_repo": dalam,
+            "lt_home": str(luar), "sisa_kode_luar": sisa or None,
+            "ok": dalam and not sisa}
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--pasar", choices=["polymarket", "crypto"], default=None)
@@ -122,6 +147,9 @@ def main() -> int:
         out.append(_pembanding_poly())
     if a.pasar in (None, "crypto"):
         out.append(_pembanding_crypto())
+    g = _guard_kodebase()
+    print(f"=== KODEBASE: {'SIAP' if g['ok'] else 'BLOKIR'} (harus di dalam /home/admin/warroom)")
+    print(f"  {json.dumps(g, ensure_ascii=False)}")
     for r in out:
         status = "SIAP" if r.get("siap") else "BLOKIR"
         print(f"=== {r['pasar'].upper()}: {status}")
