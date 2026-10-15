@@ -1171,6 +1171,13 @@ function pilihSub(s: string) {
 												<span class="flex items-center gap-2">
 													<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {e.status === 'lolos' ? 'bg-pos/15 text-pos border border-pos/30' : 'bg-warn/15 text-warn border border-warn/30'}">
 														{e.status === 'lolos' ? 'LOLOS' : 'DITOLAK'}
+														{#if e.umur_jam != null && e.umur_jam > 6}
+															<!-- Temuan agent-2 (15 Okt): kartu tetap "OKE" walau verdictnya
+															     berumur > TTL 6 jam — mansion membaca itu sinyal segar.
+															     Umur verdict kini tampil eksplisit; > 6 jam = BASI
+															     (sumber bukan harga live, hanya catatan keputusan lama). -->
+															<span class="ml-1 rounded bg-warn/15 px-1 text-warn">BASI {e.umur_jam} JAM</span>
+														{/if}
 													</span>
 													<span class="font-bold text-text">{e.pair ?? '—'} {e.arah ?? ''}</span>
 													<span class="text-text-3">skor {e.skor ?? '—'}</span>
