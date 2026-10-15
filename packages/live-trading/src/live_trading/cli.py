@@ -496,6 +496,19 @@ def cmd_smc(args: argparse.Namespace) -> int:
         print(f"  VERDICT: {hasil.summary()}")
         if hasil.duplicate_of:
             print(f"  (duplikat dari kandidat {hasil.duplicate_of} — tidak dicatat ulang)")
+
+    if prop:
+        f = prop.get("filter_funding_oi") or {}
+        if f:
+            status = "TOLAK" if f.get("ok") is False else ("lolos" if f.get("ok") else "n/a")
+            print(f"  filter funding/OI [{f.get('strategi')}]: {status} — {f.get('alasan')}")
+        h = prop.get("heat")
+        if h:
+            skor = h.get("skor")
+            skor_txt = str(skor) if skor is not None else "n/a"
+            print(f"  heat [{h.get('cakupan')} cakupan]: {skor_txt} — {h.get('catatan')}")
+
+    if hasil:
         try:
             from .collectors.hyperliquid import context_for
 
@@ -736,6 +749,53 @@ def cmd_idx_check(args: argparse.Namespace) -> int:
     bentrok = sum(1 for r in gab if r["putusan"] == "bertentangan")
     print(f"\n    {len(gab)} temuan Arjum · sejalan {sejalan} · bertentangan {bentrok}")
     print("    'keadaan' EMA = sekarang, bukan cross baru (batas TradingView).")
+    return 0
+
+
+def cmd_lifecycle(args: argparse.Namespace) -> int:
+    """Status daur hidup setup per strategi: Waiting -> In Area -> Running -> TP/SL.
+
+    Candle diambil sejak verdict supaya urutan terisi -> hasil dihormati; baris yang
+    candle-nya gagal diambil tetap tampil dengan status n/a + alasan (tidak hilang).
+    """
+    import datetime as dt
+
+    from . import measure
+    from .collectors import make_client
+    from .signals import lifecycle as lc
+
+    s = get_settings()
+    rows = measure.load_verdicts(s)[-args.limit:]
+    if not rows:
+        print(f"  belum ada kandidat di {s.state_dir / 'verdicts.jsonl'}")
+        return 0
+
+    now = dt.datetime.now(dt.UTC)
+    nilai: list[dict[str, Any]] = []
+    with make_client(timeout=25.0) as c:
+        for row in rows:
+            ts = dt.datetime.fromisoformat(str(row["ts"]).replace("Z", "+00:00"))
+            klines: list[Any] | None = None
+            try:
+                klines = measure._fetch_1h(
+                    s, str(row["pair"]), int(ts.timestamp() * 1000),
+                    measure.FILL_WINDOW_H + measure.HOLD_MAX_H + 2, c,
+                )
+            except Exception:  # noqa: BLE001 — satu pair gagal jangan bunuh ringkasan
+                klines = None
+            nilai.append(lc.nilai_baris(row, klines=klines, sekarang=now))
+
+    ringkas = lc.ringkas_per_strategi(nilai)
+    print(f"  {len(rows)} kandidat terakhir · {len(ringkas)} strategi (terpisah)")
+    for nama, slot in sorted(ringkas.items()):
+        sebaran = " · ".join(f"{k} {v}" for k, v in sorted(slot["sebaran"].items())) or "—"
+        t = slot["terakhir"] or {}
+        print(f"\n  {nama}")
+        print(f"    sebaran : {sebaran}  (tanpa status: {slot['tanpa_status']})")
+        print(
+            f"    terakhir: {t.get('pair')} {t.get('arah')} "
+            f"→ {t.get('status') or 'n/a'} — {t.get('alasan') or ''}"
+        )
     return 0
 
 
@@ -1020,6 +1080,9 @@ def main(argv: list[str] | None = None) -> int:
     bd.add_argument("--period", choices=["latest", "7d", "3m"], default="7d")
     bd.set_defaults(func=cmd_bandar)
     sub.add_parser("measure", help="apakah gate berguna (hasil bayangan)").set_defaults(func=cmd_measure)
+    lfp = sub.add_parser("lifecycle", help="status daur hidup setup per strategi (verdicts + candle)")
+    lfp.add_argument("--limit", type=int, default=12, help="jumlah kandidat terakhir yang dinilai")
+    lfp.set_defaults(func=cmd_lifecycle)
     dd = sub.add_parser("dedupe", help="bersihkan catatan kandidat ganda")
     dd.add_argument("--apply", action="store_true", help="tulis hasilnya (tanpa ini hanya laporan)")
     dd.set_defaults(func=cmd_dedupe)
