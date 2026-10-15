@@ -42,6 +42,9 @@ AREA_KEYS: dict[str, tuple[str, ...]] = {
         # kind `signal` diterbitkan job `signal-sync` (bukan bagian snapshot).
         # UI sudah mendeklarasikan topik `signal.` untuk area ini sejak awal.
         "signal",
+        # kind `paper20` = dompet uji $20 (opsi paper20_cycle.py) — fakta kind
+        # sendiri karena sumbernya bukan snapshot domain.
+        "paper20",
     ),
     "idx": (
         "bagian", "idx_posisi", "idx_ledger", "idx_equity", "idx_risiko",
