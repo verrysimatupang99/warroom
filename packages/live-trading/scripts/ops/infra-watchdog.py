@@ -4,7 +4,7 @@
 Cek: systemd units, port loopback, disk, gate live, freshness state/backups.
 State: /home/admin/live-trading/state/watchdog-infra.json (delta antar run).
 Keluar 0 selalu saat cek jalan (ALERT = baris teks, bukan exit code).
-UID yang jalan: admin (baca /etc/poly-pilot/* via allowlist sudo cat).
+UID yang jalan: admin (gate = cek keberadaan berkas; snipe-state = allowlist sudo cat).
 """
 import json
 import os
@@ -97,16 +97,9 @@ def check_gate():
 
 
 def mtime_of(path):
-    """mtime file; coba langsung, lalu via allowlist sudo stat."""
-    try:
-        return time.time() - os.path.getmtime(path)
-    except PermissionError:
-        rc, o = sh("sudo", "-n", "/usr/bin/stat", "-c", "%Y", path)
-        if rc == 0 and o.strip().isdigit():
-            return time.time() - int(o.strip())
-        raise
-    except FileNotFoundError:
-        raise
+    # `sudo stat` tidak ada di allowlist sudoers dan pasti ditolak di konteks
+    # systemd setelah baris %sudo blanket dicabut — baca langsung, gagal = jujur.
+    return time.time() - os.path.getmtime(path)
 
 
 def check_fresh():
