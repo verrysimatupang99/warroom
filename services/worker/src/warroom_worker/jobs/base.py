@@ -26,6 +26,11 @@ def root_dir() -> Path:
     return Path(os.environ.get("WARROOM_DOMAIN_HOME", str(Path.home() / "live-trading")))
 
 
+def root_dir_repo() -> Path:
+    """Root repo warroom (tempat kode resmi hidup — guard kodebase-dalam-repo)."""
+    return Path(__file__).resolve().parents[5]
+
+
 def _lt_bin() -> Path:
     """Lokasi CLI `lt` yang benar — dari venv tempat worker ini berjalan.
 

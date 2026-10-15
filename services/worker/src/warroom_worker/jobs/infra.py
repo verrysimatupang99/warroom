@@ -16,6 +16,7 @@ from .base import (
     _upsert_service,
     publish_snapshot,
     root_dir,
+    root_dir_repo,
 )
 
 log = logging.getLogger("warroom_worker.jobs")
@@ -118,6 +119,26 @@ def handler_freshness(s: SASession, job: Job) -> str:
             ):
                 dibuat += 1
 
+        # Auto-pulih (rekomendasi #6: "selesaikan otomatis begitu pulih") — alert
+        # 'data basi' ber-subjek {kind}/{sumber|key} diclose saat fakta yang
+        # dimaksud SUDAH segar lagi. Tanpa ini, alert basi menggantung selamanya
+        # walau sumber sudah pulih (kasus snapshot & lp_mark, 15 Okt).
+        buka = s.scalars(
+            select(Alert).where(Alert.ack_at.is_(None)).where(Alert.subject.like("%/%"))
+        ).all()
+        for a in buka:
+            potongan = a.subject.split("/", 1)
+            if len(potongan) != 2:
+                continue
+            kind_a, ident_a = potongan
+            masih_basi = any(
+                f.kind == kind_a and (f.key == ident_a or (f.source or "-") == ident_a)
+                for f in basi
+            )
+            if not masih_basi:
+                a.ack_at = now
+                a.message = (a.message or "") + " | PULIH otomatis: fakta segar kembali"
+
     s.add(
         Event(
             type="freshness.checked",
@@ -192,9 +213,15 @@ def handler_lp_mark(s: SASession, job: Job) -> str:
 
 def handler_backup(s: SASession, job: Job) -> str:
     """Skrip backup domain (state + rotasi 14) — dipindahkan dari timer domain."""
-    skrip = root_dir() / "scripts" / "ops" / "backup-state.sh"
+    # 15 Okt: skrip pindah ke repo (packages/live-trading/scripts/ops) setelah
+    # kode di luar repo diarsipkan — cari repo dulu, domain-home hanya fallback.
+    kandidat = [
+        root_dir_repo() / "packages" / "live-trading" / "scripts" / "ops" / "backup-state.sh",
+        root_dir() / "scripts" / "ops" / "backup-state.sh",
+    ]
+    skrip = next((p for p in kandidat if p.exists()), kandidat[0])
     if not skrip.exists():
-        raise FileNotFoundError(f"skrip backup domain tidak ada: {skrip}")
+        raise FileNotFoundError(f"skrip backup domain tidak ada: {', '.join(str(p) for p in kandidat)}")
     hasil = subprocess.run(  # noqa: S603 — path tetap, dari repo domain yang tepercaya
         ["/bin/bash", str(skrip)],
         capture_output=True,
