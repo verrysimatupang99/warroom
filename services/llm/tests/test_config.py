@@ -9,17 +9,31 @@ from warroom_llm.config import LLMConfig, default_config
 
 
 def test_default_config_bentuk_baku_saat_berkas_tak_ada(tmp_path: Path, monkeypatch) -> None:
-    """Berkas root tidak ada → bentuk baku (nutaraline → qonek) tetap dipakai."""
+    """Berkas root tidak ada → bentuk baku (qonek → kiyara → nutaraline) tetap dipakai."""
     monkeypatch.setenv("WARROOM_LLM_CONFIG", str(tmp_path / "tidak-ada.json"))
     cfg = default_config()
     nama = [p.name for p in cfg.chain()]
-    assert nama == ["nutaraline", "qonek"]
-    assert cfg.primary == "nutaraline"
+    assert nama == ["qonek", "kiyara", "nutaraline"]
+    assert cfg.primary == "qonek"
     assert cfg.timeout_ms == 45000
     assert cfg.retry_attempts == 2
     assert cfg.circuit_failures == 5
     assert cfg.cache_ttl_sec == 900
     assert cfg.budget_daily_usd == 3.0
+
+
+def test_default_config_pricing_menutup_seluruh_rantai(tmp_path: Path, monkeypatch) -> None:
+    """Anggaran fail-closed: setiap provider di rantai wajib punya entri harga.
+
+    Provider tanpa harga membuat anggaran harian tak terhitung — gagal-tertutup akan
+    memblokir SEMUA panggilan. Bentuk baku harus siap jalan tanpa blokir demikian.
+    """
+    monkeypatch.setenv("WARROOM_LLM_CONFIG", str(tmp_path / "tidak-ada.json"))
+    cfg = default_config()
+    tanpa_harga = [p.name for p in cfg.chain() if p.name not in cfg.pricing]
+    assert tanpa_harga == []
+    for harga in cfg.pricing.values():
+        assert "in" in harga and "out" in harga
 
 
 def test_default_config_memakai_berkas_root_bila_ada(tmp_path: Path, monkeypatch) -> None:

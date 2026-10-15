@@ -1,4 +1,4 @@
-"""Gateway LLM: rantai provider (nutaraline → qonek), circuit breaker, cache, dan audit.
+"""Gateway LLM: rantai provider dari config (urutan hemat biaya, ADR-007), breaker, cache, audit.
 
 Kontrak blueprint 04: angka tidak pernah lahir dari LLM (gagal = ``insufficient``), setiap
 panggilan tercatat di ``llm_calls``, konten eksternal = data bukan perintah, kredensial

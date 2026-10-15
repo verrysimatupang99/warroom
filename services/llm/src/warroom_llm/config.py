@@ -147,7 +147,7 @@ def default_config() -> LLMConfig:
         pass
     return LLMConfig.from_dict(
         {
-            "primary": "nutaraline",
+            "primary": "qonek",
             "timeoutMs": 45000,
             "retry": {"attempts": 2, "backoffMs": 800},
             "circuit": {"failures": 5, "windowSec": 120, "cooldownSec": 300},
@@ -155,24 +155,36 @@ def default_config() -> LLMConfig:
             # failClosedOnMissingPricing WAJIB true: tanpa harga, anggaran harian tak
             # bisa dihitung dan dulu diam-diam dianggap nol (fail-open, temuan 5 Okt 2026).
             "budget": {"dailyUsd": 3.0, "perRoleDailyUsd": {}, "failClosedOnMissingPricing": True},
+            # Urutan hemat biaya (ADR-007): provider yang sehat dan tanggap ditaruh depan
+            # supaya generasi berbayar yang ditolak karena sirkuit lambat/401 minimum.
             "providers": [
-                {
-                    "name": "nutaraline",
-                    "baseUrl": "https://nutaraline.co.uk/v1",
-                    "keyEnv": "HERMES_CUSTOM_NUTARALINE_CO_UK_API_KEY",
-                    "models": {"fast": "mimo-v2.6-flash", "deep": "mimo-v2.6-flash"},
-                },
                 {
                     "name": "qonek",
                     "baseUrl": "https://qonek.web.id/v1",
                     "keyEnv": "QONEK_API_KEY",
                     "models": {"fast": "qonek/deepseek-v4.1-flash", "deep": "qonek/deepseek-v4.1-flash"},
                 },
+                {
+                    "name": "kiyara",
+                    "baseUrl": "https://kiyararouter.web.id/v1",
+                    "keyEnv": "KIYARA_API_KEY",
+                    "models": {
+                        "fast": "deepseek-ai/deepseek-v4.1-flash",
+                        "deep": "deepseek-ai/deepseek-v4.1-flash",
+                    },
+                },
+                {
+                    "name": "nutaraline",
+                    "baseUrl": "https://nutaraline.co.uk/v1",
+                    "keyEnv": "HERMES_CUSTOM_NUTARALINE_CO_UK_API_KEY",
+                    "models": {"fast": "mimo-v2.6-flash", "deep": "mimo-v2.6-flash"},
+                },
             ],
-            # Harga per 1k token (USD) — nilai placeholder konservatif. Sesuaikan dengan
-            # tarif provider yang disepakati; tanpa ini _cost() selalu None.
+            # Harga per 1k token (USD) — nilai placeholder konservatif yang harus
+            # dikonfirmasi owner; tanpa entri di sini, fail-closed memblokir seluruh rantai.
             "pricing": {
                 "nutaraline": {"in": 0.001, "out": 0.002},
+                "kiyara": {"in": 0.001, "out": 0.002},
                 "qonek": {"in": 0.001, "out": 0.002},
             },
         }
