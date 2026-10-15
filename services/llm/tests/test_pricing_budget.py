@@ -137,8 +137,7 @@ def test_anggaran_terpicu_pada_konfigurasi_efektif_produksi(
     gw = _gateway_produksi(
         _handler_verifier(fid, (5_000_000, 5_000_000)),
         budget=3.0,
-        pricing={"nutaraline": {"in": 0.001, "out": 0.002},
-                 "qonek": {"in": 0.001, "out": 0.002}},
+        pricing={p.name: {"in": 0.001, "out": 0.002} for p in default_config().chain()},
     )
 
     codes = []
@@ -164,8 +163,7 @@ def test_biaya_tercatat_bukan_none_pada_konfigurasi_produksi(fakta, bersih_llm) 
     gw = _gateway_produksi(
         _handler_verifier(fid, (123, 45)),
         budget=3.0,
-        pricing={"nutaraline": {"in": 0.001, "out": 0.002},
-                 "qonek": {"in": 0.001, "out": 0.002}},
+        pricing={p.name: {"in": 0.001, "out": 0.002} for p in default_config().chain()},
     )
     r = gw.call(CallRequest(role="verifier", facts=faktaref, user="periksa",
                             min_facts=0, use_cache=False))
