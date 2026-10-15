@@ -107,7 +107,11 @@ AREA_KIND: dict[str, tuple[str, ...]] = {
     # `lpagent-sync`). Ia kind SENDIRI (bukan `snapshot`) karena sumbernya API pihak
     # ketiga, bukan berkas lokal — dan tanpa kunci isinya jujur `menunggu-kunci`,
     # bukan angka pool palsu. Tanpa entri ini fakta tak pernah sampai ke UI.
-    "sistem": ("lpagent",),
+    "sistem": (
+        # Telemetri LP Agent (kind sendiri, baca-saja) + dompet uji $20 yang
+        # diterbitkan siklus ops/paper20_cycle.py (kind `paper20`).
+        "lpagent", "paper20",
+    ),
 }
 
 
