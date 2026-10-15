@@ -39,7 +39,7 @@ Ini *usulan*, bukan rencana yang sudah disetujui.
 
 | # | Item | Catatan |
 |---|------|---------|
-| **P0-4** | **Migrasi DB dijalankan MANUAL** — produksi tertinggal 3 revisi (`a1f2b3c4d5e6` → head) saat ditemukan; `users.totp_last_counter` (anti-replay TOTP, PR #3) tak pernah ada di DB walau kode aktif | Tambah mekanisme: `ExecStartPre` alembic **atau** langkah CI/deploy yang memaksa `upgrade head`, + tes "DB di head". Sudah diterapkan sekali (14 Okt 18:44); **cegah kambuh**. |
+| **P0-4** | **Migrasi DB dijalankan MANUAL** — produksi tertinggal 3 revisi (`a1f2b3c4d5e6` → head) saat ditemukan; `users.totp_last_counter` (anti-replay TOTP, PR #3) tak pernah ada di DB walau kode aktif | Tambah mekanisme: `ExecStartPre` alembic **atau** langkah CI/deploy yang memaksa `upgrade head`, + tes "DB di head". Sudah diterapkan sekali (14 Okt 18:44). **SELESAI** (PR #35: `ExecStartPre=ops/check-db-head.py --upgrade` di unit api & worker + tes `test_db_head_guard.py`; terverifikasi restart kedua unit, journal `OK: DB di head d4e6f8a0b2c3`). |
 
 ---
 
