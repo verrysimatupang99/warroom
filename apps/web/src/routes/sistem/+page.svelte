@@ -66,6 +66,9 @@ function pilihSub(s: string) {
 	// Fact `lpagent` (kind sendiri) — dari /api/v1/areas/sistem. Telemetri pool
 	// Solana/Meteora via LP Agent Open API; tanpa kunci isinya jujur 'menunggu-kunci'.
 	let lpagent = $state<Record<string, any> | null>(null);
+	// Fact `paper20/dompet` — diterbitkan siklus ops/paper20_cycle.py tiap 15 menit.
+	// Angka NYATA dompet uji $20 (equity, posisi terbuka); kosong = pesan 'menunggu'.
+	let paper20 = $state<Record<string, any> | null>(null);
 	let aksiGalat = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -92,8 +95,11 @@ function pilihSub(s: string) {
 			const sys = await getArea('sistem');
 			const f = (sys.facts ?? []).find((x: any) => x.key === 'pools');
 			lpagent = f ? (f.value as Record<string, any>) : null;
+			const p = (sys.facts ?? []).find((x: any) => x.kind === 'paper20' && x.key === 'dompet');
+			paper20 = p ? (p.value as Record<string, any>) : null;
 		} catch {
 			lpagent = null;
+			paper20 = null;
 		}
 		try {
 			metrik = await getMetrikTeks();
@@ -186,6 +192,48 @@ function pilihSub(s: string) {
 		     (telemetri pool Solana/Meteora). Fact `lpagent` diterbitkan job
 		     `lpagent-sync`; tanpa kunci isinya jujur 'menunggu-kunci' — halaman ini
 		     menampilkan apa adanya, tidak pernah mengarang daftar pool. -->
+		{#if paper20}
+			<!-- Dompet uji $20 (crypto) — angka NYATA dari ledger siklus paper20.
+			     Antislop R-17/R-27: hanya angka nyata, dan jika kosong pesannya
+			     "menunggu sinyal" bareng tindakan berikutnya, bukan "tidak ada data". -->
+			<Block
+				judul="Dompet uji $20 · crypto"
+				deskripsi={`siklus 15 menit · diperiksa ${paper20.updated ?? '—'} WIB`}
+				memuat={memuat && !paper20}
+			>
+				<div class="grid grid-cols-3 gap-2 text-12">
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="text-10 uppercase text-text-3">Equity</span>
+						<div class="angka text-15 font-bold">${paper20.equity_usd ?? '—'}</div>
+					</div>
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="text-10 uppercase text-text-3">Posisi terbuka</span>
+						<div class="angka text-15 font-bold">{paper20.n_posisi ?? 0}</div>
+					</div>
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="text-10 uppercase text-text-3">Verdict</span>
+						<div class="angka text-15 font-bold">{paper20.jumlah_verdict ?? 0}</div>
+					</div>
+				</div>
+				{#if paper20.posisi?.length}
+					<div class="mt-2 space-y-1">
+						{#each paper20.posisi as p}
+							<div class="flex justify-between rounded border border-line-soft bg-surface px-2 py-1 font-mono text-11">
+								<span class="text-text">{p.pair} {p.arah ?? ''}</span>
+								<span class="angka text-text-3">entry {p.entry} · SL {p.sl} · ${p.size_usd}</span>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<p class="mt-2 text-11 text-text-3">
+						0 posisi — mesin menunggu sinyal yang lolos gerbang struktur + risiko
+						(jarak SL vs ATR masih penolak terbanyak). Verifikasi manual:
+						<code class="font-mono">lt paper list --venue crypto</code>
+					</p>
+				{/if}
+				<p class="mt-2 text-10 text-text-3">diperiksa {paper20.updated ?? '—'} WIB</p>
+			</Block>
+		{/if}
 		{#if lpagent}
 			<Block
 				judul="LP Agent · likuiditas Solana (Meteora)"
