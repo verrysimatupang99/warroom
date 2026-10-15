@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
-__all__ = ["Keputusan", "Konteks", "decide_entry", "jalur_untuk"]
+__all__ = ["Keputusan", "Konteks", "decide_entry", "jalur_untuk", "kirim_ke_live"]
 
 Mode = Literal["paper", "live"]
 
@@ -128,3 +128,19 @@ def jalur_untuk(keputusan: Keputusan) -> str:
     live) — tetapi `jejak`-nya harus identik.
     """
     return "paper" if keputusan.mode == "paper" else "live"
+
+
+def kirim_ke_live(keputusan: Keputusan) -> dict[str, Any]:
+    """Kirim keputusan ber-mode live ke venue sungguhan (15 Okt 2026).
+
+    Menutup dari `belum ada, sengaja` di docstring modul: pengirimnya ADA sekarang,
+    tetapi tetap menolak keras sampai owner (1) membuat file izin
+    ``/etc/warroom/crypto-live-approved`` dan (2) memasang kredensial venue.
+    Lihat ``live_venue.py`` — satu-satunya tempat order nyata dibentuk.
+    """
+    if keputusan.mode != "live":
+        raise ValueError("kirim_ke_live hanya menerima keputusan mode=live")
+    from live_trading.execution.live_venue import LiveVenueCrypto
+
+    venue = LiveVenueCrypto.bangun()
+    return venue.kirim_order(keputusan)
