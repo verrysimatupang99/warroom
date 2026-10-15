@@ -7,6 +7,7 @@ verifikasi on-chain ⇒ `terverifikasi=False`; eksekutor tanpa keputusan ⇒ `ti
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -79,32 +80,122 @@ def pohon(tmp_path: Path) -> Path:
 
 
 def test_baca_json_menyertakan_mtime_dan_sha256(pohon: Path) -> None:
-    b = baca_json(pohon / "poly-agent" / "agent-summary.json", pakai_sudo=False)
+    b = baca_json(pohon / "poly-agent" / "agent-summary.json")
     assert b.ok and b.data == {"threshold": 0.82}
     assert b.mtime is not None and len(b.sha256 or "") == 64
 
 
 def test_berkas_tidak_ada_statusnya_jujur(pohon: Path) -> None:
-    b = baca_json(pohon / "tidak-ada.json", pakai_sudo=False)
+    b = baca_json(pohon / "tidak-ada.json")
     assert b.status == "tidak-ada" and b.data is None
 
 
 def test_json_rusak_dilaporkan_rusak(pohon: Path) -> None:
     rusak = pohon / "rusak.json"
     rusak.write_text("{bukan json", encoding="utf-8")
-    assert baca_json(rusak, pakai_sudo=False).status == "rusak"
+    assert baca_json(rusak).status == "rusak"
 
 
 def test_baca_jsonl_menghitung_baris_rusak(pohon: Path) -> None:
     f = pohon / "campur.jsonl"
     f.write_text('{"a":1}\nbukan-json\n{"a":2}\n', encoding="utf-8")
-    b = baca_jsonl_ekor(f, n=10, pakai_sudo=False)
+    b = baca_jsonl_ekor(f, n=10)
     assert b.ok and len(b.data) == 2 and b.meta["rusak"] == 1
 
 
 def test_ringkas_dir_menghitung_berkas(pohon: Path) -> None:
-    r = ringkas_dir(pohon / "poly-research" / "paired", pakai_sudo=False)
+    r = ringkas_dir(pohon / "poly-research" / "paired")
     assert r["status"] == "ok" and r["files"] == 1 and r["bytes"] > 0
+
+
+def test_baca_json_admin_dilakukan_tanpa_subprocess(tmp_path, monkeypatch) -> None:
+    """Berkas milik admin (mis. verdicts.jsonl) dibaca langsung — sudo tidak pernah sulut."""
+    import warroom_worker.adapters.io as wio
+
+    def _meledak(*a, **k):
+        raise AssertionError("sudo tidak boleh dipanggil untuk berkas admin")
+
+    monkeypatch.setattr(wio.subprocess, "run", _meledak)
+    f = tmp_path / "verdicts.jsonl"
+    f.write_text('{"allowed": true}\n', encoding="utf-8")
+    b = wio.baca_jsonl_ekor(f, 10)
+    assert b.ok and b.meta["baris"] == 1 and b.lewat_sudo is False
+
+
+def test_ekor_n_baris_terakhir(tmp_path) -> None:
+    f = tmp_path / "besar.jsonl"
+    f.write_text("\n".join(json.dumps({"i": i}) for i in range(500)) + "\n", encoding="utf-8")
+    b = baca_jsonl_ekor(f, 400)
+    assert b.ok and len(b.data) == 400 and b.data[-1]["i"] == 499
+
+
+def test_io_izin_ditolak_status_jelas_tanpa_subprocess(tmp_path, monkeypatch) -> None:
+    """Path di luar allowlist: izin ditolak → `tidak-izin` jujur, tanpa menjalankan apa pun."""
+    if os.geteuid() == 0:
+        pytest.skip("pemeriksaan izin tidak berlaku saat dijalankan sebagai root")
+    import warroom_worker.adapters.io as wio
+
+    monkeypatch.setattr(
+        wio.subprocess, "run",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("sudo untuk path di luar allowlist")),
+    )
+    f = tmp_path / "rahasia.json"
+    f.write_text("{}", encoding="utf-8")
+    f.chmod(0)
+    try:
+        wio.reset_cache_gagal()
+        assert wio.baca_json(f).status == "tidak-izin"
+    finally:
+        f.chmod(0o644)
+        wio.reset_cache_gagal()
+
+
+def test_io_sudo_allowlist_ditolak_dan_kegagalan_tercache(tmp_path, monkeypatch) -> None:
+    """Sudo hanya untuk allowlist; ditolak → tidak diulang sampai cache kegagalan habis."""
+    if os.geteuid() == 0:
+        pytest.skip("pemeriksaan izin tidak berlaku saat dijalankan sebagai root")
+    import warroom_worker.adapters.io as wio
+
+    assert wio._TTL_GAGAL_S >= 600
+    f = tmp_path / "state.json"
+    f.write_text("{}", encoding="utf-8")
+    f.chmod(0)
+    monkeypatch.setattr(wio, "_CAT_SUDO", frozenset({str(f)}))
+    panggilan = {"n": 0}
+
+    def _palsu(*a, **k):
+        panggilan["n"] += 1
+        return _proc(1, stderr="sudo: a password is required")
+
+    monkeypatch.setattr(wio.subprocess, "run", _palsu)
+    try:
+        wio.reset_cache_gagal()
+        assert wio.baca_json(f).status == "tidak-izin"
+        assert panggilan["n"] == 1
+        # di dalam TTL: tidak ada subprocess kedua
+        assert wio.baca_json(f).status == "tidak-izin"
+        assert panggilan["n"] == 1
+    finally:
+        f.chmod(0o644)
+        wio.reset_cache_gagal()
+
+
+def test_ringkas_dir_izin_ditolak_bukan_hitungan_nol(tmp_path) -> None:
+    if os.geteuid() == 0:
+        pytest.skip("pemeriksaan izin tidak berlaku saat dijalankan sebagai root")
+    import warroom_worker.adapters.io as wio
+
+    d = tmp_path / "terkunci"
+    d.mkdir()
+    (d / "a.txt").write_text("x", encoding="utf-8")
+    d.chmod(0)
+    try:
+        wio.reset_cache_gagal()
+        r = wio.ringkas_dir(d)
+        assert r["status"] == "tidak-izin" and "files" not in r
+    finally:
+        d.chmod(0o755)
+        wio.reset_cache_gagal()
 
 
 # --- poly.arms --------------------------------------------------------------------------

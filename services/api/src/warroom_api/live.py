@@ -14,6 +14,8 @@ import json
 import os
 import subprocess
 import sys
+import threading
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -50,31 +52,67 @@ SCOPE_DIKENAL = (
 )
 
 
-def _baca_root(path: str, *, timeout_s: float = 10.0) -> tuple[str | None, str]:
-    """Baca berkas di direktori root-only lewat sudo tanpa sandi (baca-saja)."""
+# /etc/poly-pilot tidak ada di allowlist sudoers konteks service — setiap `sudo -n`
+# pasti ditolak ("a password is required"), jadi tidak pernah dipanggil dari sini.
+_TTL_GAGAL_S = 600
+
+_gagal: dict[str, float] = {}
+_kunci_gagal = threading.Lock()
+
+
+def _gagal_segar(kunci: str) -> bool:
+    with _kunci_gagal:
+        batas = _gagal.get(kunci)
+        return batas is not None and time.monotonic() < batas
+
+
+def _catat_gagal(kunci: str) -> None:
+    with _kunci_gagal:
+        _gagal[kunci] = time.monotonic() + _TTL_GAGAL_S
+
+
+def reset_cache_gagal() -> None:
+    """Bersihkan cache kegagalan izin (untuk uji; produksi cukup menunggu TTL)."""
+    with _kunci_gagal:
+        _gagal.clear()
+
+
+def _baca_root(path: str) -> tuple[str | None, str]:
+    """Baca berkas milik root langsung; izin ditolak → status ``tidak-izin`` yang jelas.
+
+    Kegagalan izin di-cache 10 menit: berkas yang tidak terbaca tidak diajak berulang
+    tiap request, dan hasil yang ditampilkan tetap jujur (bukan kosong yang menyamar).
+    """
+    kunci = f"baca:{path}"
+    if _gagal_segar(kunci):
+        return None, "tidak-izin"
     p = Path(path)
     try:
-        if p.exists():
-            return p.read_text(encoding="utf-8", errors="replace"), "ok"
+        return p.read_text(encoding="utf-8", errors="replace"), "ok"
+    except FileNotFoundError:
+        return None, "tidak-ada"
     except PermissionError:
-        pass
+        _catat_gagal(kunci)
+        return None, "tidak-izin"
     except OSError as exc:
         return None, f"rusak:{type(exc).__name__}"
-    hasil = subprocess.run(  # noqa: S603 — path tetap, bukan input pengguna
-        ["sudo", "-n", "cat", path], capture_output=True, text=True, check=False, timeout=timeout_s
-    )
-    if hasil.returncode == 0:
-        return hasil.stdout, "ok"
-    if "No such file" in hasil.stderr:
-        return None, "tidak-ada"
-    return None, "tidak-bisa-dibaca"
 
 
-def _ada_root(path: str) -> bool:
-    hasil = subprocess.run(  # noqa: S603
-        ["sudo", "-n", "test", "-e", path], capture_output=True, text=True, check=False, timeout=10
-    )
-    return hasil.returncode == 0
+def _ada_root(path: str) -> tuple[bool, str]:
+    """Kembalikan ``(ada, status)``. Tidak terbaca ≠ tidak ada: fail-closed, nilai jujur."""
+    kunci = f"ada:{path}"
+    if _gagal_segar(kunci):
+        return False, "tidak-izin"
+    try:
+        os.stat(path)
+        return True, "ada"
+    except FileNotFoundError:
+        return False, "tidak-ada"
+    except PermissionError:
+        _catat_gagal(kunci)
+        return False, "tidak-izin"
+    except OSError as exc:
+        return False, f"rusak:{type(exc).__name__}"
 
 
 @dataclass
@@ -91,12 +129,13 @@ def arming_status() -> Arming:
     """Tiga sumber + heartbeat. `armed` HANYA bila gate ada, operator tidak paused, unit ada."""
     checks: list[dict[str, Any]] = []
 
-    gate_ada = _ada_root(GATE_FILE)
+    gate_ada, gate_status = _ada_root(GATE_FILE)
+    nilai_gate = {"ada": "ada", "tidak-ada": "tidak ada"}.get(gate_status, "tidak terbaca")
     checks.append(
         {
             "nama": "gate_file",
             "sumber": GATE_FILE,
-            "nilai": "ada" if gate_ada else "tidak ada",
+            "nilai": nilai_gate,
             "lulus": gate_ada,
             "arti": "berkas gate hadir = izin live diberikan; TIDAK PERNAH dibuat oleh agen",
         }

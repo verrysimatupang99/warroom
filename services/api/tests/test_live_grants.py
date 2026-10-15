@@ -7,6 +7,7 @@ dibaca dari tiga sumber dan `armed` hanya bila semuanya lulus; kill switch hanya
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -112,19 +113,83 @@ def test_arming_membaca_tiga_sumber(client, make_user) -> None:
 
 def test_arming_tidak_armed_saat_gate_hilang(monkeypatch) -> None:
     """Gate hilang = tidak armed, walaupun operator.json bilang siap."""
-    monkeypatch.setattr(live, "_ada_root", lambda p: False)
+    monkeypatch.setattr(live, "_ada_root", lambda p: (False, "tidak-ada"))
     _ok = ('{"paused": false, "submissionAllowed": true}', "ok")
-    monkeypatch.setattr(live, "_baca_root", lambda p, timeout_s=10.0: _ok)
+    monkeypatch.setattr(live, "_baca_root", lambda p: _ok)
     st = live.arming_status()
     assert st.armed is False
     assert "gate_file" in st.detail
 
 
+def test_baca_root_izin_ditolak_status_jelas_tanpa_sudo(tmp_path, monkeypatch) -> None:
+    """Izin ditolak → 'tidak-izin' jujur; sudo tidak pernah dipanggil dari pembacaan."""
+
+    def _meledak(*a, **k):
+        raise AssertionError("sudo tidak boleh dipanggil dari pembacaan berkas")
+
+    monkeypatch.setattr(live.subprocess, "run", _meledak)
+    f = tmp_path / "operator.json"
+    f.write_text('{"paused": false}', encoding="utf-8")
+    if os.geteuid() != 0:
+        f.chmod(0)
+    live.reset_cache_gagal()
+    try:
+        teks, status = live._baca_root(str(f))
+        assert teks is None and status == "tidak-izin"
+    finally:
+        live.reset_cache_gagal()
+
+
+def test_baca_root_kegagalan_izin_tercache_sampai_ttl(tmp_path, monkeypatch) -> None:
+    """Sumber tak terbaca tidak diulang tiap request — kegagalan izin di-cache 10 menit."""
+    assert live._TTL_GAGAL_S >= 600
+    if os.geteuid() == 0:
+        pytest.skip("pemeriksaan izin tidak berlaku saat dijalankan sebagai root")
+
+    def _meledak(*a, **k):
+        raise AssertionError("tidak boleh ada subprocess apa pun")
+
+    monkeypatch.setattr(live.subprocess, "run", _meledak)
+    f = tmp_path / "operator.json"
+    f.write_text('{"paused": false}', encoding="utf-8")
+    f.chmod(0)
+    try:
+        live.reset_cache_gagal()
+        assert live._baca_root(str(f))[1] == "tidak-izin"
+        f.chmod(0o644)
+        assert live._baca_root(str(f))[1] == "tidak-izin"
+        live.reset_cache_gagal()
+        assert live._baca_root(str(f))[1] == "ok"
+    finally:
+        live.reset_cache_gagal()
+
+
+def test_arming_gate_tak_terbaca_fail_closed(tmp_path, monkeypatch) -> None:
+    """Gate tidak bisa diperiksa (parent terkunci) → 'tidak terbaca', armed tetap False."""
+    if os.geteuid() == 0:
+        pytest.skip("pemeriksaan izin tidak berlaku saat dijalankan sebagai root")
+    d = tmp_path / "terkunci"
+    d.mkdir()
+    monkeypatch.setattr(live, "GATE_FILE", str(d / "activation-approved"))
+    monkeypatch.setattr(live, "OPERATOR_FILE", str(d / "operator.json"))
+    monkeypatch.setattr(live, "HEARTBEAT", str(d / "harness-heartbeat.json"))
+    d.chmod(0)
+    try:
+        live.reset_cache_gagal()
+        st = live.arming_status()
+        gate = next(c for c in st.checks if c["nama"] == "gate_file")
+        assert gate["nilai"] == "tidak terbaca" and gate["lulus"] is False
+        assert st.armed is False
+    finally:
+        d.chmod(0o755)
+        live.reset_cache_gagal()
+
+
 def test_arming_armed_hanya_bila_semua_lulus(monkeypatch) -> None:
-    monkeypatch.setattr(live, "_ada_root", lambda p: True)
+    monkeypatch.setattr(live, "_ada_root", lambda p: (True, "ada"))
     monkeypatch.setattr(
         live, "_baca_root",
-        lambda p, timeout_s=10.0: ('{"paused": false, "submissionAllowed": true}', "ok"),
+        lambda p: ('{"paused": false, "submissionAllowed": true}', "ok"),
     )
 
     class _U:
@@ -141,8 +206,8 @@ def test_arming_armed_hanya_bila_semua_lulus(monkeypatch) -> None:
 
 def test_aksi_live_tanpa_grant_409_dengan_daftar_kurang(client, make_user, monkeypatch) -> None:
     _, sid = make_user("p6-owner", role="owner")
-    monkeypatch.setattr(live, "_ada_root", lambda p: False)
-    monkeypatch.setattr(live, "_baca_root", lambda p, timeout_s=10.0: (None, "tidak-ada"))
+    monkeypatch.setattr(live, "_ada_root", lambda p: (False, "tidak-ada"))
+    monkeypatch.setattr(live, "_baca_root", lambda p: (None, "tidak-ada"))
     r = client.post("/api/v1/live/action", json={"scope": "live.start"}, headers=_cookie(sid))
     assert r.status_code == 409
     err = r.json()["error"]
@@ -172,10 +237,10 @@ def test_grant_butuh_message_id_dan_scope_dikenal(client, make_user) -> None:
 def test_grant_aktif_membuat_aksi_lolos_syarat_grant(client, make_user, monkeypatch) -> None:
     _, sid = make_user("p6-owner4", role="owner")
     # gate dibuka hanya di dunia tes (di host nyata berkas gate TIDAK pernah dibuat agen)
-    monkeypatch.setattr(live, "_ada_root", lambda p: True)
+    monkeypatch.setattr(live, "_ada_root", lambda p: (True, "ada"))
     monkeypatch.setattr(
         live, "_baca_root",
-        lambda p, timeout_s=10.0: ('{"paused": false, "submissionAllowed": true}', "ok"),
+        lambda p: ('{"paused": false, "submissionAllowed": true}', "ok"),
     )
 
     class _U:

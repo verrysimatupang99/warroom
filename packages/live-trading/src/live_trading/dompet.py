@@ -496,8 +496,6 @@ def _dompet_polymarket(state_dir: Path, kurs: float | None) -> dict[str, Any]:
     PnL arm diambil apa adanya dari shadow summary (bukan dihitung ulang), lalu diterapkan
     ke saldo awal dompet — itu satu-satunya cara jujur memakai angka yang sudah terekam.
     """
-    import subprocess
-
     arm = "B kandidat"
     berkas = {
         "A momentum": "/var/lib/poly-paper/execution-paper-shadow-summary.json",
@@ -509,14 +507,14 @@ def _dompet_polymarket(state_dir: Path, kurs: float | None) -> dict[str, Any]:
     p = Path(berkas[arm])
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError, PermissionError):
-        try:
-            r = subprocess.run(["sudo", "-n", "cat", str(p)], capture_output=True, text=True, timeout=10)
-            data = json.loads(r.stdout) if r.returncode == 0 and r.stdout else None
-        except Exception:  # noqa: BLE001
-            data = None
+    except (OSError, json.JSONDecodeError):
+        data = None
     if not isinstance(data, dict):
-        return {"market": "polymarket", "tersedia": False, "alasan": f"shadow summary {arm} tidak terbaca"}
+        return {
+            "market": "polymarket",
+            "tersedia": False,
+            "alasan": f"shadow summary {arm} tidak terbaca (izin)",
+        }
     if kurs is None:
         return {"market": "polymarket", "tersedia": False, "alasan": "kurs USD→IDR tidak tersedia"}
 
