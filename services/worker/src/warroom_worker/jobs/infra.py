@@ -240,8 +240,36 @@ def handler_source_health(s: SASession, job: Job) -> str:
         # Denyut ditulis apa pun statusnya: yang penting "kapan terakhir dilihat", bukan tebakan.
         s.add(Heartbeat(host=host, unit=unit, beat_at=now, payload_json={"status": aktif}))
         ditulis += 1
+
+    # Disk host — insiden 15 Okt (89%, sempat >95%): pemakaian > 80% = peringatan
+    # ber-dedupe (_alert menahan duplikat selama alert lama terbuka). Baca-saja: `df`.
+    import subprocess as _sp
+
+    try:
+        out = _sp.run(["df", "-P", "/"], capture_output=True, text=True, timeout=15).stdout
+        pakai_pct = int(out.strip().splitlines()[-1].split()[4].rstrip("%"))
+    except Exception as e:  # noqa: BLE001
+        _alert(
+            s, subject="ops/disk-baca",
+            severity="warning",
+            message=f"gagal membaca pemakaian disk: {type(e).__name__} {str(e)[:80]}",
+            aksi="periksa df / dan unit host",
+        )
+    else:
+        if pakai_pct >= 80:
+            _alert(
+                s, subject="ops/disk-80",
+                severity="warning" if pakai_pct < 90 else "kritis",
+                message=f"pemakaian disk / {pakai_pct}% (ambang 80%)",
+                aksi=(
+                    "rotasi log/journal, VACUUM/bersihkan snapshot lama, "
+                    "periksa /root/warroom-archive sebelum menambah data"
+                ),
+            )
+        status_ringkas["disk_pct"] = str(pakai_pct)
+
     s.flush()
     ringkas = " ".join(f"{u}={status_ringkas[u]}" for u in units)
-    return f"host={host} unit={ditulis} {ringkas}"
+    return f"host={host} unit={ditulis} {ringkas} disk={status_ringkas.get('disk_pct', '?')}%"
 
 
