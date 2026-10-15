@@ -182,10 +182,12 @@ def main() -> int:
                 print(f"[{_stamp()}] {pair}: size ${size} < min ${stg.harian_min_trade_usd} — dilewati")
                 continue
             stp = round(harga[pair] * (1 - stg.harian_capat_stop_pct / 100), 6)
+            arah_note = (f"SMA{stg.harian_sma_n} harian, "
+                         f"konfirmasi {stg.harian_confirm_closes} close")
             b.open_position(pair=pair, direction="LONG", entry=harga[pair],
-                                  stop=stp, tp1=None, tp2=None,
-                                  size_usd=size,
-                                  note=f"SMA{stg.harian_sma_n} harian, konfirmasi {stg.harian_confirm_closes} close")
+                            stop=stp, tp1=None, tp2=None,
+                            size_usd=size,
+                            note=arah_note)
             n_baru += 1
             print(f"[{_stamp()}] buka {pair} LONG @ {harga[pair]} stop {stp} size ${size}")
         elif status == "FLAT" and pos is not None:
