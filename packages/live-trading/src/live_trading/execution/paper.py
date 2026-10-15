@@ -192,6 +192,14 @@ class PaperBroker:
             raise KeyError(f"posisi {signal_id} tidak ditemukan")
 
         r = compute_r_exit(target, exit_price)
+        # Fee ikut tercatat di baris ledger (bukan hanya di posisi) supaya rekonsiliasi
+        # "saldo = modal + realized − fee" bisa diperiksa. R di sini GROSS (belum potong
+        # fee); fee_usd = size × cost_bps round-trip. cost_bps None → fee None (jujur),
+        # bukan nol seolah gratis.
+        cost_bps = target.cost_bps
+        fee_usd = (
+            round(target.size_usd * cost_bps / 10_000.0, 6) if cost_bps is not None else None
+        )
         record = {
             "signal_id": target.signal_id,
             "pair": target.pair,
@@ -199,6 +207,8 @@ class PaperBroker:
             "closed_at": _now_wib(),
             "status": status,
             "r": r,
+            "cost_bps": cost_bps,
+            "fee_usd": fee_usd,
             "note": note or f"{status} @ {exit_price}",
             "source": target.source,
         }

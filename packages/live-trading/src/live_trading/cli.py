@@ -230,6 +230,28 @@ def cmd_risk(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_rekon(args: argparse.Namespace) -> int:
+    from .dompet import cek_rekonsiliasi_saldo
+
+    market = getattr(args, "market", None) or "crypto"
+    out = cek_rekonsiliasi_saldo(get_settings().state_dir, market=market)
+    if not out.get("tersedia"):
+        print(f"  {market}: tidak bisa direkonsiliasi — {out.get('alasan')}")
+        return 1
+    print(f"  market             : {market}")
+    print(f"  modal              : ${out['modal_usd']:.2f}")
+    print(f"  realized (gross)   : ${out['realized_usd']:+.2f}")
+    print(f"  fee tercatat       : ${out['fee_usd']:.2f}")
+    print(f"  saldo gross        : ${out['saldo_gross_usd']:.2f}")
+    print(f"  saldo net          : ${out['saldo_net_usd']:.2f}   [{out['identitas']}]")
+    lengkap = "" if out["lengkap"] else f", {out['baris_tanpa_fee']} belum"
+    print(f"  baris fee          : {out['baris_dengan_fee']}/{out['baris_trade']} tercatat{lengkap}")
+    print(f"  konsisten          : {'ya' if out['konsisten'] else 'TIDAK'}")
+    for c in out.get("catatan", []):
+        print(f"  catatan            : {c}")
+    return 0
+
+
 def cmd_paper(args: argparse.Namespace) -> int:
     from .execution.paper import PaperBroker
 
@@ -991,6 +1013,9 @@ def main(argv: list[str] | None = None) -> int:
     col.set_defaults(func=cmd_collect)
 
     sub.add_parser("risk", help="status risk gate").set_defaults(func=cmd_risk)
+    rekon = sub.add_parser("rekon", help="rekonsiliasi ledger: saldo = modal + realized − fee")
+    rekon.add_argument("--market", default="crypto")
+    rekon.set_defaults(func=cmd_rekon)
     sub.add_parser("verdicts", help="ringkasan verdict gate").set_defaults(func=cmd_verdicts)
     scan = sub.add_parser("scan", help="pindai pair: hanya arah yang didukung struktur")
     scan.add_argument("pairs", nargs="*", help="daftar pair (default: 10 pair pantauan)")
