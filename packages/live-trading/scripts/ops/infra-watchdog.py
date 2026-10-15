@@ -34,11 +34,6 @@ UNITS = SERVICES + [t + ".timer" for t in TIMERS]
 DISK_WARN_PCT = 80
 STATE_FRESH_S = {"paper-shadow-summary": 900, "snipe-state": 300,
                  "dashboard-data": 120, "lt-backup": 6 * 3600 + 600}
-ALLOW_SUDO_CAT = [
-    "/var/lib/poly-paper/execution-paper-shadow-summary.json",
-    "/var/lib/poly-pilot/snipe-live-v1-state.json",
-    "/var/www/html/data.json",
-]
 
 
 def sh(*a, timeout=15):
