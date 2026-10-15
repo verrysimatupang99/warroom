@@ -366,8 +366,11 @@ def cmd_lp_mark(args: argparse.Namespace) -> int:
     s = get_settings()
     laporan = lp_mark_run.run_lp_mark(s.state_dir, state_path=args.state)
     if laporan.get("status") == "tidak-ada-posisi":
-        print(f"  {laporan.get('alasan')}")
-        return 1
+        # 15 Okt: state kosong = KEADAAN NORMAL (reset $20 + belum ada posisi LP),
+        # bukan kegagalan — sebelumnya exit 1 membuat job lp-mark "gagal" tiap jam
+        # dan alert basi menumpuk. Gagal sejati (bursa tak terbaca) tetap exit 1.
+        print(f"  {laporan.get('alasan')} — kosong, tidak ada yang di-mark")
+        return 0
     print(f"  LP mark: {len(laporan.get('mark', []))} posisi → {s.state_dir}")
     for m in laporan.get("mark", []):
         print(
