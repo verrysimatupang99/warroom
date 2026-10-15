@@ -9,6 +9,8 @@ Yang dikunci:
 
 from __future__ import annotations
 
+import pytest
+
 from live_trading.execution import costs
 
 
@@ -76,3 +78,31 @@ def test_ringkas_jujur_soal_sumber() -> None:
     asumsi = costs.biaya_asumsi(alasan="jaringan mati")
     assert "ASUMSI" in costs.ringkas(asumsi)
     assert "slippage tak terukur" in costs.ringkas(asumsi)
+
+
+def test_biaya_seragam_datar_per_sisi() -> None:
+    """Biaya paper diseragamkan 0,1%/sisi (20 bps bolak-balik) — bukan terukur dari buku."""
+    b = costs.biaya_seragam()
+    assert b["total_bps"] == costs.BIAYA_ROUND_TRIP_BPS == 20.0
+    assert b["total_bps"] / 2 == costs.BIAYA_SISI_BPS == 10.0  # 0,1% per sisi
+    assert b["sumber"] == "seragam"
+    # kebijakan datar, jadi jujur ditandai asumsi — slippage tidak dikarang terukur
+    assert b["asumsi"] is True
+    assert b["slippage_bps_masuk"] is None and b["slippage_bps_keluar"] is None
+
+
+def test_biaya_seragam_dipakai_sebagai_asumsi_keputusan(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keputusan paper tanpa biaya terukur jatuh ke seragam 0,2%, bukan 0,13% lama."""
+    # RiskGate membaca posisi paper NYATA — arahkan LT_HOME ke direktori kosong agar tes
+    # menguji kode, bukan mencerminkan state runtime.
+    monkeypatch.setenv("LT_HOME", str(tmp_path))
+    from live_trading.execution.keputusan import Konteks, decide_entry
+
+    k = decide_entry(
+        {"pair": "BTCUSDT", "direction": "LONG", "entry": 86000.0, "sl": 85280.0,
+         "tp1": 87440.0, "tp2": 88880.0, "atr": 800.0},
+        Konteks(equity_usd=100.0, fee_bps=None, slot_tersisa=3),
+    )
+    assert k.masuk is True
+    # jejak gerbang risiko memakai fee_buffer 0,2% → stop_pct lebih lebar dari asumsi 0,13%
+    assert any("gerbang risiko" in j for j in k.jejak)
