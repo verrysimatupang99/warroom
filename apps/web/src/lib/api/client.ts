@@ -106,6 +106,9 @@ export const getKesehatan = () => minta<Health>('/api/v1/health');
 export const getKesegaran = () => minta<FreshnessPayload>('/api/v1/freshness');
 export const getAreas = () => minta<AreasPayload>('/api/v1/areas');
 export const getArea = (area: string) => minta<AreaPayload>(`/api/v1/${encodeURIComponent(area)}`);
+/** Area token kind-nonsnapshot (lpagent, paper20) — endpoint /api/v1/areas/{area}. */
+export const getAreaFakta = (area: string) =>
+	minta<AreaPayload>(`/api/v1/areas/${encodeURIComponent(area)}`);
 export const getAku = () => minta<Me>('/api/v1/auth/me');
 export const getFakta = (kind: string, key: string, riwayat = 20) =>
 	minta<SingleFact>(
