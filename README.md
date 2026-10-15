@@ -45,3 +45,15 @@ Panduan teknis (stack, struktur folder, perintah harian, environment, deploy ngi
 ada di **[`docs/pengembangan.md`](docs/pengembangan.md)**. Aturan kerja & keselamatan ada di
 `AGENTS.md`. Dilarang push langsung ke `main` — semua perubahan lewat branch → PR
 (lihat `.github/pull_request_template.md`).
+
+### Dokumentasi Paket & Layanan
+
+- [`packages/core`](packages/core/README.md) — Model DB, evaluasi gate statistik, data splits, retensi
+- [`packages/live-trading`](packages/live-trading/README.md) — Mesin analisis multi-pasar, CLI `lt`, kalkulator risiko & dompet
+- [`services/api`](services/api/README.md) — FastAPI :8800 REST & stream SSE, auth cookie & RBAC
+- [`services/worker`](services/worker/README.md) — Job runner latar belakang & penerbit fakta
+- [`services/notifier`](services/notifier/README.md) — Notifikasi Telegram Hermes & webhook retry
+- [`services/llm`](services/llm/README.md) — Gateway LLM ber-grounding fakta dengan circuit breaker
+- [`apps/web`](apps/web/README.md) — Antarmuka SvelteKit 2, desain Serene Capital
+
+Catatan perubahan seluruh sektor terdokumentasi di [**`CHANGELOG.md`**](CHANGELOG.md).

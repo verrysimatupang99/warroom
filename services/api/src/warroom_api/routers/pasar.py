@@ -69,7 +69,7 @@ def gate_evaluate(body: GateBody, user: Annotated[User, Depends(auth.current_use
     # splits.verifikasi: id terdaftar DAN berkas cocok). Id terdaftar tapi
     # berkas berubah/hilang = 422 — bukan lolos. Tanpa ini, siapa pun bisa
     # memakai split basi SETELAH melihat hasil — gate jadi upacara tanpa isi
-    # (ADR-003, P1; diperketat verifikasi hash 12 Okt).
+    # (ADR-003, P1; diperketat verifikasi hash).
     if body.split and body.split.startswith("frozen:"):
         from warroom_core import splits as _splits
 
@@ -130,15 +130,15 @@ def gate_evaluate(body: GateBody, user: Annotated[User, Depends(auth.current_use
         "ci": r.ci,
         "deff": r.deff,
         "notes": r.notes,
-        # Pakem bukti (6 Okt): kematangan sampel pada n efektif — terpisah dari verdict
+        # Pakem bukti: kematangan sampel pada n efektif — terpisah dari verdict
         # supaya UI tidak membaca "n besar" sebagai "hampir lolos".
         "pakem": r.pakem,
         "n_efektif": r.n_efektif,
     }
 
 
-# --- sinyal terbaik per pasar (Home, 5 Okt 2026) -----------------------------------
-# Satu kontrak untuk seluruh UI baru: semua pasar dinormalkan ke bentuk yang sama,
+# --- sinyal terbaik per pasar (Home) -----------------------------------
+# Satu kontrak untuk seluruh UI: semua pasar dinormalkan ke bentuk yang sama,
 # lengkap dengan status verifikasi (klaim eksplorasi tidak boleh terlihat seperti edge).
 
 
@@ -171,9 +171,8 @@ def signals_per_market(
 def verdict_semua(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
     """Verdict KANONIK per pasar — satu sumber keputusan untuk seluruh UI.
 
-    Audit QA 7 Okt: UI tidak boleh menyusun verdict sendiri dari beberapa angka
-    (kartu bilang "EDGE TERBUKTI", gate bilang "split belum beku"). Backend
-    mengeluarkan lima state + headline + alasan blokir; UI hanya merender.
+    UI tidak menyusun verdict sendiri dari beberapa angka; backend menyajikan state kanonik
+    (lima state + headline + alasan blokir) dan UI hanya merender.
     """
     from warroom_core.verdict import all_market_verdicts
 
@@ -237,10 +236,7 @@ def pasar_ringkas(user: Annotated[User, Depends(auth.current_user)]) -> dict[str
             "tingkat": seri.get("tingkat") or seri.get("pakem"),
             "setup": seri.get("nama") or kunci_seri,
             "jumlah_setup": len(per_setup),
-            # Blok BUKTI (audit QA putaran 3): tujuh jawaban untuk halaman
-            # Performance & Proof — closed trades, WR, total R, PnL, drawdown,
-            # biaya, periode + denominator. Diterbitkan mesin (pasar.py), API hanya
-            # meneruskan; kalau mesin belum menghitungnya, jangan dikarang di sini.
+            # Blok bukti performa dari pasar.py diteruskan apa adanya tanpa kalkulasi tambahan di API.
             "bukti": (v or {}).get("bukti"),
         }
 

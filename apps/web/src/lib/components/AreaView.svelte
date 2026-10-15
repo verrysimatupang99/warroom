@@ -44,30 +44,24 @@
 	let { kunci }: Props = $props();
 
 	const area = $derived(AREAS.find((a) => a.kunci === kunci)!);
-	// URL = satu-satunya sumber kebenaran (SSOT). Dulu `sub` disimpan sebagai $state dan
-	// disinkronkan lewat $effect TANPA cabang else, sehingga kembali ke rute induk
-	// (klik menu area / tombol Back) membuat tab macet di nilai sebelumnya — URL, RailNav,
-	// SubNav, dan isi halaman saling tak cocok (temuan 5 Okt 2026). Turunan langsung ini
-	// menghapus seluruh kelas bug itu: tak ada state yang bisa menyimpang dari URL.
-	// Slug LAMA → slug baru, supaya tautan & bookmark tidak mati saat sub dirampingkan
-	// (6 Okt 2026: IDX 5→3, GMGN 4→3). Bukan pengalihan URL, tapi penerjemahan di sini —
-	// halaman tetap satu tempat, dan `?sub=` lama tetap menampilkan isi yang benar.
+
+	// URL sebagai satu-satunya sumber kebenaran agar tab dan navigasi selalu sinkron.
+	// Pemetaan slug lama menjaga kompatibilitas tautan dan bookmark tanpa pengalihan URL.
 	const ALIAS_SUB: Record<string, string> = {
-		aliran: 'bandarmologi', // IDX: Aliran digabung ke Bandarmologi
-		watchlist: 'bsjp', // IDX: Watchlist/ARA Hunter digabung ke BSJP
-		token: 'memecoin', // GMGN: Token + Bot digabung jadi Memecoin
+		aliran: 'bandarmologi',
+		watchlist: 'bsjp',
+		token: 'memecoin',
 		bot: 'memecoin',
-		// Crypto: 7→4 (6 Okt 2026)
+		// Alias tab crypto
 		lab: 'ukur',
 		data: 'cockpit',
 		overextended: 'eksekusi',
-		// IDX (7 Okt): "screener" diganti "sinyal"; "aliran" kini tab sendiri lagi
+		// Alias tab IDX
 		screener: 'sinyal',
-		// Polymarket (7 Okt): fokus Setup B; verdict→setup-b, dataset→riset, arm→arsip
+		// Alias tab Polymarket
 		verdict: 'setup-b',
 		dataset: 'riset',
 		arm: 'arsip',
-		// Polymarket (7 Okt): sub lama dipetakan ke struktur baru {setup-b, riset, arsip, live}
 		agen: 'arsip',
 		replay: 'riset',
 		parity: 'riset',
@@ -85,8 +79,7 @@
 
 function pilihSub(s: string) {
 	if (typeof window !== 'undefined') {
-		// replaceState:true — disamakan dengan rute sistem & riset (10 Okt 2026):
-		// ganti tab tak menumpuk riwayat; Back selalu keluar area, seragam di semua halaman.
+		// Ganti tab tanpa menumpuk riwayat navigasi agar tombol Back langsung kembali ke rute sebelumnya.
 		void goto(`?sub=${s}`, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 }
@@ -99,12 +92,8 @@ function pilihSub(s: string) {
 		gmgn: ['gmgn.', 'radar.', 'lp.', 'pumpfun.', 'memecoin.']
 	};
 
-	// Backfill: SSE hanya mengirim kejadian BARU (mulai dari "sekarang"), jadi panel area
-	// selalu kosong sampai ada kejadian berikutnya. Ambil riwayat singkat lewat REST dan
-	// gabung dengan aliran SSE — dedupe per id, urut terbaru dulu. Tanpa ini kepala panel
-	// menjanjikan "aliran SSE terfilter" padahal isinya mustahil terisi (menyesatkan).
-	// Verdict KANONIK (audit QA 7 Okt): headline keputusan per pasar datang dari backend,
-	// bukan disusun UI dari beberapa angka. Satu panggilan, dipakai semua area.
+	// Backfill riwayat kejadian via REST digabung dengan stream SSE baru untuk kelengkapan panel.
+	// Headline keputusan kanonik per pasar diambil langsung dari backend sebagai sumber tunggal.
 	let verdictSemua = $state<MarketVerdict[]>([]);
 	$effect(() => {
 		let batal = false;
@@ -125,9 +114,7 @@ function pilihSub(s: string) {
 	let kejadianRiw = $state<EventItem[]>([]);
 	$effect(() => {
 		let batal = false;
-		// Backfill DISARING ke prefiks area. Tanpa filter, 120 kejadian terakhir hampir
-		// pasti didominasi `job.ran` (12.000+ baris) sehingga panel area selalu kosong —
-		// temuan QA putaran 2 saat memeriksa isolasi SSE.
+		// Saring riwayat kejadian per prefiks topik area agar panel terfokus pada instrumen terkait.
 		const prefiks = (topikArea[kunci] ?? []).join(',');
 		void (async () => {
 			try {
@@ -198,15 +185,11 @@ function pilihSub(s: string) {
 		return facts.find((f) => f.key === key) ?? null;
 	}
 
-	// Dompet uji $20 + arm D ($20 Polymarket) — diambil langsung dari API (kind
-	// paper20 dan poly_paper/arms) supaya panel ini tidak bergantung pada props
-	// snippet yang scoped ke cabang markup. Angka NYATA, bukan perkiraan.
+	// Dompet uji dan arm D diambil langsung dari API agar terbebas dari cakupan snippet markup.
 	let dompetUji = $state<Record<string, any> | null>(null);
 	let armDPoly = $state<Record<string, any> | null>(null);
 
-	// Muat dompet $20 sekali per mount + refresh tiap 5 menit (bukan 15s — data
-	// siklus hanya berubah tiap 15 menit). Gagal → null, panel menampilkan
-	// pesan jujur "menunggu siklus" (R-27), bukan angka karangan.
+	// Polling dompet setiap 5 menit sesuai interval pembaruan siklus di backend.
 	$effect(() => {
 		let hidup = true;
 		const ambil = async () => {
@@ -262,10 +245,8 @@ function pilihSub(s: string) {
 	});
 
 	/**
-	 * PELUANG HARI INI (pembaruan 10 Okt, tiru pola InvestSaham 'Screener + Hipotesis +
-	 * Hati-hati'): tiga pertanyaan yang dijawab mesin kita sendiri, apa adanya.
-	 * Angka MURNI dari idx_akurasi (mean_r + n) — tak ada ambang baru. Nama setup
-	 * diterjemahkan ke bahasa manusia, tapi vonis tetap diturunkan dari angka.
+	 * Menghitung peluang IDX dari fakta idx_akurasi (mean_r dan n)
+	 * untuk mengelompokkan setup terbaik, yang perlu dihindari, dan yang diarsipkan.
 	 */
 	function hitungPeluangIdx(blok: any, setupKarantina: (n: string, s: any) => any) {
 		const ps = (blok?.per_setup ?? {}) as Record<string, any>;
@@ -295,10 +276,8 @@ function pilihSub(s: string) {
 	}
 
 	/**
-	 * PELUANG HARI INI (FOREX) — pakem sama dengan IDX, angka apa adanya dari jurnal mesin.
-	 * Kekhususan forex: sampel MASIH KECIL (n=5/strategi). Jadi vonis "Layak/Merugikan"
-	 * TIDAK dipakai; yang ditampilkan adalah "sampel belum cukup" sebagai kejujuran utama.
-	 * Nama mesin diterjemahkan ke bahasa manusia, tapi angka & jumlah sampel tidak diubah.
+	 * Menghitung peluang Forex dari jurnal mesin; status kelayakan mensyaratkan
+	 * kecukupan sampel (n >= 30) sebelum vonis diberikan.
 	 */
 	function hitungPeluangForex(blok: any, setupKarantina: (n: string, s: any) => any) {
 		const ps = (blok?.per_setup ?? {}) as Record<string, any>;
@@ -316,8 +295,7 @@ function pilihSub(s: string) {
 			menang: s?.menang == null ? null : Number(s.menang),
 			kar: setupKarantina(nama, s)
 		}));
-		// Forex: ambang sampel belum ditetapkan owner. Kita HANYA menyebut "cukup" bila n>=30
-		// (pakem gate yang sudah dipakai di tempat lain), selain itu "belum cukup" — apa adanya.
+		// Ambang evaluasi sampel minimal n >= 30 sebelum vonis dinyatakan cukup.
 		const AMBANG_VONIS = 30;
 		const hidup = daftar.filter((d) => d.mean_r != null && !d.kar);
 		const terbaik = hidup.slice().sort((a, b) => (b.mean_r ?? 0) - (a.mean_r ?? 0))[0] ?? null;
@@ -330,16 +308,8 @@ function pilihSub(s: string) {
 	}
 
 	/**
-	 * VONIS LP (pembaruan 10 Okt) — pola yang sama dengan IDX/FOREX, tapi ini KABAR BURUK.
-	 * Angka MURNI dari `sim_ledger.jsonl` (via fact `lp_paper`) — tak ada ambang baru:
-	 * "cukup" memakai n>=30 (pakem gate yang sudah ada). Tak ada satu angka pun yang dihitung
-	 * ulang di UI; semuanya dibaca apa adanya dari fact. Yang dilakukan UI hanya MENERJEMAHKAN
-	 * angka menjadi kalimat, dan membandingkan `signal` vs `control` (pembanding yang sudah
-	 * ada di data — bukan yang kita karang).
-	 *
-	 * Kenapa ditulis jujur sekeras ini: mesin LP ini RUGI, dan lebih buruk dari tebakan acak.
-	 * Menyembunyikannya sama dengan mengundang pemilik membuang uang ke jalur yang sudah
-	 * terbukti merugi.
+	 * Menerjemahkan metrik fakta lp_paper (sim_ledger.jsonl) ke dalam vonis evaluasi,
+	 * membandingkan performa sinyal vs kontrol secara objektif.
 	 */
 	function hitungVonisLp(lp: any): Record<string, any> {
 		if (!lp?.tersedia) {
@@ -406,19 +376,14 @@ function pilihSub(s: string) {
 		<SubNav {area} aktif={sub} onpilih={pilihSub} />
 	{/if}
 
-	<!-- Headline keputusan (prioritas 2 audit): SATU kalimat di paling atas halaman pasar.
-	     Dihilangkan untuk area non-pasar (sistem/riset/info) karena verdict hanya ada
-	     untuk pasar. -->
+	<!-- Headline keputusan kanonik pasar ditampilkan di bagian atas halaman instrumen. -->
 	{#if verdictArea}
 		<div class="mb-3">
 			<KepalaVerdict verdict={verdictArea} />
 		</div>
 	{/if}
 
-	<!-- Basis data mengikuti SUB, bukan hanya area induk. Sub `lp` punya area sendiri
-	     di API (`/areas/lp`) karena faktanya beda: `lp_paper` = kinerja arm LP dari
-	     sim_ledger.jsonl. Dulu selalu `kunci` (gmgn) sehingga sub LP tak pernah menerima
-	     fakta `lp_paper` — panel vonisnya buta. Halaman lain tetap memakai `kunci`. -->
+	<!-- Sub `lp` menggunakan area API khusus (/areas/lp) karena memuat fakta lp_paper terpisah. -->
 	<AreaLoader area={sub === 'lp' ? 'lp' : kunci}>
 		{#snippet children(data)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
@@ -435,10 +400,7 @@ function pilihSub(s: string) {
 			{@const faktaGmgn = temukanFakta(data.facts, 'gmgn')}
 			{@const faktaPosisi = temukanFakta(data.facts, kunci === 'crypto' ? 'posisi' : `${kunci}_posisi`) ?? temukanFakta(data.facts, 'posisi')}
 			{@const posisiArray = Array.isArray(faktaPosisi?.value) ? (faktaPosisi.value as any[]) : []}
-			<!-- Sumber jumlah = posisiArray.length, BUKAN risiko.posisi_terbuka: collector kini
-			     menulis `posisi` sebagai array, sedangkan `risiko` tak lagi memuat field itu.
-			     Akibat versi lama: ada 2 posisi nyata (SUIUSDT, 1000PEPE) tapi Cockpit menulis
-			     "Tidak ada posisi terbuka (0/3)" — temuan pemilik 7 Okt. -->
+			<!-- Jumlah posisi terbuka dihitung langsung dari panjang array fakta posisi. -->
 			{@const posisiJumlah = posisiArray.length}
 			<!-- Pembersih format harga: kripto mikro (1000PEPE 0,0041) tidak boleh jadi "0,00" -->
 			{@const harga = (v: unknown): string => {
@@ -473,8 +435,7 @@ function pilihSub(s: string) {
 			{@const idxSinyalObj = (faktaIdxSinyal?.value as any) ?? null}
 			{@const faktaLpVerif = temukanFakta(data.facts, 'lp_verifikasi')}
 			{@const lpVerifObj = (faktaLpVerif?.value as any) ?? null}
-			<!-- Kandidat AKTIF (kind `signal`, kunci per pair) — hanya yang belum basi;
-			     sebelumnya fakta ini tidak pernah sampai ke UI (temuan audit 7 Okt). -->
+			<!-- Kandidat aktif diambil dari fakta berjenis signal per pasangan instrumen. -->
 			{@const sinyalAktif = data.facts.filter((f) => f.kind === 'signal')}
 			{@const hargaAdaptif = (v: unknown): string => {
 				const n = typeof v === 'number' ? v : Number(v);
@@ -496,9 +457,7 @@ function pilihSub(s: string) {
 			{@const akurasiForex = (pasarAkurasiObj?.pasar?.forex as any) ?? null}
 			{@const akurasiGmgn = (pasarAkurasiObj?.pasar?.gmgn as any) ?? null}
 			{@const akurasiPoly = (pasarAkurasiObj?.pasar?.polymarket as any) ?? null}
-			<!-- Karantina setup rugi (keputusan owner 9 Okt): penanda datang dari verdict backend
-			     (`detail.bukti.setup_dikarantina`). Kita SUNTIKKAN ke per_setup supaya tabel tetap
-			     menampilkan setup itu (jejak audit utuh) tapi ditandai DIARSIPKAN. Tidak menghitung ulang. -->
+			<!-- Setup yang dikarantina ditandai di tabel agar jejak audit tetap terlihat tanpa menghitung ulang. -->
 			{@const karantinaPasar = (mk: string): Record<string, any> => {
 				const v = verdictSemua.find((x) => x.pasar === mk) as any;
 				return (v?.detail?.bukti?.setup_dikarantina as Record<string, any>) ?? {};
@@ -550,10 +509,7 @@ function pilihSub(s: string) {
 			{@const gmgnPaperObj = (faktaGmgnPaper?.value as any) ?? null}
 			{@const faktaGmgnRadarMentah = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'radar')}
 			{@const gmgnRadarMentahObj = (faktaGmgnRadarMentah?.value as any) ?? null}
-			<!-- Status hasil apa adanya (perbaikan per-halaman 10 Okt): kartu "PAPER JALAN"
-			     hijau dulu berdiri sendiri tanpa hasil di dekatnya, jadi terlihat lebih baik
-			     dari kenyataan. snapshot/gmgn memang TIDAK punya vonis gate dan statnya masih
-			     posisi terbuka (closed=0) — itu yang ditampilkan apa adanya. -->
+			<!-- Status hasil snapshot GMGN ditampilkan apa adanya dari posisi berjalan. -->
 			{@const faktaGmgnSnap = data.facts.find((f) => f.kind === 'snapshot' && f.key === 'gmgn')}
 			{@const gmgnSnapStats = ((faktaGmgnSnap?.value as any)?.stats as any[]) ?? []}
 			{@const faktaPengukuran = temukanFakta(data.facts, 'pengukuran')}
@@ -562,8 +518,7 @@ function pilihSub(s: string) {
 			{@const backtestObj = (faktaBacktest?.value as any) ?? null}
 			{@const ledgerObj = (faktaLedger?.value as any) ?? null}
 
-			<!-- Aliran keputusan dari ledger NYATA (bukan contoh). Status ledger
-			     dipetakan ke jenis keputusan; `note` jadi alasan; tidak ada yang dikarang. -->
+			<!-- Aliran keputusan dipetakan dari status dan catatan transaksi pada ledger. -->
 			{@const jenisDariStatus = (st: string | null | undefined): 'ENTRY' | 'EXIT_TP' | 'EXIT_SL' | 'EXIT_MANUAL' | 'VETO' | 'ALERT' => {
 				const s = String(st ?? '').toLowerCase();
 				if (s.includes('tp')) return 'EXIT_TP';
@@ -592,9 +547,7 @@ function pilihSub(s: string) {
 			{@const polyPaperObj = (faktaPolyPaper?.value as { arms?: { nama: string; balance: number; pnl: number; wins: number; losses: number }[] }) ?? null}
 			{@const tampilGate = Boolean(faktaVerdict || temukanFakta(data.facts, 'gate'))}
 
-			<!-- Dipecah 7 Okt supaya Cockpit bisa menyusun: baris kondisi (dompet/risiko/posisi)
-			     di atas, lalu kurva, lalu insight. Sebelumnya tiga kartu hidup di kolom yang
-			     berbeda sehingga mata harus melompat (keluhan "card dibawahnya belum rapi"). -->
+			<!-- Panel posisi dan ringkasan risiko disajikan terstruktur di bagian atas cockpit. -->
 			{#snippet panelPosisi(ringkas: boolean)}
 				<div class="permukaan-2 rounded-card border border-line p-3">
 					<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
@@ -666,8 +619,7 @@ function pilihSub(s: string) {
 			<!-- VIEW KHUSUS: CRYPTO                      -->
 			<!-- ========================================== -->
 			{#if kunci === 'crypto'}
-				<!-- 7 Okt: pemilik bertanya "apa pembeda Cockpit vs Setup?". Sekarang dijawab
-				     di kepala halaman; isinya juga dipisah (kandidat tabel hanya di Setup). -->
+				<!-- Navigasi sub-halaman crypto memisahkan ringkasan cockpit, setup, ukur, dan eksekusi. -->
 				{#if sub === 'cockpit' || !sub}
 					<JudulBagian nomor="1" judul="Ringkasan" tujuan="Uang, risiko, dan sinyal teratas — keadaan hari ini dalam satu pandangan" ikon="◎" />
 				{:else if sub === 'setup'}
@@ -748,12 +700,9 @@ function pilihSub(s: string) {
 						<!-- Kolom Kiri: Sinyal & Equity (7 cols) -->
 						<div class="space-y-4 lg:col-span-7">
 							{#if sub === 'cockpit' || !sub}
-								<!-- Cockpit mesin & ruang risiko (tiru desk Crypto Tencent, 9 Okt): status pipeline,
-								     dimensi gerbang, sinyal aktif dari fakta crypto_sinyal + risiko. TANPA panel OKX. -->
+								<!-- Status pipeline, dimensi gerbang, dan sinyal aktif crypto. -->
 								<CockpitCrypto sinyal={cryptoSinyalObj} risiko={risikoObj} />
-								<!-- Dompet uji $20 (15 Okt): angka NYATA dompet baru — penggantian
-								     tampilan dompet generasi lama (Rp10jt) yang kini diarsipkan.
-								     Antislop R-27: kosong = "menunggu sinyal", bukan angka karangan. -->
+								<!-- Dompet uji paper trading; kosong menampilkan status menunggu siklus. -->
 								{#if dompetUji}
 									<div class="rounded-card border border-line bg-surface p-3">
 										<div class="flex items-center justify-between border-b border-line-soft pb-2">
@@ -782,8 +731,7 @@ function pilihSub(s: string) {
 										Dompet uji $20 menunggu siklus pertama (paper20_cycle tiap 15 menit).
 									</p>
 								{/if}
-								<!-- Susunan ini SUDAH BENAR menurut pemilik (7 Okt) — jangan diubah tanpa
-								     alasan baru: Dompet dulu, lalu kurva, lalu catatan cara membacanya. -->
+								<!-- Ringkasan dompet, kurva equity tertutup, dan panduan membaca metrik. -->
 								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
 								<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 								<p class="text-11 text-text-3 -mt-1">
@@ -794,9 +742,7 @@ function pilihSub(s: string) {
 							{/if}
 
 							{#if sub === 'setup'}
-								<!-- Kandidat "layar besar" (SignalCard) HANYA di tab Setup.
-								     Di Cockpit ini duplikat dengan tabel MarketSignal dan membuat kedua
-								     tab terasa sama (keluhan pemilik 7 Okt: "apa pembedanya?"). -->
+								<!-- Kartu detail kandidat ditampilkan pada tab Setup untuk membedakan kedalaman analisis. -->
 								<div class="permukaan-2 rounded-card border border-line p-3">
 									<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 										<div>
@@ -823,12 +769,7 @@ function pilihSub(s: string) {
 								</div>
 							{/if}
 
-			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
-			     narasi hanya menjelaskan — tidak pernah menggantikan bukti.
-			     Revisi pemilik 7 Okt: "harusnya bisa kayak narrativelabs" — mereka
-			     menonjolkan KESIMPULAN sebagai kalimat pembuka besar, bukti menyusul,
-			     dan mesinnya (provider/ms) tidak dipajang di muka. Hierarki di bawah ini
-			     mengikuti itu; grounding `fact_ids` tetap terlihat sebagai janji bukti. -->
+			<!-- Narasi LLM menyajikan kesimpulan berdasarkan grounding fakta tanpa menggantikan angka bukti. -->
 			{#if narasiObj}
 							<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
 								<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
@@ -864,8 +805,7 @@ function pilihSub(s: string) {
 							</div>
 			{/if}
 
-							<!-- Kandidat AKTIF dari ledger gate (job signal-sync). Ini daftar "apa yang
-							     sedang hidup" — dibedakan dari tabel riwayat di bawahnya. -->
+							<!-- Kandidat aktif dari ledger gate yang sedang berjalan. -->
 							{#if (sub === 'setup' || sub === 'cockpit') && sinyalAktif.length}
 								<div class="permukaan-2 rounded-card border border-line p-3">
 									<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
@@ -896,12 +836,7 @@ function pilihSub(s: string) {
 													<div><div class="text-10 text-text-3">TP1</div><div class="text-pos">{hargaAdaptif(s.tp1)}</div></div>
 												</div>
 												<div class="mt-1 flex items-center justify-between text-10 text-text-3 font-mono">
-													<!-- TEMUAN QA 7 Okt (P0): angka ini JARAK STOP, bukan risiko akun.
-													     Ukuran posisi dihitung agar risiko akun tetap 1% (risk.py:
-													     size = risk_usd ÷ jarak-stop). Bukti: 1000PEPE jarak 3,81%
-													     → posisi $25,55 ≈ 1% × $100; SUI jarak 2,01% → $47,28.
-													     Label lama "risiko 3,813%" membuat pembaca (dan QA) wajar
-													     menyimpulkan policy dilanggar. Jangan disingkat lagi. -->
+													<!-- Menampilkan jarak stop terpisah dari risiko akun 1% agar tidak rancu. -->
 													<span>R:R {s.r_r ?? '—'} · jarak stop {s.risk_pct != null ? angka(s.risk_pct, { desimal: 2 }) : '—'}% · risiko akun 1%</span>
 													<span>{umurDetik(f.age_s)} lalu</span>
 												</div>
@@ -915,8 +850,7 @@ function pilihSub(s: string) {
 								</div>
 							{/if}
 
-							<!-- Sinyal & entry setup crypto (6 Okt): tiap baris = 1 setup, kolom khas SMC.
-							     HANYA di Setup — supaya Cockpit (ringkasan) tidak berisi tabel panjang. -->
+							<!-- Sinyal dan entry setup crypto khas SMC ditampilkan di tab Setup. -->
 							{#if sub === 'setup'}
 								<MarketSignal
 									pasar="crypto"
@@ -935,7 +869,7 @@ function pilihSub(s: string) {
 								<RiskMeter risiko={risikoObj} />
 							{/if}
 
-							<!-- Akurasi per strategi crypto (6 Okt): dari ledger nyata, pakem satu standar -->
+							<!-- Akurasi per strategi crypto dari ledger terukur dengan pakem standar. -->
 							{#if sub === 'setup' || sub === 'ukur'}
 								<AkurasiPasar
 									ringkas={sub === 'ukur'}
@@ -948,10 +882,7 @@ function pilihSub(s: string) {
 
 							{@render panelPosisi(false)}
 
-							<!-- Aliran Keputusan (7 Okt): DIPINDAH dari kolom kiri ke kanan. Ledger yang
-							     sama dipakai blok posisi di atasnya, jadi dua-duanya terbaca berurutan:
-							     "apa yang berjalan" lalu "apa yang sudah terjadi". Ini juga mengisi ruang
-							     kosong kolom kanan (screenshot cockpit: kiri jauh lebih panjang). -->
+							<!-- Feed aliran keputusan menyajikan kronologi trade terbuka dan tertutup. -->
 							<DecisionFeed items={feedKeputusan} />
 						</div>
 					</div>
@@ -959,10 +890,7 @@ function pilihSub(s: string) {
 
 				{#if sub === 'ukur'}
 					<div class="space-y-4">
-						<!-- RINGKASAN SATU BARIS (pembaruan halus 7 Okt, arah desain "Serene Capital").
-						     Tujuannya sama dengan keluhan pemilik "gw ga ngeh": baca satu kalimat dulu,
-						     baru masuk angka. Kalimatnya DITURUNKAN dari data pengukuran yang ada —
-						     tidak ada angka baru yang dikarang di UI. -->
+						<!-- Ringkasan satu baris yang diturunkan langsung dari data pengukuran lolos vs ditolak. -->
 						{#if pengukuranObj}
 							{@const pl = pengukuranObj.lolos ?? {}}
 							{@const pd = pengukuranObj.ditolak_bayangan ?? {}}
@@ -999,9 +927,7 @@ function pilihSub(s: string) {
 										</span>
 										<span class="font-mono text-11 text-text-2">{pengukuranObj?.lolos?.n ?? 0} sampel</span>
 									</div>
-									<!-- Tiga angka BESAR (pembaruan halus 7 Okt): yang dibutuhkan mata lebih dulu,
-									     sisanya jadi catatan kecil satu baris. Dulu keempat angka sama besar
-									     sehingga tidak ada yang menonjol. -->
+									<!-- Metrik utama (Trade, Total R, Win rate) disajikan menonjol untuk keterbacaan cepat. -->
 									<div class="grid grid-cols-3 gap-3">
 										<div>
 											<div class="text-10 uppercase text-text-3">Trade</div>
@@ -1060,10 +986,7 @@ function pilihSub(s: string) {
 							</div>
 						</div>
 
-						<!-- Rincian nilai PER-ATURAN (tiru 'gate checks' desk Tencent).
-						     Menjawab "aturan mana yang benar-benar berguna?": tiap aturan gate diuji
-						     apakah performa lolos vs tolak berbeda nyata (t), bukan kebetulan derau.
-						     Angka apa adanya dari pengukuran.per_aturan — termasuk yang negatif. -->
+						<!-- Evaluasi statistik t-test per aturan gate untuk memisahkan edge nyata dari derau. -->
 						{#if pengukuranObj?.per_aturan && Object.keys(pengukuranObj.per_aturan).length > 0}
 							{@const pa = pengukuranObj.per_aturan}
 							{@const barisPa = Object.entries(pa).map(([nama, v]: any) => ({ nama, ...v }))
@@ -1119,11 +1042,7 @@ function pilihSub(s: string) {
 							</div>
 						{/if}
 
-						<!-- Akurasi per strategi dalam mode RINGKAS (pembaruan halus 7 Okt).
-						     Dulu tabel 9 kolom ini tidak pernah muncul di tab Ukur karena kondisi
-						     `sub === 'ukur'` di pemanggilnya berada di dalam grid yang hanya dirender
-						     untuk cockpit/setup — kode mati. Sekarang benar-benar tampil di sini,
-						     dengan 4 kolom: setup · tuntas · ekspektasi · pakem. -->
+						<!-- Ringkasan akurasi strategi trade tuntas dari ledger nyata. -->
 						<AkurasiPasar
 							ringkas
 							market="crypto · trade tuntas"
@@ -1184,10 +1103,7 @@ function pilihSub(s: string) {
 				<!-- Tab Overextended (dipindah dari area /overextended — datanya dari crypto) -->
 				{#if sub === 'overextended' || sub === 'eksekusi'}
 					<div class="space-y-4">
-						<!-- RINGKASAN SATU BARIS (pembaruan halus 7 Okt, pasangan dari tab Ukur).
-						     Semua angka DITURUNKAN dari fakta yang sudah ada — tidak ada yang dikarang:
-						     jumlah posisi dari daftar posisi, risiko terpakai dari fakta `risiko`,
-						     jumlah trade dari ledger. -->
+						<!-- Ringkasan status eksekusi: slot terbuka, kuota risiko terpakai, dan total trade tuntas. -->
 						{#if sub === 'eksekusi'}
 							{@const hr = risikoObj?.hari_ini_r}
 							{@const batas = risikoObj?.batas_rugi_r}
@@ -1209,9 +1125,7 @@ function pilihSub(s: string) {
 							</div>
 						{/if}
 
-						<!-- POSISI TERBUKA di tab Eksekusi (temuan 7 Okt: tab ini menjanjikan
-						     "posisi terbuka" di judulnya, tapi tidak menampilkannya sama sekali —
-						     padahal ada 3 posisi berjalan). Detail penuh, bukan ringkas. -->
+						<!-- Daftar detail posisi berjalan yang aktif saat ini. -->
 						{#if sub === 'eksekusi'}
 							{@render panelPosisi(false)}
 						{/if}
@@ -1239,10 +1153,7 @@ function pilihSub(s: string) {
 													<span class="rounded px-1.5 py-0.5 text-10 font-bold uppercase {e.status === 'lolos' ? 'bg-pos/15 text-pos border border-pos/30' : 'bg-warn/15 text-warn border border-warn/30'}">
 														{e.status === 'lolos' ? 'LOLOS' : 'DITOLAK'}
 														{#if e.umur_jam != null && e.umur_jam > 6}
-															<!-- Temuan agent-2 (15 Okt): kartu tetap "OKE" walau verdictnya
-															     berumur > TTL 6 jam — mansion membaca itu sinyal segar.
-															     Umur verdict kini tampil eksplisit; > 6 jam = BASI
-															     (sumber bukan harga live, hanya catatan keputusan lama). -->
+															<!-- Tandai jika verdict telah melampaui masa berlaku (TTL 6 jam). -->
 															<span class="ml-1 rounded bg-warn/15 px-1 text-warn">BASI {e.umur_jam} JAM</span>
 														{/if}
 													</span>
@@ -1260,9 +1171,7 @@ function pilihSub(s: string) {
 										</p>
 									{/if}
 									{#if cryptoSinyalObj?.jumlah_ditolak}
-										<!-- Adopsi skip-reason counter poly-paper favorite: hitungan alasan
-										     penolakan (hanya verdict DITOLAK) — menjawab "kandidat banyak,
-										     buka nol, kenapa?" dengan angka. -->
+										<!-- Ringkasan frekuensi alasan penolakan kandidat sinyal oleh gate. -->
 										<p class="mt-1 text-10 text-text-3">
 											{cryptoSinyalObj.jumlah_ditolak} ditolak dari {cryptoSinyalObj.jumlah_verdict} verdict, terbanyak:
 											{(cryptoSinyalObj?.veto ?? []).slice(0, 3).map((v: any) => `${v.n}× ${v.alasan}`).join(' · ') || '—'}
@@ -1276,9 +1185,7 @@ function pilihSub(s: string) {
 								<div>
 									<h3 class="text-14 font-medium text-text">
 										Overextended
-										<!-- Label ini dulu hanya di catatan KAKI kartu; pembaca bisa melihat
-										     tabelnya lebih dulu dan mengira itu daftar sinyal. Sekarang duduk
-										     di judul — tidak mungkin terlewat (pembaruan halus 7 Okt). -->
+										<!-- Penanda eksplisit bahwa data overextended adalah fakta harga, bukan sinyal entri. -->
 										<span class="ml-1 rounded border border-warn/50 bg-warn/10 px-1.5 py-0.5 text-10 font-bold text-warn align-middle">
 											FAKTA HARGA, BUKAN SINYAL
 										</span>
@@ -1384,8 +1291,7 @@ function pilihSub(s: string) {
 				{/if}
 
 				{#if sub === 'ukur' || sub === 'eksekusi'}
-					<!-- 7 Okt: blok kesehatan jalur = plumbing teknis; dipindah dari Cockpit ke sini
-					     (pemilik menilai Cockpit "sangat membingungkan" karena campuran ini). -->
+					<!-- Status kesehatan teknis jalur data dan latensi integrasi bursa. -->
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -1444,9 +1350,7 @@ function pilihSub(s: string) {
 				{:else if sub === 'live'}
 					<JudulBagian nomor="4" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
 				{/if}
-			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
-			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
-			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
 			{#if narasiObj}
 				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
 					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
@@ -1496,9 +1400,7 @@ function pilihSub(s: string) {
 				{/if}
 				{#if sub === 'setup-b'}
 					<div class="space-y-4">
-						<!-- 15 Okt: arm D favorit jadi aturan dipakai (verdict EDGE, replay
-						     n=4133, EV +2,07%), bankroll reset $20. Arm B generasi lama
-						     diarsipkan di tab Arm Lain (Beku)/Riset — bukti tetap disimpan. -->
+						<!-- Konfigurasi aturan aktif Arm D (favorit) dengan bankroll terisolasi. -->
 						<div class="rounded-card border border-accent/30 bg-accent/5 p-3 space-y-1">
 							<div class="flex items-center gap-2">
 								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">YANG DIPAKAI: ARM D FAVORIT (BANKROLL $20)</span>
@@ -1547,7 +1449,7 @@ function pilihSub(s: string) {
 								<p class="mt-2 text-11 text-text-3">Arm D belum terbaca — tunggu sinkronisasi berikutnya.</p>
 							{/if}
 						</div>
-						<!-- Akurasi & PnL per arm (6 Okt): win-rate entri mesin paper, dihitung per arm -->
+						<!-- Akurasi dan win-rate entri mesin paper per arm. -->
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket — generasi lama, arsip 15 Okt)"
 							subjudul="Entri menang/kalah mesin paper lama — bukan dompet $20; tolok ukur generasi baru di kartu di atas"
@@ -1569,7 +1471,7 @@ function pilihSub(s: string) {
 								angkanya jangan dihapus, tapi jangan dijadikan dasar keputusan baru.
 							</p>
 						</div>
-						<!-- Dompet paper Polymarket: arm B (keputusan owner 7 Okt), arm lain dibekukan -->
+						<!-- Dompet paper Polymarket untuk arm B. -->
 						<DompetPasar market="polymarket" dompet={dompetObj} judul="Dompet Paper Polymarket (arm B)" />
 						<AkurasiPasar
 							judul="Akurasi & PnL per Arm (Polymarket)"
@@ -1790,9 +1692,7 @@ function pilihSub(s: string) {
 				{/if}
 
 				{#if sub === 'sinyal' || !sub}
-					<!-- Deret KPI besar (tiru kartu ringkasan IDX-616 Tencent): uang → hasil → sampel →
-					     sinyal. Pembaruan 10 Okt: pertanyaan "layak dipercaya atau tidak?" dijawab lebih
-					     dulu, sebelum tabel panjang. Angka apa adanya dari fakta (dompet + idx_akurasi). -->
+					<!-- Ringkasan metrik utama pasar IDX: dompet paper, hasil PnL, performa BSJP, dan kandidat aktif. -->
 					{@const kpiIdx = (dompetObj?.pasar?.idx as any) ?? null}
 					{@const kpiIdxSaldo = kpiIdx?.titik?.length ? kpiIdx.titik[kpiIdx.titik.length - 1]?.saldo_idr ?? null : null}
 					{@const kpiIdxPnl = kpiIdx?.total_pnl_idr ?? null}
@@ -1827,10 +1727,7 @@ function pilihSub(s: string) {
 							</div>
 						</div>
 
-						<!-- PELUANG HARI INI (pembaruan 10 Okt, tiru pola InvestSaham 'Screener + Hipotesis +
-						     Hati-hati'): tiga pertanyaan yang dijawab mesin kita sendiri, apa adanya.
-						     Angka MURNI dari idx_akurasi (mean_r + n) — tak ada ambang baru. Nama setup
-						     diterjemahkan ke bahasa manusia, tapi vonis tetap diturunkan dari angka. -->
+						<!-- Rekomendasi peluang dan peringatan risiko diturunkan langsung dari fakta idx_akurasi. -->
 					{#if peluangIdx.terbaik || peluangIdx.diarsip.length}
 							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 								<!-- 1. Peluang hari ini: satu baris, bahasa manusia -->
@@ -1877,12 +1774,9 @@ function pilihSub(s: string) {
 								</div>
 							</div>
 						{/if}
-						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP terlihat bedanya.
-						     Ini "uang" — selalu di atas, apa pun tabnya. -->
+						<!-- Dompet paper IDX: bagian per setup — ARA_HUNTER vs BSJP. -->
 						<DompetPasar market="idx" dompet={dompetObj} judul="Dompet Paper IDX (Rp 10 juta)" />
-						<!-- ALUR KERJA: (1) Bandarmologi = siapa yang bergerak; (2) BSJP+ARA = sinyal;
-						     (3) Screener Arjum = bahan mentah. Urutan ini menggantikan tumpukan
-						     yang dulu membuat halaman terasa "hancur" (keluhan 7 Okt). -->
+						<!-- Panduan alur analisis data IDX dari saringan bahan mentah hingga eksekusi. -->
 						<div class="rounded-card border border-accent/30 bg-accent/5 p-2.5 text-11 text-text-2">
 							Halaman ini dibaca dari ATAS ke BAWAH sebagai satu alur: dari <b>bahan mentah</b>
 							sampai <b>keputusan</b>. Tiap blok berlabel LANGKAH — inilah artinya:
@@ -2031,9 +1925,7 @@ function pilihSub(s: string) {
 					</div>
 				{/if}
 
-			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
-			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
-			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
 			{#if narasiObj}
 			<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
 				<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
@@ -2068,10 +1960,7 @@ function pilihSub(s: string) {
 			</div>
 			{/if}
 
-				<!-- Akurasi signal per setup (6 Okt): dari ledger mesin (grader v3).
-				     Hanya baris TUNTAS masuk metrik; belum tuntas & ambigu dipisah.
-				     Pakem = kematangan sampel pada hari independen, bukan jumlah trade.
-				     Sengaja TANPA guard sub: ini inti area IDX, wajib tampak di semua tab. -->
+				<!-- Akurasi sinyal per setup dari ledger grader v3 (hanya trade tuntas dan kematangan hari bursa). -->
 				<div class="permukaan-2 rounded-card border border-line p-3">
 					<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 						<div>
@@ -2147,9 +2036,7 @@ function pilihSub(s: string) {
 													{s.pakem}
 												</span>
 											</td>
-											<!-- VONIS: diturunkan MURNI dari angka yang sudah ada (mean_r + pakem). Tidak ada
-											     ambang baru — hanya menaruh kesimpulan di depan supaya mata tak menebak mana
-											     setup yang layak dipercaya (dulu ARA -139R sebaris dgn BSJP +20R, tanpa vonis). -->
+											<!-- Vonis diturunkan langsung dari mean R dan tingkat kematangan sampel pakem. -->
 											<td class="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
 												{#if kar}
 													<span class="rounded border border-neg/40 text-neg bg-neg/10 px-1.5 py-0.5 text-10 font-bold whitespace-nowrap">Diarsipkan</span>
@@ -2195,12 +2082,10 @@ function pilihSub(s: string) {
 					{/if}
 				</div>
 
-				<!-- Gate live-trading (tiru desk IDX Tencent, 9 Okt): centang otomatis per setup dari
-				     fakta idx_akurasi. Ambang TIDAK diubah — komponen hanya menyusun centang dari
-				     angka yang sudah ada (n≥30, hari≥10, pakem ≥ PRELIMINARY, ekspektasi > 0). -->
+				<!-- Status evaluasi gate per setup berdasarkan ambang n, hari independen, dan ekspektasi positif. -->
 				<KartuGateSetup blok={idxAkurasiObj} />
 
-				<!-- Sinyal & entry setup IDX (6 Okt): ARA/BSJP/INTRADAY dari ledger mesin -->
+				<!-- Sinyal dan entri setup aktif IDX dari ledger mesin. -->
 				{#if sub === 'bsjp' || sub === 'sinyal'}
 					<MarketSignal
 						pasar="idx"
@@ -2349,8 +2234,7 @@ function pilihSub(s: string) {
 				<!-- Tab Bandarmologi -->
 				{#if sub === 'bandarmologi' || sub === 'sinyal'}
 					<div class="space-y-4">
-						<!-- Skor Bandarmologi 0–100 (adopsi pola ihsgscreener, 6 Okt): satu angka
-						     ringkas dengan komponen yang bisa diaudit. Alat baca, bukan ajakan beli. -->
+						<!-- Skor Bandarmologi 0–100 berdasarkan pembobotan ATS beli/jual, frekuensi, dan status no-sell. -->
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
 								<div>
@@ -2572,9 +2456,7 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 				{/if}
-				<!-- 5 BLOK WAJIB (6 Okt 2026): Statistik & verifikasi + Posisi & riwayat.
-				     Sumber: fakta {kunci}_equity / {kunci}_ledger / {kunci}_risiko / {kunci}_posisi.
-				     Kosong ditampilkan apa adanya — bukan 0 yang dikarang. -->
+				<!-- Blok ringkasan performa: kurva ekuitas, meter risiko, posisi terbuka, dan riwayat ledger. -->
 				<div class="mt-4 space-y-4">
 					<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 					<RiskMeter risiko={risikoObj} />
@@ -2696,9 +2578,7 @@ function pilihSub(s: string) {
 							</div>
 						</div>
 
-			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
-			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
-			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
 			{#if narasiObj}
 				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
 					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
@@ -2737,10 +2617,7 @@ function pilihSub(s: string) {
 						<!-- Dompet paper forex: Rp 10 juta, dari jurnal mesin -->
 						<DompetPasar market="forex" dompet={dompetObj} judul="Dompet Paper Forex" />
 
-						<!-- PELUANG HARI INI (FOREX) — pola sama dengan IDX ('Peluang + Hipotesis +
-						     Hati-hati'), TAPI satu beda penting yang jujur: sampel forex masih kecil
-						     (n=5/strategi), jadi tombol/tanda 'Layak' TIDAK dipakai. Yang ditonjolkan
-						     justru 'sampel belum cukup'. Angka murni dari jurnal mesin — tanpa ambang baru. -->
+						<!-- Evaluasi peluang dan peringatan risiko forex berdasarkan kecukupan sampel jurnal mesin. -->
 			{#if peluangForex.daftar.length}
 							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 								<!-- 1. Peluang hari ini -->
@@ -2834,11 +2711,10 @@ function pilihSub(s: string) {
 								</div>
 							</div>
 						</div>
-						<!-- Zona & sinyal mesin (tiru desk XAU Tencent, 9 Okt): baris pair/TF/zona/arah/
-						     entry/SL/TP apa adanya dari jurnal mesin. Angka tidak dihitung di UI. -->
+						<!-- Zona dan sinyal aktif dari jurnal mesin untuk pair terpilih. -->
 						<ZonaAktif blok={forexSinyalObj} />
 
-						<!-- Sinyal & entry setup forex (6 Okt): XAUUSD 4-agen + multi-pair, dari jurnal Tencent -->
+						<!-- Sinyal dan entri setup forex dari jurnal mesin. -->
 						<MarketSignal
 							pasar="forex"
 							judul="Sinyal & Entry Setup (Forex)"
@@ -2911,7 +2787,7 @@ function pilihSub(s: string) {
 					</div>
 				{:else if sub === 'kalender'}
 					<div class="space-y-4">
-						<!-- Kalender dengan dampak + hitung mundur (riset 7 Okt: yang membuat terasa hidup) -->
+						<!-- Kalender makroekonomi dengan filter dampak dan hitung mundur rilis data. -->
 						<KalenderDampak macro={macroObj} />
 					<div class="permukaan-2 rounded-card border border-line p-3">
 						<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -3012,9 +2888,7 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 				{/if}
-				<!-- 5 BLOK WAJIB (6 Okt 2026): Statistik & verifikasi + Posisi & riwayat.
-				     Sumber: fakta {kunci}_equity / {kunci}_ledger / {kunci}_risiko / {kunci}_posisi.
-				     Kosong ditampilkan apa adanya — bukan 0 yang dikarang. -->
+				<!-- Blok ringkasan performa: kurva ekuitas, meter risiko, posisi terbuka, dan riwayat ledger. -->
 				<div class="mt-4 space-y-4">
 					<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 					<RiskMeter risiko={risikoObj} />
@@ -3085,9 +2959,7 @@ function pilihSub(s: string) {
 					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru dari GMGN/FOMO: bot uji coba, saringan keamanan, pantauan pemain besar — eksplorasi, bukan rekomendasi" ikon="✦" />
 				{/if}
 
-				<!-- Deret KPI besar di kepala halaman GMGN (tiru kartu ringkasan Tencent):
-				     berapa bot paper jalan, berapa hasil tuntas, dan vonis gate apa adanya.
-				     Pembaruan 10 Okt: kartu "PAPER JALAN" hijau dulu berdiri sendiri tanpa angka. -->
+				<!-- Ringkasan status bot paper GMGN, posisi tercatat, trade tuntas, dan status gate. -->
 				{@const gmgnStats0 = (gmgnSnapStats?.[0] as any) ?? null}
 				{@const gmgnTuntas = gmgnStats0?.closed ?? 0}
 				{@const gmgnTerbuka = gmgnStats0?.open_at_end ?? 0}
@@ -3114,9 +2986,7 @@ function pilihSub(s: string) {
 					</div>
 				</div>
 
-				<!-- PETA TARGET (revisi pemilik 7 Okt): tiga tujuan yang disebut eksplisit —
-				     memecoin di GMGN/FOMO, LP Uniswap di Robinhood Chain, LP Solana/Meteora —
-				     dan siapa mengerjakan apa. Ditulis dari data yang benar-benar ada. -->
+				<!-- Peta target dan status implementasi untuk memecoin dan penyediaan likuiditas (LP). -->
 				<div class="mb-4 rounded-card border border-line bg-surface p-3">
 					<div class="mb-2 border-b border-line-soft pb-2">
 						<h3 class="text-13 font-medium text-text">Tiga target &amp; sumbernya</h3>
@@ -3129,10 +2999,7 @@ function pilihSub(s: string) {
 								<span class="rounded px-1.5 py-0.5 text-10 font-bold border {gmgnPaperObj ? 'text-pos bg-pos/10 border-pos/20' : 'text-text-3 bg-canvas border-line'}">{gmgnPaperObj ? 'PAPER JALAN' : 'BELUM ADA DATA'}</span>
 							</div>
 							<p class="text-11 text-text-3">Sumber: <b class="text-text-2">GMGN / FOMO</b> — pemindaian token baru + safety gate (bundler, dev hold, entrapment).</p>
-							<!-- Status hasil apa adanya (perbaikan per-halaman 10 Okt): kartu "PAPER JALAN"
-							     hijau dulu berdiri sendiri, jadi terlihat lebih baik dari kenyataan. Fact
-							     snapshot/gmgn TIDAK punya vonis gate (tak ada kata lolos/ditolak/gate), dan
-							     statnya masih posisi TERBUKA (closed=0) — jadi ditulis apa adanya di sini. -->
+							<!-- Status hasil tuntas vs posisi terbuka berdasarkan fakta snapshot gmgn. -->
 							{#if gmgnSnapStats?.length}
 								{@const st0 = gmgnSnapStats[0]}
 								<div class="mt-1.5 rounded border border-warn/40 bg-warn/10 px-1.5 py-1">
@@ -3179,9 +3046,7 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 				</div>
-			<!-- Narasi LLM per market: dari job llm-brief-<market>. Angka tetap dari fakta;
-			     narasi hanya menjelaskan — tidak pernah menggantikan bukti. Gaya 7 Okt:
-			     kesimpulan dulu (kalimat besar), bukti menyusul, mesin disembunyikan di kaki. -->
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
 			{#if narasiObj}
 				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
 					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
@@ -3218,12 +3083,10 @@ function pilihSub(s: string) {
 			{/if}
 
 
-				<!-- Penjelasan LP: Robinhood Chain vs Meteora (riset 7 Okt) + verifikasi live.
-				     Fact yang membingungkan banyak orang dijelaskan di sini dengan bukti. -->
+				<!-- Perbandingan arsitektur LP antara Robinhood Chain (Uniswap) dan Solana (Meteora). -->
 				{#if sub === 'radar' || !sub}
 					<div class="space-y-3">
-						<!-- Jawaban satu baris (pertanyaan langsung pemilik 7 Okt): "aslinya kita
-						     Robinhood-Uniswap atau Meteora-Solana?" — dijawab, bukan disuruh baca. -->
+						<!-- Ringkasan pemantauan radar untuk dua protokol yang berbeda. -->
 						<div class="rounded-card border border-accent/40 bg-accent/10 p-3">
 							<div class="text-12 font-bold text-text">Jawaban singkat: radar kita memantau <span class="text-accent">KEDUANYA</span> — dua protokol berbeda.</div>
 							<p class="mt-1 text-11 text-text-2">
@@ -3379,11 +3242,7 @@ function pilihSub(s: string) {
 				{#if sub === 'lp'}
 					{@const vonis = hitungVonisLp(lpPaperObj)}
 					<div class="space-y-4">
-						<!-- VONIS LP (pembaruan 10 Okt) — pola Peluang + Hipotesis + Hati-hati, sama
-						     spt /idx & /forex, TAPI ini kabar buruk. Angka MURNI dari sim_ledger.jsonl
-						     via fact `lp_paper`; tak ada ambang baru (cukup = n>=30, pakem gate).
-						     Ditulis sekeras ini karena mesinnya RUGI dan lebih buruk dari acak —
-						     menyembunyikannya berarti mengundang pemilik membuang uang. -->
+						<!-- Evaluasi vonis LP berdasarkan data sim_ledger (median net PnL dan tingkat signifikansi). -->
 						{#if vonis.ada}
 							<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 								<!-- 1. Peluang hari ini: jujur bahwa TIDAK ADA peluang -->
@@ -3484,7 +3343,7 @@ function pilihSub(s: string) {
 						{/if}
 						<!-- Dompet paper LP: Rp 10 juta, dari mark posisi -->
 						<DompetPasar market="gmgn" dompet={dompetObj} judul="Dompet Paper GMGN / LP" />
-						<!-- Akurasi & PnL LP terukur (6 Okt): hasil dinyatakan P&L (IL+fee), bukan R -->
+						<!-- Akurasi dan PnL LP terukur dari mark lokal. -->
 						<AkurasiPasar
 							judul="Akurasi & PnL LP Terukur"
 							subjudul="Mark lokal — rekonsiliasi on-chain belum ada (dinyatakan apa adanya)"
@@ -3540,8 +3399,7 @@ function pilihSub(s: string) {
 							{/if}
 						</div>
 
-						<!-- MARK LP TERUKUR (6 Okt): fee/IL/LP-vs-hold dari pasar nyata + label pakem.
-						     Sumber: fakta `lp_mark` (job `lp-mark`, DexScreener per alamat pool). -->
+						<!-- Mark LP terukur per alamat pool: fee akumulasi, impermanent loss, dan perbandingan vs hold. -->
 						<div class="permukaan-2 rounded-card border border-line p-3">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 								<div>
@@ -3762,9 +3620,7 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 				{/if}
-				<!-- 5 BLOK WAJIB (6 Okt 2026): Statistik & verifikasi + Posisi & riwayat.
-				     Sumber: fakta {kunci}_equity / {kunci}_ledger / {kunci}_risiko / {kunci}_posisi.
-				     Kosong ditampilkan apa adanya — bukan 0 yang dikarang. -->
+				<!-- Blok ringkasan performa: kurva ekuitas, meter risiko, posisi terbuka, dan riwayat ledger. -->
 				<div class="mt-4 space-y-4">
 					<EquityCurve points={equityObj?.points} stats={equityObj?.stats} />
 					<RiskMeter risiko={risikoObj} />
@@ -3874,15 +3730,7 @@ function pilihSub(s: string) {
 				</div>
 			{/if}
 
-			<!-- Aliran EventItem SSE untuk Area ini.
-			     Revisi pemilik 7 Okt: "kejadian area cardnya di collaps aja toh itu 3 tombolnya
-			     ga berfungsi juga". Dua hal yang diperbaiki:
-			     (1) blok ini TERLIPAT secara default — bukan karena isinya rusak, tapi karena
-			         ia feed diagnosis, bukan keputusan trading; kepala tetap tampil.
-			     (2) tiga tombol filter lama (semua/tipe) MEMANG terasa mati: karena feed area
-			         biasanya cuma memuat satu tipe, menyaring tidak mengubah apa pun. Sekarang
-			         filter di EventFeed hanya dirender bila ada LEBIH DARI SATU tipe kejadian —
-			         tombol yang tidak mungkin mengubah apa pun tidak lagi dipajang. -->
+			<!-- Aliran kejadian SSE untuk area ini, tertutup secara default sebagai panel diagnosis. -->
 			<Block
 				judul="EventItem Area"
 				deskripsi={`Aliran SSE terfilter topik area · ${kejadianArea.length} kejadian`}

@@ -1,4 +1,4 @@
-"""Per-market signal & accuracy engine — one contract for all markets (6 Oct 2026).
+"""Per-market signal & accuracy engine — one contract for all markets.
 
 Owner's brief: "dashboard digunakan untuk menampilkan sinyal, akurasi sinyal, data pnl
 per market berdasarkan sinyal, dan entry setup per sinyal per market; pastikan isinya
@@ -69,11 +69,8 @@ STRATEGI_PASAR: dict[str, list[dict[str, Any]]] = {
         },
     ],
     "idx": [
-        # Status IDX dikoreksi 14 Okt dari BUKTI ledger (bukan dari kenyamanan tampilan):
-        #   BSJP_STRONG +20,51R (n=26) & BSJP_ARA +6,84R (n=19) -> aktif
-        #   ARA_HUNTER -139,08R (n=198) -> dihentikan (menghabiskan dompet)
-        #   INTRADAY -0,38R (n=35)      -> dihentikan (praktis datar)
-        # Seleksi mengikuti live_trading.strategi_terpilih (poin 3 & 4).
+        # Status IDX diselaraskan dari bukti ledger: BSJP terbukti positif,
+        # sedangkan ARA Hunter dan INTRADAY dihentikan karena drawdowns/ekspektansi negatif.
         {"nama": "ARA Hunter", "status": "dihentikan", "sumber": "ledger idx616 (grader v3): -139,08R"},
         {
             "nama": "BSJP (Beli Sore Jual Pagi)",
@@ -701,8 +698,7 @@ def ringkas_forex_sinyal(state_dir: Path) -> dict[str, Any]:
             "angka di sini BRUTO. Jangan dibandingkan langsung dengan pasar yang net "
             "(crypto: cost_bps terukur; IDX: grader v3 sudah termasuk biaya).",
         ],
-        # QA eksternal 7 Okt: "Home harus menampilkan flag NOT COST-ADJUSTED dan jangan
-        # menaruhnya berdampingan dengan PnL net tanpa penanda". Flag ini yang dipakai UI.
+        # Flag biaya dipakai UI agar PnL bruto tidak disandingkan dengan PnL net tanpa penanda.
         "biaya_tercatat": False,
         "biaya_label": "NOT COST-ADJUSTED",
     }
@@ -868,14 +864,8 @@ def ringkas_akurasi_pasar(state_dir: Path) -> dict[str, Any]:
             pasar[nama] = fn(state_dir)
         except Exception as exc:  # noqa: BLE001 — satu pasar jangan menjatuhkan yang lain
             pasar[nama] = {"tersedia": False, "alasan": f"{type(exc).__name__}: {exc}"}
-    # BUKTI per pasar (temuan audit QA putaran 3): halaman Performance & Proof harus
-    # menjawab tujuh hal untuk TIAP pasar — closed trades, PnL, win rate, drawdown,
-    # biaya, periode, dan DENOMINATOR (populasi mana yang dihitung). Sebelumnya angka
-    # ini tersebar dan pembaca harus menebak; beberapa pasar bahkan tidak punya
-    # keterangan biaya sama sekali.
-    #
-    # Aturan yang dikodekan: kalau sebuah angka TIDAK diketahui, tulis None — jangan 0,
-    # dan jangan dikosongkan tanpa alasan.
+    # Bukti per pasar merangkum metrik lengkap (trade, PnL, win rate, drawdown, biaya, periode, denominator).
+    # Nilai yang tidak diketahui diisi None (bukan 0) agar tidak menyesatkan.
     for nama, blok in pasar.items():
         blok["bukti"] = _bukti_pasar(nama, blok)
     return {
