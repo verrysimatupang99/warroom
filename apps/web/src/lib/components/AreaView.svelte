@@ -35,7 +35,7 @@
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import MarketSignal from './MarketSignal.svelte';
-	import { getEvents, getVerdict } from '$lib/api/client';
+	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
 	import type { Fact, EventItem, MarketVerdict } from '$lib/api/types';
 
 	interface Props {
@@ -197,6 +197,42 @@ function pilihSub(s: string) {
 	function temukanFakta(facts: Fact[], key: string): Fact | null {
 		return facts.find((f) => f.key === key) ?? null;
 	}
+
+	// Dompet uji $20 + arm D ($20 Polymarket) — diambil langsung dari API (kind
+	// paper20 dan poly_paper/arms) supaya panel ini tidak bergantung pada props
+	// snippet yang scoped ke cabang markup. Angka NYATA, bukan perkiraan.
+	let dompetUji = $state<Record<string, any> | null>(null);
+	let armDPoly = $state<Record<string, any> | null>(null);
+
+	// Muat dompet $20 sekali per mount + refresh tiap 5 menit (bukan 15s — data
+	// siklus hanya berubah tiap 15 menit). Gagal → null, panel menampilkan
+	// pesan jujur "menunggu siklus" (R-27), bukan angka karangan.
+	$effect(() => {
+		let hidup = true;
+		const ambil = async () => {
+			try {
+				const sys = await getAreaFakta('sistem');
+				const f = (sys.facts ?? []).find((x: any) => x.kind === 'paper20' && x.key === 'dompet');
+				if (hidup) dompetUji = f ? ((f.value as Record<string, any>) ?? null) : null;
+			} catch {
+				if (hidup) dompetUji = null;
+			}
+			try {
+				const pm = await getArea('polymarket');
+				const pp = (pm.facts ?? []).find((x: any) => x.key === 'poly_paper');
+				const arms = ((pp?.value as any)?.arms ?? []) as any[];
+				if (hidup) armDPoly = arms.find((a) => a.nama === 'D favorit') ?? null;
+			} catch {
+				if (hidup) armDPoly = null;
+			}
+		};
+		void ambil();
+		const t = setInterval(() => void ambil(), 300000);
+		return () => {
+			hidup = false;
+			clearInterval(t);
+		};
+	});
 
 	const rp = (n?: number | null) =>
 		n == null ? '—' : `Rp ${n.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
@@ -715,6 +751,37 @@ function pilihSub(s: string) {
 								<!-- Cockpit mesin & ruang risiko (tiru desk Crypto Tencent, 9 Okt): status pipeline,
 								     dimensi gerbang, sinyal aktif dari fakta crypto_sinyal + risiko. TANPA panel OKX. -->
 								<CockpitCrypto sinyal={cryptoSinyalObj} risiko={risikoObj} />
+								<!-- Dompet uji $20 (15 Okt): angka NYATA dompet baru — penggantian
+								     tampilan dompet generasi lama (Rp10jt) yang kini diarsipkan.
+								     Antislop R-27: kosong = "menunggu sinyal", bukan angka karangan. -->
+								{#if dompetUji}
+									<div class="rounded-card border border-line bg-surface p-3">
+										<div class="flex items-center justify-between border-b border-line-soft pb-2">
+											<h3 class="text-13 font-medium text-text">Dompet uji $20 · crypto</h3>
+											<span class="rounded bg-surface px-2 py-0.5 text-10 font-mono text-text-3 border border-line">
+												{dompetUji.updated ? waktuWIB(dompetUji.updated) : '—'}
+											</span>
+										</div>
+										<div class="mt-2 grid grid-cols-3 gap-2 text-12">
+											<div class="rounded border border-line bg-surface p-2">
+												<span class="block text-10 uppercase text-text-3">Equity</span>
+												<span class="angka text-15 font-bold">${dompetUji.equity_usd ?? '—'}</span>
+											</div>
+											<div class="rounded border border-line bg-surface p-2">
+												<span class="block text-10 uppercase text-text-3">Posisi</span>
+												<span class="angka text-15 font-bold">{dompetUji.n_posisi ?? 0}</span>
+											</div>
+											<div class="rounded border border-line bg-surface p-2">
+												<span class="block text-10 uppercase text-text-3">Verdict</span>
+												<span class="angka text-15 font-bold">{dompetUji.jumlah_verdict ?? 0}</span>
+											</div>
+										</div>
+									</div>
+								{:else}
+									<p class="rounded-card border border-line bg-surface p-3 text-11 text-text-3">
+										Dompet uji $20 menunggu siklus pertama (paper20_cycle tiap 15 menit).
+									</p>
+								{/if}
 								<!-- Susunan ini SUDAH BENAR menurut pemilik (7 Okt) — jangan diubah tanpa
 								     alasan baru: Dompet dulu, lalu kurva, lalu catatan cara membacanya. -->
 								<DompetPasar market="crypto" dompet={dompetObj} judul="Dompet Paper Crypto" ringkas />
@@ -1429,27 +1496,61 @@ function pilihSub(s: string) {
 				{/if}
 				{#if sub === 'setup-b'}
 					<div class="space-y-4">
-						<!-- Keputusan owner 7 Okt: fokus SETUP B KANDIDAT. Arm lain dibekukan (tab Arsip). -->
+						<!-- 15 Okt: arm D favorit jadi aturan dipakai (verdict EDGE, replay
+						     n=4133, EV +2,07%), bankroll reset $20. Arm B generasi lama
+						     diarsipkan di tab Arm Lain (Beku)/Riset — bukti tetap disimpan. -->
 						<div class="rounded-card border border-accent/30 bg-accent/5 p-3 space-y-1">
 							<div class="flex items-center gap-2">
-								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">YANG DIPAKAI: ARM B</span>
+								<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/40 text-accent bg-accent/10">YANG DIPAKAI: ARM D FAVORIT (BANKROLL $20)</span>
 								<span class="text-11 text-text-3">"Arm" = aturan beli yang diuji mesin; huruf A/B/C/D hanya penanda.</span>
 							</div>
 							<p class="text-11 text-text-2">
-								<b>Arm B (kandidat)</b> = beli outcome favorit yang harganya <b>0,70–0,95</b>.
-								Menang kecil (+0,05–0,30) tapi sering benar; kalah besar karena membayar mahal.
-								Arm A momentum · C fade · D favorit dibekukan → tab <b>Arm Lain (Beku)</b>.
+								<b>Arm D (favorit, blok awal 45–119s)</b> = beli outcome favorit harga <b>0,70–0,95</b>,
+								maxOpen 1, loss cap $15, fee receipt, redeem otomatis. Verdict formal:
+								<b>EDGE</b> (n=4.133 window, WR 78,25% vs BE 76,66%, EV +2,07%/stake, CI95 di atas BE).
 							</p>
-							<p class="text-10 text-text-3">
-								Dompet di bawah = Rp 10 juta × persentase PnL arm (modal asli arm 100 USD) — bukan setoran baru.
+							<p class="text-11 text-text-3">
+								Generasi lama (arm B, Rp10 juta, 289 trade, −32,23%) diarsipkan 15 Okt →
+								tab <b>Arm Lain (Beku)</b>; file state & log tersimpan di /root/warroom-archive.
 							</p>
 						</div>
-						<!-- Dompet paper Polymarket: arm B (keputusan owner 7 Okt) -->
-						<DompetPasar market="polymarket" dompet={dompetObj} judul="Dompet Paper Polymarket (arm B)" />
+						<!-- Dompet paper $20 (arm D) — angka NYATA dari shadow summary -->
+						<div class="rounded-card border border-accent/30 bg-accent/5 p-3">
+							<div class="flex items-center justify-between border-b border-line-soft pb-2">
+								<h3 class="text-13 font-medium text-text">Dompet Paper $20 · arm D favorit</h3>
+								<span class="rounded bg-surface px-2 py-0.5 text-10 font-mono text-text-3 border border-line">
+									{armDPoly?.updated ? waktuWIB(armDPoly.updated) : '—'}
+								</span>
+							</div>
+							{#if armDPoly}
+								<div class="mt-2 grid grid-cols-4 gap-2 text-12">
+									<div class="rounded border border-line bg-surface p-2">
+										<span class="block text-10 uppercase text-text-3">Saldo</span>
+										<span class="angka text-15 font-bold">${armDPoly.balance?.toFixed(2) ?? '—'}</span>
+									</div>
+									<div class="rounded border border-line bg-surface p-2">
+										<span class="block text-10 uppercase text-text-3">PnL</span>
+										<span class="angka text-15 font-bold {armDPoly.pnl > 0 ? 'text-pos' : armDPoly.pnl < 0 ? 'text-neg' : ''}">
+											${armDPoly.pnl?.toFixed(2) ?? '0.00'}
+										</span>
+									</div>
+									<div class="rounded border border-line bg-surface p-2">
+										<span class="block text-10 uppercase text-text-3">Entri</span>
+										<span class="angka text-15 font-bold">{armDPoly.entries ?? 0}</span>
+									</div>
+									<div class="rounded border border-line bg-surface p-2">
+										<span class="block text-10 uppercase text-text-3">W/L</span>
+										<span class="angka text-15 font-bold">{armDPoly.wins ?? 0}/{armDPoly.losses ?? 0}</span>
+									</div>
+								</div>
+							{:else}
+								<p class="mt-2 text-11 text-text-3">Arm D belum terbaca — tunggu sinkronisasi berikutnya.</p>
+							{/if}
+						</div>
 						<!-- Akurasi & PnL per arm (6 Okt): win-rate entri mesin paper, dihitung per arm -->
 						<AkurasiPasar
-							judul="Akurasi & PnL per Arm (Polymarket)"
-							subjudul="Entri menang/kalah mesin paper — fees sudah dibebankan; bukan R, belum lewat split beku"
+							judul="Akurasi & PnL per Arm (Polymarket — generasi lama, arsip 15 Okt)"
+							subjudul="Entri menang/kalah mesin paper lama — bukan dompet $20; tolok ukur generasi baru di kartu di atas"
 							data={akurasiPolyT}
 						/>
 						<StatisticalEdgeCard
