@@ -21,18 +21,12 @@ import time
 
 BIG_CAP = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]
 MID_CAP = ["SUIUSDT", "INJUSDT", "ARBUSDT", "OPUSDT", "FETUSDT", "DOGEUSDT"]
-# Expanded 8 Sep (request Dumbledore): +6 solid liquidity, +5 user picks
-# (FARTCOIN/PUMP/LIT = meme but liquid enough; ZEC very volatile — watch spread)
+# Pilihan likuiditas solid dan instrumen dengan volume memadai (pantau spread pada instrumen volatil)
 EXTRA = ["XRPUSDT", "HYPEUSDT", "LINKUSDT", "NEARUSDT", "LTCUSDT", "AVAXUSDT",
          "FARTCOINUSDT", "PUMPUSDT", "UNIUSDT", "LITUSDT", "ZECUSDT"]
-# Added 26 Sep (request Dumbledore): +4. Semua sudah diverifikasi ada di Binance
-# fapi DAN OKX swap (nama kontrak sama, tanpa alias) — ENA vol $731M,
-# ONDO $342M, TAO $264M, VIRTUAL $45M (paling tipis, awasi spread).
+# Pasangan kontrak Binance fapi dan OKX swap dengan likuiditas tinggi
 EXTRA2 = ["ENAUSDT", "VIRTUALUSDT", "ONDOUSDT", "TAOUSDT"]
-# Added 26 Sep (request Dumbledore): AAVE. Ada di Binance fapi ($162M/24j) DAN
-# OKX swap (AAVE-USDT-SWAP, contractSize 0.01 -> 1 lot = $1.54, pas di target
-# ~$1.5/trade). ATR1H ~1.0% = tepat di batas gate A5, jadi bisa ke-skip kalau
-# volatilitas turun.
+# Kontrak dengan lot size sesuai batas target risiko per transaksi
 EXTRA3 = ["AAVEUSDT"]
 WATCHLIST = BIG_CAP + MID_CAP + EXTRA + EXTRA2 + EXTRA3
 
@@ -41,9 +35,7 @@ WATCHLIST = BIG_CAP + MID_CAP + EXTRA + EXTRA2 + EXTRA3
 # Per pair budget: price(1)+24hr(1)+1d_kl(5)+4h_kl(5)+1h_kl(5)+premium(1)+oi(1) = 19
 # Total 10 pairs: 190 weight ≈ 3.5 min at 60/min. Acceptable for cron.
 
-# ============================================================
-# SHARED DATA STORE (global cache for entire run)
-# ============================================================
+# Cache global untuk satu siklus pemindaian
 _data = {
     "prices": {},       # symbol -> {"price": float, "chg24h": float, "vol24_quote": float, "index": float}
     "klines": {},       # f"{symbol}_{interval}" -> list of raw binance kline rows
@@ -109,10 +101,7 @@ def structure(highs, lows):
     return "ranging/mixed"
 
 
-# ============================================================
-# PHASE 0 FETCHERS — ORDER FLOW
-# Fetches ALL order-flow data for one pair, caches in _data
-# ============================================================
+# Fetcher data order flow per instrumen
 def fetch_orderflow(symbol):
     """Fetch all order-flow endpoints for one symbol. Results stored in _data."""
     # --- 24hr ticker ---
@@ -123,8 +112,7 @@ def fetch_orderflow(symbol):
         _data["of_hl"][symbol] = (
             float(hr.get("highPrice", 0)), float(hr.get("lowPrice", 0))
         )
-        # NOTE 8 Sep: /ticker/24hr does NOT return bidPrice/askPrice on
-        # fapi — spread must come from /ticker/bookTicker (below).
+        # Endpoint /ticker/24hr pada fapi tidak mengembalikan bid/ask; spread diambil dari bookTicker.
         bid = float(hr.get("bidPrice", 0) or 0)
         ask = float(hr.get("askPrice", 0) or 0)
         if bid > 0 and ask > 0 and (ask - bid) / bid < 0.1:
@@ -180,10 +168,7 @@ def fetch_orderflow(symbol):
         }
 
 
-# ============================================================
-# PHASE 1 FETCHERS — SMC STRUCTURE
-# Fetches klines for one pair, stores in _data["klines"]
-# ============================================================
+# Fetcher struktur kline SMC per instrumen
 def fetch_klines(symbol, interval="1h", limit=24):
     """Fetch klines for one symbol+interval. Stored in _data['klines'].
     Returns parsed dict {closes, highs, lows, volumes, last_ts_ms}.
@@ -225,9 +210,7 @@ def fresh_check(key, max_age_hours=2):
     return True
 
 
-# ============================================================
-# ANALYSIS HELPERS
-# ============================================================
+# Helper analisis order flow dan volatilitas
 def calc_buy_pressure(symbol):
     """Where is current price within 24h range? (higher = more bullish pressure)."""
     hl = _data["of_hl"].get(symbol)
@@ -305,9 +288,7 @@ def make_tf_label(struct, pos, zone, pd, bars):
     return f"{struct}, price {pos} EMA50, {zone} ({pd*100:.0f}% of {min(bars,30)}-bar range)"
 
 
-# ============================================================
-# ANALYZE — single-pair convenience for outlook collector
-# ============================================================
+# Analisis satu pasangan instrumen untuk pemindaian
 def analyze(symbol):
     """Fetch all data for one symbol and return a summary dict.
 
@@ -381,9 +362,7 @@ def analyze(symbol):
         return None
 
 
-# ============================================================
-# MAIN PIPELINE
-# ============================================================
+# Pipeline utama pengumpulan sinyal
 def main():
     lines = ["=== CRYPTO SIGNAL COLLECTOR DIGEST (BINANCE PERP) ==="]
     lines.append("Semua harga dari kontrak perp Binance (USDT), sesuai venue eksekusi user.")
@@ -410,10 +389,7 @@ def main():
         vd = calc_vol_delta(sym)
         funding = _data["fundings"].get(sym, 0.0)
         oi = _data["ois"].get(sym, 0.0)
-        # --- Global long/short account ratio (proxy long_pct) ---
-        # NOTE 2026-09-01: topLongShortAccountRatio is GLOBAL (all users), while
-        # topPositionLongShortRatio is TOP-TRADER positions. Position ratio reads
-        # as a price-scaled value (e.g. 1.8 => 64% long) — NOT a percentage.
+        # topLongShortAccountRatio mencerminkan rasio akun global (long/short), bukan persentase langsung.
         top_ratio = None
         ls = curl_retry(
             f"https://fapi.binance.com/futures/data/topLongShortAccountRatio?symbol={sym}&period=1h&limit=1"
