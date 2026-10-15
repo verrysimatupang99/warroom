@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
-from warroom_core.db import Event, Fact, Heartbeat, Job
+from warroom_core.db import Alert, Event, Fact, Heartbeat, Job
 from warroom_notifier.dispatch import kirim_tertunda
 
 from .base import (
@@ -266,6 +266,17 @@ def handler_source_health(s: SASession, job: Job) -> str:
                     "periksa /root/warroom-archive sebelum menambah data"
                 ),
             )
+        elif pakai_pct < 78:
+            # Pemulihan: kondisi pulih → alert disk yang masih terbuka diselesaikan
+            # otomatis (rekomendasi #6 "selesai otomatis begitu pulih"), bukan
+            # menunggu ack manual selamanya.
+            pulih = s.scalar(
+                select(Alert.id).where(Alert.subject == "ops/disk-80").where(Alert.ack_at.is_(None)).limit(1)
+            )
+            if pulih is not None:
+                row = s.get(Alert, pulih)
+                row.ack_at = now
+                row.message = (row.message or "") + " | PULIH otomatis: pemakaian kembali < 78%"
         status_ringkas["disk_pct"] = str(pakai_pct)
 
     s.flush()
