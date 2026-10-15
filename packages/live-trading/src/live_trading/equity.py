@@ -81,7 +81,12 @@ def add_trade(
 
 
 def _now_wib() -> str:
-    return (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).isoformat(timespec="seconds")
+    """Waktu sekarang WIB dengan offset +07:00 yang jujur (lihat paper.py).
+
+    Sebelumnya menulis jam WIB berlabel `+00:00`: pembaca yang mengonversi
+    zona waktu benar menampilkan +7 jam dari yang seharusnya (temuan QA 15 Okt).
+    """
+    return dt.datetime.now(dt.timezone(dt.timedelta(hours=7))).isoformat(timespec="seconds")
 
 
 def curve(settings: Settings, venue: str = "crypto") -> dict[str, Any]:
