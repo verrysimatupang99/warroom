@@ -363,6 +363,16 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     gate = RiskGate(stg, venue="crypto")
     curr_pos = b_crypto.positions()
 
+    # Batas harian per strategi (owner 16 Okt): melebihi trade/fee → 'benched' hari itu.
+    from live_trading.bench import BatasStrategi, BenchHarian
+
+    bench = BenchHarian(
+        stg.state_dir / "bench_harian.json",
+        batas=BatasStrategi(
+            maks_trade=stg.bench_max_trade_harian, maks_fee_usd=stg.bench_max_fee_harian_usd
+        ),
+    )
+
     if len(curr_pos) >= stg.max_concurrent_positions:
         return f"slot posisi crypto penuh ({len(curr_pos)}/{stg.max_concurrent_positions})"
 
@@ -424,6 +434,12 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
         if r.get("allowed") and len(b_crypto.positions()) < stg.max_concurrent_positions:
             pair = r["pair"]
             direction = r["direction"].upper()
+            # Batas harian per strategi: melebihi trade/fee → 'benched', dilewati hari itu.
+            nama_strategi = str(r.get("strategy") or "paper-crypto")
+            boleh_bench, alasan_bench = bench.boleh_entry(nama_strategi)
+            if not boleh_bench:
+                dilewati.append(f"{pair} {alasan_bench}")
+                continue
             blokir = blokir_korelasi_rezim(
                 direction, arah_terbuka, rezim, stg.maks_posisi_searah, stg.btc_regime_filter,
             )
@@ -515,6 +531,9 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     payload_json=pos.to_dict(), severity="info",
                 ))
                 dibuka.append(f"{pos.signal_id} {pos.pair} {pos.direction}")
+                # Catat trade + fee ke batas harian strategi (bisa membuatnya 'benched').
+                fee_usd = float(kep.size_usd or 0.0) * float(kep.cost_bps or 0.0) / 10_000.0
+                bench.catat(nama_strategi, fee_usd=fee_usd)
 
     if dibuka:
         kirim_tertunda(s, limit=5)
