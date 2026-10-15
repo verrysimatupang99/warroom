@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal siklus dompet paper $20 (crypto) tiap 15 menit
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+Unit=paper20-cycle.service
+
+[Install]
+WantedBy=timers.target
