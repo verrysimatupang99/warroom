@@ -363,6 +363,16 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     gate = RiskGate(stg, venue="crypto")
     curr_pos = b_crypto.positions()
 
+    # Batas harian per strategi (owner 16 Okt): melebihi trade/fee → 'benched' hari itu.
+    from live_trading.bench import BatasStrategi, BenchHarian
+
+    bench = BenchHarian(
+        stg.state_dir / "bench_harian.json",
+        batas=BatasStrategi(
+            maks_trade=stg.bench_max_trade_harian, maks_fee_usd=stg.bench_max_fee_harian_usd
+        ),
+    )
+
     if len(curr_pos) >= stg.max_concurrent_positions:
         return f"slot posisi crypto penuh ({len(curr_pos)}/{stg.max_concurrent_positions})"
 
@@ -424,6 +434,12 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
         if r.get("allowed") and len(b_crypto.positions()) < stg.max_concurrent_positions:
             pair = r["pair"]
             direction = r["direction"].upper()
+            # Batas harian per strategi: melebihi trade/fee → 'benched', dilewati hari itu.
+            nama_strategi = str(r.get("strategy") or "paper-crypto")
+            boleh_bench, alasan_bench = bench.boleh_entry(nama_strategi)
+            if not boleh_bench:
+                dilewati.append(f"{pair} {alasan_bench}")
+                continue
             blokir = blokir_korelasi_rezim(
                 direction, arah_terbuka, rezim, stg.maks_posisi_searah, stg.btc_regime_filter,
             )
@@ -448,24 +464,13 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                 pair=pair, price=entry, atr=atr, equity_usd=stg.equity_usd, fee_buffer_pct=0.0013
             )
             if dec.allowed:
-                # Biaya TERUKUR dari buku nyata (P2) — bukan asumsi 0,1%. Sisi masuk = sisi
-                # yang kita cross: LONG membeli di ask, SHORT menjual di bid; keluar di sisi
-                # sebaliknya. Bila buku tak terbaca, biaya ditandai asumsi (bukan angka palsu).
-                biaya: dict[str, Any] = {"asumsi": True, "total_bps": None, "sumber": "tak-diukur"}
-                try:
-                    from live_trading.collectors.depth import DepthCollector
-                    from live_trading.execution import costs
+                # Biaya SERAGAM 0,1%/sisi (fee+slippage) — kebijakan owner 16 Okt 2026
+                # supaya perbandingan antar-strategi paper ADIL. Buku order tidak lagi
+                # diukur per pair: pair tipis tidak boleh "bayar" lebih mahal hanya karena
+                # likuidasnya. `asumsi=True` tetap jujur — ini kebijakan datar, bukan terukur.
+                from live_trading.execution import costs
 
-                    rep = DepthCollector(stg).report(pair, limit=100, max_bps=costs.MAKS_BPS)
-                    sisi_masuk = "ask" if direction.upper() == "LONG" else "bid"
-                    sisi_keluar = "bid" if direction.upper() == "LONG" else "ask"
-                    biaya = costs.biaya_dari_depth(
-                        rep, sisi_masuk=sisi_masuk, size_usd=float(dec.size_usd or 0.0),
-                        sisi_keluar=sisi_keluar,
-                    )
-                except Exception as exc:  # noqa: BLE001 — biaya gagal diukur jangan blokir order
-                    biaya = {"asumsi": True, "total_bps": None, "sumber": "error",
-                             "alasan": f"{type(exc).__name__}: {exc}"}
+                biaya: dict[str, Any] = costs.biaya_seragam()
 
                 # Jalur keputusan TUNGGAL (paper & live). Ukuran/SL/TP dari sini, bukan
                 # dihitung ulang di eksekutor — itu yang membuat paper benar-benar 1:1.
@@ -506,7 +511,7 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                 s.add(Event(type="cost.measured", actor="paper_scan",
                             payload_json={"pair": pair, "direction": direction,
                                           "size_usd": dec.size_usd, **biaya},
-                            severity="info" if not biaya.get("asumsi") else "warning"))
+                            severity="info"))
                 subjek = f"trade/{pos.signal_id}"
                 pesan = (
                     f"🟢 [PAPER TRADE DIBUKA - CRYPTO]\n"
@@ -514,7 +519,7 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     f"Entry: ${pos.entry} | SL: ${pos.stop} | TP1: ${pos.tp1} | TP2: ${pos.tp2}\n"
                     f"Ukuran: ${pos.size_usd} | Risiko: ${dec.risk_usd} (1.0% equity)\n"
                     f"Biaya: {biaya.get('total_bps') or '?'} bps "
-                    f"({'asumsi fee saja' if biaya.get('asumsi') else 'terukur dari buku'})\n"
+                    f"(seragam 0,1%/sisi, fee+slippage)\n"
                     f"Signal ID: {pos.signal_id}"
                 )
                 _alert(
@@ -526,6 +531,9 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     payload_json=pos.to_dict(), severity="info",
                 ))
                 dibuka.append(f"{pos.signal_id} {pos.pair} {pos.direction}")
+                # Catat trade + fee ke batas harian strategi (bisa membuatnya 'benched').
+                fee_usd = float(kep.size_usd or 0.0) * float(kep.cost_bps or 0.0) / 10_000.0
+                bench.catat(nama_strategi, fee_usd=fee_usd)
 
     if dibuka:
         kirim_tertunda(s, limit=5)

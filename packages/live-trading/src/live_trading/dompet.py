@@ -30,6 +30,7 @@ __all__ = [
     "kurs_usd_idr",
     "summarize_wallet",
     "summarize_all_wallets",
+    "cek_rekonsiliasi_saldo",
 ]
 
 WALLET_IDR = 10_000_000.0
@@ -208,6 +209,80 @@ def _nama_ledger(market: str) -> str:
         "gmgn": "gmgn_equity.jsonl",
         "polymarket": "polymarket_equity.jsonl",
     }.get(market, f"{market}_equity.jsonl")
+
+
+def cek_rekonsiliasi_saldo(
+    state_dir: Path,
+    *,
+    market: str = "crypto",
+    kurs: float | None = None,
+    risk_pct: float = _DEFAULT_RISK_PCT,
+    saldo_awal_idr: float = WALLET_IDR,
+) -> dict[str, Any]:
+    """Verifikasi identitas saldo = modal + realized − fee untuk satu ledger market.
+
+    ``summarize_wallet`` menghitung saldo GROSS (modal + realized dari R; fee historis
+    belum tercatat sehingga belum dipotong). Cek ini memotong fee yang ADA per baris
+    (``fee_usd``, ditutup sejak 16 Okt) dan — yang paling penting — MELAPORKAN baris yang
+    belum mencatat fee, tanpa menganggapnya nol. Rekonsiliasi hanya "lengkap" bila semua
+    baris trade punya fee tercatat.
+
+    Cross-check: realized dihitung ulang langsung dari Σ R × risiko (flat, tanpa
+    compounding) dan dibandingkan dengan realized implisit summarize; selisih di luar
+    toleransi = ada drift (mis. compounding menyusup) → ``konsisten=False``.
+    """
+    if kurs is None:
+        kurs, _ = kurs_usd_idr(state_dir)
+    dasar = summarize_wallet(
+        state_dir, market=market, kurs=kurs, risk_pct=risk_pct,
+        saldo_awal_idr=saldo_awal_idr, sumber="cek-rekonsiliasi",
+    )
+    if not dasar.get("tersedia"):
+        return {
+            "market": market, "tersedia": False, "lengkap": False, "konsisten": False,
+            "alasan": dasar.get("alasan"),
+        }
+
+    baris = [b for b in _ledger(state_dir / _nama_ledger(market)) if b.get("r") is not None]
+    dengan_fee = [b for b in baris if b.get("fee_usd") is not None]
+    tanpa_fee = len(baris) - len(dengan_fee)
+    fee_usd = round(sum(float(b.get("fee_usd") or 0.0) for b in dengan_fee), 6)
+
+    modal = float(dasar["saldo_awal_unit"])
+    saldo_gross = float(dasar["saldo_akhir_usd"])
+    realized = round(saldo_gross - modal, 6)
+
+    risiko_usd = modal * (risk_pct / 100.0)
+    realized_ulang = round(sum(float(b["r"]) for b in baris) * risiko_usd, 6)
+    # summarize membulatkan saldo ke sen (2 desimal); noise realisasi ±$0,01. Toleransi
+    # 1 sen menangkap drift nyata (compounding/kesalahan skema) tanpa false-alarm pembulatan.
+    konsisten = abs(realized_ulang - realized) < 0.01
+
+    saldo_net = round(saldo_gross - fee_usd, 6)
+    return {
+        "market": market,
+        "tersedia": True,
+        "modal_usd": round(modal, 6),
+        "realized_usd": realized,
+        "fee_usd": fee_usd,
+        "saldo_gross_usd": round(saldo_gross, 6),
+        "saldo_net_usd": saldo_net,
+        "identitas": "saldo_net = modal + realized − fee",
+        "baris_trade": len(baris),
+        "baris_dengan_fee": len(dengan_fee),
+        "baris_tanpa_fee": tanpa_fee,
+        "lengkap": tanpa_fee == 0,
+        "konsisten": konsisten,
+        "catatan": (
+            ["Rekonsiliasi PENUH: semua baris trade punya fee_usd tercatat."]
+            if tanpa_fee == 0
+            else [
+                f"{tanpa_fee} dari {len(baris)} baris trade belum mencatat fee_usd "
+                "(fee sebelum 16 Okt tidak disimpan) — saldo_net hanya memotong fee yang "
+                "ADA, bukan menganggapnya nol. Rekonsiliasi belum penuh."
+            ]
+        ),
+    }
 
 
 def _dompet_forex(state_dir: Path, kurs: float | None) -> dict[str, Any]:

@@ -23,6 +23,9 @@ from ..collectors.depth import notional_at_bps
 
 __all__ = [
     "FEE_TAKER_BPS_PER_SISI",
+    "BIAYA_SISI_BPS",
+    "BIAYA_ROUND_TRIP_BPS",
+    "biaya_seragam",
     "biaya_dari_depth",
     "biaya_asumsi",
     "be_stop_dari_bps",
@@ -37,6 +40,35 @@ FEE_TAKER_BPS_PER_SISI = 5.0
 # Batas slippage yang dicari di buku (bps dari mid). Di atas ini kita anggap "lebih dalam
 # dari yang sanggup diukur", dan itu dicatat apa adanya.
 MAKS_BPS = 50.0
+
+# --- Biaya SERAGAM untuk semua strategi paper (owner, 16 Okt 2026) -------------------
+# War Room membandingkan strategi secara ADIL; biaya yang diukur dari buku membuat satu
+# strategi "bayar lebih mahal" hanya karena pair-nya tipis, bukan karena strateginya buruk.
+# Karena itu semua trade paper BARU memakai 0,1% per sisi (fee + slippage digabung), datar.
+# Ini KEBIJAKAN, bukan terukur — `biaya_seragam()` menandainya `asumsi=True` agar jujur.
+BIAYA_SISI_BPS = 10.0                    # 0,1% per sisi
+BIAYA_ROUND_TRIP_BPS = BIAYA_SISI_BPS * 2  # 0,2% bolak-balik (masuk + keluar)
+
+
+def biaya_seragam() -> dict[str, Any]:
+    """Biaya paper datar 0,1%/sisi (fee+slippage) — seragam antar-strategi.
+
+    ``asumsi=True``: ini kebijakan datar, BUKAN pengukuran buku. Slippage dikosongkan
+    (None), bukan diisi angka yang menyiratkan terukur — supaya panel bisa membedakan
+    "diseragamkan" dari "terukur dari buku".
+    """
+    return {
+        "sumber": "seragam",
+        "mid": None,
+        "fee_bps": BIAYA_ROUND_TRIP_BPS,
+        "slippage_bps_masuk": None,
+        "slippage_bps_keluar": None,
+        "total_bps": BIAYA_ROUND_TRIP_BPS,
+        "total_pct": round(BIAYA_ROUND_TRIP_BPS / 10000.0, 8),
+        "size_usd": None,
+        "asumsi": True,
+        "alasan": "kebijakan biaya seragam 0,1%/sisi (fee+slippage) untuk semua strategi paper",
+    }
 
 
 def biaya_dari_depth(

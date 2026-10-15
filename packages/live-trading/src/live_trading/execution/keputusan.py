@@ -94,11 +94,14 @@ def decide_entry(kandidat: dict[str, Any], konteks: Konteks) -> Keputusan:
 
     # Ukuran & SL dari gerbang risiko — TIDAK dihitung ulang di eksekutor.
     from live_trading.config import get_settings
+    from live_trading.execution.costs import BIAYA_ROUND_TRIP_BPS
     from live_trading.risk import RiskGate
 
     atr = float(kandidat.get("atr") or abs(entry - sl) / max(konteks.stop_mult, 0.1))
     gate = RiskGate(get_settings(), venue="crypto")
-    fee_pct = (konteks.fee_bps / 10000.0) if konteks.fee_bps is not None else 0.0013
+    # Tanpa biaya terukur, jatuh ke kebijakan SERAGAM 0,1%/sisi (bolak-balik 0,2%) —
+    # bukan angka 0,13% tersembunyi yang membuat sizing tidak sebanding antar-strategi.
+    fee_pct = (konteks.fee_bps / 10000.0) if konteks.fee_bps is not None else BIAYA_ROUND_TRIP_BPS / 10000.0
     dec = gate.check(pair=pair, price=entry, atr=atr, equity_usd=konteks.equity_usd,
                      stop_mult=konteks.stop_mult, fee_buffer_pct=fee_pct)
     jejak.append(f"gerbang risiko: {'lolos' if dec.allowed else 'tolak'} ({dec.reason})")

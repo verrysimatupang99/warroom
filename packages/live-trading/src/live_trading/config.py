@@ -64,6 +64,13 @@ class Settings(BaseSettings):
     maks_posisi_searah: int = 2
     btc_regime_filter: bool = True
 
+    # --- Batas harian per strategi (status 'benched', 16 Okt 2026) -------------
+    # Kebijakan owner: batasi jumlah trade dan total fee per strategi tiap hari supaya
+    # satu strategi kebablasan tidak menghabiskan dompet. Melebihi → 'benched' sampai
+    # hari berikutnya. Angka = titik mulai; owner bisa lewat env LT_BENCH_*.
+    bench_max_trade_harian: int = 5
+    bench_max_fee_harian_usd: float = 2.0
+
     # --- Strategi A: SMA harian (spec agent-2 §3, disetujui owner 16 Okt) -----
     # Semua angka = hipotesis awal; wajib lulus backtest 4 tahun + OOS (sudah,
     # lihat docs/blueprint/strategi-harian-backtest-20261016.md).
