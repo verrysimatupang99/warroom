@@ -128,3 +128,31 @@ def test_short_tp2_ditutup_di_harga_tp(tmp_path: Path) -> None:
 
     assert closed[0]["status"] == "closed_TP2"
     assert closed[0]["r"] == pytest.approx(2.0)
+
+
+def test_closed_at_wib_berlabel_jujur(tmp_path: Path) -> None:
+    """Temuan QA 15 Okt 2026: `closed_at` dulu jam WIB berlabel +00:00.
+
+    Akibatnya satu trade tampil beda 7 jam antar panel (feed pakai created_at
+    DB yang benar; /riset percaya label dan menambah 7 jam lagi). Sekarang
+    offset harus +07:00 dan jamnya cocok dengan waktu WIB nyata.
+    """
+    import datetime as dt
+
+    b = _broker(tmp_path)
+    pos = b.open_position(
+        pair="BTCUSDT", direction="LONG", entry=100.0, stop=95.0, tp1=105.0, tp2=110.0, size_usd=100.0
+    )
+    rec = b.close_position(pos.signal_id, 110.0, "closed_TP2")
+
+    parsed = dt.datetime.fromisoformat(rec["closed_at"])
+    assert parsed.utcoffset() == dt.timedelta(hours=7), "closed_at harus ber-offset +07:00 (WIB)"
+    wib_now = dt.datetime.now(dt.timezone(dt.timedelta(hours=7)))
+    assert abs((parsed - wib_now).total_seconds()) < 60, "jam harus waktu WIB saat ini"
+
+    # posisi terbuka juga jujur
+    pos2 = b.open_position(
+        pair="ETHUSDT", direction="SHORT", entry=100.0, stop=105.0, tp1=95.0, tp2=90.0, size_usd=50.0
+    )
+    opened = dt.datetime.fromisoformat(pos2.opened_at)
+    assert opened.utcoffset() == dt.timedelta(hours=7)

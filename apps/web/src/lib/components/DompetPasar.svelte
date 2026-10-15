@@ -104,6 +104,20 @@
 	const dolar = (v: number | null | undefined) =>
 		v === null || v === undefined ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(2)} USD`;
 
+	/** Saldo (bukan delta/PnL) — TANPA tanda `+`.
+	 *
+	 * Temuan QA 15 Okt 2026: baris saldo USD memakai `dolar()` sehingga tampil
+	 * "+378.16 USD" tepat di bawah "SALDO KINI" dan di atas baris "PnL" —
+	 * pembaca (dan QA) membacanya sebagai PnL positif, padahal itu saldo.
+	 * Tanda `+` hanya boleh untuk perubahan (PnL), bukan level (saldo). */
+	const dolarSaldo = (v: number | null | undefined) =>
+		v === null || v === undefined
+			? '—'
+			: `${v < 0 ? '−' : ''}${Math.abs(v).toLocaleString('id-ID', {
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2
+				})} USD`;
+
 	// Kurva mini: posisi (x,y) dari saldo berjalan — SVG, tanpa pustaka.
 	const lebar = 260;
 	const tinggi = 60;
@@ -172,7 +186,7 @@
 					{/if}
 				</div>
 				{#if d.mata_uang !== 'IDR' && d.saldo_akhir_usd != null}
-					<div class="text-10 text-text-3 font-mono">{dolar(d.saldo_akhir_usd)} @ {Math.round(d.kurs_usd_idr ?? 0).toLocaleString('id-ID')}</div>
+					<div class="text-10 text-text-3 font-mono">{dolarSaldo(d.saldo_akhir_usd)} @ {Math.round(d.kurs_usd_idr ?? 0).toLocaleString('id-ID')}</div>
 				{/if}
 			</div>
 			<div class="rounded bg-surface p-2.5 border border-line">

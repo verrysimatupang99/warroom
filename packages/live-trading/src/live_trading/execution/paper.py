@@ -22,7 +22,15 @@ from ..config import Settings
 
 
 def _now_wib() -> str:
-    return (dt.datetime.now(dt.UTC) + dt.timedelta(hours=7)).isoformat(timespec="seconds")
+    """Waktu sekarang dalam WIB dengan offset +07:00 yang JUJUR.
+
+    Sejarah (temuan QA 15 Okt 2026): fungsi ini dulu menulis jam WIB
+    (+7) tetapi dengan offset `+00:00` — string itu berbohong soal zona.
+    Akibatnya panel yang mengonversi benar (mis. /riset, Aliran Keputusan)
+    menampilkan jam +7 dari yang seharusnya, sementara feed yang memakai
+    `created_at` DB menampilkan jam benar — satu trade tampil beda 7 jam.
+    """
+    return dt.datetime.now(dt.timezone(dt.timedelta(hours=7))).isoformat(timespec="seconds")
 
 
 def new_signal_id() -> str:
