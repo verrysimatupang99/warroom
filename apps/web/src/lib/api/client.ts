@@ -25,7 +25,8 @@ import type {
 	ResearchRunDetail,
 	ResearchRunsPayload,
 	ProposalsPayload,
-	SignalPayload
+	SignalPayload,
+	LeaderboardPayload
 } from './types';
 
 export class ApiError extends Error {
@@ -213,3 +214,6 @@ export async function getLiveArming(): Promise<LiveArming | null> {
 		return null;
 	}
 }
+
+/** Leaderboard performa strategi kuantitatif lintas instrumen. */
+export const getLeaderboard = () => minta<LeaderboardPayload>('/api/v1/leaderboard');

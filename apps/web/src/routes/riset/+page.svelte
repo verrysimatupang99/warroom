@@ -9,8 +9,8 @@
 	// bukan 0. Kalkulator menandai asumsinya terang-terangan (fee, leverage).
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getArea, getPasarRingkas, getResearchRuns } from '$lib/api/client';
-	import type { AreaPayload, Fact, MarketSummaryPayload, ResearchRunSummary } from '$lib/api/types';
+	import { getArea, getPasarRingkas, getResearchRuns, getLeaderboard } from '$lib/api/client';
+	import type { AreaPayload, Fact, MarketSummaryPayload, ResearchRunSummary, LeaderboardPayload } from '$lib/api/types';
 	import { AREAS } from '$lib/nav';
 	import { umurDetik, angka, waktuWIB } from '$lib/format';
 	import SubNav from '$lib/components/SubNav.svelte';
@@ -19,6 +19,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import DompetLintasMarket from '$lib/components/DompetLintasMarket.svelte';
 	import KinerjaBukti from '$lib/components/KinerjaBukti.svelte';
+	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
@@ -31,6 +32,26 @@
 	}
 	$effect(() => {
 		void muatBukti();
+	});
+
+	let leaderboardPayload = $state<LeaderboardPayload | null>(null);
+	let leaderboardGalat = $state<string | null>(null);
+	let leaderboardMemuat = $state(false);
+	async function muatLeaderboard() {
+		leaderboardMemuat = true;
+		try {
+			leaderboardPayload = await getLeaderboard();
+			leaderboardGalat = null;
+		} catch (e) {
+			leaderboardGalat = e instanceof Error ? e.message : String(e);
+		} finally {
+			leaderboardMemuat = false;
+		}
+	}
+	$effect(() => {
+		if (sub === 'leaderboard' && !leaderboardPayload && !leaderboardMemuat) {
+			void muatLeaderboard();
+		}
 	});
 	const sub = $derived.by(() => {
 		const s = page.url.searchParams.get('sub');
@@ -231,6 +252,14 @@ function pilihSub(s: string) {
 		<!-- Tujuh jawaban berdampingan untuk semua pasar: trade tuntas, WR, total R, PnL,
 		     drawdown, biaya, periode + denominator. -->
 		<KinerjaBukti akurasi={pasarRingkas} risetRuns={risetRuns} />
+	{:else if sub === 'leaderboard'}
+		<!-- ============ LEADERBOARD ANTAR-STRATEGI ============ -->
+		<StrategyLeaderboard
+			payload={leaderboardPayload}
+			memuat={leaderboardMemuat}
+			galat={leaderboardGalat}
+			onulang={muatLeaderboard}
+		/>
 	{:else if sub === 'kalender'}
 		<!-- ============ KALENDER (padanan /calendar algentis) ============ -->
 		<section class="kartu" aria-label="Agenda makro">

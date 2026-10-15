@@ -433,3 +433,68 @@ export interface MarketVerdict {
 	promotable_edge: boolean;
 	detail: Record<string, unknown>;
 }
+
+/** Status daur hidup setup kuantitatif. */
+export type SetupLifecycleStatus = 'WAITING' | 'IN_AREA' | 'RUNNING' | 'TP' | 'SL' | 'EXPIRED' | 'CANCELLED';
+
+export interface SetupStatusInfo {
+	setup_id?: string;
+	pair?: string;
+	status: SetupLifecycleStatus;
+	arah?: 'LONG' | 'SHORT' | 'BUY' | 'SELL';
+	entry?: number | null;
+	tp?: number | null;
+	sl?: number | null;
+	dibuat_pada?: string | null;
+	detail?: string;
+}
+
+/** Status rekonsiliasi saldo vs modal + realized - fee. */
+export type RekonsiliasiStatus = 'SEIMBANG' | 'SELISIH' | 'BELUM_DIVERIFIKASI';
+
+export interface RekonsiliasiInfo {
+	status: RekonsiliasiStatus;
+	saldo: number | null;
+	modal_awal: number | null;
+	realized_pnl: number | null;
+	total_fee: number | null;
+	selisih: number | null;
+	catatan?: string | null;
+}
+
+export interface LeaderboardStrategy {
+	rank: number;
+	id: string;
+	nama: string;
+	venue: string;
+	pasar: 'crypto' | 'polymarket' | 'idx' | 'forex' | 'gmgn';
+	tipe: 'PAPER' | 'LIVE' | 'SIGNAL-ONLY' | 'RESEARCH';
+	ekuitas: number | null;
+	modal_awal?: number | null;
+	winrate_pct: number | null;
+	total_r: number | null;
+	expectancy_r: number | null;
+	n_samples: number;
+	max_dd_pct?: number | null;
+	max_dd_r?: number | null;
+	total_fee: number | null;
+	status_operasional: 'AKTIF' | 'BENCHED' | 'HALTED';
+	alasan_status?: string | null;
+	setup_status?: SetupLifecycleStatus | null;
+	setup_terakhir?: SetupStatusInfo | null;
+	rekonsiliasi: RekonsiliasiInfo;
+	friksi_est_pct?: number | null;
+	diperbarui_pada?: string | null;
+}
+
+export interface LeaderboardPayload {
+	diperbarui_pada: string;
+	total_strategi: number;
+	strategi: LeaderboardStrategy[];
+	catatan?: string | null;
+	rekonsiliasi_global?: {
+		seimbang: boolean;
+		total_selisih: number;
+		diperiksa_pada?: string;
+	};
+}

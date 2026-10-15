@@ -145,6 +145,7 @@ export const AREAS: Area[] = [
 			// Halaman Kinerja & Bukti (audit QA putaran 3): tujuh jawaban berdampingan untuk
 			// SEMUA pasar — trade tuntas, WR, total R, PnL, drawdown, biaya, periode + denominator.
 			{ slug: 'bukti', label: 'Bukti', kunci: [], catatan: 'Semua pasar berdampingan: trade tuntas, biaya, periode, denominator' },
+			{ slug: 'leaderboard', label: 'Leaderboard', kunci: ['equity', 'ledger'], catatan: 'Papan peringkat strategi kuantitatif, status setup & rekonsiliasi' },
 			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda makro: CPI, NFP, FOMC' },
 			{ slug: 'alat', label: 'Alat', kunci: [], catatan: 'Position size, likuidasi, risk/reward' }
 		]
