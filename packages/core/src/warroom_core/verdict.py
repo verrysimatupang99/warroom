@@ -45,7 +45,15 @@ from sqlalchemy.orm import Session as SASession
 
 from warroom_core.market_signal import PASAR, best_signal_per_market
 
-__all__ = ["Verdict", "all_market_verdicts", "market_verdict"]
+__all__ = [
+    "Verdict",
+    "all_market_verdicts",
+    "market_verdict",
+    # Aturan yang dipakai pembaca lain (leaderboard) — satu definisi, jangan hitung ulang.
+    "karantina_setup",
+    "execution_state",
+    "biaya_pasar",
+]
 
 # Tingkat pakem → urutan. Dipakai memutuskan apakah bukti sudah cukup untuk promosi.
 _TINGKAT_URUT = {"INSUFFICIENT": 0, "DIRECTIONAL": 1, "PRELIMINARY": 2, "TUNING": 3}
@@ -398,3 +406,10 @@ def all_market_verdicts(
         s, split_terverifikasi=split_terverifikasi)]
     keluar.sort(key=lambda v: urutan.get(v.pasar, 99))
     return keluar
+
+
+# Alias publik untuk modul pembaca (leaderboard): aturan karantina, status eksekusi,
+# dan biaya tinggal SATU definisi di sini — tidak dihitung ulang di tempat lain.
+karantina_setup = _karantina_setup
+execution_state = _execution_state
+biaya_pasar = _biaya_pasar

@@ -18,7 +18,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Fact
 
-__all__ = ["AREA_KEYS", "areas_summary", "facts_for_area", "latest_facts"]
+__all__ = ["AREA_KEYS", "areas_summary", "facts_for_area", "latest_facts", "split_poly_terverifikasi"]
 
 SOURCE_STATES = {"fresh", "stale", "degraded", "unknown"}
 
@@ -149,6 +149,35 @@ def latest_facts(s: SASession, kind: str = "snapshot") -> dict[str, Fact]:
         .where(Fact.kind == kind)
     ).all()
     return {f.key: f for f in rows}
+
+
+def split_poly_terverifikasi(s: SASession) -> bool:
+    """Hasil verifikasi hash split pada fakta `poly.verdict` (True = lolos hash).
+
+    Lapisan API yang punya sesi DB menghitung ini via `splits.verifikasi` (id
+    terdaftar DAN sha256 berkas cocok) lalu meneruskannya ke modul murni
+    (`sinyal`/`verdict`) sebagai parameter — modul murni itu tidak
+    query splits sendiri. Gagal baca / tidak ada split / tidak cocok → False
+    (fail-closed).
+    """
+    from warroom_core import splits as _splits
+
+    try:
+        row = s.scalars(
+            select(Fact)
+            .where(Fact.kind == "poly.verdict", Fact.key == "verdict")
+            .order_by(Fact.observed_at.desc())
+            .limit(1)
+        ).first()
+        nilai = row.value_json if row is not None else None
+        split = nilai.get("split") if isinstance(nilai, dict) else None
+        if not split:
+            return False
+        if _splits.split_untuk_gate(s, str(split)) is None:
+            return False
+        return bool(_splits.verifikasi(s, str(split)).get("cocok"))
+    except Exception:  # noqa: BLE001 — fail-closed: ragu = tidak terverifikasi
+        return False
 
 
 def facts_for_area(

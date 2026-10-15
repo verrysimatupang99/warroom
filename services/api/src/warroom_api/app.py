@@ -23,6 +23,7 @@ from warroom_api.routers import auth as auth_router
 from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
+from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
 from warroom_api.routers import llm as llm_router
 from warroom_api.routers import observability as observability_router
@@ -85,6 +86,9 @@ def create_app() -> FastAPI:
 
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
+
+    # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---
+    app.include_router(leaderboard_router.router)
 
     # --- split beku & riset (ADR-003) ---
     app.include_router(datasets_router.router)
