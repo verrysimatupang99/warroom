@@ -2,4 +2,4 @@
 
 from __future__ import annotations
 
-from . import gates, golden_pullback, smc  # noqa: F401  (re-export untuk pemakaian ringkas)
+from . import gates, golden_pullback, heat, lifecycle, smc  # noqa: F401  (re-export untuk pemakaian ringkas)
