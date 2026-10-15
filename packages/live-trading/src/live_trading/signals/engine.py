@@ -9,14 +9,15 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-from dataclasses import dataclass, field
+from collections.abc import Mapping
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import httpx
 
 from ..collectors import make_client
 from ..config import Settings
-from . import gates, golden_pullback, smc
+from . import gates, golden_pullback, heat, smc
 
 TIMEFRAMES = {"1h": 200, "4h": 200, "1d": 120}
 
@@ -293,6 +294,8 @@ def _record_verdict(
     harga_keputusan: float | None = None,
     atr_pct: float | None = None,
     agents: dict[str, Any] | None = None,
+    heat_hasil: dict[str, Any] | None = None,
+    filter_funding_oi: dict[str, Any] | None = None,
 ) -> None:
     """Simpan verdict ke `state/verdicts.jsonl`.
 
@@ -334,6 +337,13 @@ def _record_verdict(
                 {"rule": v.rule, "ok": v.ok, "hard": v.hard, "reason": v.reason} for v in assessment.verdicts
             ],
         }
+        # konteks pasar per strategi: heat + filter funding/OI. Ditulis hanya saat jalur
+        # evaluasi menyertakannya — `ok: null` di dalam berarti n/a (bukan lolos),
+        # sehingga "filter jalan atau tidak" bisa diaudit dari baris.
+        if heat_hasil is not None:
+            row["heat"] = heat_hasil
+        if filter_funding_oi is not None:
+            row["filter_funding_oi"] = filter_funding_oi
         with path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     except Exception:  # noqa: BLE001
@@ -630,6 +640,50 @@ def assess_setup(
     )
 
 
+def konteks_untuk_strategi(
+    strategi: str,
+    *,
+    konteks: Mapping[str, float | None] | None,
+    arah: str,
+    agents: dict[str, Any] | None = None,
+) -> tuple[heat.HeatScore | None, heat.HasilFilter]:
+    """Heat + filter funding/OI untuk satu strategi dari konteks yang tersedia.
+
+    ``konteks`` eksplisit menang; tanpa itu, konteks diturunkan dari keluaran
+    ``agents.collect``. Tanpa keduanya, filter ditandai n/a — TIDAK dievaluasi dan
+    tidak mengubah keputusan apa pun.
+    """
+    dipakai = dict(konteks) if konteks is not None else (
+        heat.konteks_dari_agents(agents) if agents else None
+    )
+    if dipakai is None:
+        return None, heat.HasilFilter(
+            strategi=strategi,
+            ok=None,
+            alasan="konteks funding/OI tidak diambil pada jalur ini — filter n/a",
+        )
+    return heat.heat_strategi(strategi, dipakai), heat.filter_funding_oi(strategi, arah, dipakai)
+
+
+def _gabung_filter(assessment: gates.Assessment, hasil: heat.HasilFilter) -> gates.Assessment:
+    """Tambahkan verdict filter ke assessment; penolakan filter = SKIP, seperti gate keras."""
+    if hasil.ok is None:
+        return assessment
+    verdict = gates.Verdict(
+        rule="filter_funding_oi",
+        ok=bool(hasil.ok),
+        reason=hasil.alasan,
+        hard=not hasil.ok,
+        detail={"strategi": hasil.strategi},
+    )
+    return replace(
+        assessment,
+        allowed=assessment.allowed and bool(hasil.ok),
+        tier=assessment.tier if hasil.ok else "SKIP",
+        verdicts=assessment.verdicts + (verdict,),
+    )
+
+
 def evaluate(
     settings: Settings,
     pair: str,
@@ -643,8 +697,13 @@ def evaluate(
     client: httpx.Client | None = None,
     record: bool = True,
     agents: dict[str, Any] | None = None,
+    konteks: Mapping[str, float | None] | None = None,
 ) -> tuple[Structure, dict[str, Any] | None, gates.Assessment]:
-    """Analisis + usulan + verdict. Entry/SL/TP bisa ditimpa kalau mau menguji setup sendiri."""
+    """Analisis + usulan + verdict. Entry/SL/TP bisa ditimpa kalau mau menguji setup sendiri.
+
+    ``konteks`` (funding/OI) mengaktifkan heat + filter per strategi; tanpa konteks
+    (jalur scan biasa), hasilnya dicatat n/a dan tidak mengubah keputusan.
+    """
     st = analyze(settings, pair, client)
     prop = _propose_golden_smc_gated(st, direction) or propose(st, direction)
     base = prop or {}
@@ -665,6 +724,14 @@ def evaluate(
         open_positions=open_positions,
         btc_change_24h=btc_change_24h,
     )
+    strategi = str(base.get("strategy") or heat.STRATEGI_LEGACY)
+    heat_hasil, filter_hasil = konteks_untuk_strategi(
+        strategi, konteks=konteks, arah=direction, agents=agents
+    )
+    assessment = _gabung_filter(assessment, filter_hasil)
+    if prop is not None:
+        prop["heat"] = heat_hasil.to_dict() if heat_hasil is not None else None
+        prop["filter_funding_oi"] = filter_hasil.to_dict()
     if record:
         # Dedupe ada DI SINI, bukan di pemanggil: kalau hanya `scan` yang memeriksa,
         # pemanggilan `lt smc` langsung akan mencatat ulang kandidat yang sama dan
@@ -690,5 +757,7 @@ def evaluate(
                 harga_keputusan=st.price,
                 atr_pct=st.atr_pct,
                 agents=agents,
+                heat_hasil=heat_hasil.to_dict() if heat_hasil is not None else None,
+                filter_funding_oi=filter_hasil.to_dict(),
             )
     return st, prop, assessment
