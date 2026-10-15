@@ -229,14 +229,11 @@
 		border-radius: 50%;
 		flex: none;
 	}
+	/* Antislop R-19: dot menandai state nyata (aliran SSE hidup) — tanpa glow
+	   berlebih dan TANPA loop pulse bermakna tidak ada. Pulih otomatis diam. */
 	.titik.baik {
 		background: var(--color-pos);
-		box-shadow: 0 0 8px color-mix(in srgb, var(--color-pos) 80%, transparent);
-		animation: pulse-titik 2.2s infinite ease-in-out;
-	}
-	@keyframes pulse-titik {
-		0%, 100% { opacity: 1; transform: scale(1); }
-		50% { opacity: 0.45; transform: scale(1.25); }
+		box-shadow: 0 0 6px color-mix(in srgb, var(--color-pos) 45%, transparent);
 	}
 	.titik.perhatian {
 		background: var(--color-warn);
@@ -247,6 +244,15 @@
 	.angka {
 		font-family: var(--font-mono);
 		font-variant-numeric: tabular-nums;
+	}
+	.stat,
+	.merek,
+	.mode {
+		transition: color 160ms var(--ease-out, ease-out), border-color 160ms var(--ease-out, ease-out);
+	}
+	.mode:hover { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
+	a.stat:hover {
+		color: var(--color-accent);
 	}
 	@media (max-width: 640px) {
 		.kanan .stat:nth-child(2) {
