@@ -32,6 +32,10 @@ def _run(args: list[str]) -> subprocess.CompletedProcess:
 
 def main() -> int:
     if not os.environ.get("WARROOM_DB_URL"):
+        if os.environ.get("CHECK_DB_HEAD_REQUIRED") == "1":
+            print("GAGAL: WARROOM_DB_URL wajib ada (CHECK_DB_HEAD_REQUIRED=1) — "
+                  "unit tidak boleh naik tanpa verifikasi skema DB.")
+            return 1
         print("LEWAT: WARROOM_DB_URL tidak diset — cek head dilewati (bukan lulus).")
         return 0
 
