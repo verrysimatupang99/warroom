@@ -140,17 +140,9 @@ def _baca_json(p: Path, default: Any = None) -> Any:
     try:
         return json.loads(p.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        pass
-    # Berkas milik poly-pilot: coba `sudo -n` seperti panel lama (tanpa prompt).
-    try:
-        import subprocess
-
-        r = subprocess.run(["sudo", "-n", "cat", str(p)], capture_output=True, text=True, timeout=10)
-        if r.returncode == 0 and r.stdout:
-            return json.loads(r.stdout)
-    except Exception:  # noqa: BLE001 — baca-saja; gagal = default
-        pass
-    return default
+        # Baca langsung saja: sumber state milik admin, dan sudo di konteks service
+        # pasti ditolak — `default` di sini berarti belum ada/rusak, bukan nol.
+        return default
 
 
 def _baca_jsonl(p: Path, maks: int | None = None) -> list[dict[str, Any]]:

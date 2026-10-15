@@ -59,7 +59,7 @@ def sinyal_terakhir(
 
     Gagal baca → status + alasan (bukan daftar kosong yang menyamar jadi "tidak ada sinyal").
     """
-    b = baca_jsonl_ekor(Path(state_dir) / "verdicts.jsonl", EKOR, pakai_sudo=True)
+    b = baca_jsonl_ekor(Path(state_dir) / "verdicts.jsonl", EKOR)
     if not b.ok:
         return {"status": b.status, "path": b.path, "detail": b.detail, "sinyal": []}
 

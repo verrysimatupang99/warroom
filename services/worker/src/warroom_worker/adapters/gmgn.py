@@ -25,7 +25,7 @@ def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
     d = Path(state_dir or GMGN_STATE).expanduser()
     if not d.exists():
         return {"status": "tidak-ada", "dir": str(d)}
-    ringkas = ringkas_dir(d, pakai_sudo=False)
+    ringkas = ringkas_dir(d)
     berkas: list[dict[str, Any]] = []
     try:
         for f in sorted(d.glob("*")):
@@ -38,7 +38,7 @@ def gmgn_ringkas(state_dir: str | None = None) -> dict[str, Any]:
     kunci = ("run_config.json", "positions.json", "signals.jsonl")
     isi: dict[str, Any] = {}
     for nama in kunci:
-        b = baca_json(d / nama, pakai_sudo=False)
+        b = baca_json(d / nama)
         if b.ok:
             isi[nama] = b.data
         else:
@@ -59,7 +59,7 @@ def lp_mark_ringkas(state_path: str | None = None) -> dict[str, Any]:
     Sumber: `state/lp_mark_terakhir.json`, ditulis job `lp-mark` dari harga nyata
     (DexScreener per alamat pool). Belum ada → status jujur, bukan nol.
     """
-    b = baca_json(state_path or LP_MARK_STATE, pakai_sudo=False)
+    b = baca_json(state_path or LP_MARK_STATE)
     if not b.ok:
         return {"status": b.status, "path": b.path, "detail": b.detail}
     data = b.data if isinstance(b.data, dict) else {}
@@ -85,7 +85,7 @@ def radar_ringkas(state_path: str | None = None) -> dict[str, Any]:
     akan dimatikan) — tidak ada lagi SSH. Kesegaran tetap dibawa apa adanya: ``mtime``
     dari ``diambil_epoch`` (kapan radar benar-benar jalan), bukan waktu berkas disentuh.
     """
-    b = baca_json(state_path or RADAR_STATE, pakai_sudo=False)
+    b = baca_json(state_path or RADAR_STATE)
     if not b.ok:
         return {"status": b.status, "path": b.path, "detail": b.detail}
     data = b.data if isinstance(b.data, dict) else {}

@@ -272,11 +272,9 @@ def _poly_panel(path: str | None = None) -> dict[str, Any]:
 
     Arm A (momentum, /var/lib/poly-paper/) merah; arm B (kandidat) dan D (favorit)
     hijau. Legacy /var/lib/poly-pilot/ mati sejak 24 Sep — tidak dibaca lagi.
-    Berkas milik poly-pilot: coba baca langsung, lalu ``sudo -n``; gagal = n/a.
-    Tidak pernah ditulis dari sini.
+    Baca langsung: sudo di konteks service pasti ditolak, jadi arm tak terbaca
+    ditandai jelas (bukan diam-diam kosong). Tidak pernah ditulis dari sini.
     """
-    import subprocess
-
     if path:
         paths = {"arm": path}
     else:
@@ -287,19 +285,15 @@ def _poly_panel(path: str | None = None) -> dict[str, Any]:
         try:
             with open(p, encoding="utf-8") as fh:
                 raw = fh.read()
-        except (OSError, PermissionError):
-            try:
-                r = subprocess.run(["sudo", "-n", "cat", p], capture_output=True, text=True, timeout=10)
-                raw = r.stdout if r.returncode == 0 else None
-            except Exception:  # noqa: BLE001
-                raw = None
+        except OSError:
+            raw = None
         if not raw:
-            arms.append({"nama": nama, "tersedia": False})
+            arms.append({"nama": nama, "tersedia": False, "alasan": "tidak terbaca (izin)"})
             continue
         try:
             d = json.loads(raw)
         except json.JSONDecodeError:
-            arms.append({"nama": nama, "tersedia": False})
+            arms.append({"nama": nama, "tersedia": False, "alasan": "rusak (bukan JSON)"})
             continue
         arms.append(
             {
