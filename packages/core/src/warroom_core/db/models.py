@@ -136,6 +136,8 @@ class Strategy(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
+    __table_args__ = (Index("ix_strategies_area_status", "area", "status"),)
+
 
 class Trade(Base):
     """Paper & live dibedakan tegas lewat (venue, mode) — bukan boolean."""
@@ -162,6 +164,8 @@ class Trade(Base):
     __table_args__ = (
         UniqueConstraint("venue", "mode", "ext_id", name="uq_trades_venue_mode_ext"),
         Index("ix_trades_closed_at", "closed_at"),
+        Index("ix_trades_strategy_id", "strategy_id"),
+        Index("ix_trades_mode_strategy_closed", "mode", "strategy_id", "closed_at"),
     )
 
 
@@ -453,6 +457,8 @@ class FrozenSplit(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    __table_args__ = (Index("ix_frozen_splits_dataset", "dataset"),)
 
 
 class Job(Base):
