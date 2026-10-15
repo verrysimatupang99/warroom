@@ -9,6 +9,7 @@
 		getAku,
 		getAreas,
 		getArea,
+		getAreaFakta,
 		getKesegaran,
 		getKesehatan,
 		getMetrikTeks,
@@ -91,11 +92,18 @@ function pilihSub(s: string) {
 		if (pr.status === 'fulfilled') proposals = pr.value.proposals;
 		// Fact lpagent datang lewat area 'sistem' (kind `lpagent`). Gagal → tetap null,
 		// halaman menampilkan 'belum ada fakta', bukan mengarang daftar pool.
+		let sys;
 		try {
-			const sys = await getArea('sistem');
-			const f = (sys.facts ?? []).find((x: any) => x.key === 'pools');
+			sys = await getAreaFakta('sistem');
+		} catch {
+			sys = null;
+		}
+		try {
+			const f = (sys?.facts ?? []).find((x: any) => x.key === 'pools');
 			lpagent = f ? (f.value as Record<string, any>) : null;
-			const p = (sys.facts ?? []).find((x: any) => x.kind === 'paper20' && x.key === 'dompet');
+			const p = (sys?.facts ?? []).find(
+				(x: any) => x.kind === 'paper20' && x.key === 'dompet'
+			);
 			paper20 = p ? (p.value as Record<string, any>) : null;
 		} catch {
 			lpagent = null;
