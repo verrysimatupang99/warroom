@@ -10,7 +10,7 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
+	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
 	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
@@ -23,15 +23,21 @@
 	let sumber = $state<{ pasar: string; label: string; sumber: string; keterangan: string }[]>([]);
 	// Verdict kanonik (audit QA 7 Okt) — dipakai agar Home TIDAK menyusun kesimpulan sendiri.
 	let verdictSemua = $state<MarketVerdict[]>([]);
+	// Dompet paper $20 (15 Okt): angka NYATA dari fakta — crypto dari siklus paper20,
+	// Polymarket dari arm D (band favorit). GMGN berjalan di mesin terpisah (link).
+	let dompetCrypto = $state<Record<string, any> | null>(null);
+	let dompetPoly = $state<number | null>(null);
 	// Mode eksekusi global dari API arming — SATU-SATUNYA sumber badge mode di header Home.
 	let arming = $state<LiveArming | null>(null);
 async function muat() {
-	const [s, k, a, sm, m] = await Promise.allSettled([
+	const [s, k, a, sm, m, sys, poly] = await Promise.allSettled([
 		getSinyalPerPasar(),
 		getArea('crypto'),
 		getPasarRingkas(),
 		getSumber(),
-		getLiveArming()
+		getLiveArming(),
+		getAreaFakta('sistem'),
+		getArea('polymarket')
 	]);
 	if (sm.status === 'fulfilled') sumber = sm.value.sumber;
 	try {
@@ -44,6 +50,16 @@ async function muat() {
 	if (k.status === 'fulfilled') kripto = k.value;
 	if (a.status === 'fulfilled') akurasi = a.value;
 	if (m.status === 'fulfilled') arming = m.value;
+	if (sys.status === 'fulfilled') {
+		const f = (sys.value.facts ?? []).find((x: any) => x.kind === 'paper20' && x.key === 'dompet');
+		dompetCrypto = f ? (f.value as Record<string, any>) : null;
+	} else dompetCrypto = null;
+	if (poly.status === 'fulfilled') {
+		const pp = (poly.value.facts ?? []).find((x: any) => x.key === 'poly_paper');
+		const arms = ((pp?.value as any)?.arms ?? []) as any[];
+		const d = arms.find((x) => x.nama === 'D favorit');
+		dompetPoly = d ? Number(d.balance ?? 20) : null;
+	} else dompetPoly = null;
 }
 	$effect(() => {
 		void muat();
@@ -278,6 +294,27 @@ async function muat() {
 	</div>
 
 	<div class="isi">
+		{#if sumber.length}
+			<section class="dompet20-strip" aria-label="Dompet paper $20 per market">
+				<span class="sumber-judul">Dompet paper $20</span>
+				<div class="dompet-grid">
+					<div class="dompet-chip">
+						<span class="sumber-pasar">Crypto</span>
+						<span class="angka sumber-nama">
+							{dompetCrypto ? `$${dompetCrypto.equity_usd} · ${dompetCrypto.n_posisi} posisi` : 'menunggu siklus'}
+						</span>
+					</div>
+					<div class="dompet-chip">
+						<span class="sumber-pasar">Poly arm D</span>
+						<span class="angka sumber-nama">{dompetPoly !== null ? `$${dompetPoly.toFixed(2)}` : '—'}</span>
+					</div>
+					<div class="dompet-chip">
+						<span class="sumber-pasar">Memecoin GMGN</span>
+						<span class="angka sumber-nama">$20 · <a href="/gmgn/" class="text-accent">/gmgn</a></span>
+					</div>
+				</div>
+			</section>
+		{/if}
 		{#if sumber.length}
 			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto OKX, IDX Stock Arjum,
 			     Forex TVC, Polymarket Dokumentasi PM, Meme GMGN/FOMO, LP Meteora & Uniswap) —
@@ -888,7 +925,22 @@ async function muat() {
 	}
 	.sumber-pasar { color: var(--redup); }
 	.sumber-nama { font-weight: 600; color: var(--tinta); }
-
+	/* Dompet paper $20 (15 Okt) — strip dengan chip yang lebih besar dari sumber data
+	   supaya hierarki jelas: dompet = angka yang owner pantau, sumber = metadata. */
+	.dompet20-strip {
+		display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+		border: 1px solid var(--garis); border-radius: 12px;
+		padding: 0.45rem 0.7rem; background: var(--permukaan);
+	}
+	.dompet-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+	.dompet-chip {
+		display: inline-flex; flex-direction: column; gap: 0.1rem;
+		border: 1px solid var(--garis); border-radius: 10px; padding: 0.3rem 0.65rem;
+		background: var(--latar);
+	}
+	.dompet-chip .angka { font-size: 0.8rem; }
+	.dompet-chip a { color: var(--mint, #34E39A); }
+	
 	.kepala {
 		display: flex;
 		align-items: baseline;
