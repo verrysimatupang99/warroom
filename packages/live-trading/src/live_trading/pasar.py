@@ -26,6 +26,7 @@ Modul murni baca berkas; tidak menyentuh jaringan dan tidak menulis apa pun.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import math
 from collections import Counter
@@ -300,12 +301,19 @@ def ringkas_crypto_sinyal(state_dir: Path) -> dict[str, Any]:
             }
             for r in rules
         ]
+        ver_ts = v.get("ts")
+        try:
+            ts_parse = dt.datetime.fromisoformat(str(ver_ts).replace("Z", "+00:00"))
+            umur = round((datetime.now(UTC) - ts_parse).total_seconds() / 3600, 1)
+        except (TypeError, ValueError):
+            umur = None
         entries.append(
             {
                 "pair": v.get("pair"),
                 "arah": v.get("direction"),
                 "tier": v.get("tier"),
                 "status": "lolos" if v.get("allowed") else "ditolak",
+                "umur_jam": umur,
                 "skor": round(100 * ok / len(rules)) if rules else None,
                 "ok": ok,
                 "total_aturan": len(rules),
