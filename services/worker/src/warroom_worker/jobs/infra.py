@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import logging
 import subprocess
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
@@ -20,6 +21,52 @@ from .base import (
 )
 
 log = logging.getLogger("warroom_worker.jobs")
+
+
+def audit_kesegaran(
+    s: SASession,
+    rows: list[Fact],
+    basi: list[Fact],
+    *,
+    now: datetime,
+    jendela_hari: int = 7,
+) -> dict[str, Any]:
+    """Rekap kesegaran per sumber + peringkat sumber paling sering basi.
+
+    Bagian pertama dari fakta TERBARU per kunci (umur vs ttl masing-masing);
+    bagian kedua dari riwayat alert `data basi` pada jendela tertentu — frekuensi
+    kejadian, bukan satu momen. Tanpa riwayat, "paling sering basi" hanya bisa
+    ditebak dari snapshot sesaat.
+    """
+    per_sumber: dict[str, dict[str, Any]] = {}
+
+    def _entri(nama: str) -> dict[str, Any]:
+        return per_sumber.setdefault(
+            nama, {"fakta": 0, "basi": 0, "umur_maks_mnt": 0.0, "ttl_s": []}
+        )
+
+    for f in rows:
+        e = _entri(f.source or "-")
+        e["fakta"] += 1
+        umur_mnt = round((now - f.observed_at).total_seconds() / 60, 1)
+        e["umur_maks_mnt"] = max(e["umur_maks_mnt"], umur_mnt)
+        if f.ttl_s not in e["ttl_s"]:
+            e["ttl_s"].append(f.ttl_s)
+    for f in basi:
+        _entri(f.source or "-")["basi"] += 1
+
+    sejak = now - timedelta(days=max(1, jendela_hari))
+    riwayat = s.scalars(
+        select(Alert).where(Alert.message.like("data basi%")).where(Alert.created_at >= sejak)
+    ).all()
+    kejadian: dict[str, int] = {}
+    for a in riwayat:
+        kejadian[a.subject] = kejadian.get(a.subject, 0) + 1
+    return {
+        "per_sumber": per_sumber,
+        "kejadian_basi": dict(sorted(kejadian.items(), key=lambda kv: -kv[1])[:5]),
+        "jendela_hari": jendela_hari,
+    }
 
 
 def handler_publish_facts(s: SASession, job: Job) -> str:
@@ -139,6 +186,13 @@ def handler_freshness(s: SASession, job: Job) -> str:
                 a.ack_at = now
                 a.message = (a.message or "") + " | PULIH otomatis: fakta segar kembali"
 
+    audit = audit_kesegaran(
+        s,
+        rows,
+        basi,
+        now=now,
+        jendela_hari=int(job.payload_json.get("audit_jendela_hari", 7)),
+    )
     s.add(
         Event(
             type="freshness.checked",
@@ -148,12 +202,17 @@ def handler_freshness(s: SASession, job: Job) -> str:
                 "basi": len(basi),
                 "basi_wajar": basi_wajar,
                 "alert_baru": dibuat,
+                "audit_sumber": audit,
             },
             fact_ids=[f.id for f in basi],
             severity="warning" if (len(basi) - basi_wajar) else "info",
         )
     )
-    return f"diperiksa={len(rows)} basi={len(basi)} basi_wajar={basi_wajar} alert_baru={dibuat}"
+    paling = next(iter(audit["kejadian_basi"]), "-")
+    return (
+        f"diperiksa={len(rows)} basi={len(basi)} basi_wajar={basi_wajar} "
+        f"alert_baru={dibuat} paling_sering_basi={paling}"
+    )
 
 
 def handler_notify(s: SASession, job: Job) -> str:
