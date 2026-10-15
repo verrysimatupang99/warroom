@@ -929,17 +929,27 @@ async function muat() {
 	   supaya hierarki jelas: dompet = angka yang owner pantau, sumber = metadata. */
 	.dompet20-strip {
 		display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
-		border: 1px solid var(--garis); border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--mint) 28%, var(--garis));
+		border-radius: 12px;
 		padding: 0.45rem 0.7rem; background: var(--permukaan);
 	}
-	.dompet-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+	.dompet-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
 	.dompet-chip {
 		display: inline-flex; flex-direction: column; gap: 0.1rem;
 		border: 1px solid var(--garis); border-radius: 10px; padding: 0.3rem 0.65rem;
 		background: var(--latar);
+		transition: border-color 160ms var(--ease-out), background 160ms var(--ease-out);
 	}
-	.dompet-chip .angka { font-size: 0.8rem; }
+	.dompet-chip:hover {
+		border-color: color-mix(in srgb, var(--mint) 40%, var(--garis));
+		background: color-mix(in srgb, var(--mint) 6%, var(--latar));
+	}
+	.dompet-chip .angka { font-size: 0.8rem; font-family: var(--font-mono); color: var(--mint); }
 	.dompet-chip a { color: var(--accent); }
+	.sumber-chip {
+		transition: border-color 160ms var(--ease-out);
+	}
+	.sumber-chip:hover { border-color: color-mix(in srgb, var(--mint) 30%, var(--garis)); }
 	
 	.kepala {
 		display: flex;
@@ -977,6 +987,10 @@ async function muat() {
 		padding: 1.5rem 1.5rem 1.35rem;
 		background: var(--permukaan);
 		position: relative;
+		transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+	}
+	.verdikt:hover {
+		border-color: color-mix(in srgb, var(--mint) 30%, var(--garis));
 	}
 	.verdikt.ada {
 		border-color: color-mix(in srgb, var(--mint) 45%, var(--garis));
