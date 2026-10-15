@@ -835,7 +835,7 @@ function pilihSub(s: string) {
 													     → posisi $25,55 ≈ 1% × $100; SUI jarak 2,01% → $47,28.
 													     Label lama "risiko 3,813%" membuat pembaca (dan QA) wajar
 													     menyimpulkan policy dilanggar. Jangan disingkat lagi. -->
-													<span>R:R {s.r_r ?? '—'} · jarak stop {s.risk_pct ?? '—'}% · risiko akun 1%</span>
+													<span>R:R {s.r_r ?? '—'} · jarak stop {s.risk_pct != null ? angka(s.risk_pct, { desimal: 2 }) : '—'}% · risiko akun 1%</span>
 													<span>{umurDetik(f.age_s)} lalu</span>
 												</div>
 												{#if s.aturan_gagal?.length}

@@ -77,7 +77,15 @@
 				</div>
 			{/if}
 			<div class="mt-1 flex justify-between text-10 text-text-3">
-				<span>Sisa toleransi: <b class="angka text-text">{angka(sisaR)} R</b></span>
+				<!-- Temuan QA 15 Okt (Medium): sisa > batas membingungkan. Rumus domain
+				     (risk.py): sisa ruang rugi = batas harian + hasil hari ini → saat profit,
+				     ruang rugi melebar di atas batas (tetap jujur, diberi rumus). -->
+				<span>
+					Sisa toleransi: <b class="angka text-text">{angka(sisaR)} R</b>
+					{#if profitHariIni > 0}
+						<span title={`batas ${angka(batasR)} R + profit ${angka(profitHariIni)} R hari ini`}>(batas + profit)</span>
+					{/if}
+				</span>
 				<span>{angka(pctTerpakai)}% kuota</span>
 			</div>
 		</div>

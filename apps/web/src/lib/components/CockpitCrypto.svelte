@@ -94,7 +94,14 @@
 		<div class="rounded bg-surface border border-line p-2.5">
 			<div class="text-10 uppercase tracking-wide text-text-3">Ruang risiko sisa</div>
 			<div class="mt-0.5 text-20 font-bold text-text-2">{angka(risiko?.sisa_ruang_r, 2)}R</div>
-			<div class="text-10 text-text-3">dari batas {angka(risiko?.batas_rugi_r, 2)}R</div>
+			<!-- Temuan QA 15 Okt (Medium): 8R > batas 3R membingungkan. Rumus domain
+			     (risk.py): ruang rugi = batas harian + hasil hari ini (profit menambah
+			     ruang sebelum garis -3R tersentuh). Tampilkan rumusnya, jangan tebak. -->
+			<div class="text-10 text-text-3">
+				{(risiko?.hari_ini_r ?? 0) > 0
+					? `batas ${angka(risiko?.batas_rugi_r, 2)}R + profit ${angka(risiko?.hari_ini_r, 2)}R hari ini`
+					: `dari batas ${angka(risiko?.batas_rugi_r, 2)}R`}
+			</div>
 		</div>
 		<div class="rounded bg-surface border border-line p-2.5">
 			<div class="text-10 uppercase tracking-wide text-text-3">Posisi terbuka</div>

@@ -153,6 +153,14 @@ function pilihSub(s: string) {
 				<p><span class="label-mikro block">pengguna</span>{sehat?.user ?? '—'}</p>
 			</div>
 		</Block>
+		<!-- Populasi tabel Area = fakta snapshot yang DIPAKAI tiap area (kunci dipakai
+		     beberapa area terhitung ganda; fakta signal kind lain tidak masuk). Populasi
+		     header/segar-total-basi ada di tab Kesegaran. Temuan QA 15 Okt. -->
+		<p class="mb-2 text-11 text-text-3">
+			Tabel ini = fakta snapshot yang <b>dipakai tiap area</b> (satu kunci bisa dipakai
+			beberapa area terhitung ganda; fakta <span class="angka">signal</span> kind lain tidak
+			masuk). Populasi header (segar/total/basi) ada di tab Kesegaran.
+		</p>
 		<Block judul="Area" memuat={memuat && !areas}>
 			<DataTable
 				kolom={[
@@ -271,7 +279,7 @@ function pilihSub(s: string) {
 	{:else if sub === 'kesegaran'}
 		<Block
 			judul="Matriks kesegaran"
-			deskripsi={`${kesegaran?.count ?? 0} fakta · dicek ${kesegaran ? waktuWIB(kesegaran.checked_at) : '—'}`}
+			deskripsi={`${kesegaran?.count ?? 0} fakta — semua kind, sumber angka header · dicek ${kesegaran ? waktuWIB(kesegaran.checked_at) : '—'}`}
 			memuat={memuat && !kesegaran}
 			kosong={!!kesegaran && kesegaran.facts.length === 0}
 			kosongPesan="Belum ada fakta."

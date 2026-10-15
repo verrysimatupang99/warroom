@@ -24,6 +24,12 @@
 		const u = String(fd.get('username') ?? username);
 		const p = String(fd.get('password') ?? password);
 		const k = String(fd.get('totp') ?? totp);
+		// Temuan QA 15 Okt (Low): submit kosong dulu menampilkan "kredensial tidak sah"
+		// — tidak membedakan "field kosong" dari "salah". Validasi wajib di sini.
+		if (!u.trim() || !p.trim()) {
+			galat = 'username dan sandi wajib diisi';
+			return;
+		}
 		try {
 			await masuk(u, p, k || undefined);
 			await goto(page.url.searchParams.get('lanjut') || '/');

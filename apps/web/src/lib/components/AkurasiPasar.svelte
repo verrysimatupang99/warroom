@@ -201,6 +201,15 @@
 			Angka di kartu lain (mis. narasi "n=16") bisa berasal dari populasi BERBEDA: sinyal yang dievaluasi
 			versus trade yang tuntas. Bandingkan hanya populasi yang sama.
 		</p>
+		{#if baris.length > 0 && baris.every((s) => s.n_hari == null && s.mean_r == null && s.total_r == null)}
+			<!-- Temuan QA 15 Okt (Low): kolom Hari/Ekspektasi R/Total R "—" tanpa konteks.
+			     Polymarket: sumber shadow summary melaporkan menang/kalah (bukan hasil
+			     berbasis R), jadi kolom pakem-R memang tidak terisi — dinyatakan apa adanya. -->
+			<p class="mt-2 text-10 text-text-3">
+				<b>Hari/Ekspektasi R/Total R = —</b> bukan data hilang: sumber ini (win/loss per arm)
+				tidak berbasis R, sedangkan ketiga kolom pakem hanya terisi dari evaluasi berbasis R.
+			</p>
+		{/if}
 
 
 		{#if data?.sumber}

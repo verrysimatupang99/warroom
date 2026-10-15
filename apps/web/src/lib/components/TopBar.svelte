@@ -94,8 +94,10 @@
 		{/if}
 
 		{#if alert !== null && alert > 0}
-			<a class="stat perhatian" href="/sistem?sub=event" title="alert terbuka">
-				<Ikon nama="peringatan" ukuran={13} /> <b class="angka">{alert}</b> alert
+			<!-- Temuan QA 15 Okt (Low): "alert" saja tidak menyebut status. Angka ini
+			     alert TERBUKA (belum di-ack) — tulis eksplisit. -->
+			<a class="stat perhatian" href="/sistem?sub=event" title="alert terbuka (belum di-ack)">
+				<Ikon nama="peringatan" ukuran={13} /> <b class="angka">{alert}</b> alert terbuka
 			</a>
 		{/if}
 
