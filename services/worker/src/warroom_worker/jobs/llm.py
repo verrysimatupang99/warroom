@@ -334,6 +334,24 @@ def _kandidat_terbaru_dari_ledger(stg: Any, *, jam_terakhir: float = 6.0) -> lis
     return [v for v in terbaru.values()]
 
 
+def blokir_korelasi_rezim(
+    arah: str, arah_terbuka: dict[str, int], rezim: str | None, maks_searah: int, pakai_filter: bool,
+) -> str | None:
+    """Alasan pemblokiran candidate berdasarkan korelasi & rezim BTC (#9, 15 Okt).
+
+    Returns Skip-reason teks bila harus DIBLOKIR, None bila boleh lanjut.
+    Murni (tanpa I/O) supaya bisa diuji tanpa DB — aturan tetap SATU tempat.
+    """
+    if pakai_filter and rezim in ("naik", "turun"):
+        if arah == "SHORT" and rezim == "naik":
+            return "(rezim BTC naik, short diblok)"
+        if arah == "LONG" and rezim == "turun":
+            return "(rezim BTC turun, long diblok)"
+    if arah_terbuka.get(arah, 0) >= maks_searah:
+        return f"(korelasi searah {arah} ≥ {maks_searah})"
+    return None
+
+
 def handler_paper_scan(s: SASession, job: Job) -> str:
     """Pemindaian otomatis & pembukaan posisi paper bila ada sinyal lolos gerbang risiko."""
     from live_trading.config import get_settings
@@ -347,6 +365,42 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
 
     if len(curr_pos) >= stg.max_concurrent_positions:
         return f"slot posisi crypto penuh ({len(curr_pos)}/{stg.max_concurrent_positions})"
+
+    # Batas korelasi (rekomendasi #9, 15 Okt): maks posisi SE-ARAH. Slot penuh =
+    # semua posisi bisa buka arah yang sama; kartu resisten BTC berbalik →
+    # semuanya rugi serentak. maks_searah 2 dari 3 slot: selalu tersisih satu
+    # slot bagi arah berlawanan.
+    arah_terbuka: dict[str, int] = {}
+    for p in curr_pos:
+        ar = str(getattr(p, "direction", "") or "").upper()
+        if ar:
+            arah_terbuka[ar] = arah_terbuka.get(ar, 0) + 1
+
+    # Filter rezim BTC (rekomendasi #9): hitung TREN sekali per siklus, bukan per
+    # kandidat. SHORT hanya saat BTC di bawah EMA50 4H, LONG hanya saat di atas.
+    # Data gagal terbaca → sengaja SKIP kandidat (fail-closed, kultur rumah):
+    # lebih baik tanpa entry daripada masuk tanpa tahu rezim.
+    rezim: str | None = None
+    if stg.btc_regime_filter:
+        try:
+            from live_trading.collectors.crypto import CryptoCollector
+            from live_trading.indicators import ema as _ema
+
+            c = CryptoCollector(stg)
+            kl = c._get(stg.binance_fapi, "/fapi/v1/klines",
+                        {"symbol": "BTCUSDT", "interval": "4h", "limit": 60})
+            closes = [float(k[4]) for k in kl]
+            if len(closes) >= 50:
+                rata = _ema(closes, 50)
+                if rata is not None:
+                    rezim = "naik" if closes[-1] > rata else "turun"
+        except Exception as exc:  # noqa: BLE001
+            print(f"[paper-scan] rezim BTC gagal ({type(exc).__name__}) — kandidat diblok fail-closed")
+            rezim = None
+        if stg.btc_regime_filter and rezim is None:
+            return "paper-scan: rezim BTC tidak terbaca — kandidat TIDAK dibuka (fail-closed)"
+    else:
+        rezim = "nonaktif"
 
     # Sumber kandidat = `verdicts.jsonl` (ledger gate), BUKAN `engine.scan` lokal.
     #
@@ -369,7 +423,13 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
             continue
         if r.get("allowed") and len(b_crypto.positions()) < stg.max_concurrent_positions:
             pair = r["pair"]
-            direction = r["direction"]
+            direction = r["direction"].upper()
+            blokir = blokir_korelasi_rezim(
+                direction, arah_terbuka, rezim, stg.maks_posisi_searah, stg.btc_regime_filter,
+            )
+            if blokir:
+                dilewati.append(f"{pair} {blokir}")
+                continue
             entry = float(r["entry"])
             # Ledger menulis `sl`/`tp1`/`tp2`; engine.scan menulis `stop`. Keduanya diterima
             # supaya sumber kandidat bisa berganti tanpa kehilangan level — dan kalau
@@ -433,6 +493,10 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     note=f"jalur-tunggal ({kep.alasan}); biaya {biaya.get('sumber')}",
                     cost_bps=kep.cost_bps,
                 )
+                # Cap korelasi: hitungan searah naik SETELAH sukses buka, supaya
+                # kandidat searah berikutnya dalam siklus yang sama ikut terhitung.
+                arah_k = kep.arah.upper()
+                arah_terbuka[arah_k] = arah_terbuka.get(arah_k, 0) + 1
                 # Jejak keputusan disimpan supaya bisa dibandingkan baris-demi-baris dengan
                 # mode live nanti — itu bukti 1:1 yang bisa diperiksa, bukan klaim.
                 s.add(Event(type="keputusan.masuk", actor="paper_scan",
