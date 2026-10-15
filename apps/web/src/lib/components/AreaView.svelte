@@ -1185,6 +1185,15 @@ function pilihSub(s: string) {
 											{(cryptoSinyalObj?.dimensi ?? []).slice(0, 3).map((d: any) => `${d.dimensi} ${d.persen ?? '—'}%`).join(' · ')}
 										</p>
 									{/if}
+									{#if cryptoSinyalObj?.jumlah_ditolak}
+										<!-- Adopsi skip-reason counter poly-paper favorite: hitungan alasan
+										     penolakan (hanya verdict DITOLAK) — menjawab "kandidat banyak,
+										     buka nol, kenapa?" dengan angka. -->
+										<p class="mt-1 text-10 text-text-3">
+											{cryptoSinyalObj.jumlah_ditolak} ditolak dari {cryptoSinyalObj.jumlah_verdict} verdict, terbanyak:
+											{(cryptoSinyalObj?.veto ?? []).slice(0, 3).map((v: any) => `${v.n}× ${v.alasan}`).join(' · ') || '—'}
+										</p>
+									{/if}
 								{/if}
 							</div>
 						{/if}

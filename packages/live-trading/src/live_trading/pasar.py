@@ -361,6 +361,22 @@ def ringkas_crypto_sinyal(state_dir: Path) -> dict[str, Any]:
         key=lambda x: (x["persen"] if x["persen"] is not None else 101),
     )
 
+    # Penghitung veto — adopsi pola "skip-reason counter" poly-paper favorite
+    # (outside_price_band 375x, loss_budget 335x, dst.): alasan apa yang paling
+    # sering MENOLAK setup, dihitung hanya dari verdict yang ditolak. Melengkapi
+    # `dimensi` di atas (pass-rate semua verdict) supaya panel bisa menjawab
+    # "kandidat banyak tapi buka nol — kenapa?" dengan hitungan, bukan tebakan.
+    veto: dict[str, int] = {}
+    for v in verdicts:
+        if v.get("allowed"):
+            continue
+        for nama in {
+            _aturan_ke_nama(str(r.get("rule")))
+            for r in (v.get("rules") or [])
+            if not r.get("ok")
+        }:
+            veto[nama] = veto.get(nama, 0) + 1
+
     metadata = watch.get("meta") or {}
     return {
         "tersedia": bool(verdicts) or bool(items),
@@ -371,6 +387,10 @@ def ringkas_crypto_sinyal(state_dir: Path) -> dict[str, Any]:
         "dimensi": dimensi_list,
         "jumlah_verdict": len(verdicts),
         "jumlah_lolos": sum(1 for v in verdicts if v.get("allowed")),
+        "jumlah_ditolak": len(verdicts) - sum(1 for v in verdicts if v.get("allowed")),
+        "veto": sorted(
+            ({"alasan": k, "n": n} for k, n in veto.items()), key=lambda x: (-x["n"], x["alasan"])
+        ),
         "sumber": "state/verdicts.jsonl (gate crypto lokal) + state/crypto-watchlist.json",
         "suplai": {
             "mesin": "cron Hermes Tencent `crypto-5agent-pipeline-653` (SMC 5-agen)",
