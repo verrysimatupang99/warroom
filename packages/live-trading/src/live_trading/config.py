@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     # Batas notional terhadap ekuitas. 1.0 = tanpa leverage (paling aman).
     # Dinaikkan secara sadar lewat LT_MAX_LEVERAGE kalau memang mau pakai perp.
     max_leverage: float = 1.0
+    # Rekomendasi agent-2 #9 (15 Okt, disetujui owner "gass semua"):
+    # 1) batas korelasi — maks posisi SE-ARAH supaya tidak full-short saat BTC berbalik;
+    # 2) filter rezim BTC — candidate berlawanan arah tren BTC 4h (EMA50) dilewati.
+    maks_posisi_searah: int = 2
+    btc_regime_filter: bool = True
 
     # --- Dashboard --------------------------------------------------------
     dashboard_port: int = 8799
