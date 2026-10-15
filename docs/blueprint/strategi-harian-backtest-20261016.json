@@ -1,0 +1,133 @@
+{
+  "SMA50/c1": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 1445.07,
+        "dd": 58.03
+      },
+      "ETHUSDT": {
+        "ret": 1330.4,
+        "dd": 56.67
+      },
+      "SOLUSDT": {
+        "ret": 13486.97,
+        "dd": 68.91
+      }
+    },
+    "avg_ret_pct": 5420.81,
+    "avg_dd_pct": 61.2,
+    "oos_ret_pct": 21.28,
+    "oos_dd_pct": 40.11,
+    "n_trade": 113.7
+  },
+  "SMA50/c2": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 1575.03,
+        "dd": 53.29
+      },
+      "ETHUSDT": {
+        "ret": 1171.62,
+        "dd": 53.58
+      },
+      "SOLUSDT": {
+        "ret": 8503.37,
+        "dd": 66.12
+      }
+    },
+    "avg_ret_pct": 3750.01,
+    "avg_dd_pct": 57.66,
+    "oos_ret_pct": 10.53,
+    "oos_dd_pct": 42.82,
+    "n_trade": 87.0
+  },
+  "SMA50/c3": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 1235.75,
+        "dd": 51.96
+      },
+      "ETHUSDT": {
+        "ret": 1105.24,
+        "dd": 52.18
+      },
+      "SOLUSDT": {
+        "ret": 14967.27,
+        "dd": 68.15
+      }
+    },
+    "avg_ret_pct": 5769.42,
+    "avg_dd_pct": 57.43,
+    "oos_ret_pct": 13.64,
+    "oos_dd_pct": 41.98,
+    "n_trade": 79.0
+  },
+  "SMA100/c1": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 608.86,
+        "dd": 38.89
+      },
+      "ETHUSDT": {
+        "ret": 481.66,
+        "dd": 75.6
+      },
+      "SOLUSDT": {
+        "ret": 2423.87,
+        "dd": 84.71
+      }
+    },
+    "avg_ret_pct": 1171.46,
+    "avg_dd_pct": 66.4,
+    "oos_ret_pct": -0.36,
+    "oos_dd_pct": 40.45,
+    "n_trade": 95.0
+  },
+  "SMA100/c2": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 457.24,
+        "dd": 43.49
+      },
+      "ETHUSDT": {
+        "ret": 323.79,
+        "dd": 77.01
+      },
+      "SOLUSDT": {
+        "ret": 2164.16,
+        "dd": 79.02
+      }
+    },
+    "avg_ret_pct": 981.73,
+    "avg_dd_pct": 66.51,
+    "oos_ret_pct": -7.2,
+    "oos_dd_pct": 39.85,
+    "n_trade": 73.0
+  },
+  "SMA100/c3": {
+    "per_aset": {
+      "BTCUSDT": {
+        "ret": 276.47,
+        "dd": 51.93
+      },
+      "ETHUSDT": {
+        "ret": 226.67,
+        "dd": 75.86
+      },
+      "SOLUSDT": {
+        "ret": 2035.6,
+        "dd": 75.95
+      }
+    },
+    "avg_ret_pct": 846.25,
+    "avg_dd_pct": 67.91,
+    "oos_ret_pct": -15.21,
+    "oos_dd_pct": 42.32,
+    "n_trade": 61.0
+  },
+  "UNIVERSE_BUY_HOLD": {
+    "BTCUSDT": 905.2,
+    "ETHUSDT": 436.51,
+    "SOLUSDT": 3102.13
+  }
+}

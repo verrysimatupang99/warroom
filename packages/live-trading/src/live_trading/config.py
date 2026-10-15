@@ -64,6 +64,22 @@ class Settings(BaseSettings):
     maks_posisi_searah: int = 2
     btc_regime_filter: bool = True
 
+    # --- Strategi A: SMA harian (spec agent-2 §3, disetujui owner 16 Okt) -----
+    # Semua angka = hipotesis awal; wajib lulus backtest 4 tahun + OOS (sudah,
+    # lihat docs/blueprint/strategi-harian-backtest-20261016.md).
+    harian_universe: str = "BTCUSDT,ETHUSDT,SOLUSDT"
+    # Pemilihan parameter sesuai hasil backtest 4-tahun OOS 30% (16 Okt, docs/blueprint/
+    # strategi-harian-backtest-20261016.json): SMA50+confirm1 OOS +21,3% (DD 40%)
+    # vs SMA100 semua VARIAN OOS negatif — data menang atas default spec.
+    harian_sma_n: int = 50
+    harian_confirm_closes: int = 1
+    harian_maks_bucket: float = 0.40      # maks 40% bucket per aset
+    harian_min_trade_usd: float = 5.0
+    # Batas mingguan & kill-switch drawdown (spec §2):
+    harian_mingguan_loss_pct: float = 8.0
+    harian_kill_dd_pct: float = 20.0
+    harian_capat_stop_pct: float = 20.0   # catastrophic stop per posisi (opsional)
+
     # --- Dashboard --------------------------------------------------------
     dashboard_port: int = 8799
     snapshot_ttl_s: int = 600

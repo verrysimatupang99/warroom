@@ -1,0 +1,19 @@
+[Unit]
+Description=War Room: Siklus Strategi A SMA harian (paper $10) — spec agent-2 §3
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom
+EnvironmentFile=/etc/warroom/db.env
+Environment=LT_HOME=/home/admin/live-trading/state-harian
+Environment=LT_EQUITY_USD=10
+Environment=LT_PAPER=true
+ExecStart=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/harian_cycle.py
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

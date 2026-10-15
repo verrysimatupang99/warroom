@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal Strategi A harian — 00:20 UTC (setelah close harian)
+
+[Timer]
+OnCalendar=*-*-* 00:20:00 UTC
+Persistent=true
+Unit=harian-cycle.service
+
+[Install]
+WantedBy=timers.target
