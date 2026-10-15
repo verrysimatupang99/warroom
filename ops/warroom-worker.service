@@ -16,6 +16,8 @@ EnvironmentFile=/etc/warroom/db.env
 EnvironmentFile=/etc/warroom/llm.env
 # Opsional: bila tidak ada, alert tetap di DB dan TIDAK diklaim terkirim.
 EnvironmentFile=-/etc/warroom/notifier.env
+# P0-4: pastikan skema DB di head alembic sebelum worker naik (lihat warroom-api.service).
+ExecStartPre=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/check-db-head.py --upgrade
 ExecStart=/home/admin/warroom/.venv/bin/python -m warroom_worker.run --every 30
 Restart=on-failure
 RestartSec=10

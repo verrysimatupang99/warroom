@@ -58,6 +58,20 @@ Skrip `deploy-web.sh` melakukan, berurutan:
 
 Setelah mengubah kode API, **selalu** sinkronkan `build_id` lalu restart:
 
+### Migrasi DB (otomatis sejak 15 Okt 2026)
+
+Unit `warroom-api` dan `warroom-worker` menjalankan
+`ExecStartPre=ops/check-db-head.py --upgrade` sebelum proses naik: skema DB
+dipastikan di head alembic, dan kalau tertinggal migrasinya diterapkan dulu.
+Bila unit gagal start, periksa `journalctl -u warroom-api -n 50` — kegagalan
+migrasi muncul di situ dan **tidak boleh** diatasi dengan menghapus ExecStartPre.
+Cek manual:
+
+```bash
+sudo bash -c 'set -a; source /etc/warroom/db.env; set +a; \
+  /home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/check-db-head.py'
+```
+
 ```bash
 cd /home/admin/warroom
 bash ops/set-build-id.sh                 # samakan build_id

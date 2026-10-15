@@ -19,6 +19,9 @@ EnvironmentFile=/etc/warroom/llm.env
 EnvironmentFile=-/etc/warroom/notifier.env
 # Identitas build untuk verifikasi build<->proses (ops/set-build-id.sh).
 EnvironmentFile=-/etc/warroom/build.env
+# P0-4: pastikan skema DB di head alembic sebelum proses naik. Mencegah kejadian
+# 14 Okt 2026 (produksi tertinggal 3 revisi). Gagal = unit gagal start (terlihat).
+ExecStartPre=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/check-db-head.py --upgrade
 ExecStart=/home/admin/warroom/.venv/bin/uvicorn warroom_api.app:app --host 127.0.0.1 --port 8800 --log-level warning
 Restart=on-failure
 RestartSec=10
