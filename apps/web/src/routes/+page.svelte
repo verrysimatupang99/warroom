@@ -939,7 +939,7 @@ async function muat() {
 		background: var(--latar);
 	}
 	.dompet-chip .angka { font-size: 0.8rem; }
-	.dompet-chip a { color: var(--mint, #34E39A); }
+	.dompet-chip a { color: var(--accent); }
 	
 	.kepala {
 		display: flex;
