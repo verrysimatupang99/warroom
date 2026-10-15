@@ -11,12 +11,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select
-from warroom_core.db import Fact, User, session_scope
+from warroom_core.db import User, session_scope
 from warroom_core.gate import DEFAULT_CI, DEFAULT_MIN_N, GateInput, evaluate
 
 from warroom_api import auth
-from warroom_api.areas import latest_facts
+from warroom_api.areas import latest_facts, split_poly_terverifikasi
 
 router = APIRouter()
 
@@ -33,34 +32,6 @@ class GateBody(BaseModel):
     label: str = "konfirmasi"
     subject: str = ""
     rule: str = ""
-
-
-def _split_poly_terverifikasi(s: Any) -> bool:
-    """Hasil verifikasi hash split pada fakta `poly.verdict` (True = lolos hash).
-
-    Lapisan API yang punya sesi DB menghitung ini via `splits.verifikasi` (id
-    terdaftar DAN sha256 berkas cocok) lalu meneruskannya ke `sinyal`/`verdict`
-    sebagai parameter — modul murni itu tidak query splits sendiri. Gagal baca /
-    tidak ada split / tidak cocok → False (fail-closed).
-    """
-    try:
-        from warroom_core import splits as _splits
-
-        row = s.scalars(
-            select(Fact)
-            .where(Fact.kind == "poly.verdict", Fact.key == "verdict")
-            .order_by(Fact.observed_at.desc())
-            .limit(1)
-        ).first()
-        nilai = row.value_json if row is not None else None
-        split = nilai.get("split") if isinstance(nilai, dict) else None
-        if not split:
-            return False
-        if _splits.split_untuk_gate(s, str(split)) is None:
-            return False
-        return bool(_splits.verifikasi(s, str(split)).get("cocok"))
-    except Exception:  # noqa: BLE001 — fail-closed: ragu = tidak terverifikasi
-        return False
 
 
 @router.post("/api/v1/gate/evaluate")
@@ -156,7 +127,7 @@ def signals_per_market(
     from warroom_core.market_signal import best_signal_per_market, signals_per_market
 
     with session_scope() as s:
-        terverifikasi = _split_poly_terverifikasi(s)
+        terverifikasi = split_poly_terverifikasi(s)
         daftar = signals_per_market(s, maks=maks, split_terverifikasi=terverifikasi)
         rows = best_signal_per_market(s, split_terverifikasi=terverifikasi)
     return {
@@ -178,7 +149,7 @@ def verdict_semua(user: Annotated[User, Depends(auth.current_user)]) -> dict[str
     from warroom_core.verdict import all_market_verdicts
 
     with session_scope() as s:
-        rows = all_market_verdicts(s, split_terverifikasi=_split_poly_terverifikasi(s))
+        rows = all_market_verdicts(s, split_terverifikasi=split_poly_terverifikasi(s))
     return {
         "verdict": [v.to_dict() for v in rows],
         "dibuat": datetime.now(UTC).isoformat(),
