@@ -70,6 +70,8 @@ function pilihSub(s: string) {
 	// Fact `paper20/dompet` — diterbitkan siklus ops/paper20_cycle.py tiap 15 menit.
 	// Angka NYATA dompet uji $20 (equity, posisi terbuka); kosong = pesan 'menunggu'.
 	let paper20 = $state<Record<string, any> | null>(null);
+	// Feed AXYNODE — sumber publik (funding perp seluruh simbol + FNG), per jam.
+	let axynode = $state<Record<string, any> | null>(null);
 	let aksiGalat = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -105,6 +107,8 @@ function pilihSub(s: string) {
 				(x: any) => x.kind === 'paper20' && x.key === 'dompet'
 			);
 			paper20 = p ? (p.value as Record<string, any>) : null;
+			const ax = (sys?.facts ?? []).find((x: any) => x.kind === 'axynode' && x.key === 'ringkas');
+			axynode = ax ? (ax.value as Record<string, any>) : null;
 		} catch {
 			lpagent = null;
 			paper20 = null;
@@ -240,9 +244,50 @@ function pilihSub(s: string) {
 					</p>
 				{/if}
 				<p class="mt-2 text-10 text-text-3">diperiksa {paper20.updated ?? '—'} WIB</p>
-			</Block>
-		{/if}
-		{#if lpagent}
+				</Block>
+				{/if}
+				{#if axynode}
+				<!-- Feed pasar eksternal AXYNODE — sumber publik (fapi Binance funding+perp,
+				alternative.me FNG) tanpa kunci; siklus ops/axynode_sinkron.py per jam. -->
+				<Block
+				judul="AXYNODE · pasar eksternal (funding &amp; FNG)"
+				deskripsi={axynode.sumber ? axynode.sumber.join(' · ') : 'sumber publik'}
+				memuat={memuat && !axynode}
+				>
+				<div class="grid grid-cols-3 gap-2 text-12">
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="block text-10 uppercase text-text-3">Fear &amp; Greed</span>
+						<span class="angka text-15 font-bold" class:text-warn={axynode.data?.fng?.nilai < 40} class:text-pos={axynode.data?.fng?.nilai > 60}>
+							{axynode.data?.fng?.nilai ?? '—'} {axynode.data?.fng?.label ?? ''}
+						</span>
+					</div>
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="block text-10 uppercase text-text-3">Rata funding</span>
+						<span class="angka text-15 font-bold">
+							{axynode.data?.funding?.rata_semua != null ? `${axynode.data.funding.rata_semua}%` : '—'}
+						</span>
+					</div>
+					<div class="rounded border border-line bg-surface p-2">
+						<span class="block text-10 uppercase text-text-3">Simbol perp likuid</span>
+						<span class="angka text-15 font-bold">{axynode.data?.funding?.jumlah_simbol ?? '—'}</span>
+					</div>
+				</div>
+				{#if axynode.data?.funding?.ekstrem?.length}
+					<div class="mt-2 space-y-1">
+						{#each axynode.data.funding.ekstrem.slice(0, 5) as f}
+							<div class="flex justify-between rounded border border-line-soft bg-surface px-2 py-1 font-mono text-11">
+								<span class="text-text">{f.simbol}</span>
+								<span class={f.funding_pct > 0 ? 'angka text-pos' : 'angka text-neg'}>
+									{f.funding_pct > 0 ? '+' : ''}{f.funding_pct}%
+								</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+				<p class="mt-2 text-10 text-text-3">diperiksa {axynode.updated ?? '—'} UTC · sumber publik tanpa kunci</p>
+				</Block>
+				{/if}
+				{#if lpagent}
 			<Block
 				judul="LP Agent · likuiditas Solana (Meteora)"
 				deskripsi={lpagent.sumber ?? 'LP Agent Open API'}

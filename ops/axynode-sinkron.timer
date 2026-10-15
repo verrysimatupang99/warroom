@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal sinkron AXYNODE per jam (menit 25)
+
+[Timer]
+OnCalendar=*-*-* *:25:00 UTC
+Persistent=true
+Unit=axynode-sinkron.service
+
+[Install]
+WantedBy=timers.target

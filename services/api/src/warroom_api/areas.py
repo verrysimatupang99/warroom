@@ -112,8 +112,9 @@ AREA_KIND: dict[str, tuple[str, ...]] = {
     # bukan angka pool palsu. Tanpa entri ini fakta tak pernah sampai ke UI.
     "sistem": (
         # Telemetri LP Agent (kind sendiri, baca-saja) + dompet uji $20 yang
-        # diterbitkan siklus ops/paper20_cycle.py (kind `paper20`).
-        "lpagent", "paper20",
+        # diterbitkan siklus ops/paper20_cycle.py (kind `paper20`) + feed pasar
+        # eksternal AXYNODE (kind `axynode`, sumber publik — tanpa kunci).
+        "lpagent", "paper20", "axynode",
     ),
 }
 
