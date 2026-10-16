@@ -47,10 +47,16 @@ def status_gerbang_live(home: Path | None = None) -> dict[str, Any]:
     kunci = {nama: bool(os.environ.get(nama)) for nama in KUNCI_WAJIB}
     env_file = Path("/etc/warroom/crypto.env")
     if any(not ada for ada in kunci.values()) and env_file.is_file():
-        teks = env_file.read_text(encoding="utf-8", errors="ignore")
-        for nama in KUNCI_WAJIB:
-            if not kunci[nama]:
-                kunci[nama] = any(baris.startswith(f"{nama}=") for baris in teks.splitlines())
+        try:
+            teks = env_file.read_text(encoding="utf-8", errors="ignore")
+            for nama in KUNCI_WAJIB:
+                if not kunci[nama]:
+                    kunci[nama] = any(baris.startswith(f"{nama}=") for baris in teks.splitlines())
+        except PermissionError:
+            # File ada tapi tak terbaca oleh proses ini (mis. mode 600 root saat
+            # proses berjalan sebagai user lain) — jangan crash; status jujur:
+            # keberadaan kunci tidak terbaca, gerbang tetap ditentukan oleh izin owner.
+            pass
     siap = izin and all(kunci.values())
     return {"izin_owner": izin, "file_izin": FILE_IZIN_OWNER, "kunci_ada": kunci, "siap": siap}
 
