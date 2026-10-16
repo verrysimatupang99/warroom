@@ -8,6 +8,7 @@
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
+import HonestyTag from './HonestyTag.svelte';
 	import Block from './Block.svelte';
 	import FreshnessBadge from './FreshnessBadge.svelte';
 	import SubNav from './SubNav.svelte';
@@ -44,6 +45,9 @@
 	let { kunci }: Props = $props();
 
 	const area = $derived(AREAS.find((a) => a.kunci === kunci)!);
+
+	// Status pemuatan fakta area → honesty-tag di header (TERUKUR / BELUM TERVERIFIKASI / —).
+	let statusFakta = $state<'memuat' | 'ok' | 'galat'>('memuat');
 
 	// URL sebagai satu-satunya sumber kebenaran agar tab dan navigasi selalu sinkron.
 	// Pemetaan slug lama menjaga kompatibilitas tautan dan bookmark tanpa pengalihan URL.
@@ -347,16 +351,21 @@ function pilihSub(s: string) {
 </script>
 
 <div class="space-y-4">
-	<!-- Header Area: eyebrow mono (label struktur ala DESIGN-USULAN) di atas judul.
-	     Kunci area = label mono; judul tetap dari definisi area, bukan karangan UI. -->
+	<!-- Header Area: eyebrow mono struktural "PASAR / <LABEL>" (label bagian mockup 16 Okt)
+	     + honesty-tag kejujuran data di samping judul, selaras halaman leaderboard. -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
 		<div>
-			<span class="label-mikro">{(anak?.label ?? area?.kunci ?? kunci).toUpperCase()}</span>
-			<div class="flex items-center gap-2">
+			<span class="label-mikro">PASAR / {(area?.label ?? kunci).toUpperCase()}</span>
+			<div class="flex flex-wrap items-center gap-2">
 				<h1 class="text-26 font-bold tracking-tight text-text font-display">{area?.label ?? kunci}</h1>
 				<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
 					{area?.kunci ?? kunci}
 				</span>
+				<HonestyTag
+					terverifikasi={statusFakta === 'ok' ? true : statusFakta === 'galat' ? false : null}
+					sumber={statusFakta === 'ok' ? `/api/v1/areas/${kunci}` : null}
+					alasan="endpoint area belum menjawab — bukan angka sintetis"
+				/>
 			</div>
 			{#if anak}
 				<p class="text-12 text-text-3 mt-0.5">{anak.label} — {anak.catatan}</p>
@@ -386,7 +395,7 @@ function pilihSub(s: string) {
 	{/if}
 
 	<!-- Sub `lp` menggunakan area API khusus (/areas/lp) karena memuat fakta lp_paper terpisah. -->
-	<AreaLoader area={sub === 'lp' ? 'lp' : kunci}>
+	<AreaLoader area={sub === 'lp' ? 'lp' : kunci} onstatus={(s) => (statusFakta = s)}>
 		{#snippet children(data)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
