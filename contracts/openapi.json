@@ -3076,7 +3076,7 @@
     },
     "/api/v1/verdict": {
       "get": {
-        "description": "Verdict KANONIK per pasar — satu sumber keputusan untuk seluruh UI.\n\nAudit QA 7 Okt: UI tidak boleh menyusun verdict sendiri dari beberapa angka\n(kartu bilang \"EDGE TERBUKTI\", gate bilang \"split belum beku\"). Backend\nmengeluarkan lima state + headline + alasan blokir; UI hanya merender.",
+        "description": "Verdict KANONIK per pasar — satu sumber keputusan untuk seluruh UI.\n\nUI tidak menyusun verdict sendiri dari beberapa angka; backend menyajikan state kanonik\n(lima state + headline + alasan blokir) dan UI hanya merender.",
         "operationId": "verdict_semua_api_v1_verdict_get",
         "parameters": [
           {
