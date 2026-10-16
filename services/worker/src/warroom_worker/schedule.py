@@ -103,6 +103,19 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="polybtc-sync",
+        interval_s=900,
+        enabled=True,
+        # TTL 30 mnt > interval 15 mnt (aturan rumah: fakta tidak boleh basi di antara
+        # dua tulis). Sesi BTC 5m berganti tiap 5 menit, jadi 15 mnt cukup segar.
+        payload={"ttl_s": 1800},
+        note=(
+            "baca-saja keluaran skill «PolyBTC Momentum» (0xgetz/polymarket-btc-5m) → "
+            "fakta `poly.alt/btc-5m`. Skill berjalan mandiri; handler ini tidak pernah "
+            "mengirim order dan tidak mengubah kode skill."
+        ),
+    ),
+    JobSpec(
         name="lpagent-sync",
         interval_s=1800,
         # SENGAJA enabled=True walau kunci belum ada: handler mendeteksi kunci hilang dan

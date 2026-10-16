@@ -336,3 +336,31 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
     )
 
 
+
+
+def handler_polybtc_sync(s: SASession, job: Job) -> str:
+    """Terbitkan fakta alternatif «PolyBTC Momentum» (BTC 5m) — baca-saja.
+
+    Skill pihak ketiga (0xgetz/polymarket-btc-5m) berjalan mandiri; handler ini
+    hanya membaca keluarannya dan menerbitkan fakta. Tidak ada order, tidak ada
+    perubahan pada kode skill. Kegagalan dilaporkan sebagai data, bukan disembunyikan.
+    """
+    from warroom_worker.adapters import polybtc
+
+    r = polybtc.polybtc_ringkas()
+    _tulis_fakta(
+        s,
+        kind="poly.alt",
+        key="btc-5m",
+        value=r,
+        source=str(r.get("skill_dir", "polymarket-btc-5m")),
+        ttl_s=int(job.payload_json.get("ttl_s", 900)),
+    )
+    sesi = r.get("sesi") or {}
+    obs = r.get("observasi") or {}
+    return (
+        f"tersedia={r.get('tersedia')} jalan={r.get('jalan')} "
+        f"mode={sesi.get('mode')} profil={sesi.get('profil')} "
+        f"snapshot={obs.get('n_snapshot')} preflight_go={obs.get('preflight_go')}"
+    )
+
