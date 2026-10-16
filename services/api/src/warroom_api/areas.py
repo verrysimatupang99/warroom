@@ -86,6 +86,10 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
         ("poly.verdict", "verdict"),
         ("poly.dataset", "recorder"),
         ("poly.akses", "cakupan"),
+        # Alternatif BTC 5m (skill 0xgetz/polymarket-btc-5m) — dibaca job `polybtc-sync`
+        # dari keluaran skill yang berjalan mandiri. Kind sendiri supaya jelas ini
+        # bukan bagian arm D favorit.
+        ("poly.alt", "btc-5m"),
     ),
     # Narasi LLM per market (6 Okt): kind `ai.brief`, key = nama area. Ditulis job
     # `llm-brief-<market>`; hanya tampil bila ada — tidak ada fakta = tidak ada kartu.

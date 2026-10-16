@@ -37,6 +37,7 @@ import TrackBar from './TrackBar.svelte';
 	import ForexPair from './ForexPair.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import MarketSignal from './MarketSignal.svelte';
+import PolyAltBtc5m from './PolyAltBtc5m.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
 	import type { Fact, EventItem, MarketVerdict } from '$lib/api/types';
 
@@ -404,6 +405,8 @@ function pilihSub(s: string) {
 			{@const faktaLedger = temukanFakta(data.facts, kunci === 'crypto' ? 'ledger' : `${kunci}_ledger`) ?? temukanFakta(data.facts, 'ledger')}
 			{@const faktaVerdict = temukanFakta(data.facts, 'verdict')}
 			{@const faktaPolyPaper = temukanFakta(data.facts, 'poly_paper')}
+			{@const faktaPolyAlt = data.facts.find((f) => f.kind === 'poly.alt' && f.key === 'btc-5m') ?? null}
+			{@const polyAltObj = (faktaPolyAlt?.value as Record<string, any>) ?? null}
 			{@const datasetRecorder = temukanFakta(data.facts, 'recorder')}
 			{@const datasetCakupan = temukanFakta(data.facts, 'cakupan')}
 			{@const faktaBagian = temukanFakta(data.facts, 'bagian')}
@@ -1355,12 +1358,14 @@ function pilihSub(s: string) {
 			{#if kunci === 'polymarket'}
 				{#if sub === 'setup-b' || !sub}
 					<JudulBagian nomor="1" judul="Favorit 0,70–0,95 (Arm B)" tujuan="Satu-satunya arm yang dipakai: beli outcome favorit yang harganya 0,70–0,95 (menang kecil, sering benar)" ikon="◎" />
+				{:else if sub === 'btc-5m'}
+					<JudulBagian nomor="2" judul="BTC 5m (Alternatif)" tujuan="Strategi BTC 5 menit up/down dari skill PolyBTC Momentum — dijalankan terpisah dari arm D favorit" ikon="⚡" />
 				{:else if sub === 'riset'}
-					<JudulBagian nomor="2" judul="Riset" tujuan="Dataset beku + parity/drift + katalog replay — bahan bukti, bukan keputusan" ikon="⌕" />
+					<JudulBagian nomor="3" judul="Riset" tujuan="Dataset beku + parity/drift + katalog replay — bahan bukti, bukan keputusan" ikon="⌕" />
 				{:else if sub === 'arsip'}
-					<JudulBagian nomor="3" judul="Arm Lain (Beku)" tujuan="A momentum, C fade, D favorit: disimpan sebagai bukti, bukan dasar keputusan" ikon="❄" />
+					<JudulBagian nomor="4" judul="Arm Lain (Beku)" tujuan="A momentum, C fade, D favorit: disimpan sebagai bukti, bukan dasar keputusan" ikon="❄" />
 				{:else if sub === 'live'}
-					<JudulBagian nomor="4" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
+					<JudulBagian nomor="5" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
 				{/if}
 			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
 			{#if narasiObj}
@@ -1399,6 +1404,17 @@ function pilihSub(s: string) {
 			{/if}
 
 
+				{#if sub === 'btc-5m'}
+					<Block
+						judul="BTC 5m — PolyBTC Momentum (alternatif)"
+						deskripsi="fakta poly.alt/btc-5m — dibaca job polybtc-sync dari keluaran skill yang berjalan mandiri"
+						sumber={faktaPolyAlt?.source ?? null}
+						age_s={faktaPolyAlt?.age_s ?? null}
+						status={faktaPolyAlt?.status ?? null}
+					>
+						<PolyAltBtc5m nilai={polyAltObj} fakta={faktaPolyAlt} />
+					</Block>
+				{/if}
 				{#if sub === 'riset'}
 					<Block
 						judul="Katalog dataset"
