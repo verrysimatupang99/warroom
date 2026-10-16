@@ -268,3 +268,78 @@ def get_settings_palsu():
     from live_trading.config import get_settings
 
     return get_settings()
+
+
+# ---------------------------------------------------- paritas backtest ↔ lapangan
+# Perbandingan antar-strategi hanya sah kalau angka backtest diukur dengan aturan yang
+# sama dengan angka harian (forward). Dua tempat yang bisa melenceng tanpa suara:
+# jendela tahan posisi dan basis biaya yang dipakai untuk "R bersih".
+
+def test_run_pair_memakai_jendela_tahan_yang_sama_dengan_lapangan(monkeypatch) -> None:
+    """Backtest harus menahan posisi selama jendela lapangan (`measure.HOLD_MAX_H`).
+
+    Kalau jendela backtest lebih pendek, hasilnya "keluar lebih awal" dibanding hasil
+    paper — dua angka yang terlihat sebanding padahal mengukur kebijakan berbeda.
+    """
+    from live_trading import measure
+
+    _batas_kecil(monkeypatch)
+    panggilan: list[dict[str, Any]] = []
+    asli = backtest.resolve_one
+
+    def _rekam(row, klines, *args, **kwargs):
+        panggilan.append({"hold_max_h": kwargs.get("hold_max_h"), "candles": len(klines)})
+        return asli(row, klines, *args, **kwargs)
+
+    monkeypatch.setattr(backtest, "resolve_one", _rekam)
+    rows = backtest.run_pair(get_settings_palsu(), "UJIUSDT", _seri(700), step_h=4, warmup_h=300)
+
+    assert rows, "harus ada kandidat supaya pengujian ini ada artinya"
+    assert panggilan
+    for p in panggilan:
+        assert p["hold_max_h"] == measure.HOLD_MAX_H, "jendela tahan backtest ≠ jendela lapangan"
+        assert p["candles"] >= measure.FILL_WINDOW_H + measure.HOLD_MAX_H, (
+            "candle yang disediakan kurang untuk jendela terisi + jendela tahan"
+        )
+
+
+def test_run_pair_ulang_memberi_baris_identik(monkeypatch) -> None:
+    """Dua jalan dengan input sama harus menghasilkan baris identik.
+
+    Angka per strategi dipakai untuk membandingkan; kalau satu jalan bisa berbeda dari
+    jalan lain tanpa perubahan data, selisihnya bukan bukti.
+    """
+    _batas_kecil(monkeypatch)
+    seri = _seri(700)
+    a = backtest.run_pair(get_settings_palsu(), "UJIUSDT", seri, step_h=4, warmup_h=300)
+    b = backtest.run_pair(get_settings_palsu(), "UJIUSDT", seri, step_h=4, warmup_h=300)
+
+    assert a
+    assert a == b
+
+
+def test_agregat_menyebut_basis_biaya_yang_dipakai() -> None:
+    """R bersih wajib membawa basis biayanya — tanpa itu dua angka tidak bisa dibandingkan."""
+    rows = [{"allowed": True, "hasil": "tp1", "r": 2.0, "rules_gagal": [], "entry": 100.0, "sl": 99.0}]
+    a = backtest.aggregate(rows, fee_per_sisi=0.001)
+
+    assert a["fee_per_sisi"] == 0.001
+    assert a["lolos"]["biaya_rata_r"] == pytest.approx(0.2), "(2 x 0,001 x 100) / 1"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="biaya backtest 0,05%/sisi vs kebijakan biaya paper 0,1%/sisi — menunggu keputusan owner",
+)
+def test_basis_biaya_backtest_sebanding_kebijakan_paper() -> None:
+    """Temuan QA: biaya default backtest 2x lebih murah dari kebijakan biaya paper.
+
+    Owner menetapkan biaya paper seragam 0,1%/sisi supaya perbandingan antar-strategi
+    adil (`execution.costs.biaya_seragam`). Backtest masih memakai tarif taker 0,05%/sisi,
+    jadi selama keduanya berbeda, "R bersih" backtest dan "R" hasil paper diukur dengan
+    biaya yang tidak sama. xfail(strict): begitu owner menyamakan basisnya, tes ini
+    XPASS dan penanda ini wajib dilepas (bukan dibiarkan hijau palsu).
+    """
+    from live_trading.execution import costs
+
+    assert backtest.FEE_PER_SISI_DEFAULT * 10_000 == costs.BIAYA_SISI_BPS
