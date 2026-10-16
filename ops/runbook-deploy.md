@@ -83,6 +83,25 @@ curl -sS http://127.0.0.1:8800/api/v1/build   # verifikasi
 `WARROOM_BUILD_ID`, endpoint `/api/v1/build` akan melaporkan build lama → verifikasi
 deploy web akan memberi **peringatan palsu**.
 
+### Satu perintah (deploy-service.sh)
+
+```bash
+cd /home/admin/warroom
+bash ops/deploy-service.sh api      # atau: worker
+bash ops/rollback-service.sh api    # kembali ke commit yang direkam deploy terakhir
+bash ops/rollback-service.sh api <commit>
+```
+
+Alurna: tree git live harus bersih → `set-build-id.sh` → `systemctl restart` →
+health gate. Gate api: unit aktif, `/api/v1/build` melaporkan `build_id` yang baru,
+tanpa auto-restart (NRestarts=0). Gate worker: unit aktif stabil sepanjang jendela
+≥30 s tanpa NRestarts. Gate gagal → otomatis kembali ke commit sebelum-deploy +
+restart + gate ulang.
+
+**Batas rollback:** hanya kode. Kalau deploy tadi menjalankan migrasi, skema DB bisa
+lebih baru dari kode lama → unit menolak start. Penurunan skema (alembic downgrade)
+adalah keputusan owner, bukan langkah otomatis skrip.
+
 ---
 
 ## Verifikasi manual (kapan saja)
