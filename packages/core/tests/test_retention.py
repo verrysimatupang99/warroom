@@ -14,14 +14,19 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import func, select
 from warroom_core import retention
-from warroom_core.db import Event, Fact, session_scope
+from warroom_core.db import Alert, Event, Fact, session_scope
 
 
 @pytest.fixture(autouse=True)
 def _bersihkan(db):
-    """Isolasi: retensi bersifat GLOBAL (semua kunci), jadi sisa tes lain harus dikosongkan."""
+    """Isolasi: retensi bersifat GLOBAL (semua kunci), jadi sisa tes lain harus dikosongkan.
+
+    `alerts` ikut dibersihkan karena `rencana()`/`jalankan()` menghitung alert secara
+    global juga — alert ack milik tes lain membuat hitungannya bocor antar-berkas.
+    """
     with session_scope() as s:
         s.query(Fact).delete()
+        s.query(Alert).delete()
         s.query(Event).filter(Event.type.in_(["uji.lama"])).delete()
     yield
 

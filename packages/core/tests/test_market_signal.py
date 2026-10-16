@@ -21,8 +21,12 @@ def _fakta(s, kind: str, key: str, value) -> None:
                observed_at=datetime.now(UTC), ttl_s=3600, hash=f"h-{kind}-{key}"))
 
 
-def test_selalu_semua_pasar(db) -> None:
-    """Tanpa fakta apa pun, semua pasar tetap muncul — sebagai 'tidak ada', bukan hilang."""
+def test_selalu_semua_pasar(bersihkan_db) -> None:
+    """Tanpa fakta apa pun, semua pasar tetap muncul — sebagai 'tidak ada', bukan hilang.
+
+    `bersihkan_db`: pertanyaan tes ini adalah keadaan dunia KOSONG, jadi baris sisa
+    berkas tes lain harus dibuang dulu (kalau tidak, hasilnya bergantung urutan).
+    """
     with session_scope() as s:
         rows = best_signal_per_market(s)
     assert len(rows) == len(PASAR)
@@ -161,7 +165,7 @@ def test_lp_sorot_yang_harus_keluar(db) -> None:
     assert lp.arah == "KELUAR"
 
 
-def test_idx_dan_forex_kosong_menyebut_alasan(db) -> None:
+def test_idx_dan_forex_kosong_menyebut_alasan(bersihkan_db) -> None:
     with session_scope() as s:
         rows = {r.pasar: r for r in best_signal_per_market(s)}
     assert "BSJP" in rows["idx"].alasan
