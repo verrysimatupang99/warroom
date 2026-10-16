@@ -38,6 +38,12 @@ import TrackBar from './TrackBar.svelte';
 	import KalenderDampak from './KalenderDampak.svelte';
 	import MarketSignal from './MarketSignal.svelte';
 import PolyAltBtc5m from './PolyAltBtc5m.svelte';
+import KartuNarasi from './KartuNarasi.svelte';
+import PasarCrypto from './PasarCrypto.svelte';
+import PasarIdx from './PasarIdx.svelte';
+import PasarForex from './PasarForex.svelte';
+import PasarGmgn from './PasarGmgn.svelte';
+import PasarPolymarket from './PasarPolymarket.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
 import { buatKonteks } from '$lib/pasar/konteks';
 	import type { Fact, EventItem, MarketVerdict } from '$lib/api/types';
@@ -607,11 +613,11 @@ function pilihSub(s: string) {
 			<!-- VIEW KHUSUS: CRYPTO                      -->
 			<!-- ========================================== -->
 			{#if kunci === 'crypto'}
-				<!-- Navigasi sub-halaman crypto memisahkan ringkasan cockpit, setup, ukur, dan eksekusi. -->
-				{#if sub === 'cockpit' || !sub}
-					<JudulBagian nomor="1" judul="Ringkasan" tujuan="Uang, risiko, dan sinyal teratas — keadaan hari ini dalam satu pandangan" ikon="◎" />
-				{:else if sub === 'setup'}
-					<JudulBagian nomor="2" judul="Setup Kandidat" tujuan="Daftar lengkap kandidat + alasan lolos/gagal per aturan (kolom 'skor gate')" ikon="◈" />
+				<!-- Judul bagian pasar crypto dari komponennya (Level 1). -->
+				<PasarCrypto {sub} />
+				<!-- Navigasi sub-halaman crypto memisahkan ringkasan cockpit, setup, ukur, dan eksekusi.
+				     Cabang 'cockpit' tidak perlu isi di sini: judulnya sudah dari <PasarCrypto>. -->
+				{#if sub === 'setup'}
 					<div class="mt-3">
 						<Penjelasan judul="Metode yang dipakai (SMC multi-timeframe) + cara membaca kolomnya">
 							<p>
@@ -639,7 +645,6 @@ function pilihSub(s: string) {
 						</Penjelasan>
 					</div>
 				{:else if sub === 'ukur'}
-					<JudulBagian nomor="3" judul="Ukur (validasi)" tujuan="Apakah aturan gate punya nilai? Lolos vs ditolak, dihitung setelah kejadian" ikon="⚖" />
 					<div class="mt-3">
 						<Penjelasan judul="Apa yang dimaksud 'diukur' di tab ini">
 							<p>
@@ -662,7 +667,6 @@ function pilihSub(s: string) {
 						</Penjelasan>
 					</div>
 				{:else if sub === 'eksekusi'}
-					<JudulBagian nomor="4" judul="Eksekusi & Ledger" tujuan="Yang benar-benar terjadi: posisi terbuka, fill, hasil per trade" ikon="⇄" />
 					<div class="mt-3">
 						<Penjelasan judul="Cara membaca Eksekusi & Ledger (jalur paper)">
 							<p>
@@ -758,40 +762,8 @@ function pilihSub(s: string) {
 							{/if}
 
 			<!-- Narasi LLM menyajikan kesimpulan berdasarkan grounding fakta tanpa menggantikan angka bukti. -->
-			{#if narasiObj}
-							<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-								<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
-									<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
-									<span class="text-10 text-text-3 font-mono">
-										{narasiObj.fact_ids?.length ?? 0} fakta dirujuk
-										{#if narasiObj.output?.nada}· nada {narasiObj.output.nada}{/if}
-									</span>
-								</div>
-								{#if narasiObj.status !== 'ok'}
-									<p class="px-3 py-2 text-11 text-warn">
-										Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
-										angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
-									</p>
-								{:else if narasiObj.output?.kalimat?.length}
-									<div class="px-3 py-2.5">
-										<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
-										{#if narasiObj.output.kalimat.length > 1}
-											<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
-												{#each narasiObj.output.kalimat.slice(1) as k}
-													<p class="text-12 text-text-2">{k.teks}</p>
-												{/each}
-											</div>
-										{/if}
-										<p class="mt-2 text-10 text-text-3">
-											Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
-											{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
-										</p>
-									</div>
-								{:else}
-									<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
-								{/if}
-							</div>
-			{/if}
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief (kartu bersama). -->
+			<KartuNarasi narasi={narasiObj} />
 
 							<!-- Kandidat aktif dari ledger gate yang sedang berjalan. -->
 							{#if (sub === 'setup' || sub === 'cockpit') && sinyalAktif.length}
@@ -1329,52 +1301,10 @@ function pilihSub(s: string) {
 			<!-- VIEW KHUSUS: POLYMARKET                  -->
 			<!-- ========================================== -->
 			{#if kunci === 'polymarket'}
-				{#if sub === 'setup-b' || !sub}
-					<JudulBagian nomor="1" judul="Favorit 0,70–0,95 (Arm B)" tujuan="Satu-satunya arm yang dipakai: beli outcome favorit yang harganya 0,70–0,95 (menang kecil, sering benar)" ikon="◎" />
-				{:else if sub === 'btc-5m'}
-					<JudulBagian nomor="2" judul="BTC 5m (Alternatif)" tujuan="Strategi BTC 5 menit up/down dari skill PolyBTC Momentum — dijalankan terpisah dari arm D favorit" ikon="⚡" />
-				{:else if sub === 'riset'}
-					<JudulBagian nomor="3" judul="Riset" tujuan="Dataset beku + parity/drift + katalog replay — bahan bukti, bukan keputusan" ikon="⌕" />
-				{:else if sub === 'arsip'}
-					<JudulBagian nomor="4" judul="Arm Lain (Beku)" tujuan="A momentum, C fade, D favorit: disimpan sebagai bukti, bukan dasar keputusan" ikon="❄" />
-				{:else if sub === 'live'}
-					<JudulBagian nomor="5" judul="Live" tujuan="Jalur uang nyata: status arming 3-way (belum aktif)" ikon="⚡" />
-				{/if}
+				<PasarPolymarket {sub} />
 			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
-			{#if narasiObj}
-				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
-						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
-						<span class="text-10 text-text-3 font-mono">
-							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
-						</span>
-					</div>
-					{#if narasiObj.status !== 'ok'}
-						<p class="px-3 py-2 text-11 text-warn">
-							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
-							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
-							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
-						</p>
-					{:else if narasiObj.output?.kalimat?.length}
-						<div class="px-3 py-2.5">
-							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
-							{#if narasiObj.output.kalimat.length > 1}
-								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
-									{#each narasiObj.output.kalimat.slice(1) as k}
-										<p class="text-12 text-text-2">{k.teks}</p>
-									{/each}
-								</div>
-							{/if}
-							<p class="mt-2 text-10 text-text-3">
-								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
-								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
-							</p>
-						</div>
-					{:else}
-						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
-					{/if}
-				</div>
-			{/if}
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief (kartu bersama). -->
+			<KartuNarasi narasi={narasiObj} />
 
 
 				{#if sub === 'btc-5m'}
@@ -1671,15 +1601,7 @@ function pilihSub(s: string) {
 
 			<!-- ========================================== -->
 			{#if kunci === 'idx'}
-				{#if sub === 'sinyal' || !sub}
-					<JudulBagian nomor="1" judul="Sinyal" tujuan="Bandarmologi + BSJP + ARA: siapa yang bergerak, dan sinyal apa yang keluar" ikon="◈" />
-				{:else if sub === 'bandarmologi'}
-					<JudulBagian nomor="2" judul="Bandarmologi" tujuan="Aliran broker per emiten (ATS, frekuensi, no-sell) + skor 0–100" ikon="⚖" />
-				{:else if sub === 'bsjp'}
-					<JudulBagian nomor="3" judul="BSJP" tujuan="Beli Sore Jual Pagi: kandidat tahan semalam, dari walk-forward (bukan karangan)" ikon="☾" />
-				{:else if sub === 'aliran'}
-					<JudulBagian nomor="4" judul="Aliran" tujuan="Peta modal: asing vs lokal, akumulasi senyap, konflik distribusi" ikon="⇄" />
-				{/if}
+				<PasarIdx {sub} />
 				{#if isWeekendWIB}
 					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
@@ -1927,39 +1849,8 @@ function pilihSub(s: string) {
 				{/if}
 
 			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
-			{#if narasiObj}
-			<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-				<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
-					<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
-					<span class="text-10 text-text-3 font-mono">
-						{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
-					</span>
-				</div>
-				{#if narasiObj.status !== 'ok'}
-					<p class="px-3 py-2 text-11 text-warn">
-						Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
-						angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
-					</p>
-				{:else if narasiObj.output?.kalimat?.length}
-					<div class="px-3 py-2.5">
-						<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
-						{#if narasiObj.output.kalimat.length > 1}
-							<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
-								{#each narasiObj.output.kalimat.slice(1) as k}
-									<p class="text-12 text-text-2">{k.teks}</p>
-								{/each}
-							</div>
-						{/if}
-						<p class="mt-2 text-10 text-text-3">
-							Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
-							{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
-						</p>
-					</div>
-				{:else}
-					<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
-				{/if}
-			</div>
-			{/if}
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief (kartu bersama). -->
+			<KartuNarasi narasi={narasiObj} />
 
 				<!-- Akurasi sinyal per setup dari ledger grader v3 (hanya trade tuntas dan kematangan hari bursa). -->
 				<div class="permukaan-2 rounded-card border border-line p-3">
@@ -2526,15 +2417,7 @@ function pilihSub(s: string) {
 			<!-- ========================================== -->
 			{@const peluangForex = hitungPeluangForex(akurasiForexT, forexSetupKarantina)}
 			{#if kunci === 'forex'}
-				{#if sub === 'struktur' || !sub}
-					<JudulBagian nomor="1" judul="Struktur" tujuan="Pandangan harga emas (XAU/USD) + sinyal & titik masuk dari jurnal mesin" ikon="◈" />
-				{:else if sub === 'sesi'}
-					<JudulBagian nomor="2" judul="Sesi" tujuan="Kapan tiap bursa buka/tutup + ramai-tidaknya tiap jam sesi" ikon="◷" />
-				{:else if sub === 'kalender'}
-					<JudulBagian nomor="3" judul="Kalender" tujuan="Agenda berita besar + hitung mundur: apakah aman masuk posisi sekarang" ikon="⌗" />
-				{:else if sub === 'demo'}
-					<JudulBagian nomor="4" judul="Keterbatasan & Demo" tujuan="Apa yang belum ada (akun broker, biaya) — dinyatakan terbuka" ikon="⚠" />
-				{/if}
+				<PasarForex {sub} />
 				{#if isWeekendWIB}
 					<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-12 text-warn flex items-start gap-2.5">
 						<span class="text-16 leading-none">ℹ️</span>
@@ -2585,40 +2468,8 @@ function pilihSub(s: string) {
 						</div>
 
 			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
-			{#if narasiObj}
-				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
-						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
-						<span class="text-10 text-text-3 font-mono">
-							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
-						</span>
-					</div>
-					{#if narasiObj.status !== 'ok'}
-						<p class="px-3 py-2 text-11 text-warn">
-							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
-							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
-							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
-						</p>
-					{:else if narasiObj.output?.kalimat?.length}
-						<div class="px-3 py-2.5">
-							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
-							{#if narasiObj.output.kalimat.length > 1}
-								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
-									{#each narasiObj.output.kalimat.slice(1) as k}
-										<p class="text-12 text-text-2">{k.teks}</p>
-									{/each}
-								</div>
-							{/if}
-							<p class="mt-2 text-10 text-text-3">
-								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
-								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
-							</p>
-						</div>
-					{:else}
-						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
-					{/if}
-				</div>
-			{/if}
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief (kartu bersama). -->
+			<KartuNarasi narasi={narasiObj} />
 
 						<!-- Dompet paper forex: Rp 10 juta, dari jurnal mesin -->
 						<DompetPasar market="forex" dompet={dompetObj} judul="Dompet Paper Forex" />
@@ -2957,13 +2808,7 @@ function pilihSub(s: string) {
 			<!-- VIEW KHUSUS: GMGN (DEX & MEMECOIN)        -->
 			<!-- ========================================== -->
 			{#if kunci === 'gmgn'}
-				{#if sub === 'radar' || !sub}
-					<JudulBagian nomor="1" judul="Radar" tujuan="Kapan tiap jaringan ramai (jam ramai-nya) + Robinhood Chain vs Meteora + cek harga langsung" ikon="◉" />
-				{:else if sub === 'lp'}
-					<JudulBagian nomor="2" judul="LP" tujuan="Menaruh dana di dua tempat: Solana (Meteora) &amp; Robinhood Chain (Uniswap) — untung fee, risiko impermanent loss, bandingkan dgn sekadar tahan" ikon="≋" />
-				{:else if sub === 'memecoin'}
-					<JudulBagian nomor="3" judul="Memecoin" tujuan="Token baru dari GMGN/FOMO: bot uji coba, saringan keamanan, pantauan pemain besar — eksplorasi, bukan rekomendasi" ikon="✦" />
-				{/if}
+				<PasarGmgn {sub} />
 
 				<!-- Ringkasan status bot paper GMGN, posisi tercatat, trade tuntas, dan status gate. -->
 				{@const gmgnStats0 = (gmgnSnapStats?.[0] as any) ?? null}
@@ -3053,40 +2898,8 @@ function pilihSub(s: string) {
 					</div>
 				</div>
 			<!-- Narasi penjelas berbasis fakta dari job llm-brief; bukti dan angka SSOT tetap diutamakan. -->
-			{#if narasiObj}
-				<div class="mb-4 overflow-hidden rounded-card border border-line bg-surface">
-					<div class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-1.5">
-						<span class="text-11 font-bold uppercase tracking-wide text-accent-2">✳ Narasi</span>
-						<span class="text-10 text-text-3 font-mono">
-							{narasiObj.fact_ids?.length ?? 0} fakta dirujuk{#if narasiObj.output?.nada} · nada {narasiObj.output.nada}{/if}
-						</span>
-					</div>
-					{#if narasiObj.status !== 'ok'}
-						<p class="px-3 py-2 text-11 text-warn">
-							Narasi tidak tersedia ({narasiObj.status ?? '—'}{narasiObj.error_code ? ` · ${narasiObj.error_code}` : ''}) —
-							angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
-							Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
-						</p>
-					{:else if narasiObj.output?.kalimat?.length}
-						<div class="px-3 py-2.5">
-							<p class="text-15 leading-snug text-text">{narasiObj.output.kalimat[0].teks}</p>
-							{#if narasiObj.output.kalimat.length > 1}
-								<div class="mt-1.5 space-y-1 border-l-2 border-line-soft pl-2.5">
-									{#each narasiObj.output.kalimat.slice(1) as k}
-										<p class="text-12 text-text-2">{k.teks}</p>
-									{/each}
-								</div>
-							{/if}
-							<p class="mt-2 text-10 text-text-3">
-								Deskriptif, bukan rekomendasi. Mesin: {narasiObj.provider ?? '—'} ·
-								{narasiObj.prompt_version ?? '—'}{#if narasiObj.latency_ms} · {narasiObj.latency_ms} ms{/if}
-							</p>
-						</div>
-					{:else}
-						<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
-					{/if}
-				</div>
-			{/if}
+			<!-- Narasi penjelas berbasis fakta dari job llm-brief (kartu bersama). -->
+			<KartuNarasi narasi={narasiObj} />
 
 
 				<!-- Perbandingan arsitektur LP antara Robinhood Chain (Uniswap) dan Solana (Meteora). -->
