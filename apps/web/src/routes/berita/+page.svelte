@@ -47,6 +47,7 @@
 
 <div class="berita">
 	<header class="kepala">
+		<span class="label-mikro">INFORMASI / BERITA</span>
 		<h1>Berita</h1>
 		<p class="dim">
 			Judul + tautan dari feed publik. Ringkasan tidak disalin — klik untuk baca di sumbernya.
