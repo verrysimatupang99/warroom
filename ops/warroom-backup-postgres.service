@@ -1,0 +1,19 @@
+[Unit]
+Description=War Room: backup harian Postgres (pg_dump custom + sha256 + rotasi)
+After=postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom
+# WARROOM_DB_URL dibaca systemd (root) lalu disuntik ke proses — berkas tetap 600 root.
+EnvironmentFile=/etc/warroom/db.env
+ExecStart=/usr/bin/env bash /home/admin/warroom/ops/backup-postgres.sh
+TimeoutStartSec=900
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

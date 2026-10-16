@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal backup Postgres War Room — 00:40 UTC (setelah siklus harian 00:20 selesai menulis)
+
+[Timer]
+OnCalendar=*-*-* 00:40:00 UTC
+Persistent=true
+Unit=warroom-backup-postgres.service
+
+[Install]
+WantedBy=timers.target
