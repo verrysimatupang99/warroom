@@ -170,8 +170,18 @@ def handler_freshness(s: SASession, job: Job) -> str:
         # 'data basi' ber-subjek {kind}/{sumber|key} diclose saat fakta yang
         # dimaksud SUDAH segar lagi. Tanpa ini, alert basi menggantung selamanya
         # walau sumber sudah pulih (kasus snapshot & lp_mark, 15 Okt).
+        #
+        # Batas yang penting: hanya alert yang BENAR-BENAR milik job ini (pesannya
+        # berpola 'data basi:') yang boleh ditutup di sini. Sebelumnya filternya
+        # hanya "subjek memuat /", sehingga alert domain lain yang kebetulan
+        # bersubjek sama (mis. alert siklus hidup strategi) ikut ter-ack otomatis
+        # lima menit setelah dibuat — alert keselamatan uang hilang tanpa jejak
+        # keputusan siapa pun.
         buka = s.scalars(
-            select(Alert).where(Alert.ack_at.is_(None)).where(Alert.subject.like("%/%"))
+            select(Alert)
+            .where(Alert.ack_at.is_(None))
+            .where(Alert.subject.like("%/%"))
+            .where(Alert.message.like("data basi:%"))
         ).all()
         for a in buka:
             potongan = a.subject.split("/", 1)
