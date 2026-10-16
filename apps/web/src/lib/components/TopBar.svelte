@@ -142,7 +142,7 @@
 		max-width: 24rem; max-height: 60vh; overflow: auto;
 		background: var(--color-surface); border: 1px solid var(--color-line);
 		border-radius: var(--radius-card, 0.75rem); padding: 0.75rem 0.85rem;
-		box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+		/* FLAT (design 16 Okt): tanpa glow. */
 	}
 	.kepala-basi { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
 	.tutup-basi { border: 1px solid var(--color-line); border-radius: 0.4rem; padding: 0 0.4rem; color: var(--color-text-3); }
@@ -159,10 +159,9 @@
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
 		background: color-mix(in srgb, var(--color-bg) 84%, transparent);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
+		/* backdrop-filter blur (glassmorphism) dihapus — FLAT, design 16 Okt. */
 		border-bottom: 1px solid var(--color-line);
-		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+		/* FLAT: tanpa glassmorphism/glow. */
 	}
 	.kiri {
 		display: flex;
@@ -233,7 +232,7 @@
 	   berlebih dan TANPA loop pulse bermakna tidak ada. Pulih otomatis diam. */
 	.titik.baik {
 		background: var(--color-pos);
-		box-shadow: 0 0 6px color-mix(in srgb, var(--color-pos) 45%, transparent);
+		/* Glow mint dihapus — mint khusus nilai TERUKUR (design 16 Okt). */
 	}
 	.titik.perhatian {
 		background: var(--color-warn);
