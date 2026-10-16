@@ -60,7 +60,7 @@
 		width: min(22rem, 80vw); padding: 0.5rem 0.7rem;
 		background: var(--color-surface-3); border: 1px solid var(--color-accent);
 		border-radius: 0.6rem; font-size: 0.75rem; line-height: 1.45;
-		color: var(--color-text); font-weight: 400; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+		color: var(--color-text); font-weight: 400;
 	}
 	.teknis { display: block; margin-top: 0.3rem; color: var(--color-text-3); font-size: 0.68rem; }
 	.teknis code { font-family: var(--font-mono); }

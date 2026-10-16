@@ -117,6 +117,7 @@
 
 <div class="catatan">
 	<header class="kepala">
+		<span class="label-mikro">DOKUMEN / CATATAN</span>
 		<h1>Catatan</h1>
 		<p class="dim">Dokumentasi proyek: temuan, keputusan, dan pelajaran. Dibaca dari repo.</p>
 	</header>

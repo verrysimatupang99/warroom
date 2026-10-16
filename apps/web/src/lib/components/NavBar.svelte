@@ -38,8 +38,6 @@
 		z-index: 20;
 		border-bottom: 1px solid var(--color-line);
 		background: color-mix(in srgb, var(--color-bg) 84%, transparent);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
 	}
 	/* Di ponsel nav-horizontal DISEMBUNYIKAN: BottomNav sudah jadi navigasi
 	   ponsel yang benar. Menampilkan keduanya = dua navigasi untuk 7 tautan
@@ -85,7 +83,7 @@
 		color: var(--color-accent);
 		background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 		border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
-		box-shadow: 0 0 12px -2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+		/* Glow aksen dihapus (FLAT, design 16 Okt). */
 		font-weight: 600;
 	}
 	.ikon {

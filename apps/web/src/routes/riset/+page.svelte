@@ -177,8 +177,9 @@ function pilihSub(s: string) {
 
 <div class="riset">
 	<header class="kepala">
+		<span class="label-mikro">ANALITIK / RISET</span>
 		<h1>Riset</h1>
-		<span class="badge-sumber badge-{sourceState}">{sourceState}</span>
+		<span class="badge-sumber badge-{sourceState}">{sourceState.toUpperCase()}</span>
 		<p class="dim">Bukti dari ledger, agenda makro, dan kalkulator. Semua angka dari data nyata.</p>
 	</header>
 

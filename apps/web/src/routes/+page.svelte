@@ -14,6 +14,10 @@
 	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
+	// Komponen fondasi tema baru (DESIGN-USULAN 16 Okt): honesty-tag pada setiap
+	// status verifikasi, track bar untuk skor ber-maksimum.
+	import HonestyTag from '$lib/components/HonestyTag.svelte';
+	import TrackBar from '$lib/components/TrackBar.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -366,11 +370,11 @@ async function muat() {
 						</span>
 						<span class="badge-verdict {verdictTeratas.toLowerCase()}">
 							{#if verdictTeratas === 'OKE'}
-								🟢 OKE AUTOTRADE
+								● OKE AUTOTRADE
 							{:else if verdictTeratas === 'PANTAU'}
-								🟡 PANTAU / KANDIDAT
+								● PANTAU / KANDIDAT
 							{:else}
-								🔴 SKIP / TOLAK
+								● SKIP / TOLAK
 							{/if}
 						</span>
 					</div>
@@ -526,19 +530,16 @@ async function muat() {
 								{#if p.mode}
 									<span class="mode-badge mode-{p.mode.toLowerCase()}" title={p.catatan_mode ?? ''}>{p.mode}</span>
 								{/if}
-								{#if jujur.terverifikasi === true}
-									<span class="verif-badge verif-ok" title="Sudah lewat split beku (ADR-003)">✓ TERVERIFIKASI</span>
-								{:else if jujur.terverifikasi === false}
-									<span class="verif-badge verif-belum" title="Belum lewat split beku — klaim eksplorasi, bukan edge terbukti">○ BELUM TERVERIFIKASI</span>
-								{/if}
+								<!-- honesty-tag motif baru: TERUKUR solid / BELUM TERVERIFIKASI dashed -->
+								<HonestyTag terverifikasi={jujur.terverifikasi} sumber={p.sumber} alasan={p.alasan_eksekusi ?? null} />
 								{#if p.autotrade_verdict}
 									<span class="badge-autotrade {p.autotrade_verdict.toLowerCase()}">
 										{#if p.autotrade_verdict === 'OKE'}
-											🟢 OKE AUTOTRADE
+											● OKE AUTOTRADE
 										{:else if p.autotrade_verdict === 'PANTAU'}
-											🟡 PANTAU / KANDIDAT
+											● PANTAU / KANDIDAT
 										{:else}
-											🔴 SKIP / TOLAK
+											● SKIP / TOLAK
 										{/if}
 									</span>
 								{/if}
@@ -572,6 +573,17 @@ async function muat() {
 										<span class="lead-skor angka">{p.sinyal[0].skor}<span class="dari">/100</span></span>
 									{/if}
 								</div>
+							{/if}
+
+							<!-- Track bar (pola warisan .bar, kini komponen): skor vs 100. -->
+							{#if p.sinyal[0]?.skor != null}
+								<TrackBar
+									label="SKOR VALIDASI"
+									nilai={p.sinyal[0].skor}
+									ambang={75}
+									nada={p.sinyal[0].skor >= 75 ? 'terkukur' : 'netral'}
+									teksAmbang={p.sinyal[0].skor >= 75 ? `AMBANG: 75` : 'AMBANG: 75 (DI BAWAH)'}
+								/>
 							{/if}
 
 							<!-- 3 Poin Konfluensi Pemicu -->
@@ -711,7 +723,11 @@ async function muat() {
 	/* Arah ini SUDAH dipromosikan: nilainya kini token global di app.css
 	   (lapis primitive --p-mint-400 dst), jadi tidak ada nilai mentah di sini. */
 	.pratinjau {
-		--mint: var(--color-accent);
+		/* Tema 16 Okt: amber = aksen fokus; mint = nilai positif TERUKUR. Nama lama
+		   dipertahankan agar diff halaman tetap kecil. */
+		--mint: var(--color-pos);
+		--amber: var(--color-accent);
+		--kuning: var(--color-accent);
 		--kuning: var(--color-warn);
 		--merah: var(--color-neg);
 		--latar: var(--color-bg);
@@ -724,7 +740,7 @@ async function muat() {
 	.peluang-daftar { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.25rem; }
 	.peluang-chip {
 		display: inline-flex; align-items: center; gap: 0.4rem;
-		border: 1px solid var(--garis); border-radius: 999px;
+		border: 1px solid var(--garis); border-radius: var(--radius-track);
 		padding: 0.2rem 0.65rem; font-size: 0.75rem; text-decoration: none;
 		background: var(--permukaan); color: var(--tinta);
 	}
@@ -734,7 +750,7 @@ async function muat() {
 	.chip-arah { color: var(--mint); font-weight: 700; font-size: 0.68rem; }
 	.tanda-biaya {
 		margin-left: 0.3rem; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
-		border: 1px solid var(--kuning); color: var(--kuning); border-radius: 0.35rem;
+		border: 1px solid var(--kuning); color: var(--kuning); border-radius: var(--radius-card);
 		padding: 0 0.25rem; vertical-align: middle;
 	}
 	.pakem-legend { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.5rem; font-size: 0.7rem; }
@@ -742,7 +758,7 @@ async function muat() {
 
 	.judul-bagian { margin: 0.5rem 0 0.75rem; }
 	.judul-bagian h2 { font-size: 1.05rem; margin: 0 0 0.15rem; letter-spacing: 0.01em; }
-	.tabel-wrap { overflow-x: auto; border: 1px solid var(--garis); border-radius: 0.75rem; background: var(--permukaan); }
+	.tabel-wrap { overflow-x: auto; border: 1px solid var(--garis); border-radius: var(--radius-card); background: var(--permukaan); }
 	.tabel-pasar { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 	.tabel-pasar th { text-align: left; font-weight: 500; color: var(--redup); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--garis); white-space: nowrap; }
 	.tabel-pasar td { padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--garis); vertical-align: top; }
@@ -752,7 +768,7 @@ async function muat() {
 	.tabel-pasar tr.kosong { opacity: 0.75; }
 	.catatan-alasan { font-size: 0.75rem; padding-top: 0 !important; }
 	.kaki-tabel { margin-top: 0.5rem; font-size: 0.72rem; }
-	.pakem { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 0.45rem; border: 1px solid var(--garis); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; }
+	.pakem { display: inline-block; padding: 0.1rem 0.45rem; border-radius: var(--radius-card); border: 1px solid var(--garis); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; }
 	.pakem-INSUFFICIENT { color: var(--merah); border-color: var(--merah); }
 	.pakem-DIRECTIONAL { color: var(--kuning); border-color: var(--kuning); }
 	.pakem-PRELIMINARY { color: var(--mint); border-color: var(--mint); }
@@ -770,10 +786,7 @@ async function muat() {
 		align-items: center;
 		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--garis);
-		background: linear-gradient(180deg, color-mix(in srgb, var(--permukaan) 85%, transparent), var(--permukaan));
-		overflow: hidden;
-		white-space: nowrap;
-		box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+		/* FLAT: gradient latar dihapus (design 16 Okt). */
 	}
 	.ticker-jalur {
 		display: flex;
@@ -802,7 +815,7 @@ async function muat() {
 	.lipat-akurasi .isi-lipat { padding: 0 0.85rem 0.75rem; }
 
 	.lipat-status {
-		border: 1px solid var(--garis); border-radius: 1rem; background: var(--permukaan);
+		border: 1px solid var(--garis); border-radius: var(--radius-card); background: var(--permukaan);
 		padding: 0;
 	}
 	.lipat-status > summary {
@@ -818,10 +831,9 @@ async function muat() {
 
 	.kartu-gabung {
 		border: 1px solid var(--garis);
-		border-radius: 1rem;
+		border-radius: var(--radius-card);
 		background: var(--permukaan);
 		overflow: hidden;
-		box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 	}
 	.akurasi-dalam { border-top: 1px solid var(--garis); padding: 1rem; margin: 0; }
 	.verdikt { border-radius: 0; border: none; }
@@ -829,14 +841,12 @@ async function muat() {
 	/* Sinyal per market */
 	.sinyal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 0.85rem; }
 	.sinyal-kartu {
-		border: 1px solid var(--garis); border-radius: 0.85rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-card);
 		background: var(--permukaan); padding: 0.85rem 1rem;
-		box-shadow: 0 2px 14px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
 		transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 	}
 	.sinyal-kartu:hover {
-		border-color: color-mix(in srgb, var(--mint) 35%, var(--garis));
-		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 0 16px -4px color-mix(in srgb, var(--mint) 15%, transparent);
+		border-color: color-mix(in srgb, var(--amber) 35%, var(--garis));
 	}
 	.sinyal-kartu.gagal { border-color: var(--merah); }
 	.sinyal-kepala { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.45rem; }
@@ -845,7 +855,7 @@ async function muat() {
 	.sinyal-badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 	.mode-badge {
 		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
-		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0.05rem 0.3rem;
 		color: var(--redup);
 	}
 	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); background: color-mix(in srgb, var(--kuning) 8%, transparent); }
@@ -853,7 +863,7 @@ async function muat() {
 	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
 	.verif-badge {
 		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
-		border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0.05rem 0.3rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0.05rem 0.3rem;
 		white-space: nowrap;
 	}
 	.verif-badge.verif-ok { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
@@ -876,7 +886,7 @@ async function muat() {
 	.sinyal-kiri { display: inline-flex; align-items: baseline; gap: 0.4rem; }
 	.sinyal-pair { font-weight: 700; font-size: 0.82rem; }
 	.sinyal-arah { font-weight: 700; font-size: 0.68rem; letter-spacing: 0.03em; }
-	.sinyal-tier { font-size: 0.62rem; color: var(--redup); border: 1px solid var(--garis); border-radius: 0.35rem; padding: 0 0.3rem; }
+	.sinyal-tier { font-size: 0.62rem; color: var(--redup); border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0 0.3rem; }
 	.sinyal-kanan { font-size: 0.7rem; display: inline-flex; gap: 0.5rem; }
 	.sinyal-kanan .umur { color: var(--redup); }
 	.sinyal-kosong { font-size: 0.74rem; color: var(--redup); margin: 0.2rem 0 0; }
@@ -920,7 +930,7 @@ async function muat() {
 	.sumber-judul { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--redup); }
 	.sumber-chip {
 		display: inline-flex; align-items: baseline; gap: 0.35rem;
-		border: 1px solid var(--garis); border-radius: 999px; padding: 0.15rem 0.6rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-track); padding: 0.15rem 0.6rem;
 		font-size: 0.7rem; background: var(--permukaan);
 	}
 	.sumber-pasar { color: var(--redup); }
@@ -930,19 +940,19 @@ async function muat() {
 	.dompet20-strip {
 		display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
 		border: 1px solid color-mix(in srgb, var(--mint) 28%, var(--garis));
-		border-radius: 12px;
+		border-radius: var(--radius-card);
 		padding: 0.45rem 0.7rem; background: var(--permukaan);
 	}
 	.dompet-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
 	.dompet-chip {
 		display: inline-flex; flex-direction: column; gap: 0.1rem;
-		border: 1px solid var(--garis); border-radius: 10px; padding: 0.3rem 0.65rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0.3rem 0.65rem;
 		background: var(--latar);
 		transition: border-color 160ms var(--ease-out), background 160ms var(--ease-out);
 	}
 	.dompet-chip:hover {
 		border-color: color-mix(in srgb, var(--mint) 40%, var(--garis));
-		background: color-mix(in srgb, var(--mint) 6%, var(--latar));
+		/* FLAT */
 	}
 	.dompet-chip .angka { font-size: 0.8rem; font-family: var(--font-mono); color: var(--mint); }
 	.dompet-chip a { color: var(--accent); }
@@ -965,7 +975,7 @@ async function muat() {
 		margin: 0;
 	}
 	.merek span {
-		color: var(--mint);
+		color: var(--amber);
 	}
 	.mode {
 		font-size: 0.7rem;
@@ -974,7 +984,7 @@ async function muat() {
 		padding: 0.15rem 0.5rem;
 		border: 1px solid var(--mint);
 		color: var(--mint);
-		border-radius: 999px;
+		border-radius: var(--radius-track);
 	}
 	.spacer {
 		flex: 1;
@@ -983,20 +993,18 @@ async function muat() {
 	/* Verdikt: satu blok besar, ini jawaban 3 detik. */
 	.verdikt {
 		border: 1px solid var(--garis);
-		border-radius: 14px;
+		border-radius: var(--radius-card);
 		padding: 1.5rem 1.5rem 1.35rem;
 		background: var(--permukaan);
 		position: relative;
 		transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 	}
 	.verdikt:hover {
-		border-color: color-mix(in srgb, var(--mint) 30%, var(--garis));
+		border-color: color-mix(in srgb, var(--amber) 50%, var(--garis));
 	}
 	.verdikt.ada {
-		border-color: color-mix(in srgb, var(--mint) 45%, var(--garis));
-		background: radial-gradient(circle at 10% -20%, color-mix(in srgb, var(--mint) 12%, transparent), transparent 70%),
-			linear-gradient(180deg, color-mix(in srgb, var(--mint) 8%, var(--permukaan)), var(--permukaan));
-		box-shadow: 0 0 24px -6px color-mix(in srgb, var(--mint) 15%, transparent);
+		/* Pita keputusan fokus: border amber solid, latar FLAT (mockup home). */
+		border-color: var(--amber);
 	}
 	.verdikt.diam {
 		border-color: var(--garis);
@@ -1032,7 +1040,7 @@ async function muat() {
 		display: flex;
 		flex-direction: column;
 		border: 1px solid var(--garis);
-		border-radius: 14px;
+		border-radius: var(--radius-card);
 		overflow: hidden;
 		background: var(--permukaan);
 	}
@@ -1084,7 +1092,7 @@ async function muat() {
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		padding: 0.15rem 0.5rem;
-		border-radius: 999px;
+		border-radius: var(--radius-track);
 		border: 1px solid;
 		white-space: nowrap;
 	}
@@ -1136,7 +1144,7 @@ async function muat() {
 		font-weight: 700;
 		letter-spacing: 0.05em;
 		padding: 0.15rem 0.55rem;
-		border-radius: 999px;
+		border-radius: var(--radius-track);
 		border: 1px solid;
 		white-space: nowrap;
 	}
@@ -1179,7 +1187,7 @@ async function muat() {
 		padding: 0.3rem 0.6rem;
 		background: color-mix(in srgb, var(--latar) 65%, var(--permukaan));
 		border: 1px solid var(--garis);
-		border-radius: 0.4rem;
+		border-radius: var(--radius-card);
 		line-height: 1.35;
 	}
 
@@ -1196,7 +1204,7 @@ async function muat() {
 		padding: 0.5rem 0.7rem;
 		background: color-mix(in srgb, var(--latar) 60%, var(--permukaan));
 		border: 1px solid var(--garis);
-		border-radius: 0.5rem;
+		border-radius: var(--radius-card);
 	}
 	.bento-lbl {
 		font-size: 0.62rem;
@@ -1233,14 +1241,14 @@ async function muat() {
 		font-size: 0.72rem;
 		font-weight: 700;
 		padding: 0.05rem 0.35rem;
-		border-radius: 0.25rem;
+		border-radius: var(--radius-card);
 	}
 	.lead-tier {
 		font-size: 0.65rem;
 		color: var(--redup);
 		border: 1px solid var(--garis);
 		padding: 0 0.3rem;
-		border-radius: 0.25rem;
+		border-radius: var(--radius-card);
 	}
 	.lead-skor {
 		font-size: 0.85rem;
@@ -1264,7 +1272,7 @@ async function muat() {
 		padding: 0.35rem 0.5rem;
 		background: color-mix(in srgb, var(--latar) 55%, var(--permukaan));
 		border: 1px solid var(--garis);
-		border-radius: 0.4rem;
+		border-radius: var(--radius-card);
 	}
 	.card-alasan {
 		font-size: 0.72rem;
@@ -1289,7 +1297,7 @@ async function muat() {
 		font-size: 0.58rem;
 		font-weight: 700;
 		padding: 0.05rem 0.25rem;
-		border-radius: 0.2rem;
+		border-radius: var(--radius-card);
 	}
 	.badge-mini.pos {
 		color: var(--mint);

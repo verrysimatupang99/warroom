@@ -11,9 +11,11 @@
 	interface Props {
 		area: string;
 		intervalMs?: number;
+		/** Laporkan status pemuatan ke induk (untuk honesty-tag header). */
+		onstatus?: (status: 'memuat' | 'ok' | 'galat') => void;
 		children: Snippet<[AreaPayload]>;
 	}
-	let { area, intervalMs = 15000, children }: Props = $props();
+	let { area, intervalMs = 15000, onstatus, children }: Props = $props();
 
 	let data = $state<AreaPayload | null>(null);
 	let galat = $state<string | null>(null);
@@ -23,8 +25,10 @@
 		try {
 			data = await getArea(area);
 			galat = null;
+			onstatus?.('ok');
 		} catch (e) {
 			galat = e instanceof Error ? e.message : String(e);
+			onstatus?.('galat');
 		} finally {
 			memuat = false;
 		}

@@ -63,6 +63,7 @@
 
 <div class="bantuan">
 	<header class="kepala">
+		<span class="label-mikro">DOKUMEN / BANTUAN</span>
 		<h1>Bantuan</h1>
 		<p class="dim">Jawaban dari perilaku nyata sistem. Yang belum ada ditulis belum ada.</p>
 	</header>
@@ -114,6 +115,14 @@
 		font-size: var(--text-26);
 		font-weight: 700;
 		letter-spacing: -0.02em;
+	}
+	/* Perapihan dokumen (DESIGN-USULAN 16 Okt): heading bagian = eyebrow mono. */
+	.kartu h2 {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-3);
 	}
 	.kepala p {
 		margin: 0.15rem 0 0;

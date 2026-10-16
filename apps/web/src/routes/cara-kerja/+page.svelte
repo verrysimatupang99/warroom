@@ -95,6 +95,7 @@
 
 <div class="cara">
 	<header class="kepala">
+		<span class="label-mikro">DOKUMEN / CARA-KERJA</span>
 		<h1>Cara kerja</h1>
 		<p class="dim">Aliran yang benar-benar jalan, bukan rencana. Angka hanya dari tabel fakta.</p>
 	</header>
@@ -184,10 +185,16 @@
 		border-radius: var(--radius-card);
 		padding: var(--card-pad);
 	}
+	/* Perapihan dokumen (DESIGN-USULAN 16 Okt): judul bagian = eyebrow mono
+	   uppercase dengan tracking lebar — terbaca sebagai label struktur. */
 	.judul {
 		margin: 0 0 0.7rem;
-		font-size: var(--text-14);
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
 		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-3);
 	}
 	.alur {
 		list-style: none;

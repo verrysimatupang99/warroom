@@ -83,12 +83,12 @@
 		background: var(--color-surface);
 		padding: 0.85rem 1rem;
 		margin-bottom: 1rem;
-		box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+		/* FLAT */
 	}
-	.nada-kandidat { border-left-color: var(--color-warn); box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), -4px 0 16px -4px color-mix(in srgb, var(--color-warn) 20%, transparent); }
-	.nada-breach { border-left-color: var(--color-neg); box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), -4px 0 16px -4px color-mix(in srgb, var(--color-neg) 25%, transparent); }
+	.nada-kandidat { border-left-color: var(--color-warn); /* FLAT */ }
+	.nada-breach { border-left-color: var(--color-neg); /* FLAT */ }
 	.nada-beku { border-left-color: var(--color-text-3); }
-	.nada-lolos { border-left-color: var(--color-accent); box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), -4px 0 16px -4px color-mix(in srgb, var(--color-accent) 25%, transparent); }
+	.nada-lolos { border-left-color: var(--color-accent); /* FLAT */ }
 	.nada-diam { border-left-color: var(--color-line); }
 
 	.baris-utama {

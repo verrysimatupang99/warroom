@@ -8,6 +8,8 @@
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
+import HonestyTag from './HonestyTag.svelte';
+import TrackBar from './TrackBar.svelte';
 	import Block from './Block.svelte';
 	import FreshnessBadge from './FreshnessBadge.svelte';
 	import SubNav from './SubNav.svelte';
@@ -44,6 +46,9 @@
 	let { kunci }: Props = $props();
 
 	const area = $derived(AREAS.find((a) => a.kunci === kunci)!);
+
+	// Status pemuatan fakta area → honesty-tag di header (TERUKUR / BELUM TERVERIFIKASI / —).
+	let statusFakta = $state<'memuat' | 'ok' | 'galat'>('memuat');
 
 	// URL sebagai satu-satunya sumber kebenaran agar tab dan navigasi selalu sinkron.
 	// Pemetaan slug lama menjaga kompatibilitas tautan dan bookmark tanpa pengalihan URL.
@@ -347,14 +352,21 @@ function pilihSub(s: string) {
 </script>
 
 <div class="space-y-4">
-	<!-- Header Area -->
+	<!-- Header Area: eyebrow mono struktural "PASAR / <LABEL>" (label bagian mockup 16 Okt)
+	     + honesty-tag kejujuran data di samping judul, selaras halaman leaderboard. -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
 		<div>
-			<div class="flex items-center gap-2">
+			<span class="label-mikro">PASAR / {(area?.label ?? kunci).toUpperCase()}</span>
+			<div class="flex flex-wrap items-center gap-2">
 				<h1 class="text-26 font-bold tracking-tight text-text font-display">{area?.label ?? kunci}</h1>
 				<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
 					{area?.kunci ?? kunci}
 				</span>
+				<HonestyTag
+					terverifikasi={statusFakta === 'ok' ? true : statusFakta === 'galat' ? false : null}
+					sumber={statusFakta === 'ok' ? `/api/v1/areas/${kunci}` : null}
+					alasan="endpoint area belum menjawab — bukan angka sintetis"
+				/>
 			</div>
 			{#if anak}
 				<p class="text-12 text-text-3 mt-0.5">{anak.label} — {anak.catatan}</p>
@@ -367,7 +379,7 @@ function pilihSub(s: string) {
 			class="rounded-control border border-line bg-surface px-3 py-1.5 text-11 text-text-3 hover:text-text hover:border-line-soft transition-colors"
 			onclick={() => (tampilRaw = !tampilRaw)}
 		>
-			{tampilRaw ? 'Tutup Inspeksi Mentah' : '🔍 Inspeksi Fact Mentah'}
+			{tampilRaw ? 'Tutup Inspeksi Mentah' : 'FACT: inspeksi mentah'}
 		</button>
 	</div>
 
@@ -384,7 +396,7 @@ function pilihSub(s: string) {
 	{/if}
 
 	<!-- Sub `lp` menggunakan area API khusus (/areas/lp) karena memuat fakta lp_paper terpisah. -->
-	<AreaLoader area={sub === 'lp' ? 'lp' : kunci}>
+	<AreaLoader area={sub === 'lp' ? 'lp' : kunci} onstatus={(s) => (statusFakta = s)}>
 		{#snippet children(data)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
@@ -2256,21 +2268,26 @@ function pilihSub(s: string) {
 									{#each bandarSkorObj.emiten as e (e.kode)}
 										<div class="rounded-card border border-line bg-surface p-2.5">
 											<div class="flex flex-wrap items-center justify-between gap-2">
-												<div class="flex items-center gap-2">
-													<span class="font-mono font-bold text-text">{e.kode}</span>
-													<span class="rounded px-1.5 py-0.5 text-10 font-bold border {e.kelas === 'AKUMULASI' ? 'text-pos bg-pos/10 border-pos/20' : e.kelas === 'DISTRIBUSI' ? 'text-neg bg-neg/10 border-neg/20' : e.kelas === 'SEIMBANG' ? 'text-text-2 bg-surface border-line' : 'text-warn bg-warn/10 border-warn/20'}">
-														{e.kelas}
-													</span>
-													{#if e.no_sell}
-														<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/30 text-accent bg-accent/10">NO-SELL</span>
-													{/if}
-												</div>
-												<div class="flex items-center gap-2">
-													<div class="h-2 w-32 overflow-hidden rounded bg-canvas border border-line">
-														<div class="h-full rounded {e.skor >= 55 ? 'bg-pos' : e.skor <= 45 ? 'bg-neg' : 'bg-accent'}" style="width: {e.skor}%"></div>
-													</div>
-													<span class="font-mono font-bold text-14 {e.skor >= 55 ? 'text-pos' : e.skor <= 45 ? 'text-neg' : 'text-text-2'}">{e.skor}</span>
-												</div>
+												<div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+																		<span class="font-mono font-bold text-text">{e.kode}</span>
+																		<span class="rounded px-1.5 py-0.5 text-10 font-bold border {e.kelas === 'AKUMULASI' ? 'text-pos bg-pos/10 border-pos/20' : e.kelas === 'DISTRIBUSI' ? 'text-neg bg-neg/10 border-neg/20' : e.kelas === 'SEIMBANG' ? 'text-text-2 bg-surface border-line' : 'text-warn bg-warn/10 border-warn/20'}">
+																			{e.kelas}
+																		</span>
+																		{#if e.no_sell}
+																			<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/30 text-accent bg-accent/10">NO-SELL</span>
+																		{/if}
+																	</div>
+																	<div class="w-56 shrink-0">
+																		<TrackBar
+																			label="SKOR BANDARMOLOGI"
+																			nilai={e.skor ?? null}
+																			maks={100}
+																			ambang={55}
+																			teksAmbang={e.kelas === 'AKUMULASI' ? 'AKUMULASI' : e.kelas === 'DISTRIBUSI' ? 'DISTRIBUSI' : e.kelas}
+																			nada={e.kelas === 'AKUMULASI' ? 'terkukur' : e.kelas === 'DISTRIBUSI' ? 'bahaya' : 'netral'}
+																			alasan="skor bandarmologi belum tersedia untuk emiten ini"
+																		/>
+																	</div>
 											</div>
 											<div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-10 text-text-3 font-mono">
 												<span>ATS beli {e.rasio_ats_pct}%</span>
