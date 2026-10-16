@@ -102,6 +102,22 @@ export function buatHarga(minDesimalBawah1 = 4): (v: unknown) => string {
 }
 
 /**
+ * Format harga "adaptif" versi AreaView (dipakai tabel kandidat crypto).
+ * Ambangnya BEDA dari `buatHarga`: <1 tapi >=0,01 dibatasi 4 desimal, di bawah itu 8.
+ * Dipertahankan persis agar penggantian ke konteks tidak mengubah tampilan.
+ */
+export function buatHargaAdaptif(): (v: unknown) => string {
+	return (v: unknown): string => {
+		if (v == null || v === '') return '—';
+		const n = typeof v === 'number' ? v : Number(v);
+		if (!Number.isFinite(n)) return '—';
+		const a = Math.abs(n);
+		const dp = a >= 1 ? 2 : a >= 0.01 ? 4 : 8;
+		return n.toLocaleString('id-ID', { maximumFractionDigits: dp });
+	};
+}
+
+/**
  * Bangun konteks pasar dari fakta satu area.
  *
  * `kunci` = nama pasar (crypto/idx/forex/gmgn/polymarket) — dipakai untuk memilih
@@ -175,6 +191,6 @@ export function buatKonteks(facts: Fact[], kunci: string, anak: { kunci?: string
 		feedKeputusan: (temukanFakta(facts, 'keputusan')?.value as any) ?? null,
 
 		harga: buatHarga(4),
-		hargaAdaptif: buatHarga(2),
+		hargaAdaptif: buatHargaAdaptif(),
 	};
 }

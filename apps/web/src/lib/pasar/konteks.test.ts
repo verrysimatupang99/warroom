@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buatHarga, buatKonteks, temukanFakta, type Fact } from './konteks';
+import { buatHarga, buatHargaAdaptif, buatKonteks, temukanFakta, type Fact } from './konteks';
 
 const f = (key: string, value: unknown, kind = 'snapshot'): Fact => ({ key, kind, value });
 
@@ -29,6 +29,27 @@ describe('buatHarga', () => {
 		expect(buatHarga(4)(null)).toBe('—');
 		expect(buatHarga(4)(undefined)).toBe('—');
 		expect(buatHarga(4)('bukan-angka')).toBe('—');
+	});
+});
+
+describe('buatHargaAdaptif', () => {
+	const h = buatHargaAdaptif();
+
+	it('angka >= 1 dibatasi 2 desimal', () => {
+		expect(h(1.23456)).toBe('1,23');
+	});
+
+	it('angka antara 0,01 dan 1 dibatasi 4 desimal (bukan 8)', () => {
+		expect(h(0.123456789)).toBe('0,1235');
+	});
+
+	it('angka di bawah 0,01 dibatasi 8 desimal', () => {
+		expect(h(0.000123456789)).toContain('0,00012346');
+	});
+
+	it('nilai kosong jadi "—", bukan 0', () => {
+		expect(h(null)).toBe('—');
+		expect(h('')).toBe('—');
 	});
 });
 

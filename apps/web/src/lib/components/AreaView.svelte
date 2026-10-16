@@ -404,34 +404,29 @@ function pilihSub(s: string) {
 			     Semua penghitungan dipindah ke sana supaya markup hanya menggambar dan tiap
 			     pasar menerima bentuk data yang sama — dasar normalisasi antar-pasar. -->
 			{@const konteks = buatKonteks(data.facts as never, kunci, anak as never)}
+			<!-- Nilai di bawah ini kini diambil dari `konteks` (lib/pasar/konteks.ts) — sumber
+			     tunggal untuk semua pasar. Blok {@const} lama sengaja dibiarkan berdampingan
+			     sampai penggantian selesai per pasar, supaya tiap langkah tetap terverifikasi. -->
+			{@const faktaBagian = konteks.faktaBagian}
+			{@const bagianObj = konteks.bagianObj}
+			{@const posisiArray = konteks.posisiArray}
+			{@const posisiJumlah = konteks.posisiJumlah}
+			{@const harga = konteks.harga}
+			{@const hargaAdaptif = konteks.hargaAdaptif}
+			{@const faktaPolyAlt = konteks.faktaPolyAlt}
+			{@const polyAltObj = konteks.polyAltObj}
+			{@const faktaPosisi = konteks.faktaPosisi}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
 			{@const faktaEquity = temukanFakta(data.facts, kunci === 'crypto' ? 'equity' : `${kunci}_equity`) ?? temukanFakta(data.facts, 'equity')}
 			{@const faktaLedger = temukanFakta(data.facts, kunci === 'crypto' ? 'ledger' : `${kunci}_ledger`) ?? temukanFakta(data.facts, 'ledger')}
 			{@const faktaVerdict = temukanFakta(data.facts, 'verdict')}
 			{@const faktaPolyPaper = temukanFakta(data.facts, 'poly_paper')}
-			{@const faktaPolyAlt = data.facts.find((f) => f.kind === 'poly.alt' && f.key === 'btc-5m') ?? null}
-			{@const polyAltObj = (faktaPolyAlt?.value as Record<string, any>) ?? null}
 			{@const datasetRecorder = temukanFakta(data.facts, 'recorder')}
 			{@const datasetCakupan = temukanFakta(data.facts, 'cakupan')}
-			{@const faktaBagian = temukanFakta(data.facts, 'bagian')}
 			{@const faktaRadar = temukanFakta(data.facts, 'radar')}
 			{@const faktaLpPaper = temukanFakta(data.facts, 'lp_paper')}
 			{@const faktaGmgn = temukanFakta(data.facts, 'gmgn')}
-			{@const faktaPosisi = temukanFakta(data.facts, kunci === 'crypto' ? 'posisi' : `${kunci}_posisi`) ?? temukanFakta(data.facts, 'posisi')}
-			{@const posisiArray = Array.isArray(faktaPosisi?.value) ? (faktaPosisi.value as any[]) : []}
-			<!-- Jumlah posisi terbuka dihitung langsung dari panjang array fakta posisi. -->
-			{@const posisiJumlah = posisiArray.length}
-			<!-- Pembersih format harga: kripto mikro (1000PEPE 0,0041) tidak boleh jadi "0,00" -->
-			{@const harga = (v: unknown): string => {
-				const n = typeof v === 'number' ? v : Number(v);
-				if (!Number.isFinite(n)) return '—';
-				const a = Math.abs(n);
-				const dp = a >= 1000 ? 2 : a >= 1 ? 4 : 8;
-				return n.toLocaleString('id-ID', { maximumFractionDigits: dp });
-			}}
-
-			{@const bagianObj = (faktaBagian?.value as Record<string, any>) ?? {}}
 			{@const idxArjum = (bagianObj?.idx?.rows as any[]) ?? []}
 			{@const idxTv = (bagianObj?.idx_tv?.rows as any[]) ?? []}
 			{@const idxBandar = (bagianObj?.bandarmologi as any) ?? null}
@@ -457,13 +452,6 @@ function pilihSub(s: string) {
 			{@const lpVerifObj = (faktaLpVerif?.value as any) ?? null}
 			<!-- Kandidat aktif diambil dari fakta berjenis signal per pasangan instrumen. -->
 			{@const sinyalAktif = data.facts.filter((f) => f.kind === 'signal')}
-			{@const hargaAdaptif = (v: unknown): string => {
-				const n = typeof v === 'number' ? v : Number(v);
-				if (!Number.isFinite(n)) return '—';
-				const a = Math.abs(n);
-				const dp = a >= 1 ? 2 : a >= 0.01 ? 4 : 8;
-				return n.toLocaleString('id-ID', { maximumFractionDigits: dp });
-			}}
 			{@const faktaDompet = temukanFakta(data.facts, 'dompet')}
 			{@const dompetObj = (faktaDompet?.value as any) ?? null}
 			{@const faktaBandarSkor = temukanFakta(data.facts, 'bandarmologi_skor')}
