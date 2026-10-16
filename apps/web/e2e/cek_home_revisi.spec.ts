@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
 
 test('Home: card gabungan, sinyal per market maks 3, ticker berjalan', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByText('Status hari ini')).toBeVisible({ timeout: 25000 });
+	await expect(page.getByText(/Status hari ini/i)).toBeVisible({ timeout: 25000 });
 
 	// (1) satu card memuat status DAN akurasi
 	const kartu = page.locator('.kartu-gabung').first();
@@ -21,10 +21,11 @@ test('Home: card gabungan, sinyal per market maks 3, ticker berjalan', async ({ 
 	const yKartu = (await kartu.boundingBox())?.y ?? 0;
 	expect(ySinyal).toBeGreaterThan(yKartu);
 
-	// maks 3 kartu kandidat per market: crypto punya 3 baris meski ada 6 hidup
+	// Revisi UI 16 Okt: tiap kartu market diringkas jadi SATU baris status utama
+	// (bukan lagi daftar 3 kandidat); detail lengkap ada di halaman pasar masing-masing.
 	const kartuCrypto = page.locator('.sinyal-kartu').first();
-	await expect(kartuCrypto.locator('.sinyal-baris')).toHaveCount(3);
-	await expect(kartuCrypto.getByText(/Lihat semua \(\d+\)/)).toBeVisible();
+	await expect(kartuCrypto.locator('.sinyal-baris-atas')).toHaveCount(1);
+	await expect(kartuCrypto.getByText(/Buka Crypto →/)).toBeVisible();
 
 	// (3) bahasa manusia — 9 Okt 2026 pemilik: "terlalu pro, targetnya bot trading doang".
 	//     Judul pindah dari jargon (KANDIDAT/lolos gate) ke kalimat awam. Penjaganya tetap:

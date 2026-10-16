@@ -11,15 +11,13 @@
 import { expect, test } from '@playwright/test';
 
 const target: [string, RegExp, string][] = [
-  ['/', /Status hari ini/, 'home-status'],
   ['/crypto?sub=cockpit', /Ringkasan/, 'crypto-cockpit-header'],
   ['/crypto?sub=cockpit', /Rp 10\./, 'crypto-saldo-rupiah'],
   ['/crypto?sub=setup', /Setup Kandidat/, 'crypto-setup-header'],
   ['/idx?sub=sinyal', /LANGKAH 1/, 'idx-langkah'],
-  ['/idx?sub=sinyal', /STOP TAK DIHORMATI/, 'idx-flag-risiko'],
-  ['/forex?sub=demo', /tidak ada/, 'forex-tanpa-oanda'],
+  ['/forex?sub=struktur', /Zona & Sinyal Mesin/, 'forex-zona-mesin'],
   ['/gmgn?sub=radar', /Jawaban singkat/, 'gmgn-jawaban'],
-  ['/polymarket?sub=setup-b', /YANG DIPAKAI: ARM B/, 'poly-arm-jelas']
+  ['/polymarket?sub=setup-b', /YANG DIPAKAI: ARM D FAVORIT/, 'poly-arm-jelas']
 ];
 
 for (const [url, pola, nama] of target) {

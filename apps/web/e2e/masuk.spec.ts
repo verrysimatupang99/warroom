@@ -10,7 +10,7 @@ test('tanpa sesi → diarahkan ke /masuk', async ({ browser }) => {
 	await page.goto('/crypto');
 	await expect(page).toHaveURL(/\/masuk/);
 	await expect(page.getByTestId('masuk')).toBeVisible();
-	await expect(page.getByRole('heading', { name: 'Masuk War Room' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'WarRoom' })).toBeVisible();
 	await ctx.close();
 });
 
@@ -30,10 +30,23 @@ test('kredensial benar → masuk ke Ringkas', async ({ browser }) => {
 	const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
 	const page = await ctx.newPage();
 	await page.goto('/masuk');
-	await page.getByLabel('username').fill(KREDENSIAL.user);
-	await page.getByLabel('sandi').fill(KREDENSIAL.pass);
-	await page.getByRole('button', { name: 'masuk' }).click();
-	await expect(page).toHaveURL(/\/$/);
+	await page.waitForSelector('form input[name="username"]', { timeout: 20_000 });
+
+	// Login dari IP yang sama berulang kali kena limiter (429) — form tampak tidak jalan.
+	// Ulangi beberapa kali dengan jeda; yang diuji perilaku login, bukan ketahanan limiter.
+	let masuk = false;
+	for (let i = 0; i < 5 && !masuk; i++) {
+		await page.getByLabel('username').fill(KREDENSIAL.user);
+		await page.getByLabel('sandi').fill(KREDENSIAL.pass);
+		await page.getByRole('button', { name: 'masuk' }).click();
+		try {
+			await page.waitForURL(/\/(\?.*)?$/, { timeout: 12_000 });
+			masuk = true;
+		} catch {
+			await page.waitForTimeout(4000 * (i + 1));
+		}
+	}
+	expect(masuk, 'login harus berhasil (cek kredensial / limiter 429)').toBe(true);
 	// Home tidak lagi berjudul "Ringkas" — h1-nya "WarRoom" (merek). Yang dijaga: sudah keluar
 	// dari /masuk dan halaman utama benar-benar render.
 	await expect(page.getByRole('heading', { name: /WarRoom/ }).first()).toBeVisible();

@@ -14,11 +14,11 @@ test.describe('/forex — peluang & hati-hati', () => {
 		await page.goto('/forex');
 		await tungguSiap(page);
 
-		await expect(page.getByText('Peluang hari ini').first()).toBeVisible({ timeout: 15000 });
-		await expect(page.getByText('Hati-hati').first()).toBeVisible();
-		// Kejujuran forex: bukan "Layak", tapi "sampel belum cukup".
-		await expect(page.getByText(/Sampel belum cukup|Sampel cukup/).first()).toBeVisible();
+		// Panel "Peluang hari ini" diganti blok Struktur/Zona pada revisi UI 16 Okt;
+		// yang wajib tetap ada: nama manusiawi pair + dompet paper forex.
+		await expect(page.getByText(/XAUUSD/).first()).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/Dompet Paper Forex/).first()).toBeVisible();
 		// Nama manusiawi pair harus muncul, bukan cuma kode mesin.
-		await expect(page.getByText(/Gold \(XAUUSD\)/).first()).toBeVisible();
+		await expect(page.getByText(/Pandangan Harga Emas/).first()).toBeVisible();
 	});
 });

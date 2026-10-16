@@ -27,8 +27,8 @@ test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
   await bukaSemuaLipatan(page);
   const t = await page.locator('body').innerText();
   const i = t.indexOf('Akurasi & PnL per Market');
-  console.log('--- HOME AKURASI ---');
-  console.log(t.slice(i, i + 700));
+  console.log('--- HOME AKURASI (idx=' + i + ') ---');
+  console.log(t.slice(Math.max(0, i), Math.max(0, i) + 700));
   for (const pasar of ['crypto', 'idx', 'forex', 'gmgn', 'polymarket']) {
     expect(t.toLowerCase()).toContain(pasar);
   }
@@ -45,7 +45,8 @@ test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText(/Sinyal per Market|STATUS HARI INI/).first()).toBeVisible({ timeout: 25000 });
   // Tunggu DATA (bukan hanya judul) — jadi tidak flaky saat API lebih lambat dari DOM.
-  await expect(page.getByText(/lalu$/).first()).toBeVisible({ timeout: 25000 });
+  // Bentuk nyata di UI: "sumber: OKX· sinyal 1j lalu" lalu "dibuat 16 Okt 2026, 17.05 WIB".
+  await expect(page.getByText(/sinyal \d+[jhm] lalu|\d{2}\.\d{2} WIB/).first()).toBeVisible({ timeout: 25000 });
   await bukaSemuaLipatan(page);
   const t = await page.locator('body').innerText();
   // Revisi pemilik 7 Okt: sinyal per market MENGGANTIKAN blok "Sinyal digenerate" di card

@@ -14,9 +14,9 @@ test.describe('/idx — peluang & hati-hati', () => {
 		await page.goto('/idx');
 		await tungguSiap(page);
 
-		await expect(page.getByText('Peluang hari ini').first()).toBeVisible({ timeout: 15000 });
-		await expect(page.getByText('Hati-hati').first()).toBeVisible();
-		// Nama manusiawi untuk BSJP harus muncul, bukan cuma kode mesin.
-		await expect(page.getByText(/Beli Sore Jual Pagi/).first()).toBeVisible();
+		// Panel "Peluang hari ini" diganti daftar LANGKAH pada revisi UI 16 Okt;
+		// yang wajib tetap ada: nama manusiawi setup BSJP + dompet paper IDX.
+		await expect(page.getByText(/Beli Sore Jual Pagi/).first()).toBeVisible({ timeout: 15000 });
+		await expect(page.getByText(/Dompet Paper IDX/).first()).toBeVisible();
 	});
 });

@@ -16,6 +16,9 @@ test('login: nilai yang diisi lewat DOM tetap terkirim', async ({ browser }) => 
 	const ctx = await browser.newContext();
 	const page = await ctx.newPage();
 	await page.goto('/masuk');
+	// Tunggu form ter-render sebelum menulis lewat DOM: tanpa ini evaluate() bisa jalan
+	// saat halaman belum ter-hydrate dan input[name] masih null (flaky, bukan bug UI).
+	await page.waitForSelector('form input[name="username"]', { timeout: 20000 });
 
 	const user = process.env.WARROOM_E2E_USER ?? '';
 	const pass = process.env.WARROOM_E2E_PASS ?? '';
@@ -59,12 +62,17 @@ test('login: sandi salah menampilkan galat, tidak diam', async ({ browser }) => 
 	const ctx = await browser.newContext();
 	const page = await ctx.newPage();
 	await page.goto('/masuk');
+	await page.waitForSelector('form input[name="username"]', { timeout: 20_000 });
 	await page.fill('input[name="username"]', 'uji-salah');
 	await page.fill('input[name="password"]', 'sandi-salah-sekali');
 	await page.getByRole('button', { name: /masuk/i }).click();
 	// harus tetap di /masuk dan menampilkan pesan galat (bukan layar diam)
 	await expect(page).toHaveURL(/\/masuk/);
-	await expect(page.getByText(/tidak sah|gagal|salah/i).first()).toBeVisible({ timeout: 15000 });
+	// Yang diuji: UI TIDAK DIAM saat login gagal. Dua pesan sah: "kredensial tidak sah"
+	// (sandi salah) atau "terlalu banyak percobaan" (limiter 429 saat suite panjang).
+	await expect(
+		page.getByText(/tidak sah|gagal|salah|terlalu banyak/i).first()
+	).toBeVisible({ timeout: 15000 });
 	await ctx.close();
 });
 

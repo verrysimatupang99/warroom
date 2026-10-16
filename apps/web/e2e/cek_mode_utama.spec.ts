@@ -17,12 +17,13 @@ test('headline pasar: badge mode + BRUTO terlihat', async ({ page }) => {
 	expect(t).toMatch(/PAPER/);
 	expect(t).toMatch(/BRUTO/);
 
-	// IDX = HISTORIS (mesin dibekukan) + MODEL BREACH
+	// IDX = HISTORIS (mesin dibekukan). Banner MODEL BREACH hanya muncul bila ada
+	// pelanggaran 1R; ledger IDX kini belum ada, jadi yang dijaga adalah badge mode
+	// HISTORIS-nya — bukan keberadaan banner (lihat cek_invariant_idx.spec.ts).
 	await page.goto('/idx');
 	const kepalaIdx = page.locator('section[aria-live="polite"]').first();
 	await expect(kepalaIdx).toBeVisible({ timeout: 25000 });
 	const ti = await kepalaIdx.innerText();
 	console.log('--- IDX ---\n' + ti.slice(0, 260));
 	expect(ti).toMatch(/HISTORIS/);
-	expect(ti).toMatch(/MODEL BREACH/);
 });

@@ -36,6 +36,11 @@ export default defineConfig({
 	globalSetup: './e2e/global-setup.ts',
 	expect: { timeout: 10_000 },
 	fullyParallel: false,
+	// Batasi worker: tiap worker memanggil loginLewat() di beforeEach, dan API punya
+	// limiter 10 login/menit. Dengan workers=8 hasilnya 401 masal -> puluhan tes gagal
+	// palsu (temuan audit 16 Okt: 7 tes rute.spec + a11y + qa-lengkap gagal di
+	// expect(loginLewat()).toBe(true), bukan di UI). 2 worker cukup & stabil.
+	workers: 2,
 	// Satu retry: host ini juga menjalankan worker yang menulis DB tiap 30 dtk, jadi sesekali
 	// ada navigasi yang bertabrakan. Retry TIDAK menyembunyikan flake — laporan Playwright
 	// menandainya "flaky", jadi tetap terlihat saat meninjau hasil.

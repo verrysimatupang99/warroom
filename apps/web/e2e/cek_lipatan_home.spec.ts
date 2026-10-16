@@ -14,7 +14,7 @@ import { expect, test } from '@playwright/test';
 
 test('Home: tabel akurasi & catatan per pasar terlipat, bisa dibuka', async ({ page }) => {
 	await page.goto('/');
-	await expect(page.getByText('Status hari ini')).toBeVisible({ timeout: 25000 });
+	await expect(page.getByText(/Status hari ini/i)).toBeVisible({ timeout: 25000 });
 
 	// (1) kedua <details> tertutup
 	const jumlah = await page.locator('details').count();
@@ -31,7 +31,16 @@ test('Home: tabel akurasi & catatan per pasar terlipat, bisa dibuka', async ({ p
 	// (3) setelah dibuka, isinya ada
 	await kepalaAkurasi.click();
 	await expect(page.getByText('Tuntas', { exact: false }).first()).toBeVisible({ timeout: 10000 });
-	await kepalaCatatan.click();
+	// Buka SEMUA <details> langsung lewat DOM: mengklik kepala satu per satu bisa
+	// menutup kembali lipatan sebelumnya (perilaku accordion), sehingga teks pakem
+	// hilang saat dibaca — ini yang dulu membuat tes gagal padahal datanya ada.
+	const totalLipatan = await page.locator('details').count();
+	for (let i = 0; i < totalLipatan; i++) {
+		await page.locator('details').nth(i).evaluate((el) => {
+			(el as HTMLDetailsElement).open = true;
+		});
+	}
+	await page.waitForTimeout(400);
 	const t = await page.locator('body').innerText();
 	expect(t).toMatch(/pakem|INSUFFICIENT/i);
 	console.log('--- HOME LIPATAN OK ---');
