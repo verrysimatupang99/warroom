@@ -39,6 +39,7 @@ import TrackBar from './TrackBar.svelte';
 	import MarketSignal from './MarketSignal.svelte';
 import PolyAltBtc5m from './PolyAltBtc5m.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
+import { buatKonteks } from '$lib/pasar/konteks';
 	import type { Fact, EventItem, MarketVerdict } from '$lib/api/types';
 
 	interface Props {
@@ -399,6 +400,10 @@ function pilihSub(s: string) {
 	<!-- Sub `lp` menggunakan area API khusus (/areas/lp) karena memuat fakta lp_paper terpisah. -->
 	<AreaLoader area={sub === 'lp' ? 'lp' : kunci} onstatus={(s) => (statusFakta = s)}>
 		{#snippet children(data)}
+			<!-- Konteks pasar: SATU sumber untuk semua halaman market (lib/pasar/konteks.ts).
+			     Semua penghitungan dipindah ke sana supaya markup hanya menggambar dan tiap
+			     pasar menerima bentuk data yang sama — dasar normalisasi antar-pasar. -->
+			{@const konteks = buatKonteks(data.facts as never, kunci, anak as never)}
 			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
 			{@const faktaEquity = temukanFakta(data.facts, kunci === 'crypto' ? 'equity' : `${kunci}_equity`) ?? temukanFakta(data.facts, 'equity')}
