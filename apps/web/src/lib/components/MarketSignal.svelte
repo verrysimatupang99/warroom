@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { umurDetik, waktuWIB } from '$lib/format';
+	import TrackBar from './TrackBar.svelte';
 
 	/**
 	 * Sinyal & Entry Setup per market — satu komponen, kolom menyesuaikan keunikan pasar.
@@ -295,14 +296,15 @@
 			</div>
 			<div class="space-y-1.5">
 				{#each data.dimensi as d}
-					<div class="flex items-center gap-2 text-12">
-						<span class="w-56 shrink-0 truncate text-text-2">{d.dimensi}</span>
-						<div class="h-2 flex-1 overflow-hidden rounded bg-canvas border border-line">
-							<div class="h-full rounded bg-accent" style="width: {d.persen ?? 0}%"></div>
-						</div>
-						<span class="w-16 shrink-0 text-right font-mono text-text-3">{d.persen ?? '—'}% <span class="text-10">({d.lolos}/{d.total})</span></span>
-					</div>
-				{/each}
+						<TrackBar
+							label={d.dimensi}
+							nilai={d.persen ?? null}
+							maks={100}
+							teksAmbang={`${d.lolos ?? '—'}/${d.total ?? '—'} lolos`}
+							nada={(d.persen ?? 0) >= 50 ? 'terkukur' : 'netral'}
+							alasan="persentase dimensi gerbang belum tersedia"
+						/>
+					{/each}
 			</div>
 		</div>
 	{/if}

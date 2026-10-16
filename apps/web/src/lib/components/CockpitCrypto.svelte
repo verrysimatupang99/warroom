@@ -1,4 +1,6 @@
 <script lang="ts">
+	import TrackBar from './TrackBar.svelte';
+
 	/**
 	 * CockpitCrypto — ringkasan pipeline/sinyal/risiko crypto.
 	 *
@@ -121,13 +123,14 @@
 				<div class="label-mikro mb-1.5 text-text-3">Dimensi gerbang (berapa kandidat lolos tiap syarat)</div>
 				<div class="space-y-1">
 					{#each sinyal.dimensi as d (d.dimensi)}
-						<div class="flex items-center gap-2 text-11">
-							<span class="w-40 shrink-0 text-text-2">{d.dimensi ?? '—'}</span>
-							<div class="h-1.5 flex-1 overflow-hidden rounded-control bg-surface-3">
-								<div class="h-full { (d.persen ?? 0) >= 50 ? 'bg-pos' : 'bg-accent' }" style={`width:${Math.min(100, d.persen ?? 0)}%`}></div>
-							</div>
-							<span class="angka w-20 shrink-0 text-right text-text-3">{d.lolos ?? 0}/{d.total ?? 0} · {d.persen ?? 0}%</span>
-						</div>
+						<TrackBar
+							label={d.dimensi ?? '—'}
+							nilai={d.persen ?? null}
+							maks={100}
+							teksAmbang={`${d.lolos ?? 0}/${d.total ?? 0} lolos`}
+							nada={(d.persen ?? 0) >= 50 ? 'terkukur' : 'netral'}
+							alasan="persentase dimensi gerbang belum tersedia"
+						/>
 					{/each}
 				</div>
 			</div>

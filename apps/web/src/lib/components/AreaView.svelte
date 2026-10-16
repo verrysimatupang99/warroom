@@ -9,6 +9,7 @@
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
 import HonestyTag from './HonestyTag.svelte';
+import TrackBar from './TrackBar.svelte';
 	import Block from './Block.svelte';
 	import FreshnessBadge from './FreshnessBadge.svelte';
 	import SubNav from './SubNav.svelte';
@@ -2267,21 +2268,26 @@ function pilihSub(s: string) {
 									{#each bandarSkorObj.emiten as e (e.kode)}
 										<div class="rounded-card border border-line bg-surface p-2.5">
 											<div class="flex flex-wrap items-center justify-between gap-2">
-												<div class="flex items-center gap-2">
-													<span class="font-mono font-bold text-text">{e.kode}</span>
-													<span class="rounded px-1.5 py-0.5 text-10 font-bold border {e.kelas === 'AKUMULASI' ? 'text-pos bg-pos/10 border-pos/20' : e.kelas === 'DISTRIBUSI' ? 'text-neg bg-neg/10 border-neg/20' : e.kelas === 'SEIMBANG' ? 'text-text-2 bg-surface border-line' : 'text-warn bg-warn/10 border-warn/20'}">
-														{e.kelas}
-													</span>
-													{#if e.no_sell}
-														<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/30 text-accent bg-accent/10">NO-SELL</span>
-													{/if}
-												</div>
-												<div class="flex items-center gap-2">
-													<div class="h-2 w-32 overflow-hidden rounded bg-canvas border border-line">
-														<div class="h-full rounded {e.skor >= 55 ? 'bg-pos' : e.skor <= 45 ? 'bg-neg' : 'bg-accent'}" style="width: {e.skor}%"></div>
-													</div>
-													<span class="font-mono font-bold text-14 {e.skor >= 55 ? 'text-pos' : e.skor <= 45 ? 'text-neg' : 'text-text-2'}">{e.skor}</span>
-												</div>
+												<div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+																		<span class="font-mono font-bold text-text">{e.kode}</span>
+																		<span class="rounded px-1.5 py-0.5 text-10 font-bold border {e.kelas === 'AKUMULASI' ? 'text-pos bg-pos/10 border-pos/20' : e.kelas === 'DISTRIBUSI' ? 'text-neg bg-neg/10 border-neg/20' : e.kelas === 'SEIMBANG' ? 'text-text-2 bg-surface border-line' : 'text-warn bg-warn/10 border-warn/20'}">
+																			{e.kelas}
+																		</span>
+																		{#if e.no_sell}
+																			<span class="rounded px-1.5 py-0.5 text-10 font-bold border border-accent/30 text-accent bg-accent/10">NO-SELL</span>
+																		{/if}
+																	</div>
+																	<div class="w-56 shrink-0">
+																		<TrackBar
+																			label="SKOR BANDARMOLOGI"
+																			nilai={e.skor ?? null}
+																			maks={100}
+																			ambang={55}
+																			teksAmbang={e.kelas === 'AKUMULASI' ? 'AKUMULASI' : e.kelas === 'DISTRIBUSI' ? 'DISTRIBUSI' : e.kelas}
+																			nada={e.kelas === 'AKUMULASI' ? 'terkukur' : e.kelas === 'DISTRIBUSI' ? 'bahaya' : 'netral'}
+																			alasan="skor bandarmologi belum tersedia untuk emiten ini"
+																		/>
+																	</div>
 											</div>
 											<div class="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-10 text-text-3 font-mono">
 												<span>ATS beli {e.rasio_ats_pct}%</span>
