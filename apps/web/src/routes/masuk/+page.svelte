@@ -42,12 +42,16 @@
 </script>
 
 <div class="mx-auto mt-14 w-full max-w-sm" data-testid="masuk">
-	<h1 class="text-19 text-text">Masuk War Room</h1>
+	<!-- Brand flat: "WarRoom" dengan aksen amber pada "Room" (satu lampu war
+	     room, DESIGN-USULAN). Kartu hairline rata, tanpa glow/glassmorphism. -->
+	<p class="label-mikro mb-1">AKSES OPERATOR</p>
+	<h1 class="merek font-display text-26 font-bold text-text">War<span>Room</span></h1>
 	<p class="mt-1 text-12 text-text-3">
 		Sesi cookie HttpOnly; TLS dan origin tunggal ditangani reverse proxy.
 	</p>
 
-	<form class="mt-5 space-y-3" onsubmit={kirim}>
+	<!-- Kartu hairline: 6px radius, border 1px, bayangan DILARANG (aturan flat). -->
+	<form class="kartu mt-4 p-3 space-y-3" onsubmit={kirim}>
 		<label class="block" for="masuk-username">
 			<span class="label-mikro block text-text-3">username</span>
 			<input
@@ -96,3 +100,11 @@
 		</button>
 	</form>
 </div>
+
+<style>
+	/* Brand "WarRoom": amber hanya pada kata Room (DESIGN-USULAN — satu lampu war
+	   room). Scoped di halaman ini; kelas .merek di home itu scoped halaman. */
+	.merek span {
+		color: var(--color-accent);
+	}
+</style>
