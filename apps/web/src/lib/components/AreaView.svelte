@@ -347,9 +347,11 @@ function pilihSub(s: string) {
 </script>
 
 <div class="space-y-4">
-	<!-- Header Area -->
+	<!-- Header Area: eyebrow mono (label struktur ala DESIGN-USULAN) di atas judul.
+	     Kunci area = label mono; judul tetap dari definisi area, bukan karangan UI. -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
 		<div>
+			<span class="label-mikro">{(anak?.label ?? area?.kunci ?? kunci).toUpperCase()}</span>
 			<div class="flex items-center gap-2">
 				<h1 class="text-26 font-bold tracking-tight text-text font-display">{area?.label ?? kunci}</h1>
 				<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
@@ -367,7 +369,7 @@ function pilihSub(s: string) {
 			class="rounded-control border border-line bg-surface px-3 py-1.5 text-11 text-text-3 hover:text-text hover:border-line-soft transition-colors"
 			onclick={() => (tampilRaw = !tampilRaw)}
 		>
-			{tampilRaw ? 'Tutup Inspeksi Mentah' : '🔍 Inspeksi Fact Mentah'}
+			{tampilRaw ? 'Tutup Inspeksi Mentah' : 'FACT: inspeksi mentah'}
 		</button>
 	</div>
 

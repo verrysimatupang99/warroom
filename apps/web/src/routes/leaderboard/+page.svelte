@@ -2,6 +2,7 @@
 	import { getLeaderboard, getArea } from '$lib/api/client';
 	import type { LeaderboardPayload, LeaderboardStrategy } from '$lib/api/types';
 	import { angka } from '$lib/format';
+	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
 
 	let payload = $state<LeaderboardPayload | null>(null);
@@ -154,13 +155,19 @@
 
 <div class="space-y-4">
 	<!-- Kepala Halaman -->
+	<!-- Kepala halaman: eyebrow mono (label struktur) + judul + honesty-tag.
+	     Motif DESIGN-USULAN 16 Okt: label bagian mono uppercase, setiap klaim
+	     keberhasilan data membawa status verifikasinya. -->
 	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
 		<div>
-			<div class="flex items-center gap-2">
+			<span class="label-mikro">ANALITIK / LEADERBOARD</span>
+			<div class="flex flex-wrap items-center gap-2">
 				<h1 class="text-20 font-bold font-display text-text">Leaderboard Antar-Strategi</h1>
-				<span class="rounded bg-accent/15 px-2 py-0.5 text-10 font-bold uppercase text-accent border border-accent/30 font-mono">
-					Bukti Nyata
-				</span>
+				<HonestyTag
+					terverifikasi={sumberKeterangan === 'endpoint' ? true : sumberKeterangan === 'fakta_mentah' ? false : null}
+					sumber={sumberKeterangan === 'endpoint' ? '/api/v1/leaderboard' : 'agregasi fakta mentah'}
+					alasan="endpoint atau fakta mentah tidak terbaca — bukan angka sintetis"
+				/>
 			</div>
 			<p class="text-12 text-text-3 mt-1">
 				Membandingkan hasil tiap strategi secara adil dan jujur berdasarkan return terukur, riwayat ledger, dan siklus setup.
@@ -169,7 +176,7 @@
 
 		{#if sumberKeterangan === 'fakta_mentah'}
 			<div class="rounded-control border border-warn/30 bg-warn/10 px-2.5 py-1 text-10 font-mono text-warn">
-				Sumber: agregasi fakta mentah (menunggu sinkronisasi rute endpoint baru)
+				! Sumber: agregasi fakta mentah (menunggu sinkronisasi rute endpoint baru)
 			</div>
 		{:else if payload?.diperbarui_pada}
 			<div class="rounded-control border border-line bg-surface px-2.5 py-1 text-10 font-mono text-text-3">

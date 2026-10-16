@@ -31,6 +31,7 @@
 	import { AREAS } from '$lib/nav';
 	import { teksNilai, umurDetik, waktuWIB } from '$lib/format';
 	import Block from '$lib/components/Block.svelte';
+	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import SubNav from '$lib/components/SubNav.svelte';
 	import DataTable from '$lib/components/DataTable.svelte';
 	import EventFeed from '$lib/components/EventFeed.svelte';
@@ -155,8 +156,18 @@ function pilihSub(s: string) {
 </script>
 
 <div class="space-y-4">
+	<!-- Kepala halaman: eyebrow mono + judul + honesty-tag status db
+	     (SEHAT = TERUKUR dari /health; db gagal/belum terbaca = belum terverifikasi/'—'). -->
 	<div>
-		<h1 class="text-19 text-text">Sistem &amp; AI</h1>
+		<span class="label-mikro">OPERASI / SISTEM</span>
+		<div class="flex flex-wrap items-center gap-2">
+			<h1 class="text-19 text-text">Sistem &amp; AI</h1>
+			{#if sehat}
+				<HonestyTag terverifikasi={sehat.db} sumber="/api/v1/health" alasan="health tidak terbaca" />
+			{:else}
+				<HonestyTag terverifikasi={null} alasan="health tidak terbaca" />
+			{/if}
+		</div>
 		<p class="text-12 text-text-3">Unit lintas host, kesegaran, biaya, event, AI, kebijakan, audit.</p>
 	</div>
 
