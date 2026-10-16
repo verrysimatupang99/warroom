@@ -66,6 +66,38 @@ def test_exit_tanpa_r_tak_menyebut_angka():
     assert "sl" in pesan and "(" not in pesan
 
 
+def test_entry_mode_label_dan_angka_opsional():
+    a = alert_entry(
+        "legacy-smc",
+        signal_id="sig-9",
+        pair="BTCUSDT",
+        direction="long",
+        entry=100,
+        stop=98,
+        mode="paper",
+        size_usd=500.0,
+        risk_usd=5.0,
+        biaya_bps=20.0,
+    )
+    assert a.pesan.startswith("[PAPER] legacy-smc LONG BTCUSDT")
+    assert "size $500.00" in a.pesan
+    assert "risiko $5.00" in a.pesan
+    assert "biaya 20 bps" in a.pesan
+
+
+def test_entry_tanpa_angka_opsional_tak_menyebut_dolar():
+    pesan = alert_entry("smc", signal_id="s", pair="ETHUSDT", direction="long").pesan
+    assert "$" not in pesan and "bps" not in pesan
+
+
+def test_exit_mode_label():
+    a = alert_exit(
+        "paper-crypto", signal_id="s", pair="ETHUSDT", status="closed_SL", r=-1.0, mode="paper"
+    )
+    assert a.pesan.startswith("[PAPER] paper-crypto ETHUSDT ditutup: closed_SL")
+    assert "(-1.000R)" in a.pesan
+
+
 def test_to_payload_tanpa_kredensial():
     k = alert_kill_switch("smc", alasan="halt owner")
     payload = to_payload(k)

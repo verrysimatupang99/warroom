@@ -119,8 +119,16 @@ def alert_entry(
     stop: float | None = None,
     tp1: float | None = None,
     tp2: float | None = None,
+    mode: str | None = None,
+    size_usd: float | None = None,
+    risk_usd: float | None = None,
+    biaya_bps: float | None = None,
 ) -> KondisiStrategi:
-    """Trade paper baru dibuka. Subjek per signal_id → satu alert per trade."""
+    """Trade paper baru dibuka. Subjek per signal_id → satu alert per trade.
+
+    ``mode`` (mis. ``paper``) memberi label jujur pada pesan; ukuran/risiko/biaya
+    hanya ditampilkan bila pemanggil benar-benar menyuplainya.
+    """
     baris = [f"{strategi} {direction.upper()} {pair}"]
     if entry is not None:
         baris.append(f"entry {entry}")
@@ -130,12 +138,21 @@ def alert_entry(
         baris.append(f"tp1 {tp1}")
     if tp2 is not None:
         baris.append(f"tp2 {tp2}")
+    if size_usd is not None:
+        baris.append(f"size ${float(size_usd):.2f}")
+    if risk_usd is not None:
+        baris.append(f"risiko ${float(risk_usd):.2f}")
+    if biaya_bps is not None:
+        baris.append(f"biaya {float(biaya_bps):g} bps")
+    pesan = " | ".join(baris)
+    if mode:
+        pesan = f"[{mode.upper()}] {pesan}"
     return KondisiStrategi(
         strategi=strategi,
         kondisi="entry",
         subjek=f"trade/{signal_id}",
         severity="info",
-        pesan=" | ".join(baris),
+        pesan=pesan,
         subjek_aksi="lihat posisi terbuka di /crypto?sub=eksekusi",
     )
 
@@ -147,11 +164,14 @@ def alert_exit(
     pair: str,
     status: str,
     r: float | None = None,
+    mode: str | None = None,
 ) -> KondisiStrategi:
     """Trade paper ditutup (SL/TP/manual). Subjek per signal_id → satu alert per trade."""
     pesan = f"{strategi} {pair} ditutup: {status}"
     if r is not None:
         pesan += f" ({float(r):+.3f}R)"
+    if mode:
+        pesan = f"[{mode.upper()}] {pesan}"
     return KondisiStrategi(
         strategi=strategi,
         kondisi="exit",

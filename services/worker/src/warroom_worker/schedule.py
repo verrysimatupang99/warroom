@@ -275,6 +275,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="pemindaian kuantitatif SMC & auto-open posisi paper saat lolos 5 risk gates + alert Telegram.",
     ),
     JobSpec(
+        name="strategi-alert",
+        interval_s=300,
+        enabled=True,
+        payload={"kind": "harian", "key": "status", "strategi": "Strategi A"},
+        note=(
+            "kabarkan transisi HALTED (kill-switch) dari fakta `harian/status` — sekali per "
+            "transisi; transisi dinilai dari pasangan fakta, bukan berkas state."
+        ),
+    ),
+    JobSpec(
         name="source-health",
         interval_s=60,
         enabled=True,

@@ -44,12 +44,14 @@ from .infra import (
 from .llm import (
     _kandidat_terbaru_dari_ledger,  # noqa: F401
     _pair_sudah_dipakai,  # noqa: F401
+    alert_bench_jika_transisi,  # noqa: F401
     handler_learner,  # noqa: F401
     handler_llm_brief,  # noqa: F401
     handler_paper_eval,  # noqa: F401
     handler_paper_scan,  # noqa: F401
     handler_prompts_sync,  # noqa: F401
 )
+from .strategi import handler_strategi_alert  # noqa: F401
 
 __all__ = [
     "root_dir",
@@ -88,5 +90,7 @@ __all__ = [
     "_pair_sudah_dipakai",
     "_kandidat_terbaru_dari_ledger",
     "handler_paper_scan",
+    "alert_bench_jika_transisi",
+    "handler_strategi_alert",
     "register_handlers",
 ]
