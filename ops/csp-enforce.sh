@@ -75,21 +75,30 @@ else
 fi
 
 # 3) Verifikasi ulang lewat produksi (nginx): enforce & report-only harus memuat hash.
+#    Retry singkat: setelah `nginx -s reload` ada jeda propagasi — sekali baca bisa
+#    masih melihat konfigurasi lama. Kegagalan palsu di sini dulu membuat deploy
+#    mencetak "CSP enforce gagal" walau enforce sudah benar-benar terpasang.
 PUBLIC="${WARROOM_CSP_PUBLIC:-https://0xgunsl1ng3r.xyz}"
 PH="$(mktemp)"
-if curl -sS -D "$PH" -o /dev/null --max-time 8 "$PUBLIC/" 2>/dev/null; then
-	# NB: baris enforce dimulai 'content-security-policy:' dan TIDAK memuat 'report-only'.
-	# Baris report-only memuat 'Report-Only'. Ambil hash dari masing-masing baris secara tepat.
-	enf="$(grep -i '^content-security-policy:' "$PH" | grep -vi 'report-only' | grep -oiE 'sha256-[A-Za-z0-9+/=]+' | head -n1 || true)"
-	rep="$(grep -i 'content-security-policy-report-only' "$PH" | grep -oiE 'sha256-[A-Za-z0-9+/=]+' | head -n1 || true)"
-	if [[ "$enf" == "$HASH" && "$rep" == "$HASH" ]]; then
-		printf 'CSP: OK — enforce & report-only memuat hash yang sama (%s)\n' "$HASH"
-	else
-		printf 'CSP: PERINGATAN — enforce=%s report-only=%s (harus %s)\n' "${enf:-none}" "${rep:-none}" "$HASH" >&2
-		rm -f "$PH"
-		exit 1
+ok=0
+for _ in 1 2 3 4 5; do
+	if curl -sS -D "$PH" -o /dev/null --max-time 8 "$PUBLIC/" 2>/dev/null; then
+		# NB: baris enforce dimulai 'content-security-policy:' dan TIDAK memuat 'report-only'.
+		# Baris report-only memuat 'Report-Only'. Ambil hash dari masing-masing baris secara tepat.
+		enf="$(grep -i '^content-security-policy:' "$PH" | grep -vi 'report-only' | grep -oiE 'sha256-[A-Za-z0-9+/=]+' | head -n1 || true)"
+		rep="$(grep -i 'content-security-policy-report-only' "$PH" | grep -oiE 'sha256-[A-Za-z0-9+/=]+' | head -n1 || true)"
+		if [[ "$enf" == "$HASH" && "$rep" == "$HASH" ]]; then
+			ok=1
+			break
+		fi
 	fi
+	sleep 1
+done
+if (( ok == 1 )); then
+	printf 'CSP: OK — enforce & report-only memuat hash yang sama (%s)\n' "$HASH"
 else
-	echo "CSP: tidak bisa memeriksa via $PUBLIC (dilewati; web lokal sudah lolos)"
+	printf 'CSP: PERINGATAN — enforce=%s report-only=%s (harus %s)\n' "${enf:-none}" "${rep:-none}" "$HASH" >&2
+	rm -f "$PH"
+	exit 1
 fi
 rm -f "$PH"
