@@ -56,8 +56,11 @@
 		s == null || !Number.isFinite(s) ? '—' : s < 60 ? `${Math.round(s)} dtk` : `${(s / 60).toFixed(1)} mnt`;
 	const usd = (n?: number | null): string =>
 		n == null || !Number.isFinite(n) ? '—' : `$${n.toFixed(2)}`;
-	const pct = (n?: number | null): string =>
-		n == null || !Number.isFinite(n) ? '—' : `${(n * 100).toFixed(1)}%`;
+	// Skill memakai sentinel besar (mis. 99) saat sisi tidak punya harga sama sekali —
+	// itu BUKAN spread 99%. Menampilkannya sebagai persen akan menyesatkan, jadi
+	// ditampilkan sebagai "tidak ada harga" sesuai artinya.
+	const spread = (n?: number | null): string =>
+		n == null || !Number.isFinite(n) ? '—' : n >= 1 ? 'tidak ada harga' : `${(n * 100).toFixed(2)}%`;
 </script>
 
 {#if !tersedia}
@@ -113,7 +116,7 @@
 					</div>
 					<div>
 						<div class="label-mikro text-text-3">spread</div>
-						<div class="font-mono text-text">{pct(terakhir.spread)}</div>
+						<div class="font-mono text-text">{spread(terakhir.spread)}</div>
 					</div>
 					<div>
 						<div class="label-mikro text-text-3">ask UP</div>
