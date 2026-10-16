@@ -7,11 +7,22 @@ dengan alasan jelas bila kredensial tes tidak tersedia — tidak pernah diam-dia
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 TEST_ENV = Path.home() / ".config" / "warroom" / "test-db.env"
+
+# Kunci advisory Postgres untuk seluruh sesi tes ber-DB. Angka tetap (huruf "warroom"
+# sebagai heksadesimal) — bukan rahasia, hanya harus sama di semua proses.
+KUNCI_DB = 0x776172726F6F6D
+
+# Status kunci per proses — lihat `_satu_sesi_di_db`.
+_kunci_kedalaman = 0
+_kunci_pegang: tuple[Any, Any] | None = None
 
 
 def _test_url() -> str | None:
@@ -23,6 +34,49 @@ def _test_url() -> str | None:
             if line.startswith("WARROOM_TEST_DB_URL="):
                 return line.split("=", 1)[1].strip()
     return None
+
+
+@contextmanager
+def _satu_sesi_di_db(url: str) -> Iterator[None]:
+    """Satu sesi tes memakai skema `warroom_test` pada satu waktu.
+
+    `drop_all`/`create_all` di awal sesi menghapus tabel yang sedang dipakai sesi lain:
+    dua proses pytest (mis. beberapa worktree sektor berjalan bersamaan) saling
+    menjatuhkan dengan `relation "..." does not exist` — gejalanya persis seperti tes
+    flaky, padahal penyebabnya jadwal. Kunci Postgres dilepas otomatis saat koneksi
+    putus, jadi sesi yang mati tidak memblokir sesi berikutnya.
+
+    Kunci dihitung per PROSES, bukan per pemanggilan: satu proses bisa memuat fixture ini
+    lebih dari sekali (mis. lewat conftest paket yang mengekspor ulang), dan kunci
+    advisory Postgres tidak mengenal pemilik yang sama di koneksi berbeda — permintaan
+    kedua akan menunggu dirinya sendiri sampai mati.
+    """
+    global _kunci_kedalaman
+    if not url.startswith("postgresql"):
+        yield
+        return
+
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.pool import NullPool
+
+    global _kunci_pegang
+    if _kunci_kedalaman == 0:
+        # Koneksi terpisah (di luar pool bersama) supaya `dispose_engine()` tidak ikut
+        # menutup koneksi pemegang kunci.
+        kunci_engine = create_engine(url, poolclass=NullPool)
+        koneksi = kunci_engine.connect()
+        koneksi.execute(text("select pg_advisory_lock(:k)"), {"k": KUNCI_DB})
+        _kunci_pegang = (koneksi, kunci_engine)
+    _kunci_kedalaman += 1
+    try:
+        yield
+    finally:
+        _kunci_kedalaman -= 1
+        if _kunci_kedalaman == 0 and _kunci_pegang is not None:
+            koneksi, kunci_engine = _kunci_pegang
+            _kunci_pegang = None
+            koneksi.close()
+            kunci_engine.dispose()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -45,10 +99,13 @@ def db() -> str:
     from warroom_core.db import Base, dispose_engine, engine
 
     dispose_engine()
-    Base.metadata.drop_all(engine())
-    Base.metadata.create_all(engine())
-    yield url
-    dispose_engine()
+    with _satu_sesi_di_db(url):
+        Base.metadata.drop_all(engine())
+        Base.metadata.create_all(engine())
+        try:
+            yield url
+        finally:
+            dispose_engine()
 
 
 @pytest.fixture

@@ -33,9 +33,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/live_trading"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"
+# Catatan: paket ini TIDAK punya [tool.pytest.ini_options] sendiri — sengaja.
+# Konfigurasi tes (dan fixture DB) hidup di akar repo; kalau paket ini menjadi inifile
+# sendiri, `conftest.py` akar tidak dimuat dan tes ber-DB gagal (fixture `db` hilang).
+# Jalankan dari akar repo: `uv run pytest packages/live-trading -q`.
 
 [tool.ruff]
 line-length = 110
