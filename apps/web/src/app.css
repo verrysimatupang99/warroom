@@ -1,22 +1,27 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/700.css';
 @import 'tailwindcss';
 
 /* ============================================================================
-   Sistem visual War Room — ditulis ulang 6 Okt 2026 mengikuti bahasa visual
-   proyek beebots (github.com/imikerussell/beebots, MIT).
+   Sistem visual War Room — ditulis ulang 16 Okt 2026 mengikuti DESIGN-USULAN
+   (docs/revisi-total/mockup-frontend-20261016, DISETUJUI OWNER 16 Okt 2026 —
+   keputusan ini override catatan PRODUCT.md bahwa tema app.css lama mengikat).
 
-   YANG DIAMBIL: bahasa visualnya — disiplinnya, bukan tata letaknya.
-     - permukaan near-black berlapis (page -> card -> card-2), bukan satu warna
-     - mono tabular untuk SEMUA angka (kolom tidak bergoyang saat nilai berubah)
-     - "eyebrow": label mikro uppercase bertracking lebar sebagai penanda bagian
-     - bar proporsi (track + fill berkapsul) untuk setiap besaran yang punya maksimum
-     - warna status SELALU berpasangan dengan glif — tidak pernah warna saja
-     - radius 0,9rem yang konsisten, termasuk pada track bar
-
-   YANG TIDAK DIAMBIL: foto lebah, nama "bee", dan skala viewport tunggal
-   (`font-size: min(100vw/120, 100vh/67.5)` + `overflow:hidden`). Yang terakhir itu
-   dirancang untuk satu dashboard penuh layar di monitor; War Room dibuka berkali-kali
-   sehari dan sering dari layar kecil (lihat PRODUCT.md), jadi dipakai skala bertingkat:
-   tetap rapat di desktop, tetap terbaca di 390px.
+   Bahasa visual: "ops ledger" graphite gelap berlapis dengan SATU lampu amber.
+     - graphite netral berlapis (#101214 -> #17191C -> #1D2126), BUKAN biru
+     - aksen tunggal AMBER #F5B83D: identitas "lampu war room"
+     - mint #34E39A khusus nilai positif TERUKUR (satu warna satu arti)
+     - merah #FF6B6B hanya risiko, dan SELALU berpasangan glyph + kata
+     - IBM Plex Sans (teks) + IBM Plex Mono (SEMUA angka, tabular-nums)
+     - radius 6px + border hairline + FLAT: tanpa gradient/glow/glassmorphism
+     - bar proporsi (track + fill) untuk setiap besaran ber-maksimum
+     - honesty-tag (TERUKUR solid / BELUM TERVERIFIKASI dashed + sumber) di
+       setiap angka — motif pembeda produk
    ============================================================================ */
 
 /* ============================================================================
@@ -31,31 +36,30 @@
    ============================================================================ */
 
 /* ---------- LAPIS 1: PRIMITIVE — nilai mentah, tanpa makna ----------
-   Palet baru (6 Okt 2026): "Algentis gelap" — warm-dark + SATU aksen mint.
-   Sumber: algentis.xyz (panel gelapnya: --panel #0A0C0B, --panel-ink #F2F0E9,
-   --accent #34E39A). Pemilik memilih arah ini + gelap saja.
-   Setiap nilai diukur kontras AA sebelum dipakai (catatan di laporan 6 Okt). */
+   Palet graphite gelap berlapis (16 Okt 2026, keputusan owner): permukaan netral
+   (bukan biru) dari DESIGN-USULAN. Sumber: mockup home.html (Tailwind config). */
 @theme {
-	/* Permukaan warm-dark (hitam kehangatan, bukan biru) */
-	--p-ink-950: #0a0c0b;
-	--p-ink-900: #0d100e;
-	--p-ink-800: #111514;
-	--p-ink-700: #161b18;
-	--p-ink-600: #1d2420;
-	--p-ink-500: #2a312c;
-	--p-ink-400: #1f2622;
-	--p-ink-350: #0f1311;
-	/* Teks (krem, bukan putih murni) */
-	--p-mist-50: #f2f0e9;
-	--p-mist-300: #b9bfba;
-	--p-mist-500: #8c918d;
-	--p-slate-400: #9aa09c;
-	/* Aksen — mint tunggal + merah + kuning (permintaan pemilik) */
+	/* Permukaan graphite netral berlapis */
+	--p-ink-950: #0c0e10;
+	--p-ink-900: #101214;
+	--p-ink-800: #17191c;
+	--p-ink-700: #1d2126;
+	--p-ink-600: #2a2f36;
+	--p-ink-500: #2a2f36;
+	--p-ink-400: #23272d;
+	--p-ink-350: #0c0e10;
+	/* Teks (putih-abu netral, bukan krem) */
+	--p-mist-50: #e8eaed;
+	--p-mist-300: #9aa1a9;
+	--p-mist-500: #9aa1a9;
+	--p-slate-400: #9aa1a9;
+	/* Aksen tunggal amber + semantik terbatas mint (positif TERUKUR) dan
+	   merah (risiko — selalu dengan glyph + kata, tidak pernah warna saja). */
 	--p-mint-400: #34e39a;
 	--p-amber-400: #f5b83d;
 	--p-red-400: #ff6b6b;
-	--p-red-300: #d97474;
-	--p-ink-on: #0a0c0b;
+	--p-red-300: #ff8a8a;
+	--p-ink-on: #101214;
 
 	/* Skala tipografi — satu tangga, tanpa lompatan */
 	--text-10: 10px;
@@ -72,49 +76,50 @@
 	--text-26: 26px;
 	--text-34: 34px;
 
-	/* Radius + easing */
-	--radius-card: 14px;
-	--radius-control: 10px;
+	/* Radius 6px + hairline — kartu terbaca sebagai dokumen berbatas, bukan
+	   floating-slop (DESIGN-USULAN R-31). Track tetap kapsul penuh (bentuk bar). */
+	--radius-card: 6px;
+	--radius-control: 6px;
 	--radius-track: 999px;
 	--ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-	/* Font: Space Grotesk (judul), Inter (teks), JetBrains Mono (SEMUA angka). */
-	--font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
-	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	/* Font: IBM Plex Sans (teks) + IBM Plex Mono (SEMUA angka, tabular). */
+	--font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 /* ---------- LAPIS 2: SEMANTIC — peran; tema berganti di sini ----------
    Nama --color-* dan --bg/--surface/--text-* dipertahankan supaya ratusan
    pemakaian tidak putus; yang berubah hanya sumber nilainya.
 
-   PEMBAGIAN MAKNA (satu warna satu arti):
-     mint  = aksi, tautan, sorotan, untung     -> --accent & --pos
-     merah = rugi, bahaya, stop                -> --neg
-     kuning= peringatan, target, perhatian     -> --warn
-   Aksen lama (cyan/violet/emas) DIPENSIUNKAN ke mint/merah/kuning supaya tidak
-   ada enam warna bersaing di satu layar — temuan audit 6 Okt. */
+   PEMBAGIAN MAKNA (DESIGN-USULAN, satu warna satu arti):
+     amber = aksen tunggal: fokus keputusan, perhatian, tautan aktif -> --accent & --warn
+     mint  = nilai positif TERUKUR SAJA                            -> --pos
+     merah = risiko/rugi/bahaya — selalu + glyph + kata            -> --neg
+   Mint TIDAK lagi jadi warna link/aksi umum: itu hak amber. Merah tidak bisa
+   dipakai sebagai dekorasi — hanya makna risiko, dan selalu berpasangan kata. */
 @theme {
-	--color-bg: var(--p-ink-950);
-	--color-bg-2: var(--p-ink-900);
+	--color-bg: var(--p-ink-900);
+	--color-bg-2: var(--p-ink-800);
 	--color-surface: var(--p-ink-800);
 	--color-surface-2: var(--p-ink-700);
 	--color-surface-3: var(--p-ink-600);
-	--color-line: var(--p-ink-500);
-	--color-line-soft: var(--p-ink-400);
+	--color-line: var(--p-ink-600);
+	--color-line-soft: var(--p-ink-600);
 	--color-text: var(--p-mist-50);
 	--color-text-2: var(--p-mist-300);
-	--color-text-3: var(--p-mist-500);
-	--color-accent: var(--p-mint-400);
-	--color-accent-2: var(--p-mint-400);
+	--color-text-3: var(--p-mist-300);
+	--color-accent: var(--p-amber-400);
+	--color-accent-2: var(--p-amber-400);
 	--color-premium: var(--p-amber-400);
 	--color-pos: var(--p-mint-400);
 	--color-neg: var(--p-red-400);
 	--color-warn: var(--p-amber-400);
 	--color-paper: var(--p-mist-300);
-	--color-live: var(--p-red-300);
+	--color-live: var(--p-red-400);
 	--color-inherit: var(--p-slate-400);
-	--color-canvas: var(--p-ink-350);
+	--color-canvas: var(--p-ink-950);
 	--color-on-accent: var(--p-ink-on);
 }
 
@@ -167,14 +172,9 @@
 		font-size: 14px;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;
-		/* Pendar radial mint tipis di latar warm-dark — memberi kedalaman tanpa
-		   elemen tambahan. Aksen tunggal, jadi pendar pun satu warna (dulu dua:
-		   cyan + hijau; itu bagian dari "enam aksen bersaing" temuan audit 6 Okt). */
-		background:
-			radial-gradient(60rem 30rem at 12% -10%, rgba(52, 227, 154, 0.06), transparent 70%),
-			radial-gradient(50rem 30rem at 90% 110%, rgba(52, 227, 154, 0.03), transparent 70%),
-			var(--color-bg);
-		background-attachment: fixed;
+		/* FLAT (DESIGN-USULAN): latar polos, tanpa pendar radial. Kedalaman datang
+		   dari lapisan graphite + border hairline, bukan dari glow. */
+		background: var(--color-bg);
 	}
 	h1,
 	h2,
@@ -234,17 +234,16 @@
 		font-feature-settings: 'tnum' 1;
 	}
 
+	/* FLAT: tanpa box-shadow — kartu = dokumen berbatas hairline (R-31). */
 	.kartu {
 		background: var(--color-surface);
 		border: 1px solid var(--color-line);
 		border-radius: var(--radius-card);
-		box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 	}
 	.permukaan-2 {
 		background: var(--color-surface-2);
 		border: 1px solid var(--color-line-soft);
 		border-radius: var(--radius-card);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 	}
 	.pil {
 		border-radius: var(--radius-track);
@@ -274,8 +273,9 @@
 	   JANGAN render bar 0% — render tanda "—" (lihat komponen).
 	   --------------------------------------------------------------------- */
 	.bar {
-		height: 7px;
-		background: var(--grid);
+		height: 6px;
+		background: var(--color-bg);
+		border: 1px solid var(--color-line);
 		border-radius: var(--radius-track);
 		overflow: hidden;
 	}
@@ -283,7 +283,7 @@
 		display: block;
 		height: 100%;
 		border-radius: var(--radius-track);
-		background: var(--accent);
+		background: var(--color-text-2);
 		/* Animasi lebar dulu `transition: width 400ms` — itu memicu layout ulang setiap
 		   frame. Diganti transform: scaleX, yang dikerjakan kompositor tanpa layout
 		   (temuan detektor impeccable 6 Okt 2026, "Layout property animation").
@@ -291,8 +291,12 @@
 		transform-origin: left center;
 		transition: transform 400ms var(--ease-out);
 	}
-	/* Ambang status pada bar. Warnanya bukan satu-satunya penanda: pemanggil
-	   wajib menyertakan glif/teks yang menyatakan hal yang sama. */
+	/* Warna isi bar mengikuti makna, bukan dekorasi: mint hanya bila nilai positif
+	   TERUKUR (design-usulan), merah hanya risiko — pemanggil selalu menyisipkan
+	   glyph/kata di labelnya, bukan mengandalkan warna bar. */
+	.bar-isi.terkukur {
+		background: var(--color-pos);
+	}
 	.bar-isi.warn {
 		background: var(--color-warn);
 	}
