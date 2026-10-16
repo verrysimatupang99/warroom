@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - IDX Beli Sore Jual Pagi</title>
+<!-- Fonts: IBM Plex Sans & IBM Plex Mono / Space Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-fixed": "#ffdea8",
+            "inverse-on-surface": "#2f3133",
+            "surface-container-high": "#282a2c",
+            "surface-bright": "#38393c",
+            "primary-container": "#f5b83d",
+            "outline-variant": "#504535",
+            "on-surface": "#e2e2e5",
+            "on-secondary-fixed": "#002112",
+            "on-primary-fixed-variant": "#5e4200",
+            "inverse-primary": "#7c5800",
+            "on-secondary": "#003822",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "secondary": "#42eca3",
+            "surface-dim": "#121416",
+            "on-error": "#690005",
+            "tertiary": "#ffd4d2",
+            "on-tertiary-container": "#992027",
+            "surface-container-lowest": "#0c0e10",
+            "primary": "#ffd999",
+            "on-tertiary": "#68000f",
+            "on-error-container": "#ffdad6",
+            "background": "#121416",
+            "surface-variant": "#333537",
+            "error": "#ffb4ab",
+            "secondary-fixed-dim": "#30e198",
+            "primary-fixed-dim": "#fabc41",
+            "surface-container-low": "#1a1c1e",
+            "on-primary": "#422d00",
+            "tertiary-container": "#ffadaa",
+            "secondary-container": "#00d089",
+            "tertiary-fixed": "#ffdad8",
+            "on-secondary-container": "#005233",
+            "surface": "#121416",
+            "inverse-surface": "#e2e2e5",
+            "on-secondary-fixed-variant": "#005233",
+            "outline": "#9c8f7b",
+            "on-background": "#e2e2e5",
+            "surface-container-highest": "#333537",
+            "on-surface-variant": "#d4c4ae",
+            "on-primary-fixed": "#271900",
+            "on-tertiary-fixed": "#410006",
+            "on-primary-container": "#6a4a00",
+            "secondary-fixed": "#59feb2",
+            "surface-tint": "#fabc41",
+            "error-container": "#93000a",
+            "surface-container": "#1e2022",
+            "tertiary-fixed-dim": "#ffb3b0"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1rem",
+            "space-md": "0.75rem",
+            "gutter": "0.5rem"
+          },
+          fontFamily: {
+            "stat-md": ["Space Mono", "IBM Plex Mono", "monospace"],
+            "headline-sm": ["IBM Plex Sans", "sans-serif"],
+            "micro-tag": ["Space Mono", "IBM Plex Mono", "monospace"],
+            "headline-lg": ["IBM Plex Sans", "sans-serif"],
+            "body-md": ["IBM Plex Sans", "sans-serif"],
+            "stat-lg": ["Space Mono", "IBM Plex Mono", "monospace"],
+            "stat-display": ["Space Mono", "IBM Plex Mono", "monospace"],
+            "body-lg": ["IBM Plex Sans", "sans-serif"],
+            "stat-sm": ["Space Mono", "IBM Plex Mono", "monospace"],
+            "headline-md": ["IBM Plex Sans", "sans-serif"],
+            "body-sm": ["IBM Plex Sans", "sans-serif"]
+          },
+          fontSize: {
+            "stat-md": ["14px", { lineHeight: "18px", fontWeight: "600" }],
+            "headline-sm": ["16px", { lineHeight: "22px", fontWeight: "600" }],
+            "micro-tag": ["10px", { lineHeight: "12px", letterSpacing: "0.08em", fontWeight: "700" }],
+            "headline-lg": ["24px", { lineHeight: "30px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "stat-lg": ["18px", { lineHeight: "24px", fontWeight: "700" }],
+            "stat-display": ["26px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-lg": ["15px", { lineHeight: "22px", fontWeight: "400" }],
+            "stat-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+            "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.005em", fontWeight: "600" }],
+            "body-sm": ["11px", { lineHeight: "16px", fontWeight: "400" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    /* Strict Flat Styling & Precise Hardware Hairlines */
+    body {
+      background-color: #101214;
+      color: #E8EAED;
+      font-family: 'IBM Plex Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-mono-code {
+      font-family: 'IBM Plex Mono', 'Space Mono', monospace;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 0px;
+      display: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#101214] text-[#E8EAED] flex justify-center min-h-screen">
+<!-- 390px Mobile Canvas Container -->
+<div class="w-[390px] max-w-[390px] min-h-screen bg-[#101214] flex flex-col relative pb-20 selection:bg-primary-container selection:text-surface-container-lowest">
+<!-- 1. TOP APP BAR (Shared Component Execution from JSON) -->
+<header class="bg-surface-container dark:bg-surface-container border-b border-surface-container-highest dark:border-surface-container-highest flat no shadows planar layout flex justify-between items-center w-full px-space-md py-space-sm max-w-[390px] mx-auto sticky top-0 z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary text-[20px]" data-icon="terminal">terminal</span>
+<span class="text-headline-sm font-headline-sm font-bold tracking-wider uppercase text-on-surface dark:text-on-surface">War Room</span>
+</div>
+<div class="flex items-center gap-1.5 active:opacity-80 transition-opacity duration-150">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-micro-tag font-micro-tag text-outline tracking-wider font-mono-code">SNAPSHOT 15:15 WIB (12M)</span>
+</div>
+</header>
+<!-- CONTENT BODY CANVAS -->
+<main class="flex-1 px-4 pt-3 pb-6 flex flex-col gap-3">
+<!-- BREADCRUMB & STRATEGY CONTEXT HEADER -->
+<section class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<div class="text-[10px] font-mono-code uppercase tracking-wider text-[#9AA1A9] flex items-center gap-1">
+<span>PASAR</span>
+<span class="text-[#504535]">/</span>
+<span class="text-[#E8EAED]">IDX</span>
+</div>
+<span class="text-[9px] font-mono-code text-[#9AA1A9] uppercase bg-[#17191C] px-1.5 py-0.5 border border-[#2A2F36] rounded-[3px]">
+            NODE: JKT-EQ1
+          </span>
+</div>
+<h1 class="text-[18px] font-semibold tracking-tight text-[#E8EAED] font-headline-sm">
+          IDX - Beli Sore Jual Pagi
+        </h1>
+<p class="text-[12px] leading-[17px] text-[#9AA1A9]">
+          Strategi eksekusi pre-closing 15:50 WIB berdasarkan akumulasi broker &amp; momentum volume.
+        </p>
+</section>
+<!-- 2. SEGMENTED TOGGLE PILL -->
+<section class="w-full">
+<div class="bg-[#101214] p-0.5 border border-[#2A2F36] rounded-[6px] grid grid-cols-2 gap-1 text-[11px] font-mono-code uppercase">
+<button class="py-1 text-center text-[#9AA1A9] hover:text-[#E8EAED] transition-colors rounded-[4px]" type="button">
+            bersumber
+          </button>
+<div class="py-1 text-center bg-[#1D2126] text-[#E8EAED] font-medium border border-[#F5B83D] rounded-[4px] flex items-center justify-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span>terukur</span>
+</div>
+</div>
+</section>
+<!-- 3. FOCAL DECISION CARD (WALK-FORWARD STATISTICAL VALIDATION) -->
+<section class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3 relative overflow-hidden flex flex-col gap-2.5">
+<!-- Top subtle amber hairline indicator line -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-[#F5B83D]"></div>
+<div class="flex items-center justify-between pt-0.5">
+<span class="text-[10px] font-mono-code uppercase tracking-wider text-[#9AA1A9] font-bold">
+            HASIL VALIDASI STATISTIK (WALK-FORWARD)
+          </span>
+<span class="text-[9px] font-mono-code text-[#34E39A] bg-[#1D2126] border border-[#34E39A] px-1.5 py-0.2 rounded flex items-center gap-1">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>
+            ACTIVE RUN
+          </span>
+</div>
+<!-- Two Measured Results Side by Side -->
+<div class="grid grid-cols-2 gap-2">
+<!-- Card 1 -->
+<div class="bg-[#1D2126] border border-[#2A2F36] rounded-[4px] p-2 flex flex-col justify-between gap-1.5">
+<div class="flex items-baseline justify-between">
+<span class="text-[20px] font-bold font-mono-code text-[#34E39A] tracking-tight leading-none">
+                +0,86%
+              </span>
+<span class="text-[9px] font-mono-code text-[#34E39A] flex items-center">▲</span>
+</div>
+<div>
+<div class="text-[11px] font-mono-code text-[#E8EAED] leading-none mb-1">edge BSJP STRONG</div>
+<div class="inline-flex items-center gap-1 bg-[#17191C] px-1 py-0.5 rounded border border-[#2A2F36]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono-code uppercase text-[#34E39A] tracking-wider">TERUKUR</span>
+<span class="text-[9px] font-mono-code text-[#9AA1A9]">w-forward</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-[#1D2126] border border-[#2A2F36] rounded-[4px] p-2 flex flex-col justify-between gap-1.5">
+<div class="flex items-baseline justify-between">
+<span class="text-[20px] font-bold font-mono-code text-[#34E39A] tracking-tight leading-none">
+                +1,06%
+              </span>
+<span class="text-[9px] font-mono-code text-[#34E39A] flex items-center">▲</span>
+</div>
+<div>
+<div class="text-[11px] font-mono-code text-[#E8EAED] leading-none mb-1">edge ARA BREAKOUT</div>
+<div class="inline-flex items-center gap-1 bg-[#17191C] px-1 py-0.5 rounded border border-[#2A2F36]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono-code uppercase text-[#34E39A] tracking-wider">TERUKUR</span>
+<span class="text-[9px] font-mono-code text-[#9AA1A9]">w-forward</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Telemetry Footnote / Archival Note -->
+<div class="pt-1 border-t border-[#2A2F36] flex items-center justify-between text-[10px] font-mono-code text-[#9AA1A9]">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[12px] text-[#9AA1A9]" data-icon="database">database</span>
+<span>Arsip tick: 24,9 jt baris</span>
+</div>
+<div class="inline-flex items-center gap-1 bg-[#1D2126] px-1 py-0.5 border border-[#34E39A] rounded-[2px]">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>
+<span class="text-[8px] text-[#34E39A] font-bold">TERUKUR</span>
+</div>
+</div>
+</section>
+<!-- 4. TELEGRAM ALTERNATE CHANNEL CHIP -->
+<section class="bg-[#17191C] border border-[#F5B83D]/40 rounded-[6px] px-3 py-2 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#F5B83D] text-[16px]" data-icon="alt_route">alt_route</span>
+<span class="text-[11px] font-mono-code text-[#E8EAED]">
+            jalur alternatif: <span class="text-[#F5B83D] font-medium">thread Telegram 616 (IDX)</span>
+</span>
+</div>
+<span class="material-symbols-outlined text-[#9AA1A9] text-[14px]" data-icon="open_in_new">open_in_new</span>
+</section>
+<!-- 5. SECTION: KANDIDAT SERI INI -->
+<section class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono-code uppercase tracking-wider text-[#9AA1A9] font-bold">
+            KANDIDAT SERI INI
+          </span>
+<span class="text-[9px] font-mono-code text-[#9AA1A9]">FILTER SESI: 15:50</span>
+</div>
+<div class="flex flex-col gap-1.5">
+<!-- Active Candidate Row 1: BBCA -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-1.5">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-bold font-mono-code text-[#E8EAED]">BBCA</span>
+<span class="bg-[#1D2126] text-[#F5B83D] border border-[#F5B83D] text-[9px] font-mono-code px-1 py-0.2 rounded font-semibold uppercase">
+                    STRONG
+                  </span>
+</div>
+<div class="text-[11px] text-[#9AA1A9] font-body-sm">PT Bank Central Asia Tbk</div>
+</div>
+<div class="text-right">
+<div class="text-[13px] font-bold font-mono-code text-[#34E39A]">
+                  edge +0,86%
+                </div>
+<div class="text-[9px] font-mono-code text-[#9AA1A9]">Vol: 2,1x avg</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]/60 text-[9px] font-mono-code">
+<span class="text-[#9AA1A9]">Orderbook: Akumulasi Net Buy</span>
+<div class="inline-flex items-center gap-1 bg-[#1D2126] px-1 py-0.5 border border-[#34E39A] rounded-[2px]">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>
+<span class="text-[#34E39A] font-bold uppercase">TERUKUR</span>
+<span class="text-[#9AA1A9]">kpei-direct</span>
+</div>
+</div>
+</div>
+<!-- Active Candidate Row 2: BMRI -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-1.5">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-bold font-mono-code text-[#E8EAED]">BMRI</span>
+<span class="bg-[#1D2126] text-[#34E39A] border border-[#34E39A] text-[9px] font-mono-code px-1 py-0.2 rounded font-semibold uppercase">
+                    ARA
+                  </span>
+</div>
+<div class="text-[11px] text-[#9AA1A9] font-body-sm">PT Bank Mandiri Tbk</div>
+</div>
+<div class="text-right">
+<div class="text-[13px] font-bold font-mono-code text-[#34E39A]">
+                  edge +1,06%
+                </div>
+<div class="text-[9px] font-mono-code text-[#9AA1A9]">Vol: 1,8x avg</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]/60 text-[9px] font-mono-code">
+<span class="text-[#9AA1A9]">Breakout Harian + Pre-closing</span>
+<div class="inline-flex items-center gap-1 bg-[#1D2126] px-1 py-0.5 border border-[#34E39A] rounded-[2px]">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>
+<span class="text-[#34E39A] font-bold uppercase">TERUKUR</span>
+<span class="text-[#9AA1A9]">kpei-direct</span>
+</div>
+</div>
+</div>
+<!-- Active Candidate Row 3: BRPT -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-1.5">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[14px] font-bold font-mono-code text-[#E8EAED]">BRPT</span>
+<span class="bg-[#1D2126] text-[#34E39A] border border-[#34E39A] text-[9px] font-mono-code px-1 py-0.2 rounded font-semibold uppercase">
+                    ARA
+                  </span>
+</div>
+<div class="text-[11px] text-[#9AA1A9] font-body-sm">Barito Pacific Tbk</div>
+</div>
+<div class="text-right">
+<div class="text-[13px] font-bold font-mono-code text-[#34E39A]">
+                  edge +1,06%
+                </div>
+<div class="text-[9px] font-mono-code text-[#9AA1A9]">Vol: 3,4x avg</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]/60 text-[9px] font-mono-code">
+<span class="text-[#9AA1A9]">Haka Spike 15:10 WIB</span>
+<div class="inline-flex items-center gap-1 bg-[#1D2126] px-1 py-0.5 border border-[#34E39A] rounded-[2px]">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>
+<span class="text-[#34E39A] font-bold uppercase">TERUKUR</span>
+<span class="text-[#9AA1A9]">kpei-direct</span>
+</div>
+</div>
+</div>
+<!-- Dimmed Rejected Row 1: BBRI -->
+<div class="bg-[#17191C]/60 border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-1 opacity-75">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-[13px] font-bold font-mono-code text-[#9AA1A9]">BBRI</span>
+<span class="text-[11px] text-[#9AA1A9]">PT Bank Rakyat Indonesia Tbk</span>
+</div>
+<span class="text-[10px] font-mono-code text-[#FF6B6B]">
+                tidak lolos filter —
+              </span>
+</div>
+<div class="text-[10px] font-mono-code text-[#9AA1A9] leading-[14px] bg-[#101214] p-1.5 border border-[#2A2F36] rounded-[3px]">
+<span class="text-[#FF6B6B]">!</span> alasan: jam beli sore belum aktif (aktif 15:50-16:00 WIB), spread melebihi batas.
+            </div>
+</div>
+<!-- Dimmed Rejected Row 2: BREN -->
+<div class="bg-[#17191C]/60 border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-1 opacity-75">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-[13px] font-bold font-mono-code text-[#9AA1A9]">BREN</span>
+<span class="text-[11px] text-[#9AA1A9]">Barito Renewables Tbk</span>
+</div>
+<span class="text-[10px] font-mono-code text-[#FF6B6B]">
+                tidak lolos filter —
+              </span>
+</div>
+<div class="text-[10px] font-mono-code text-[#9AA1A9] leading-[14px] bg-[#101214] p-1.5 border border-[#2A2F36] rounded-[3px]">
+<span class="text-[#FF6B6B]">!</span> alasan: historical breakeven di bawah batas toleransi komisi broker.
+            </div>
+</div>
+</div>
+</section>
+<!-- 6. OPERATIONAL HONESTY NOTICE FOOTNOTE -->
+<footer class="mt-1 py-2 px-1 border-t border-[#2A2F36] flex items-center justify-between">
+<p class="text-[9px] font-mono-code text-[#9AA1A9] uppercase leading-[13px] tracking-tight">
+          UI MENAMPILKAN SNAPSHOT, BUKAN REALTIME. ATURAN FILTER KETAT (DISIPLIN TINGGI).
+        </p>
+</footer>
+</main>
+<!-- 7. FIXED BOTTOM NAVIGATION BAR (Shared Component Execution from JSON) -->
+<!-- Active Tab: 'Pasar' mapped directly from Screen Title context: 'PASAR / IDX' -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container dark:bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- 0: Beranda (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase">Beranda</span>
+</button>
+<!-- 1: Pasar (Active - Exact Match for IDX BSJP Strategy Context) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container dark:text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px] text-[#F5B83D]" data-icon="candlestick_chart">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[#F5B83D]">Pasar</span>
+</button>
+<!-- 2: Berita (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="newspaper">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase">Berita</span>
+</button>
+<!-- 3: Sistem (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="memory">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase">Sistem</span>
+</button>
+<!-- 4: Lainnya (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_horiz">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase">Lainnya</span>
+</button>
+</nav>
+</div>
+</body></html>

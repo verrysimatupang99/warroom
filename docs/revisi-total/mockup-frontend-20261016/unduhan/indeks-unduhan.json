@@ -1,0 +1,100 @@
+[
+  {
+    "layar": "bantuan",
+    "screen": "projects/14655604709134052956/screens/d3ca3210b212444c85bfb04153c4f5cb",
+    "title": "War Room Mobile - Bantuan",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "berita",
+    "screen": "projects/14655604709134052956/screens/2ba2b7c50fd24893a422f4a67d04b899",
+    "title": "War Room Mobile - Berita & Intel",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "cara-kerja",
+    "screen": "projects/14655604709134052956/screens/37ff38d94aab4f26a62f2f5e17fc1846",
+    "title": "War Room Mobile - Panduan Cara Kerja",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "catatan",
+    "screen": "projects/14655604709134052956/screens/895b5e0f1bbc4953a1cf4e3e28cb79cd",
+    "title": "War Room Mobile - Catatan Jurnal Keputusan",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "crypto",
+    "screen": "projects/14655604709134052956/screens/250d8558a38d4a08a14dce7edbf3b223",
+    "title": "War Room Mobile - Crypto Detail",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "forex",
+    "screen": "projects/14655604709134052956/screens/07606c01fd3d40649d81f88683e4d608",
+    "title": "War Room Mobile - Forex & Agenda Makro",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "gmgn",
+    "screen": "projects/14655604709134052956/screens/f4609a8c46204b52a71df1f1461063ac",
+    "title": "War Room Mobile - Meme Coin Scan (GMGN)",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "home",
+    "screen": "projects/14655604709134052956/screens/510404a1cf4b4c41afd6d618809c2555",
+    "title": "War Room Mobile Home - 5-Second Answer",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "idx",
+    "screen": "projects/14655604709134052956/screens/1dd4da058e3e483cb9d83c097b0c5fe4",
+    "title": "War Room Mobile - IDX BSJP Detail",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "leaderboard",
+    "screen": "projects/14655604709134052956/screens/1ce1536f4b0a4d05b8edf1439529ecbd",
+    "title": "War Room Mobile - Leaderboard Strategi",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "masuk",
+    "screen": "projects/14655604709134052956/screens/34aaff39ce3f4afbabbd227c096c3357",
+    "title": "War Room Mobile - Masuk (Login)",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "polymarket",
+    "screen": "projects/14655604709134052956/screens/82dc0afada8f41549b6bc8bf02c9a5d5",
+    "title": "War Room Mobile - Polymarket Watch",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "riset",
+    "screen": "projects/14655604709134052956/screens/3586fbf2ab3b460497437db001611047",
+    "title": "War Room Mobile - Riset",
+    "png": true,
+    "html": true
+  },
+  {
+    "layar": "sistem",
+    "screen": "projects/14655604709134052956/screens/6a09851d11ac430a9aa46b717c5b2792",
+    "title": "War Room Mobile - Sistem & AI (Operations Health)",
+    "png": true,
+    "html": true
+  }
+]

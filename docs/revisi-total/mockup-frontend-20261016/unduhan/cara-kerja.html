@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>War Room Mobile - Panduan / Cara Kerja</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            war: {
+              bg: '#101214',
+              card: '#17191C',
+              cardAlt: '#1D2126',
+              border: '#2A2F36',
+              text: '#E8EAED',
+              secondary: '#9AA1A9',
+              amber: '#F5B83D',
+              mint: '#34E39A',
+              red: '#FF6B6B'
+            }
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #101214;
+      color: #E8EAED;
+      font-family: 'IBM Plex Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-mono-num {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+  </style>
+</head>
+<body class="bg-[#101214] text-[#E8EAED] flex justify-center min-h-screen">
+  <!-- 390px Mobile Container -->
+  <div class="w-full max-w-[390px] min-h-screen bg-[#101214] flex flex-col justify-between border-x border-[#2A2F36] relative pb-20 select-none">
+    
+    <!-- Top System Bar & Header -->
+    <header class="w-full bg-[#17191C] border-b border-[#2A2F36] px-4 py-3 sticky top-0 z-30">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="material-symbols-outlined text-[18px] text-[#9AA1A9]">terminal</span>
+          <span class="font-sans font-bold text-sm tracking-wide text-[#E8EAED] uppercase">WAR ROOM</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+          <span class="font-mono text-[10px] tracking-wider text-[#34E39A] uppercase">07:45 WIB (12M)</span>
+        </div>
+      </div>
+      
+      <!-- Sub-header / Breadcrumb -->
+      <div class="mt-2.5 pt-2 border-t border-[#2A2F36] flex items-center justify-between">
+        <div>
+          <span class="font-mono text-[10px] tracking-widest text-[#9AA1A9] uppercase">PANDUAN / CARA KERJA</span>
+          <h1 class="font-sans text-base font-semibold text-[#E8EAED] leading-tight">Arsitektur Eksekusi 1 Operator</h1>
+        </div>
+        <span class="font-mono text-[9px] px-1.5 py-0.5 border border-[#2A2F36] bg-[#101214] text-[#9AA1A9] uppercase rounded-[3px]">
+          v3.4.1 KONSOL
+        </span>
+      </div>
+    </header>
+
+    <!-- Main Content Flow -->
+    <main class="px-4 py-4 space-y-4 flex-1">
+      
+      <!-- Primary Amber Focal Callout (The Single Accent Focal Element) -->
+      <section class="bg-[#17191C] border-l-2 border-l-[#F5B83D] border-y border-r border-[#2A2F36] rounded-[6px] p-3 shadow-none">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center space-x-1.5">
+            <span class="material-symbols-outlined text-[15px] text-[#F5B83D]">shield_with_heart</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider text-[#F5B83D] font-medium">PRINSIP INTEGRITAS TERTINGGI</span>
+          </div>
+          <span class="font-mono text-[9px] text-[#9AA1A9] uppercase tracking-wider">FAIL-CLOSED</span>
+        </div>
+        <p class="font-sans text-xs text-[#E8EAED] mt-1.5 leading-relaxed">
+          Sistem beroperasi tanpa toleransi optimisme semu. Hanya sinyal yang melewati <span class="font-mono text-[11px] text-[#F5B83D]">5 gerbang komputasi deterministik</span> yang boleh mendekati modul eksekusi.
+        </p>
+        <div class="mt-2.5 pt-2 border-t border-[#2A2F36] flex items-center justify-between text-[10px] font-mono text-[#9AA1A9]">
+          <span>STATUS PROTOKOL: <span class="text-[#34E39A]">TERPASANG</span></span>
+          <span>AUTOPILOT: <span class="text-[#E8EAED]">TERKUNCI PAPER</span></span>
+        </div>
+      </section>
+
+      <!-- Section Title -->
+      <div class="flex items-center justify-between pt-1">
+        <span class="font-mono text-[10px] uppercase tracking-widest text-[#9AA1A9]">5 TAHAPAN SIKLUS PIPELINE</span>
+        <span class="font-mono text-[9px] text-[#9AA1A9] uppercase">SIKLUS: 15 MNT</span>
+      </div>
+
+      <!-- Vertical Connected List Rows (01 - 05) with Hairline Connector Line -->
+      <div class="relative pl-6 space-y-3">
+        <!-- Hairline Vertical Connector Line -->
+        <div class="absolute left-[11px] top-3 bottom-5 w-px bg-[#2A2F36]"></div>
+
+        <!-- ROW 01 -->
+        <div class="relative bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3">
+          <!-- Connector Node Pin -->
+          <div class="absolute -left-[20px] top-3.5 w-2 h-2 rounded-full bg-[#101214] border border-[#9AA1A9]"></div>
+          
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline space-x-2">
+              <span class="font-mono text-xs font-bold text-[#E8EAED]">01</span>
+              <h2 class="font-sans text-xs font-semibold text-[#E8EAED]">Cron + worker menyusun snapshot tiap 15 mnt</h2>
+            </div>
+          </div>
+          <p class="font-sans text-[11px] text-[#9AA1A9] mt-1 leading-normal">
+            Daemon mengambil tick-level data dari 6 pasar independen dan membekukan state lokal agar UI terhindar dari polling berlebih.
+          </p>
+          <div class="mt-2 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9]">SUMBER: DAEMON ASYNC</span>
+            <span class="inline-flex items-center space-x-1 font-mono text-[9px] text-[#34E39A]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+              <span>TERUKUR</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ROW 02 -->
+        <div class="relative bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3">
+          <!-- Connector Node Pin -->
+          <div class="absolute -left-[20px] top-3.5 w-2 h-2 rounded-full bg-[#101214] border border-[#9AA1A9]"></div>
+          
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline space-x-2">
+              <span class="font-mono text-xs font-bold text-[#E8EAED]">02</span>
+              <h2 class="font-sans text-xs font-semibold text-[#E8EAED]">Sinyal per pasar diberi skor + catatan kejujuran</h2>
+            </div>
+          </div>
+          <p class="font-sans text-[11px] text-[#9AA1A9] mt-1 leading-normal">
+            Setiap instrumen diuji terhadap threshold kuantitatif; bila kuotasi tertunda atau tipis, status wajib ditandai belum terverifikasi.
+          </p>
+          <div class="mt-2 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9]">METRIK: SKOR AMBANG</span>
+            <span class="inline-flex items-center px-1.5 py-0.2 border border-dashed border-[#9AA1A9] text-[#9AA1A9] font-mono text-[9px] rounded-[2px]">
+              BELUM TERVERIFIKASI
+            </span>
+          </div>
+        </div>
+
+        <!-- ROW 03 -->
+        <div class="relative bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3">
+          <!-- Connector Node Pin -->
+          <div class="absolute -left-[20px] top-3.5 w-2 h-2 rounded-full bg-[#101214] border border-[#9AA1A9]"></div>
+          
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline space-x-2">
+              <span class="font-mono text-xs font-bold text-[#E8EAED]">03</span>
+              <h2 class="font-sans text-xs font-semibold text-[#E8EAED]">Risk gate: ci_low &gt; biaya break-even, kill switch fail-closed</h2>
+            </div>
+          </div>
+          <p class="font-sans text-[11px] text-[#9AA1A9] mt-1 leading-normal">
+            Batas bawah interval kepercayaan 95% wajib melampaui komisi broker dan slippage; jika API terdegradasi, eksekusi diputus otomatis.
+          </p>
+          <div class="mt-2 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9]">AMBANG: 95% CI &gt; BIAYA</span>
+            <span class="inline-flex items-center space-x-1 font-mono text-[9px] text-[#FF6B6B]">
+              <span class="font-bold">!</span>
+              <span>RISIKO TERKUNCI</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ROW 04 -->
+        <div class="relative bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3">
+          <!-- Connector Node Pin -->
+          <div class="absolute -left-[20px] top-3.5 w-2 h-2 rounded-full bg-[#101214] border border-[#9AA1A9]"></div>
+          
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline space-x-2">
+              <span class="font-mono text-xs font-bold text-[#E8EAED]">04</span>
+              <h2 class="font-sans text-xs font-semibold text-[#E8EAED]">Paper trade 1:1 - jalur keputusan sama dengan live</h2>
+            </div>
+          </div>
+          <p class="font-sans text-[11px] text-[#9AA1A9] mt-1 leading-normal">
+            Seluruh filter latensi, orderbook spread, dan sizing difaktorkan tanpa bypass simulasi sebelum menyentuh modal dingin.
+          </p>
+          <div class="mt-2 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9]">SUMBER: SIMULASI DETERMINISTIK</span>
+            <span class="inline-flex items-center space-x-1 font-mono text-[9px] text-[#34E39A]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+              <span>TERUKUR</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- ROW 05 -->
+        <div class="relative bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-3">
+          <!-- Connector Node Pin -->
+          <div class="absolute -left-[20px] top-3.5 w-2 h-2 rounded-full bg-[#101214] border border-[#9AA1A9]"></div>
+          
+          <div class="flex items-baseline justify-between">
+            <div class="flex items-baseline space-x-2">
+              <span class="font-mono text-xs font-bold text-[#E8EAED]">05</span>
+              <h2 class="font-sans text-xs font-semibold text-[#E8EAED]">Validasi forward 30 hari, baru live MEXC bertahap</h2>
+            </div>
+          </div>
+          <p class="font-sans text-[11px] text-[#9AA1A9] mt-1 leading-normal">
+            Strategi yang lolos uji berjalan 30 hari penuh di pasar nyata tanpa modifikasi aturan; pembagian kuota dilakukan bergradasi.
+          </p>
+          <div class="mt-2 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9]">DURASI: 30 HARI FORWARD</span>
+            <span class="inline-flex items-center space-x-1 font-mono text-[9px] text-[#34E39A]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+              <span>TERUKUR</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Telemetry Status Card (Honesty Check on Absent Data) -->
+      <section class="bg-[#1D2126] border border-[#2A2F36] rounded-[6px] p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-[10px] uppercase tracking-wider text-[#9AA1A9]">AUDIT PIPELINE OPERATOR</span>
+          <span class="font-mono text-[9px] text-[#9AA1A9]">NODE: ID-SGT01</span>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <div class="bg-[#101214] border border-[#2A2F36] p-2 rounded-[4px]">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9] block">LATENSI LIVE MEXC</span>
+            <span class="font-mono text-xs text-[#9AA1A9] font-medium block mt-0.5">—</span>
+            <span class="font-mono text-[8px] text-[#9AA1A9] block mt-1 leading-tight">alasan: kunci fase paper trade aktif</span>
+          </div>
+          <div class="bg-[#101214] border border-[#2A2F36] p-2 rounded-[4px]">
+            <span class="font-mono text-[9px] uppercase tracking-wider text-[#9AA1A9] block">SLIPPAGE FORWARD</span>
+            <span class="font-mono text-xs text-[#9AA1A9] font-medium block mt-0.5">—</span>
+            <span class="font-mono text-[8px] text-[#9AA1A9] block mt-1 leading-tight">alasan: menunggu sampel eksekusi n=30</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing Mono Quote Row -->
+      <section class="border border-[#2A2F36] bg-[#17191C] rounded-[6px] p-3">
+        <div class="flex items-start space-x-2">
+          <span class="material-symbols-outlined text-[15px] text-[#9AA1A9] mt-0.5">format_quote</span>
+          <div>
+            <p class="font-mono text-[11px] text-[#E8EAED] italic leading-relaxed">
+              &ldquo;UI bukan sumber kebenaran; ia menampilkan kebenaran yang sudah dihitung.&rdquo;
+            </p>
+            <span class="font-mono text-[9px] text-[#9AA1A9] uppercase tracking-wider block mt-1">
+              DOKTRIN WAR ROOM &bull; 1 OPERATOR
+            </span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (5 Items, 44px minimum tap targets, 'Lainnya' active in AMBER) -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] h-14 bg-[#17191C] border-t border-[#2A2F36] flex items-center justify-between px-1 z-40 select-none">
+      
+      <!-- 1. Beranda -->
+      <a href="#" class="flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] transition-colors">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        <span class="font-mono text-[9px] uppercase tracking-widest mt-0.5">BERANDA</span>
+      </a>
+
+      <!-- 2. Pasar -->
+      <a href="#" class="flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] transition-colors">
+        <span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+        <span class="font-mono text-[9px] uppercase tracking-widest mt-0.5">PASAR</span>
+      </a>
+
+      <!-- 3. Berita -->
+      <a href="#" class="flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] transition-colors">
+        <span class="material-symbols-outlined text-[20px]">newspaper</span>
+        <span class="font-mono text-[9px] uppercase tracking-widest mt-0.5">BERITA</span>
+      </a>
+
+      <!-- 4. Sistem -->
+      <a href="#" class="flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] transition-colors">
+        <span class="material-symbols-outlined text-[20px]">memory</span>
+        <span class="font-mono text-[9px] uppercase tracking-widest mt-0.5">SISTEM</span>
+      </a>
+
+      <!-- 5. Lainnya (ACTIVE - AMBER) -->
+      <a href="#" class="flex-1 flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#F5B83D] border-t-2 border-[#F5B83D] -mt-[2px] transition-colors">
+        <span class="material-symbols-outlined text-[20px] text-[#F5B83D]">more_horiz</span>
+        <span class="font-mono text-[9px] uppercase tracking-widest mt-0.5 font-bold text-[#F5B83D]">LAINNYA</span>
+      </a>
+
+    </nav>
+  </div>
+</body>
+</html>

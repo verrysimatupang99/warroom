@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>War Room Mobile - Polymarket Watch</title>
+<!-- Google Fonts: IBM Plex Sans & Space Mono (acting as system monospace) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Verbatim Tailwind Config -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-low": "#1a1c1e",
+            "surface-tint": "#fabc41",
+            "secondary": "#42eca3",
+            "surface": "#121416",
+            "tertiary-container": "#ffadaa",
+            "on-tertiary": "#68000f",
+            "on-background": "#e2e2e5",
+            "outline-variant": "#504535",
+            "on-surface": "#e2e2e5",
+            "on-secondary-container": "#005233",
+            "surface-bright": "#38393c",
+            "surface-container-high": "#282a2c",
+            "secondary-fixed-dim": "#30e198",
+            "on-secondary-fixed-variant": "#005233",
+            "secondary-container": "#00d089",
+            "on-primary": "#422d00",
+            "surface-container-lowest": "#0c0e10",
+            "primary-container": "#f5b83d",
+            "on-tertiary-fixed": "#410006",
+            "on-secondary-fixed": "#002112",
+            "inverse-surface": "#e2e2e5",
+            "on-surface-variant": "#d4c4ae",
+            "on-primary-container": "#6a4a00",
+            "on-primary-fixed": "#271900",
+            "outline": "#9c8f7b",
+            "on-error-container": "#ffdad6",
+            "primary-fixed": "#ffdea8",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "inverse-on-surface": "#2f3133",
+            "tertiary-fixed": "#ffdad8",
+            "on-secondary": "#003822",
+            "primary-fixed-dim": "#fabc41",
+            "background": "#121416",
+            "tertiary": "#ffd4d2",
+            "secondary-fixed": "#59feb2",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "surface-variant": "#333537",
+            "on-error": "#690005",
+            "primary": "#ffd999",
+            "error-container": "#93000a",
+            "surface-container": "#1e2022",
+            "inverse-primary": "#7c5800",
+            "error": "#ffb4ab",
+            "on-primary-fixed-variant": "#5e4200",
+            "surface-container-highest": "#333537",
+            "surface-dim": "#121416",
+            "on-tertiary-container": "#992027"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1rem",
+            "gutter": "0.5rem",
+            "space-md": "0.75rem"
+          },
+          "fontFamily": {
+            "stat-md": ["Space Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "body-sm": ["IBM Plex Sans"],
+            "stat-display": ["Space Mono"],
+            "micro-tag": ["Space Mono"],
+            "headline-lg": ["IBM Plex Sans"],
+            "body-md": ["IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans"],
+            "headline-md": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "stat-lg": ["Space Mono"]
+          },
+          "fontSize": {
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Strict Hairline & Planar Enforcements */
+    body {
+      background-color: #101214;
+      color: #e2e2e5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-hairline-b {
+      border-bottom: 1px solid #2a2f36;
+    }
+    .custom-hairline-t {
+      border-top: 1px solid #2a2f36;
+    }
+    .custom-hairline-card {
+      border: 1px solid #2a2f36;
+      border-radius: 6px;
+    }
+    .custom-tag-dashed {
+      border: 1px dashed rgba(245, 184, 61, 0.6);
+    }
+    .custom-tag-solid {
+      border: 1px solid #34e39a;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex justify-center bg-[#101214] text-on-surface antialiased min-h-screen">
+<!-- 390px Mobile Frame Baseline -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#101214] flex flex-col relative pb-16">
+<!-- Top Status / Eyebrow Telemetry Strip -->
+<header class="w-full bg-[#17191c] custom-hairline-b px-space-md py-space-sm flex justify-between items-center z-40 sticky top-0">
+<div class="flex items-center space-x-space-xs">
+<span class="material-symbols-outlined text-primary text-base" data-icon="terminal">terminal</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-bold tracking-wider uppercase text-on-surface">WAR ROOM</span>
+<span class="font-micro-tag text-micro-tag text-[#9aa1a9] tracking-widest uppercase">PASAR / POLYMARKET</span>
+</div>
+</div>
+<div class="flex items-center space-x-1.5 bg-[#1d2126] px-2 py-1 rounded border border-[#2a2f36]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34e39a] animate-pulse"></span>
+<span class="font-micro-tag text-micro-tag text-primary tracking-normal">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin pt-space-md pb-space-lg flex flex-col space-y-space-md">
+<!-- SECTION 1: PELUANG TERATAS (Focal Card) -->
+<section aria-labelledby="focal-heading">
+<div class="bg-[#17191c] custom-hairline-card p-space-md relative overflow-hidden">
+<!-- Active Focal Accent Lamp Indicator -->
+<div class="absolute top-0 left-0 right-0 h-0.5 bg-[#f5b83d]"></div>
+<!-- Eyebrow & Badging -->
+<div class="flex justify-between items-center mb-space-xs">
+<div class="flex items-center space-x-1.5">
+<span class="w-1.5 h-3 bg-[#f5b83d] rounded-none inline-block"></span>
+<h2 class="font-micro-tag text-micro-tag text-primary-container tracking-wider uppercase" id="focal-heading">PELUANG TERATAS</h2>
+</div>
+<!-- Amber Paper Trade Action Badge -->
+<span class="border border-amber-500/40 text-[#f5b83d] bg-[#f5b83d]/10 font-micro-tag text-[9px] px-2 py-0.5 rounded tracking-wider uppercase font-bold">
+              paper trade dulu
+            </span>
+</div>
+<!-- Question Text -->
+<h3 class="font-headline-sm text-[15px] font-semibold text-[#e8eaed] leading-snug mt-1 mb-space-md">
+            Apakah The Fed akan memangkas suku bunga acuan pada FOMC meeting berikutnya?
+          </h3>
+<!-- Stat and Verification Badge Block -->
+<div class="bg-[#1d2126] custom-hairline-card p-space-sm mb-space-md">
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline space-x-2">
+<span class="font-stat-display text-stat-display text-[#e8eaed]">61%</span>
+<span class="font-micro-tag text-micro-tag text-[#9aa1a9]">PROBABILITAS</span>
+</div>
+<!-- Dashed Unverified Honesty Chip -->
+<div class="custom-tag-dashed bg-[#17191c] px-2 py-0.5 rounded flex items-center space-x-1">
+<span class="font-micro-tag text-[10px] text-[#f5b83d] tracking-wide">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<!-- Single Line Microtext Telemetry Source -->
+<div class="flex justify-end mt-1">
+<span class="font-micro-tag text-[9px] text-[#9aa1a9] tracking-wider uppercase">SUMBER: Gamma/CLOB</span>
+</div>
+<!-- Precision Metric Bar (0 to 100 with 61% Fill) -->
+<div class="mt-2.5">
+<div class="w-full bg-[#121416] h-2 rounded border border-[#2a2f36] p-[1px] relative">
+<div class="h-full bg-[#34e39a] rounded-none transition-all duration-300" style="width: 61%;"></div>
+</div>
+<div class="flex justify-between mt-1 text-[#9aa1a9] font-stat-sm text-[10px]">
+<span>0</span>
+<span class="text-[#34e39a] font-bold">61</span>
+<span>100</span>
+</div>
+</div>
+</div>
+<!-- One-line Reasoning (Indonesian) -->
+<div class="border-l-2 border-[#2a2f36] pl-2.5 py-0.5">
+<p class="font-body-sm text-body-sm text-[#9aa1a9] leading-relaxed">
+              Imbal hasil obligasi 2Y melandai, namun likuiditas orderbook tipis jelang rilis CPI.
+            </p>
+</div>
+</div>
+</section>
+<!-- SECTION 2: KOLEKSI DIPANTAU (Rows List) -->
+<section aria-labelledby="monitored-heading" class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between px-0.5 pt-1">
+<h2 class="font-micro-tag text-micro-tag text-[#9aa1a9] tracking-wider uppercase" id="monitored-heading">KOLEKSI DIPANTAU</h2>
+<span class="font-micro-tag text-[9px] text-[#9aa1a9] uppercase">3 KONTRAK AKTIF</span>
+</div>
+<div class="bg-[#17191c] custom-hairline-card divide-y divide-[#2a2f36]">
+<!-- Row 1: NBER Recession -->
+<article class="p-space-sm space-y-2">
+<div class="flex justify-between items-start">
+<h3 class="font-body-md text-body-md font-medium text-[#e8eaed] pr-2">
+                US Recession declared by NBER before end of 2024?
+              </h3>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-1 bg-[#1d2126] px-2.5 py-1.5 custom-hairline-card">
+<div class="flex items-center space-x-2">
+<span class="font-stat-md text-stat-md text-[#e8eaed]">Yes: 18¢</span>
+<span class="text-[#2a2f36]">|</span>
+<span class="font-stat-md text-stat-md text-[#e8eaed]">No: 82¢</span>
+</div>
+<!-- Terukur Tag -->
+<div class="custom-tag-solid bg-[#17191c] px-1.5 py-0.5 rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34e39a]"></span>
+<span class="font-micro-tag text-[9px] text-[#34e39a] tracking-wider uppercase">TERUKUR</span>
+</div>
+</div>
+<div class="flex justify-between items-center text-[#9aa1a9] pt-0.5">
+<span class="font-micro-tag text-[9px] tracking-wider uppercase">SUMBER: POLYMARKET CLOB</span>
+<span class="font-stat-sm text-[11px] text-[#e8eaed]">Spread: <span class="font-semibold text-primary">14 bps</span></span>
+</div>
+</article>
+<!-- Row 2: Solana ETF (Absent Data / Strict Reason Rule) -->
+<article class="p-space-sm space-y-2">
+<div class="flex justify-between items-start">
+<h3 class="font-body-md text-body-md font-medium text-[#e8eaed] pr-2">
+                Solana ETF approved by SEC before Q3 2025?
+              </h3>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-1 bg-[#1d2126] px-2.5 py-1.5 custom-hairline-card">
+<div class="flex items-center space-x-2">
+<span class="font-stat-md text-stat-md text-[#9aa1a9]">Yes: —</span>
+<span class="text-[#2a2f36]">|</span>
+<span class="font-stat-md text-stat-md text-[#9aa1a9]">No: —</span>
+</div>
+<!-- Amber Liquidity Risk Badge -->
+<div class="border border-[#f5b83d]/50 bg-[#17191c] px-1.5 py-0.5 rounded flex items-center space-x-1">
+<span class="font-micro-tag text-[9px] text-[#f5b83d] font-bold">! risiko likuiditas</span>
+</div>
+</div>
+<!-- Absolute Data Absence Explanations -->
+<div class="space-y-1 pt-0.5">
+<div class="flex items-center justify-between text-[#9aa1a9]">
+<span class="font-micro-tag text-[9px] text-error font-medium">! ALASAN HARGA:</span>
+<span class="font-micro-tag text-[9px] text-[#9aa1a9]">orderbook beku, kuotasi bid-ask tidak konsisten</span>
+</div>
+<div class="flex items-center justify-between text-[#9aa1a9]">
+<span class="font-stat-sm text-[11px] text-[#9aa1a9]">Spread: —</span>
+<span class="font-micro-tag text-[9px] text-[#9aa1a9]">likuiditas di bawah ambang $15,000</span>
+</div>
+</div>
+</article>
+<!-- Row 3: Arbitrum / L2 TVL -->
+<article class="p-space-sm space-y-2">
+<div class="flex justify-between items-start">
+<h3 class="font-body-md text-body-md font-medium text-[#e8eaed] pr-2">
+                Ethereum L2 TVL exceeds Arbitrum peak in current cycle?
+              </h3>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-1 bg-[#1d2126] px-2.5 py-1.5 custom-hairline-card">
+<div class="flex items-center space-x-2">
+<span class="font-stat-md text-stat-md text-[#e8eaed]">Yes: 44¢</span>
+<span class="text-[#2a2f36]">|</span>
+<span class="font-stat-md text-stat-md text-[#e8eaed]">No: 56¢</span>
+</div>
+<!-- Dashed Unverified Chip -->
+<div class="custom-tag-dashed bg-[#17191c] px-1.5 py-0.5 rounded flex items-center space-x-1">
+<span class="font-micro-tag text-[9px] text-[#f5b83d] tracking-wider">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex justify-between items-center text-[#9aa1a9] pt-0.5">
+<span class="font-micro-tag text-[9px] tracking-wider uppercase">SUMBER: Gamma/CLOB</span>
+<span class="font-stat-sm text-[11px] text-[#e8eaed]">Spread: <span class="font-semibold text-primary">28 bps</span></span>
+</div>
+</article>
+</div>
+</section>
+<!-- BOTTOM SECTION: Telemetry Note -->
+<footer class="pt-space-xs pb-space-sm">
+<div class="bg-[#17191c] border border-[#2a2f36] px-space-md py-2 text-center rounded">
+<p class="font-micro-tag text-[9px] text-[#9aa1a9] leading-tight tracking-wider uppercase">
+            UI MENAMPILKAN SNAPSHOT, BUKAN REALTIME. ATURAN FILTER KETAT (DISIPLIN TINGGI).
+          </p>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation Bar (Shared Component strictly mapped) -->
+<!-- Destination intent: Pasar is active -->
+<nav aria-label="Bottom Tactical Navigation" class="fixed bottom-0 left-0 right-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- Nav Item 1: Beranda -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] tracking-wider mt-0.5">Beranda</span>
+</button>
+<!-- Nav Item 2: Pasar (ACTIVE: style_active_navigation applied with Amber accent) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100" type="button">
+<span class="material-symbols-outlined text-xl text-primary-container" data-icon="candlestick_chart">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] tracking-wider text-primary-container font-bold mt-0.5">Pasar</span>
+</button>
+<!-- Nav Item 3: Berita -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="newspaper">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] tracking-wider mt-0.5">Berita</span>
+</button>
+<!-- Nav Item 4: Sistem -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="memory">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] tracking-wider mt-0.5">Sistem</span>
+</button>
+<!-- Nav Item 5: Lainnya -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="more_horiz">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] tracking-wider mt-0.5">Lainnya</span>
+</button>
+</nav>
+</div>
+</body></html>

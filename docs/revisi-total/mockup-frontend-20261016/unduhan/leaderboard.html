@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Leaderboard Antar-Strategi | War Room</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Script -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary": "#ffd4d2",
+            "surface-bright": "#38393c",
+            "primary": "#ffd999",
+            "on-secondary-container": "#005233",
+            "on-surface-variant": "#d4c4ae",
+            "on-secondary-fixed-variant": "#005233",
+            "on-error": "#690005",
+            "surface-container-highest": "#333537",
+            "background": "#121416",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "secondary-container": "#00d089",
+            "tertiary-container": "#ffadaa",
+            "surface-dim": "#121416",
+            "on-surface": "#e2e2e5",
+            "on-secondary": "#003822",
+            "primary-fixed": "#ffdea8",
+            "outline-variant": "#504535",
+            "on-tertiary": "#68000f",
+            "secondary-fixed-dim": "#30e198",
+            "surface-container-low": "#1a1c1e",
+            "primary-container": "#f5b83d",
+            "inverse-primary": "#7c5800",
+            "surface-tint": "#fabc41",
+            "surface-container-lowest": "#0c0e10",
+            "on-primary-fixed": "#271900",
+            "secondary-fixed": "#59feb2",
+            "surface-container": "#1e2022",
+            "on-tertiary-fixed": "#410006",
+            "on-primary-container": "#6a4a00",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "tertiary-fixed": "#ffdad8",
+            "surface-container-high": "#282a2c",
+            "on-error-container": "#ffdad6",
+            "on-background": "#e2e2e5",
+            "outline": "#9c8f7b",
+            "on-tertiary-container": "#992027",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "on-primary": "#422d00",
+            "surface": "#121416",
+            "inverse-surface": "#e2e2e5",
+            "inverse-on-surface": "#2f3133",
+            "on-secondary-fixed": "#002112",
+            "on-primary-fixed-variant": "#5e4200",
+            "surface-variant": "#333537",
+            "secondary": "#42eca3",
+            "primary-fixed-dim": "#fabc41"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter": "0.5rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1rem",
+            "space-md": "0.75rem"
+          },
+          "fontFamily": {
+            "body-md": ["IBM Plex Sans"],
+            "stat-lg": ["Space Mono"],
+            "headline-lg": ["IBM Plex Sans"],
+            "headline-sm": ["IBM Plex Sans"],
+            "stat-md": ["Space Mono"],
+            "body-sm": ["IBM Plex Sans"],
+            "micro-tag": ["Space Mono"],
+            "stat-display": ["Space Mono"],
+            "body-lg": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "headline-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Reset & Hairline specifics */
+    body {
+      background-color: #101214;
+      color: #E8EAED;
+      font-family: 'IBM Plex Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-mono-strict {
+      font-family: 'IBM Plex Mono', 'Space Mono', monospace;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#101214] text-[#E8EAED] min-h-screen flex justify-center selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mobile Frame Container (Max 390px Baseline) -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#101214] flex flex-col relative pb-20 border-x border-[#1D2126]">
+<!-- TopAppBar Component (from Shared Components JSON) -->
+<header class="bg-surface-container dark:bg-surface-container docked full-width top-0 border-b border-surface-container-highest dark:border-surface-container-highest flex justify-between items-center w-full px-space-md py-space-sm max-w-[390px] mx-auto z-40 sticky top-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">terminal</span>
+<span class="text-headline-sm font-headline-sm font-bold tracking-wider uppercase text-on-surface dark:text-on-surface">War Room</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="inline-block w-1.5 h-1.5 bg-[#34E39A] rounded-full"></span>
+<span class="text-micro-tag font-micro-tag text-[#9AA1A9] tracking-wider font-mono-strict">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Sub-Header / Eyebrow Module -->
+<div class="px-margin pt-space-md pb-space-sm bg-[#17191C] border-b border-[#2A2F36]">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] tracking-widest text-[#9AA1A9] uppercase font-mono-strict font-bold flex items-center gap-1">
+<span class="text-primary-container font-mono-strict">SYS::LEAD</span>
+<span class="text-[#2A2F36]">/</span>
+          ANALITIK / LEADERBOARD
+        </span>
+<span class="border border-[#34E39A] bg-[#1D2126] text-[#34E39A] font-mono-strict text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-[2px] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+          TERUKUR
+        </span>
+</div>
+<div class="flex items-baseline justify-between">
+<h1 class="text-headline-sm font-headline-sm font-bold text-[#E8EAED] tracking-tight">Leaderboard Strategi</h1>
+<span class="text-body-sm font-body-sm text-[#9AA1A9] font-mono-strict">N=5 SISTEM</span>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="px-margin pt-space-md flex flex-col gap-space-md flex-1">
+<!-- Amber Warning / Honesty Banner -->
+<div class="bg-[#1D2126] border border-primary-container rounded-[6px] p-space-sm flex items-start gap-2.5">
+<div class="w-5 h-5 rounded-[2px] bg-primary-container text-[#101214] font-mono-strict font-bold flex items-center justify-center shrink-0 text-[13px] mt-0.5">
+          !
+        </div>
+<div class="flex flex-col gap-1">
+<p class="text-body-sm font-body-sm text-[#E8EAED] font-mono-strict leading-snug">
+            Win-rate campuran <span class="font-bold text-[#FF6B6B]">62,6%</span> menyesatkan. Layak-dagang <span class="text-[#34E39A] font-bold">14,8% (TERUKUR)</span> - hanya strategi terverifikasi di klasemen.
+          </p>
+<div class="flex items-center gap-2 pt-1 border-t border-[#2A2F36]">
+<span class="text-[9px] text-[#9AA1A9] uppercase tracking-wider font-mono-strict">AMBANG BE: 14,8% WR</span>
+<span class="text-[#2A2F36]">•</span>
+<span class="text-[9px] text-[#9AA1A9] font-mono-strict">MIN RISK REWARD 1:1.5</span>
+</div>
+</div>
+</div>
+<!-- Decision Context Note -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-sm">
+<div class="text-[10px] text-[#9AA1A9] uppercase font-mono-strict tracking-widest mb-1 flex items-center justify-between">
+<span>PARAMETRI OPERASIONAL</span>
+<span class="text-[#34E39A] flex items-center gap-1 font-mono-strict">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span> AKTIF
+          </span>
+</div>
+<p class="text-body-sm font-body-sm text-[#9AA1A9] leading-tight">
+          Peringkat dihitung berdasarkan performa R terealisasi dan kepatuhan sistem. Strategi di bawah ambang BE otomatis didiskualifikasi dari alokasi modal primer.
+        </p>
+</div>
+<!-- Table Section Headers -->
+<div class="pt-space-xs">
+<div class="flex items-center justify-between px-2 py-1.5 bg-[#17191C] border-y border-[#2A2F36] text-[10px] uppercase font-mono-strict text-[#9AA1A9] tracking-wider">
+<span class="w-5/12">STRATEGI</span>
+<span class="w-3/12 text-right">R</span>
+<span class="w-4/12 text-right">WIN-RATE <span class="text-[8px] text-[#9AA1A9] block">(14,8% = BE)</span></span>
+</div>
+<!-- Strategy Rows Stack -->
+<div class="flex flex-col gap-space-sm mt-space-sm">
+<!-- RANK 01: FOCAL ROW (Solid Amber Left Block Indicator) -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] relative overflow-hidden flex flex-col">
+<!-- Amber left border indicator block -->
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="pl-3.5 pr-2.5 py-2 flex items-start justify-between">
+<!-- Strategy Info -->
+<div class="w-5/12 flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono-strict text-primary-container font-bold text-[12px]">01</span>
+<span class="font-body-md text-[#E8EAED] font-bold leading-tight">IDX BSJP</span>
+</div>
+<span class="text-[10px] text-[#9AA1A9] font-mono-strict leading-none">Beli Sore Jual Pagi</span>
+<span class="text-[9px] text-[#9AA1A9] font-mono-strict italic mt-0.5">Edge kuat pre-closing</span>
+</div>
+<!-- R Metric -->
+<div class="w-3/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#34E39A] font-bold font-mono-strict">+1,06R ▲</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+                </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">w-forward</span>
+</div>
+<!-- Win-rate Metric -->
+<div class="w-4/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#34E39A] font-bold font-mono-strict">68,4%</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+                </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">142 trade</span>
+</div>
+</div>
+<!-- Focal Row Execution Footer Tag -->
+<div class="bg-[#1D2126] border-t border-[#2A2F36] pl-3.5 pr-2 py-1 flex items-center justify-between">
+<span class="text-[9px] font-mono-strict uppercase text-primary-container font-semibold tracking-wider">
+                STATUS ALOKASI: PRIMER (TERVALIDASI)
+              </span>
+<span class="material-symbols-outlined text-primary-container text-[14px]">verified</span>
+</div>
+</div>
+<!-- RANK 02: Verified Row -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2 flex items-start justify-between">
+<div class="w-5/12 flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono-strict text-[#9AA1A9] font-bold text-[12px]">02</span>
+<span class="font-body-md text-[#E8EAED] font-semibold leading-tight">Crypto SMC</span>
+</div>
+<span class="text-[10px] text-[#9AA1A9] font-mono-strict leading-none">FVG &amp; MSS 15m</span>
+<span class="text-[9px] text-[#9AA1A9] font-mono-strict mt-0.5">OKX Perp L2</span>
+</div>
+<!-- R Metric -->
+<div class="w-3/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#34E39A] font-bold font-mono-strict">+0,86R ▲</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+              </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">OKX L2</span>
+</div>
+<!-- Win-rate Metric -->
+<div class="w-4/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#34E39A] font-bold font-mono-strict">58,2%</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+              </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">38 trade</span>
+</div>
+</div>
+<!-- RANK 03: Polymarket Favorit -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2 flex items-start justify-between">
+<div class="w-5/12 flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono-strict text-[#9AA1A9] font-bold text-[12px]">03</span>
+<span class="font-body-md text-[#E8EAED] font-semibold leading-tight">Polymarket</span>
+</div>
+<span class="text-[10px] text-[#9AA1A9] font-mono-strict leading-none">Favorit (0.70-0.95)</span>
+<span class="text-[9px] text-[#9AA1A9] font-mono-strict mt-0.5">Orderbook CLOB</span>
+</div>
+<!-- R Metric -->
+<div class="w-3/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#34E39A] font-bold font-mono-strict">+0,42R ▲</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+              </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">CLOB feed</span>
+</div>
+<!-- Win-rate Metric -->
+<div class="w-4/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#E8EAED] font-bold font-mono-strict">78,4%</span>
+<span class="text-[9px] text-[#9AA1A9] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#9AA1A9]"></span>TERUKUR
+              </span>
+<span class="text-[8px] text-[#FF6B6B] font-mono-strict">paper trade</span>
+</div>
+</div>
+<!-- UNVERIFIED ROW: Dashed Border Box -->
+<div class="bg-[#17191C] border border-dashed border-[#FF6B6B] rounded-[6px] p-2 flex flex-col gap-1.5">
+<div class="flex items-start justify-between">
+<div class="w-5/12 flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono-strict text-[#FF6B6B] font-bold text-[11px]">UNC</span>
+<span class="font-body-md text-[#E8EAED] font-medium leading-tight">Solana Meteora</span>
+</div>
+<span class="text-[10px] text-[#9AA1A9] font-mono-strict leading-none">DLMM / Meme Sniffer</span>
+</div>
+<!-- R Metric (Absent Data) -->
+<div class="w-3/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#9AA1A9] font-bold font-mono-strict">—</span>
+<span class="border border-dashed border-[#FF6B6B] text-[#FF6B6B] font-mono-strict text-[8px] px-1 py-0.2 rounded mt-0.5 tracking-tight uppercase">
+                  ! BELUM VERIFIKASI
+                </span>
+</div>
+<!-- Win-rate Metric (Absent Data) -->
+<div class="w-4/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#9AA1A9] font-bold font-mono-strict">—</span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict uppercase mt-0.5">N/A ON-CHAIN</span>
+</div>
+</div>
+<!-- Absent Reason Underneath -->
+<div class="pt-1 border-t border-[#2A2F36] flex items-center gap-1 text-[9px] text-[#FF6B6B] font-mono-strict italic">
+<span>alasan: belum cukup sampel, n &lt; 30 eksekusi terverifikasi</span>
+</div>
+</div>
+<!-- FAILED / REJECTED ROW: Disqualified under BE threshold -->
+<div class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-2 flex flex-col gap-1.5 opacity-85">
+<div class="flex items-start justify-between">
+<div class="w-5/12 flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-mono-strict text-[#FF6B6B] font-bold text-[11px]">REJ</span>
+<span class="font-body-md text-[#E8EAED] line-through decoration-[#FF6B6B] font-medium leading-tight">Asian Breakout</span>
+</div>
+<span class="text-[10px] text-[#9AA1A9] font-mono-strict leading-none">Forex Tokyo Range</span>
+</div>
+<!-- R Metric (Negative) -->
+<div class="w-3/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#FF6B6B] font-bold font-mono-strict">▼ −0,48R</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+                </span>
+<span class="text-[8px] text-[#9AA1A9] font-mono-strict">Reuters feed</span>
+</div>
+<!-- Win-rate Metric (Fails Threshold) -->
+<div class="w-4/12 text-right flex flex-col items-end">
+<span class="font-stat-sm text-[#FF6B6B] font-bold font-mono-strict">24,0%</span>
+<span class="text-[9px] text-[#34E39A] font-mono-strict uppercase flex items-center gap-0.5 mt-0.5">
+<span class="w-1 h-1 rounded-full bg-[#34E39A]"></span>TERUKUR
+                </span>
+<span class="text-[8px] text-[#FF6B6B] font-mono-strict">&lt; 14,8% BE</span>
+</div>
+</div>
+<!-- Rejection reason -->
+<div class="pt-1 border-t border-[#2A2F36] flex items-center gap-1 text-[9px] text-[#FF6B6B] font-mono-strict italic">
+<span>alasan: di bawah ambang batas kelayakan dagang 14,8% (EV negatif)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Tactical Bottom Audit Summary -->
+<div class="mt-space-xs bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#9AA1A9] text-[18px]">verified_user</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-mono-strict uppercase tracking-wider text-[#E8EAED]">INTEGRITAS AUDIT</span>
+<span class="text-[9px] font-mono-strict text-[#9AA1A9]">Audit sinkronisasi lokal terakhir: 4m lalu</span>
+</div>
+</div>
+<span class="font-mono-strict text-[11px] text-[#34E39A] font-bold">PASS 4/5</span>
+</div>
+</main>
+<!-- BottomNavBar Component (from Shared Components JSON) -->
+<!-- Active Tab: 'Lainnya' with Amber (#F5B83D / primary-container) style_active_navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container dark:bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- 0: Beranda (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 hover:text-on-surface dark:hover:text-on-surface active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] mt-0.5">Beranda</span>
+</a>
+<!-- 1: Pasar (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 hover:text-on-surface dark:hover:text-on-surface active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] mt-0.5">Pasar</span>
+</a>
+<!-- 2: Berita (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 hover:text-on-surface dark:hover:text-on-surface active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] mt-0.5">Berita</span>
+</a>
+<!-- 3: Sistem (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 hover:text-on-surface dark:hover:text-on-surface active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] mt-0.5">Sistem</span>
+</a>
+<!-- 4: Lainnya (ACTIVE: Amber Highlight per instructions) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container dark:text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] mt-0.5">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>

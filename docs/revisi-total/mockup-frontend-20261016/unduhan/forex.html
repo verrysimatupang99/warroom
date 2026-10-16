@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - Forex &amp; Agenda Makro</title>
+<!-- Google Fonts: IBM Plex Sans & Space Mono (acting as mono data engine) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-primary": "#7c5800",
+            "primary-fixed": "#ffdea8",
+            "on-surface-variant": "#d4c4ae",
+            "on-secondary-fixed-variant": "#005233",
+            "on-background": "#e2e2e5",
+            "error": "#ffb4ab",
+            "tertiary-fixed": "#ffdad8",
+            "surface-container-low": "#1a1c1e",
+            "surface-container": "#1e2022",
+            "on-primary-fixed": "#271900",
+            "on-error": "#690005",
+            "on-secondary-container": "#005233",
+            "on-primary-fixed-variant": "#5e4200",
+            "on-surface": "#e2e2e5",
+            "surface-bright": "#38393c",
+            "surface": "#121416",
+            "surface-dim": "#121416",
+            "surface-container-high": "#282a2c",
+            "surface-variant": "#333537",
+            "surface-container-lowest": "#0c0e10",
+            "on-primary": "#422d00",
+            "error-container": "#93000a",
+            "on-error-container": "#ffdad6",
+            "primary-container": "#f5b83d",
+            "background": "#121416",
+            "primary-fixed-dim": "#fabc41",
+            "secondary-container": "#00d089",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "primary": "#ffd999",
+            "secondary-fixed": "#59feb2",
+            "on-secondary-fixed": "#002112",
+            "outline-variant": "#504535",
+            "on-secondary": "#003822",
+            "outline": "#9c8f7b",
+            "on-primary-container": "#6a4a00",
+            "surface-container-highest": "#333537",
+            "on-tertiary-fixed": "#410006",
+            "on-tertiary": "#68000f",
+            "inverse-surface": "#e2e2e5",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "inverse-on-surface": "#2f3133",
+            "secondary": "#42eca3",
+            "on-tertiary-container": "#992027",
+            "secondary-fixed-dim": "#30e198",
+            "tertiary": "#ffd4d2",
+            "surface-tint": "#fabc41",
+            "tertiary-container": "#ffadaa"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "space-lg": "1rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem",
+            "gutter": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["IBM Plex Sans"],
+            "body-md": ["IBM Plex Sans"],
+            "stat-md": ["Space Mono"],
+            "stat-display": ["Space Mono"],
+            "body-lg": ["IBM Plex Sans"],
+            "headline-lg": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "stat-lg": ["Space Mono"],
+            "body-sm": ["IBM Plex Sans"],
+            "micro-tag": ["Space Mono"],
+            "headline-sm": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Strict tactical flat aesthetic */
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-color: #101214;
+      color: #e2e2e5;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#101214] text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex justify-center">
+<!-- Mobile Viewport Container 390px -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#101214] border-x border-[#2A2F36] flex flex-col relative pb-20">
+<!-- TopAppBar Component as defined in Shared Components JSON -->
+<header class="bg-surface-container dark:bg-surface-container border-b border-surface-container-highest dark:border-surface-container-highest docked full-width top-0 sticky z-40">
+<div class="flex justify-between items-center w-full px-space-md py-space-sm max-w-[390px] mx-auto">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary dark:text-primary text-[18px]">terminal</span>
+<div class="flex flex-col">
+<span class="text-micro-tag font-micro-tag uppercase tracking-wider text-outline">PASAR / FOREX</span>
+<h1 class="text-headline-sm font-headline-sm font-bold tracking-wider uppercase text-on-surface dark:text-on-surface leading-tight">War Room</h1>
+</div>
+</div>
+<div class="flex items-center gap-1.5 bg-[#17191C] px-2 py-1 rounded-[6px] border border-[#2A2F36]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-on-surface">07:45 WIB (12M)</span>
+</div>
+</div>
+</header>
+<!-- Main Tactical Canvas -->
+<main class="flex-1 px-margin pt-space-md pb-space-lg flex flex-col gap-space-md">
+<!-- Amber Constraint Chip (Single War-Room Lamp Focal Element) -->
+<section class="bg-[#1D2126] border border-primary-container/40 rounded-[6px] p-space-md flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-[18px] shrink-0 mt-0.5">warning</span>
+<div class="flex flex-col gap-0.5">
+<div class="text-micro-tag font-micro-tag text-primary-container uppercase tracking-wider font-bold">
+            ! KUOTA ARJUM HISTORY 99% TERPAKAI
+          </div>
+<p class="text-body-sm font-body-sm text-outline leading-snug">
+            UI TIDAK MENAMBAH PANGGILAN API. Snapshot status dipertahankan untuk disiplin eksekusi tanpa overhead beban node.
+          </p>
+</div>
+</section>
+<!-- Section 1: Agenda Hari Ini -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center px-0.5">
+<h2 class="text-micro-tag font-micro-tag uppercase tracking-wider text-outline">AGENDA HARI INI</h2>
+<span class="text-micro-tag font-micro-tag text-outline">JADWAL MAKRO</span>
+</div>
+<div class="flex flex-col gap-gutter">
+<!-- Calendar Row 1: USD/IDR BI Rate Decision -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-stat-sm font-stat-sm text-on-surface font-bold">09:30 WIB</span>
+<span class="bg-[#1D2126] border border-[#2A2F36] text-outline text-micro-tag font-micro-tag px-1.5 py-0.5 rounded-[4px]">IDR</span>
+</div>
+<!-- Text + Glyph Warning High Impact -->
+<span class="text-micro-tag font-micro-tag text-[#FF6B6B] uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">priority_high</span>
+                Tinggi !!!
+              </span>
+</div>
+<div class="text-body-md font-body-md text-on-surface font-semibold">
+              USD/IDR BI Rate Decision
+            </div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR · KALENDER RESMI</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-micro-tag font-micro-tag text-outline uppercase">Konsensus:</span>
+<span class="text-stat-sm font-stat-sm text-on-surface font-bold">—</span>
+</div>
+</div>
+<div class="text-micro-tag font-micro-tag text-outline text-[9px] -mt-1">
+              (alasan: data rilis belum dipublikasikan oleh otoritas)
+            </div>
+</article>
+<!-- Calendar Row 2: UK CPI YoY -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-stat-sm font-stat-sm text-on-surface font-bold">15:00 WIB</span>
+<span class="bg-[#1D2126] border border-[#2A2F36] text-outline text-micro-tag font-micro-tag px-1.5 py-0.5 rounded-[4px]">GBP</span>
+</div>
+<span class="text-micro-tag font-micro-tag text-primary-container uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">report</span>
+                Sedang !!
+              </span>
+</div>
+<div class="text-body-md font-body-md text-on-surface font-semibold">
+              UK CPI YoY
+            </div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR · ONS UK</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-micro-tag font-micro-tag text-outline uppercase">Target:</span>
+<span class="text-stat-sm font-stat-sm text-on-surface">2.0%</span>
+</div>
+</div>
+</article>
+<!-- Calendar Row 3: US Non-Farm Payrolls (NFP) -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-stat-sm font-stat-sm text-on-surface font-bold">20:30 WIB</span>
+<span class="bg-[#1D2126] border border-[#2A2F36] text-outline text-micro-tag font-micro-tag px-1.5 py-0.5 rounded-[4px]">USD</span>
+</div>
+<span class="text-micro-tag font-micro-tag text-[#FF6B6B] uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">priority_high</span>
+                Tinggi !!!
+              </span>
+</div>
+<div class="text-body-md font-body-md text-on-surface font-semibold">
+              US Non-Farm Payrolls (NFP)
+            </div>
+<div class="flex items-center justify-between pt-1 border-t border-[#2A2F36]">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR · BLS</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="text-micro-tag font-micro-tag text-outline uppercase">Konsensus:</span>
+<span class="text-stat-sm font-stat-sm text-on-surface font-bold">—</span>
+</div>
+</div>
+<div class="text-micro-tag font-micro-tag text-outline text-[9px] -mt-1">
+              (alasan: menunggu rilis resmi pukul 20:30)
+            </div>
+</article>
+</div>
+</section>
+<!-- Section 2: Pair Dikawal -->
+<section class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center px-0.5">
+<h2 class="text-micro-tag font-micro-tag uppercase tracking-wider text-outline">PAIR DIKAWAL</h2>
+<span class="text-micro-tag font-micro-tag text-outline">TELEMETRI HARGA</span>
+</div>
+<div class="flex flex-col gap-gutter">
+<!-- Row USD/IDR -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col gap-space-sm">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-stat-md font-stat-md text-on-surface font-bold">USD/IDR</span>
+<span class="text-micro-tag font-micro-tag text-outline text-[9px]">IDR SPOT</span>
+</div>
+<div class="text-body-sm font-body-sm text-outline">Spot Bank Indonesia / Pasar Fisik</div>
+</div>
+<!-- Em dash price state -->
+<div class="text-right">
+<div class="text-stat-lg font-stat-lg text-on-surface">—</div>
+<div class="text-micro-tag font-micro-tag text-outline">Spread: —</div>
+</div>
+</div>
+<!-- Honesty Unverified Badge -->
+<div class="bg-[#1D2126] border border-dashed border-[#FF6B6B] rounded-[4px] px-2 py-1 flex items-center justify-between">
+<span class="text-micro-tag font-micro-tag text-[#FF6B6B] uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">error</span>
+                ! BELUM TERVERIFIKASI / MENUNGGU SNAPSHOT
+              </span>
+</div>
+<p class="text-micro-tag font-micro-tag text-outline text-[9px] -mt-1">
+              (alasan: kuota polling dibatasi untuk cegah over-limit API)
+            </p>
+</article>
+<!-- Row EUR/USD -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col gap-space-sm">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-stat-md font-stat-md text-on-surface font-bold">EUR/USD</span>
+<span class="text-micro-tag font-micro-tag text-outline text-[9px]">MAJORS</span>
+</div>
+<div class="text-body-sm font-body-sm text-outline">Euro / US Dollar Interbank</div>
+</div>
+<!-- Em dash price state -->
+<div class="text-right">
+<div class="text-stat-lg font-stat-lg text-on-surface">—</div>
+<div class="text-micro-tag font-micro-tag text-outline">Kuotasi Live Ditahan</div>
+</div>
+</div>
+<!-- Honesty Unverified Badge -->
+<div class="bg-[#1D2126] border border-dashed border-[#FF6B6B] rounded-[4px] px-2 py-1 flex items-center justify-between">
+<span class="text-micro-tag font-micro-tag text-[#FF6B6B] uppercase font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">error</span>
+                ! BELUM TERVERIFIKASI / MENUNGGU SNAPSHOT
+              </span>
+</div>
+<p class="text-micro-tag font-micro-tag text-outline text-[9px] -mt-1">
+              (alasan: feed ditahan pada low-volatility session)
+            </p>
+<!-- Mandatory Verified Metric Line -->
+<div class="mt-1 pt-2 border-t border-[#2A2F36] flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-surface">spread rata-rata 1,2 pips</span>
+<div class="flex items-center gap-1.5 bg-[#1D2126] border border-secondary px-2 py-0.5 rounded-[4px]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase font-bold">TERUKUR · ECN L2</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Footer Telemetry & Discipline Rules -->
+<footer class="mt-space-sm p-space-md bg-[#17191C] border border-[#2A2F36] rounded-[6px]">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-outline text-[14px]">shield</span>
+<span class="text-micro-tag font-micro-tag text-outline uppercase tracking-wider font-bold">PROTOKOL DISIPLIN</span>
+</div>
+<p class="text-micro-tag font-micro-tag text-outline leading-relaxed uppercase">
+          UI MENAMPILKAN SNAPSHOT, BUKAN REALTIME. ATURAN FILTER KETAT (DISIPLIN TINGGI).
+        </p>
+</footer>
+</main>
+<!-- BottomNavBar Component as defined in Shared Components JSON -->
+<!-- Active tab: 'Pasar' (Exact semantic intent for Forex & Makro) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container dark:bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- Item 1: Beranda -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase">Beranda</span>
+</a>
+<!-- Item 2: Pasar (ACTIVE - Amber #F5B83D / style_active_navigation) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container dark:text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase font-bold">Pasar</span>
+</a>
+<!-- Item 3: Berita -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase">Berita</span>
+</a>
+<!-- Item 4: Sistem -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase">Sistem</span>
+</a>
+<!-- Item 5: Lainnya -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline dark:text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface dark:hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>

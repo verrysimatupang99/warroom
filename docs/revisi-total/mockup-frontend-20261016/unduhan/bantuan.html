@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - Bantuan</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: IBM Plex Sans & Space Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error": "#ffb4ab",
+            "on-background": "#e2e2e5",
+            "tertiary": "#ffd4d2",
+            "on-primary-container": "#6a4a00",
+            "background": "#121416",
+            "on-tertiary": "#68000f",
+            "on-error": "#690005",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "surface-variant": "#333537",
+            "on-primary-fixed-variant": "#5e4200",
+            "on-primary": "#422d00",
+            "secondary": "#42eca3",
+            "outline": "#9c8f7b",
+            "inverse-surface": "#e2e2e5",
+            "error-container": "#93000a",
+            "surface-container-low": "#1a1c1e",
+            "surface": "#121416",
+            "inverse-primary": "#7c5800",
+            "surface-container-lowest": "#0c0e10",
+            "surface-container-highest": "#333537",
+            "primary-fixed-dim": "#fabc41",
+            "on-primary-fixed": "#271900",
+            "outline-variant": "#504535",
+            "tertiary-container": "#ffadaa",
+            "primary-fixed": "#ffdea8",
+            "on-tertiary-container": "#992027",
+            "tertiary-fixed": "#ffdad8",
+            "on-secondary-container": "#005233",
+            "on-surface-variant": "#d4c4ae",
+            "primary": "#ffd999",
+            "surface-container-high": "#282a2c",
+            "on-secondary-fixed": "#002112",
+            "surface-bright": "#38393c",
+            "on-tertiary-fixed": "#410006",
+            "inverse-on-surface": "#2f3133",
+            "surface-container": "#1e2022",
+            "primary-container": "#f5b83d",
+            "on-error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#005233",
+            "on-secondary": "#003822",
+            "secondary-fixed-dim": "#30e198",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "surface-tint": "#fabc41",
+            "secondary-fixed": "#59feb2",
+            "on-surface": "#e2e2e5",
+            "surface-dim": "#121416",
+            "secondary-container": "#00d089"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem",
+            "gutter": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1rem",
+            "margin": "1rem"
+          },
+          "fontFamily": {
+            "body-lg": ["IBM Plex Sans"],
+            "body-sm": ["IBM Plex Sans"],
+            "body-md": ["IBM Plex Sans"],
+            "stat-display": ["Space Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "headline-lg": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "stat-lg": ["Space Mono"],
+            "headline-md": ["IBM Plex Sans"],
+            "micro-tag": ["Space Mono"],
+            "stat-md": ["Space Mono"]
+          },
+          "fontSize": {
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased font-body-md select-none min-h-screen flex flex-col justify-between items-center">
+<!-- Mobile Viewport Container (390px locked baseline) -->
+<div class="w-full max-w-[390px] min-h-screen bg-surface flex flex-col justify-between pb-16 relative">
+<!-- TOP APP BAR / HUD (Shared Component: TopAppBar) -->
+<header class="bg-surface-container docked full-width top-0 border-b border-surface-container-highest flat no shadows planar layout flex justify-between items-center w-full px-space-md py-space-sm max-w-[390px] mx-auto z-40 sticky top-0">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">terminal</span>
+<div class="flex flex-col">
+<span class="text-micro-tag font-micro-tag uppercase text-outline">PANDUAN / BANTUAN</span>
+<h1 class="text-headline-sm font-headline-sm font-bold tracking-wider uppercase text-on-surface">Bantuan</h1>
+</div>
+</div>
+<div class="text-micro-tag font-micro-tag text-outline text-right">
+        07:45 WIB (12M)
+      </div>
+</header>
+<!-- MAIN OPERATIONAL CANVAS -->
+<main class="flex-1 px-margin pt-space-lg pb-space-lg flex flex-col gap-space-lg">
+<!-- SECTION STATUS / VERIFICATION BANNER (Single Planar Frame) -->
+<section class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="text-micro-tag font-micro-tag uppercase text-outline tracking-wider">PROTOKOL INTERPRETASI</span>
+<!-- Terukur Tag -->
+<div class="bg-surface-container-high border border-secondary px-space-xs py-[2px] rounded-sm flex items-center gap-[6px]">
+<span class="w-[6px] h-[6px] rounded-full bg-secondary inline-block"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR</span>
+</div>
+</div>
+<p class="text-body-sm font-body-sm text-outline">
+          Dokumentasi operasional terminal satu operator. Menegakkan kejujuran kalkulasi data, limitasi sensor pasar, dan standardisasi sinyal eksekusi.
+        </p>
+</section>
+<!-- ACCORDION KNOWLEDGE MODULE -->
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container-highest">
+<span class="text-micro-tag font-micro-tag text-outline uppercase tracking-wider">KATALOG PERTANYAAN SISTEM</span>
+<span class="text-micro-tag font-micro-tag text-outline">5 TOPIK TERDAFTAR</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- ACCORDION ITEM 1: OPEN STATE -->
+<article class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden transition-all duration-150">
+<button class="w-full p-space-md flex items-start justify-between text-left gap-space-sm active:bg-surface-variant transition-colors min-h-[44px]" type="button">
+<span class="text-body-md font-body-md font-semibold text-on-surface leading-tight">
+                Kenapa ada angka yang ditulis — bukan 0?
+              </span>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0 pt-0.5">expand_less</span>
+</button>
+<div class="px-space-md pb-space-md pt-0 border-t border-surface-container-highest flex flex-col gap-space-sm mt-space-xs">
+<p class="text-body-sm font-body-sm text-on-surface pt-space-xs leading-relaxed">
+                Angka 0 adalah nilai terhitung nyata. Tanda — menandakan data belum ada atau sensor terputus agar tidak memanipulasi kalkulasi risiko.
+              </p>
+<!-- Inline Honesty & Telemetry Verification Cell -->
+<div class="bg-surface-container border border-surface-container-highest rounded-sm p-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="text-micro-tag font-micro-tag text-outline uppercase">CONTOH NILAI:</span>
+<span class="text-stat-sm font-stat-sm text-on-surface">—</span>
+</div>
+<!-- TERUKUR Tag with source -->
+<div class="flex items-center gap-space-xs">
+<div class="bg-surface-container-high border border-secondary px-space-xs py-[1px] rounded-sm flex items-center gap-[5px]">
+<span class="w-[5px] h-[5px] rounded-full bg-secondary inline-block"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR</span>
+</div>
+<span class="text-micro-tag font-micro-tag text-outline">walk-forward</span>
+</div>
+</div>
+</div>
+</article>
+<!-- ACCORDION ITEM 2: CLOSED STATE -->
+<article class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden">
+<button class="w-full p-space-md flex items-center justify-between text-left gap-space-sm active:bg-surface-variant transition-colors min-h-[44px]" type="button">
+<span class="text-body-md font-body-md font-semibold text-on-surface leading-tight">
+                Apa beda TERUKUR dan BELUM TERVERIFIKASI?
+              </span>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0">expand_more</span>
+</button>
+</article>
+<!-- ACCORDION ITEM 3: CLOSED STATE -->
+<article class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden">
+<button class="w-full p-space-md flex items-center justify-between text-left gap-space-sm active:bg-surface-variant transition-colors min-h-[44px]" type="button">
+<span class="text-body-md font-body-md font-semibold text-on-surface leading-tight">
+                Kenapa harus paper trade dulu?
+              </span>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0">expand_more</span>
+</button>
+</article>
+<!-- ACCORDION ITEM 4: CLOSED STATE -->
+<article class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden">
+<button class="w-full p-space-md flex items-center justify-between text-left gap-space-sm active:bg-surface-variant transition-colors min-h-[44px]" type="button">
+<span class="text-body-md font-body-md font-semibold text-on-surface leading-tight">
+                Berapa umur data snapshot?
+              </span>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0">expand_more</span>
+</button>
+</article>
+<!-- ACCORDION ITEM 5: CLOSED STATE -->
+<article class="bg-surface-container-low border border-surface-container-highest rounded-lg overflow-hidden">
+<button class="w-full p-space-md flex items-center justify-between text-left gap-space-sm active:bg-surface-variant transition-colors min-h-[44px]" type="button">
+<span class="text-body-md font-body-md font-semibold text-on-surface leading-tight">
+                Kenapa bukan realtime?
+              </span>
+<span class="material-symbols-outlined text-outline text-[18px] shrink-0">expand_more</span>
+</button>
+</article>
+</div>
+</section>
+<!-- VERIFICATION COMPARISON MINI WIDGET -->
+<section class="border border-surface-container-highest rounded-lg p-space-md bg-surface-container-low flex flex-col gap-space-sm">
+<span class="text-micro-tag font-micro-tag uppercase text-outline">AUDIT VISUAL DATA FEED</span>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Measured Example -->
+<div class="border border-surface-container-highest rounded-sm p-space-xs flex flex-col gap-[4px] bg-surface-container">
+<div class="flex items-center justify-between">
+<span class="text-micro-tag font-micro-tag text-outline">EDGE NET</span>
+<div class="border border-secondary px-[4px] py-[1px] rounded-sm flex items-center gap-[4px]">
+<span class="w-[4px] h-[4px] rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">TERUKUR</span>
+</div>
+</div>
+<div class="flex items-baseline justify-between mt-1">
+<span class="text-stat-md font-stat-md text-secondary">+14.2% ▲</span>
+<span class="text-micro-tag font-micro-tag text-outline">feed_01</span>
+</div>
+</div>
+<!-- Unverified Example -->
+<div class="border border-surface-container-highest rounded-sm p-space-xs flex flex-col gap-[4px] bg-surface-container">
+<div class="flex items-center justify-between">
+<span class="text-micro-tag font-micro-tag text-outline">RISK EXP</span>
+<div class="border border-dashed border-error px-[4px] py-[1px] rounded-sm">
+<span class="text-micro-tag font-micro-tag text-error uppercase">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-baseline justify-between mt-1">
+<span class="text-stat-md font-stat-md text-error">−8.4% ▼</span>
+<span class="text-micro-tag font-micro-tag text-outline">est_feed</span>
+</div>
+</div>
+</div>
+</section>
+<!-- STANDARDS & ACCESSIBILITY SELF-CHECK CARD -->
+<section class="bg-surface-container-low border border-surface-container-highest rounded-lg p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[16px]">verified</span>
+<span class="text-micro-tag font-micro-tag uppercase text-outline">STATUS OPERASIONAL UI</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-[6px] h-[6px] rounded-full bg-secondary"></span>
+<span class="text-micro-tag font-micro-tag text-secondary uppercase">LOLOS</span>
+</div>
+</div>
+<div class="text-micro-tag font-micro-tag text-outline tracking-wider pt-1 border-t border-surface-container-highest">
+          Kontras AA - target sentuh 44px - tanpa kode warna saja
+        </div>
+</section>
+</main>
+<!-- BOTTOM NAVIGATION BAR (Shared Component: BottomNavBar) -->
+<!-- Active Destination: 'Lainnya' (since screen is Bantuan / sub-utility of Lainnya) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- 1. Beranda -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100" href="#beranda">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase">Beranda</span>
+</a>
+<!-- 2. Pasar -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100" href="#pasar">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase">Pasar</span>
+</a>
+<!-- 3. Berita -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100" href="#berita">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase">Berita</span>
+</a>
+<!-- 4. Sistem -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100" href="#sistem">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase">Sistem</span>
+</a>
+<!-- 5. Lainnya (ACTIVE ITEM: Amber #F5B83D / style_active_navigation) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100" href="#lainnya">
+<span class="material-symbols-outlined text-[20px] text-primary-container">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase text-primary-container">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>

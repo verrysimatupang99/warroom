@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room Mobile - Catatan (Jurnal Keputusan)</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface": "#e2e2e5",
+            "on-secondary-fixed-variant": "#005233",
+            "surface-container-low": "#1a1c1e",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "surface-tint": "#fabc41",
+            "on-background": "#e2e2e5",
+            "secondary": "#42eca3",
+            "surface": "#121416",
+            "on-tertiary-fixed": "#410006",
+            "outline-variant": "#504535",
+            "inverse-primary": "#7c5800",
+            "surface-bright": "#38393c",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "surface-container": "#1e2022",
+            "on-secondary-container": "#005233",
+            "on-surface-variant": "#d4c4ae",
+            "outline": "#9c8f7b",
+            "primary-fixed-dim": "#fabc41",
+            "tertiary-container": "#ffadaa",
+            "background": "#121416",
+            "on-error": "#690005",
+            "on-primary-container": "#6a4a00",
+            "error": "#ffb4ab",
+            "tertiary-fixed": "#ffdad8",
+            "tertiary": "#ffd4d2",
+            "on-tertiary": "#68000f",
+            "on-primary": "#422d00",
+            "surface-container-high": "#282a2c",
+            "secondary-fixed-dim": "#30e198",
+            "on-error-container": "#ffdad6",
+            "inverse-surface": "#e2e2e5",
+            "surface-variant": "#333537",
+            "surface-dim": "#121416",
+            "secondary-container": "#00d089",
+            "surface-container-lowest": "#0c0e10",
+            "on-secondary": "#003822",
+            "secondary-fixed": "#59feb2",
+            "primary-container": "#f5b83d",
+            "primary-fixed": "#ffdea8",
+            "surface-container-highest": "#333537",
+            "error-container": "#93000a",
+            "on-tertiary-container": "#992027",
+            "on-primary-fixed-variant": "#5e4200",
+            "inverse-on-surface": "#2f3133",
+            "on-secondary-fixed": "#002112",
+            "primary": "#ffd999",
+            "on-primary-fixed": "#271900"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "gutter": "0.5rem"
+          },
+          "fontFamily": {
+            "stat-sm": ["Space Mono"],
+            "body-lg": ["IBM Plex Sans"],
+            "headline-sm": ["IBM Plex Sans"],
+            "headline-lg": ["IBM Plex Sans"],
+            "body-sm": ["IBM Plex Sans"],
+            "stat-display": ["Space Mono"],
+            "headline-md": ["IBM Plex Sans"],
+            "stat-md": ["Space Mono"],
+            "micro-tag": ["Space Mono"],
+            "stat-lg": ["Space Mono"],
+            "body-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #0c0e10;
+      color: #e2e2e5;
+      font-family: 'IBM Plex Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+    }
+    /* Monospace font assignment strictly for telemetry and figures */
+    .mono-num {
+      font-family: 'Space Mono', monospace;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex justify-center min-h-screen bg-surface-container-lowest text-on-surface">
+<!-- Mobile Viewport Container strictly 390px -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#101214] flex flex-col relative pb-28 selection:bg-primary-container selection:text-on-primary">
+<!-- TopAppBar Component (from Shared Components JSON with custom breadcrumb & telemetry) -->
+<header class="bg-surface-container border-b border-surface-container-highest flex justify-between items-center w-full px-space-md py-space-sm sticky top-0 z-40">
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-primary-container" data-icon="terminal">terminal</span>
+<div class="flex flex-col">
+<span class="font-micro-tag text-micro-tag text-outline tracking-wider uppercase">JURNAL / CATATAN</span>
+<h1 class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">Jurnal Keputusan</h1>
+</div>
+</div>
+<div class="flex items-center space-x-1.5 px-2 py-1 bg-[#17191C] border border-[#2A2F36] rounded-[6px]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A] inline-block animate-pulse"></span>
+<span class="font-micro-tag text-micro-tag text-on-surface-variant uppercase">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Canvas Inner Content -->
+<main class="px-space-md pt-3 flex flex-col space-y-3">
+<!-- Operational Subtitle -->
+<div class="px-1">
+<p class="font-body-sm text-body-sm text-[#9AA1A9]">Audit kepatuhan disiplin eksekusi satu operator.</p>
+</div>
+<!-- Focal Card / Header Card: Ringkasan Disiplin Jurnal -->
+<section class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col space-y-2.5">
+<div class="flex items-center justify-between">
+<span class="font-micro-tag text-micro-tag text-primary-container uppercase tracking-wider">KONSISTENSI ATURAN EKSEKUSI</span>
+<!-- Inline Honesty Tag -->
+<div class="flex items-center space-x-1 bg-[#1D2126] border border-[#34E39A] px-1.5 py-0.5 rounded-[4px]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A] inline-block"></span>
+<span class="font-micro-tag text-micro-tag text-[#34E39A] uppercase">TERUKUR</span>
+</div>
+</div>
+<div class="flex flex-col bg-[#1D2126] border border-[#2A2F36] rounded-[6px] p-2.5">
+<span class="font-body-sm text-[10px] text-[#9AA1A9] uppercase tracking-wider mb-1">HASIL HISTORIS TERAKHIR</span>
+<div class="flex items-baseline space-x-2">
+<span class="font-stat-display text-stat-display text-[#FF6B6B] mono-num tracking-tight">−1,4R</span>
+<span class="font-stat-sm text-stat-sm text-[#FF6B6B] mono-num font-bold">− turun</span>
+</div>
+<div class="mt-1 pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+<span class="font-micro-tag text-[9px] text-[#9AA1A9] mono-num">sumber: ledger internal paper trade</span>
+<span class="font-micro-tag text-[9px] text-[#34E39A] mono-num">[• TERUKUR]</span>
+</div>
+</div>
+<!-- Status Disiplin -->
+<div class="flex items-center space-x-2 px-1 py-0.5">
+<span class="material-symbols-outlined text-[#34E39A] text-[16px]" data-icon="verified_user">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface font-medium">
+            Kepatuhan Rule: <span class="mono-num text-[#34E39A]">100%</span> disiplin stop-loss dipatuhi
+          </p>
+</div>
+</section>
+<!-- Section Label -->
+<div class="flex items-center justify-between pt-1 px-1">
+<span class="font-micro-tag text-micro-tag uppercase text-[#9AA1A9] tracking-wider">DAFTAR ENTRI LOGIKAL</span>
+<span class="font-micro-tag text-[9px] text-[#9AA1A9] mono-num">FILTER: ALL SETUPS</span>
+</div>
+<!-- Journal Entry 1 -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-micro-tag text-micro-tag text-[#9AA1A9] mono-num uppercase">16 Okt 2026</span>
+<span class="font-micro-tag text-micro-tag text-on-surface bg-[#1D2126] border border-[#2A2F36] px-1.5 py-0.5 rounded-[4px] mono-num">[IDX BSJP]</span>
+</div>
+<span class="font-micro-tag text-micro-tag px-2 py-0.5 bg-[#1D2126] border border-[#FF6B6B] text-[#FF6B6B] rounded-[4px] uppercase font-bold tracking-wider">MASUK paper</span>
+</div>
+<!-- Value Row with Honesty Tag -->
+<div class="bg-[#1D2126] border border-[#2A2F36] rounded-[6px] p-2 flex flex-col space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-baseline space-x-2">
+<span class="font-stat-lg text-stat-lg text-[#FF6B6B] mono-num font-bold">−1,4R</span>
+<span class="font-stat-sm text-stat-sm text-[#FF6B6B] mono-num">− turun</span>
+</div>
+<!-- Measured Tag -->
+<div class="flex items-center space-x-1 bg-[#101214] border border-[#34E39A] px-1.5 py-0.5 rounded-[4px]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="font-micro-tag text-[9px] text-[#34E39A] mono-num">TERUKUR</span>
+</div>
+</div>
+<span class="font-micro-tag text-[9px] text-[#9AA1A9] mono-num">sumber: kpei-direct execution</span>
+</div>
+<!-- Plain Lesson -->
+<div class="pt-0.5">
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+            Disiplin cut-loss dijalankan saat spread bid-ask melebar sebelum lelang pre-closing.
+          </p>
+</div>
+</article>
+<!-- Journal Entry 2 -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-micro-tag text-micro-tag text-[#9AA1A9] mono-num uppercase">15 Okt 2026</span>
+<span class="font-micro-tag text-micro-tag text-on-surface bg-[#1D2126] border border-[#2A2F36] px-1.5 py-0.5 rounded-[4px] mono-num">[CRYPTO SMC]</span>
+</div>
+<span class="font-micro-tag text-micro-tag px-2 py-0.5 bg-[#1D2126] border border-[#2A2F36] text-[#9AA1A9] rounded-[4px] uppercase font-bold tracking-wider">TUNGGU</span>
+</div>
+<!-- Em-dash with unverified honesty tag & required explicit reason -->
+<div class="bg-[#1D2126] border border-[#2A2F36] rounded-[6px] p-2 flex flex-col space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-stat-lg text-stat-lg text-[#9AA1A9] mono-num font-bold">—</span>
+<!-- Unverified Tag (dashed border) -->
+<div class="flex items-center px-1.5 py-0.5 bg-[#17191C] border border-dashed border-[#F5B83D] rounded-[4px]">
+<span class="font-micro-tag text-[9px] text-[#F5B83D] mono-num">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<p class="font-body-sm text-[11px] text-[#9AA1A9] leading-tight">
+            alasan: harga tidak menyentuh area discount FVG H1, order batal otomatis.
+          </p>
+<span class="font-micro-tag text-[9px] text-outline mono-num pt-0.5">sumber: okx l2 orderbook snapshot</span>
+</div>
+<!-- Plain Lesson -->
+<div class="pt-0.5">
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+            Menahan godaan chase harga di tengah candle impulsive mengamankan modal dingin.
+          </p>
+</div>
+</article>
+<!-- Journal Entry 3 -->
+<article class="bg-[#17191C] border border-[#2A2F36] rounded-[6px] p-space-md flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="font-micro-tag text-micro-tag text-[#9AA1A9] mono-num uppercase">14 Okt 2026</span>
+<span class="font-micro-tag text-micro-tag text-on-surface bg-[#1D2126] border border-[#2A2F36] px-1.5 py-0.5 rounded-[4px] mono-num">[POLYMARKET]</span>
+</div>
+<span class="font-micro-tag text-micro-tag px-2 py-0.5 bg-[#1D2126] border border-primary-container text-primary-container rounded-[4px] uppercase font-bold tracking-wider">MASUK paper</span>
+</div>
+<!-- Em-dash with unverified tag and active reason -->
+<div class="bg-[#1D2126] border border-[#2A2F36] rounded-[6px] p-2 flex flex-col space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-stat-lg text-stat-lg text-[#9AA1A9] mono-num font-bold">—</span>
+<div class="flex items-center px-1.5 py-0.5 bg-[#17191C] border border-dashed border-[#F5B83D] rounded-[4px]">
+<span class="font-micro-tag text-[9px] text-[#F5B83D] mono-num">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<p class="font-body-sm text-[11px] text-[#9AA1A9] leading-tight">
+            alasan: kontrak belum jatuh tempo, posisi paper masih berjalan.
+          </p>
+<span class="font-micro-tag text-[9px] text-outline mono-num pt-0.5">sumber: clob orderbook</span>
+</div>
+<!-- Plain Lesson -->
+<div class="pt-0.5">
+<p class="font-body-sm text-body-sm text-on-surface leading-snug">
+            Ukuran taruhan dibatasi ketat di bawah 1% bankroll sesuai kriteria Kelly fraksional.
+          </p>
+</div>
+</article>
+<!-- Empty-Week Ghost Card -->
+<section class="bg-[#17191C] border border-dashed border-[#2A2F36] rounded-[6px] p-space-md flex flex-col space-y-1.5">
+<div class="flex items-center justify-between">
+<span class="font-micro-tag text-micro-tag uppercase text-outline tracking-wider">MINGGU BERJALAN (W42)</span>
+<span class="material-symbols-outlined text-outline text-[16px]" data-icon="hourglass_empty">hourglass_empty</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium">
+          Belum ada catatan minggu ini. Tulis setelah eksekusi paper.
+        </p>
+<p class="font-body-sm text-[11px] text-[#9AA1A9] mono-num pt-1">
+          alasan: menunggu konfirmasi setup lolos filter radar.
+        </p>
+</section>
+</main>
+<!-- Tactical War-Room Lamp Floating Action Button (FAB) -->
+<!-- Singular elevated element with shadow-lg as required -->
+<div class="fixed bottom-16 right-4 z-50 max-w-[390px]">
+<button class="h-12 px-4 bg-primary-container text-[#101214] font-headline-sm font-bold text-sm tracking-wide rounded-[6px] shadow-lg flex items-center space-x-1.5 active:scale-95 transition-transform duration-100 hover:brightness-105 border border-primary-fixed" type="button">
+<span class="material-symbols-outlined text-[#101214] text-[18px] font-bold" data-icon="edit_note">edit_note</span>
+<span class="lowercase font-mono text-[13px] tracking-normal font-bold">+ tulis catatan</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar (Docked strictly to 390px, 'Lainnya' tab active as per instruction) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- 1. Beranda -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Beranda</span>
+</button>
+<!-- 2. Pasar -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined" data-icon="candlestick_chart">candlestick_chart</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Pasar</span>
+</button>
+<!-- 3. Berita -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined" data-icon="newspaper">newspaper</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Berita</span>
+</button>
+<!-- 4. Sistem -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Sistem</span>
+</button>
+<!-- 5. Lainnya (ACTIVE Destination according to specification) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-primary-container" data-icon="more_horiz">more_horiz</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5 text-primary-container font-bold">Lainnya</span>
+</button>
+</nav>
+</div>
+</body></html>

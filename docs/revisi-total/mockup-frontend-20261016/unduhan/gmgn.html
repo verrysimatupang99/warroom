@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - Meme Coin Scan</title>
+<!-- Material Symbols Outlined font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: IBM Plex Sans & IBM Plex Mono / Space Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with forms and container-queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "background": "#121416",
+            "surface-tint": "#fabc41",
+            "on-background": "#e2e2e5",
+            "on-secondary-container": "#005233",
+            "surface": "#121416",
+            "outline-variant": "#504535",
+            "on-primary-container": "#6a4a00",
+            "primary-fixed-dim": "#fabc41",
+            "on-tertiary-fixed": "#410006",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "on-tertiary-container": "#992027",
+            "surface-container-highest": "#333537",
+            "on-primary-fixed-variant": "#5e4200",
+            "on-primary": "#422d00",
+            "surface-bright": "#38393c",
+            "inverse-on-surface": "#2f3133",
+            "surface-container": "#1e2022",
+            "on-secondary": "#003822",
+            "primary": "#ffd999",
+            "on-error": "#690005",
+            "error-container": "#93000a",
+            "on-primary-fixed": "#271900",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "on-surface": "#e2e2e5",
+            "inverse-surface": "#e2e2e5",
+            "surface-dim": "#121416",
+            "surface-container-high": "#282a2c",
+            "secondary-fixed-dim": "#30e198",
+            "primary-container": "#f5b83d",
+            "on-secondary-fixed": "#002112",
+            "on-secondary-fixed-variant": "#005233",
+            "primary-fixed": "#ffdea8",
+            "tertiary-fixed": "#ffdad8",
+            "secondary": "#42eca3",
+            "secondary-container": "#00d089",
+            "on-error-container": "#ffdad6",
+            "outline": "#9c8f7b",
+            "error": "#ffb4ab",
+            "tertiary": "#ffd4d2",
+            "surface-container-lowest": "#0c0e10",
+            "inverse-primary": "#7c5800",
+            "on-surface-variant": "#d4c4ae",
+            "on-tertiary": "#68000f",
+            "surface-variant": "#333537",
+            "tertiary-container": "#ffadaa",
+            "surface-container-low": "#1a1c1e",
+            "secondary-fixed": "#59feb2"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-md": "0.75rem",
+            "space-xs": "0.25rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1rem"
+          },
+          "fontFamily": {
+            "body-md": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "stat-md": ["Space Mono"],
+            "headline-lg": ["IBM Plex Sans"],
+            "headline-md": ["IBM Plex Sans"],
+            "stat-lg": ["Space Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans"],
+            "stat-display": ["Space Mono"],
+            "micro-tag": ["Space Mono"],
+            "body-sm": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "body-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+            "stat-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+            "stat-md": ["14px", {"lineHeight": "18px", "fontWeight": "600"}],
+            "headline-lg": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-md": ["20px", {"lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600"}],
+            "stat-lg": ["18px", {"lineHeight": "24px", "fontWeight": "700"}],
+            "headline-sm": ["16px", {"lineHeight": "22px", "fontWeight": "600"}],
+            "body-lg": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+            "stat-display": ["26px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "micro-tag": ["10px", {"lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+            "body-sm": ["11px", {"lineHeight": "16px", "fontWeight": "400"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen selection:bg-primary-container selection:text-on-primary-container flex justify-center">
+<!-- Mobile Viewport Container 390px -->
+<div class="w-full max-w-[390px] min-h-screen bg-background border-x border-surface-container-highest flex flex-col relative pb-20">
+<!-- Top Status / Diagnostic Bar -->
+<div class="w-full bg-surface-container-lowest px-margin py-1.5 flex justify-between items-center border-b border-surface-container-highest">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase tracking-widest">FEED AKTIF</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant font-micro-tag text-micro-tag">
+<span class="text-outline">KLUSTER:</span>
+<span class="text-on-surface">SOL-JAKARTA-01</span>
+</div>
+</div>
+<!-- SHARED COMPONENT: TopAppBar (docked full-width top-0) -->
+<header class="flex justify-between items-center w-full px-space-md py-space-sm bg-surface-container border-b border-surface-container-highest z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
+<span class="text-headline-sm font-headline-sm font-bold tracking-wider uppercase text-on-surface">War Room</span>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded border border-surface-container-highest">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+<span class="font-micro-tag text-micro-tag text-primary">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Operational Eyebrow & Pipeline Breadcrumb -->
+<div class="px-margin pt-3 pb-2 flex justify-between items-center border-b border-surface-container-highest bg-surface-container-low">
+<div class="flex items-center gap-1.5">
+<span class="font-micro-tag text-micro-tag text-outline uppercase tracking-wider">PASAR / MEME COIN</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded border border-surface-container-highest">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">SUMBER:</span>
+<span class="font-micro-tag text-micro-tag text-primary-container font-bold">GMGN API</span>
+</div>
+</div>
+<!-- Filter Chips Row -->
+<div class="px-margin py-2.5 flex items-center gap-2 overflow-x-auto border-b border-surface-container-highest bg-background">
+<div class="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 bg-surface-container border border-primary-container rounded">
+<span class="font-micro-tag text-micro-tag text-primary-container uppercase">DURASI: &lt;1JAM</span>
+</div>
+<div class="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 bg-surface-container border border-surface-container-highest rounded">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">LIKUIDITAS: &gt;$15K</span>
+</div>
+<div class="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 bg-surface-container border border-secondary rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase">JIE BEGINNERS REMOVED</span>
+</div>
+</div>
+<!-- Canvas Scroll Area -->
+<main class="flex-1 px-margin py-3 space-y-3">
+<!-- Module 1: Diagnostic Status Banner -->
+<div class="bg-surface-container border border-surface-container-highest rounded p-space-md">
+<div class="flex justify-between items-start mb-2">
+<div>
+<div class="font-micro-tag text-micro-tag text-outline uppercase tracking-wider">STATUS PEMINDAI JALUR CEPAT</div>
+<div class="font-headline-sm text-headline-sm text-on-surface mt-0.5">GMGN Pump &amp; Raydium Sniffer</div>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low border border-secondary px-1.5 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase">TERUKUR</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 pt-2 border-t border-surface-container-highest">
+<div>
+<div class="font-micro-tag text-micro-tag text-outline uppercase">DIANALISIS</div>
+<div class="font-stat-md text-stat-md text-on-surface">142</div>
+<div class="font-micro-tag text-[9px] text-outline">solscan cluster</div>
+</div>
+<div>
+<div class="font-micro-tag text-micro-tag text-outline uppercase">LOLOS LP</div>
+<div class="font-stat-md text-stat-md text-on-surface">3</div>
+<div class="font-micro-tag text-[9px] text-secondary">2.1% lolos</div>
+</div>
+<div>
+<div class="font-micro-tag text-micro-tag text-outline uppercase">TERPAPAR RISIKO</div>
+<div class="font-stat-md text-stat-md text-error">139 ▼</div>
+<div class="font-micro-tag text-[9px] text-error">97.9% buang</div>
+</div>
+</div>
+</div>
+<!-- Module 2: Card 'Kandidat Terperiksa' (Checklist Card) -->
+<section class="bg-surface-container border border-surface-container-highest rounded p-space-md">
+<div class="flex justify-between items-center mb-2.5 pb-2 border-b border-surface-container-highest">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary-container text-[16px]">fact_check</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wide">Kandidat Terperiksa</h2>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low border border-secondary px-1.5 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase">TERUKUR</span>
+</div>
+</div>
+<div class="font-body-sm text-body-sm text-outline mb-2">
+          Protokol audit deterministik sebelum eksekusi modal dingin:
+        </div>
+<!-- Strict Text Glyphs Checklist -->
+<div class="space-y-1.5 bg-surface-container-low p-2 rounded border border-surface-container-highest">
+<div class="flex items-start gap-2">
+<span class="font-stat-sm text-stat-sm text-secondary font-bold select-none">[OK]</span>
+<div class="flex-1">
+<span class="font-body-md text-body-md text-on-surface">kontrak terverifikasi</span>
+<span class="font-micro-tag text-[9px] text-outline block">sumber: GMGN bytecode validator</span>
+</div>
+</div>
+<div class="flex items-start gap-2 border-t border-surface-container-highest pt-1.5">
+<span class="font-stat-sm text-stat-sm text-secondary font-bold select-none">[OK]</span>
+<div class="flex-1">
+<span class="font-body-md text-body-md text-on-surface">LP terkunci (burned / locked)</span>
+<span class="font-micro-tag text-[9px] text-outline block">sumber: raydium vault authority renounced</span>
+</div>
+</div>
+<div class="flex items-start gap-2 border-t border-surface-container-highest pt-1.5">
+<span class="font-stat-sm text-stat-sm text-secondary font-bold select-none">[OK]</span>
+<div class="flex-1">
+<span class="font-body-md text-body-md text-on-surface">holder terdistribusi (&gt;80% non-dev)</span>
+<span class="font-micro-tag text-[9px] text-secondary block">terukur: 84.2% non-dev cluster</span>
+</div>
+</div>
+<!-- Red Warning Row -->
+<div class="flex items-start gap-2 border-t border-surface-container-highest pt-1.5 bg-surface-container p-1 rounded border border-dashed border-error">
+<span class="font-stat-sm text-stat-sm text-error font-bold select-none">[!]</span>
+<div class="flex-1">
+<div class="flex items-center gap-1.5">
+<span class="font-body-md text-body-md text-error font-bold uppercase tracking-wide">hosting awal gelap!</span>
+<span class="font-micro-tag text-[9px] text-error font-bold">! RISIKO TINGGI</span>
+</div>
+<span class="font-micro-tag text-[9px] text-on-surface-variant block">alasan: IP cluster domain terdeteksi botnet sniper</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Module 3: List Rows (Meme Coin Tickers) -->
+<section class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<span class="font-micro-tag text-micro-tag text-outline uppercase tracking-wider">RADAR KANDIDAT AKTIF (GMGN)</span>
+<span class="font-micro-tag text-micro-tag text-primary-container">2 HASIL</span>
+</div>
+<!-- Candidate Row 1: Validated Signal Masuk -->
+<div class="bg-surface-container border border-surface-container-highest rounded p-space-md">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="font-stat-md text-stat-md font-bold text-on-surface tracking-wider">$KUCING</span>
+<span class="font-micro-tag text-micro-tag px-1.5 py-0.5 bg-surface-container-low border border-surface-container-highest text-outline rounded">SOL</span>
+</div>
+<!-- Signal Masuk Chip -->
+<div class="flex items-center gap-1 bg-surface-container-low border border-secondary px-2 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase font-bold">SIGNAL MASUK</span>
+</div>
+</div>
+<!-- Metrics Row -->
+<div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-surface-container-highest">
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">UMUR</span>
+<span class="font-stat-sm text-stat-sm text-on-surface">42m 18s</span>
+<span class="font-micro-tag text-[9px] text-outline block">GMGN API</span>
+</div>
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">LIKUIDITAS</span>
+<span class="font-stat-sm text-stat-sm text-secondary">$34,810</span>
+<span class="font-micro-tag text-[9px] text-secondary block">+18.4% ▲</span>
+</div>
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">HARGA</span>
+<span class="font-stat-sm text-stat-sm text-on-surface">$0.00341</span>
+<div class="flex items-center gap-0.5">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-[9px] text-secondary uppercase">TERUKUR</span>
+</div>
+</div>
+</div>
+<!-- Integrity Metric Bar -->
+<div class="mt-2.5 pt-2 border-t border-surface-container-highest flex justify-between items-center text-on-surface-variant">
+<span class="font-micro-tag text-micro-tag text-outline">SKOR FILTER: 94/100</span>
+<span class="font-micro-tag text-micro-tag text-secondary">DEV DILAPORKAN EXIT: 0%</span>
+</div>
+</div>
+<!-- Candidate Row 2: Unverified with absent data '—' -->
+<div class="bg-surface-container border border-surface-container-highest rounded p-space-md">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="font-stat-md text-stat-md font-bold text-on-surface tracking-wider">$GARUDA</span>
+<span class="font-micro-tag text-micro-tag px-1.5 py-0.5 bg-surface-container-low border border-surface-container-highest text-outline rounded">SOL</span>
+</div>
+<!-- Belum Terverifikasi Chip -->
+<div class="flex items-center gap-1 bg-surface-container-low border border-dashed border-error px-2 py-0.5 rounded">
+<span class="font-micro-tag text-micro-tag text-error uppercase font-bold">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<!-- Metrics Row with '-' and honest failure reason -->
+<div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-surface-container-highest">
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">UMUR</span>
+<span class="font-stat-sm text-stat-sm text-on-surface">11m 02s</span>
+<span class="font-micro-tag text-[9px] text-outline block">solscan cluster</span>
+</div>
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">LIKUIDITAS</span>
+<span class="font-stat-sm text-stat-sm text-on-surface">$16,240</span>
+<span class="font-micro-tag text-[9px] text-outline block">pool awal</span>
+</div>
+<div>
+<span class="font-micro-tag text-micro-tag text-outline uppercase block">HARGA</span>
+<span class="font-stat-sm text-stat-sm text-error font-bold">—</span>
+<span class="font-micro-tag text-[9px] text-error block">DATA TIDAK ADA</span>
+</div>
+</div>
+<!-- Honest Absence Line -->
+<div class="mt-2.5 pt-2 border-t border-surface-container-highest bg-surface-container-low px-2 py-1.5 rounded">
+<div class="font-micro-tag text-[10px] text-error font-medium">
+              alasan: pending quote verification (feed tertunda 2 siklus)
+            </div>
+<div class="font-micro-tag text-[9px] text-outline mt-0.5">
+              sumber pembanding: GMGN pool quote vs jupiter route
+            </div>
+</div>
+</div>
+</section>
+<!-- Module 4: Empty State Card (Contoh State Kosong) -->
+<section class="border border-dashed border-surface-container-highest bg-surface-container-lowest rounded p-space-md text-left">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-stat-sm text-outline select-none">[!]</span>
+<span class="font-micro-tag text-micro-tag text-outline uppercase tracking-wider">CONTOH STATE KOSONG</span>
+</div>
+<span class="font-micro-tag text-micro-tag text-outline">FILTER RADIKAL</span>
+</div>
+<div class="bg-surface-container p-2.5 rounded border border-surface-container-highest">
+<div class="font-headline-sm text-headline-sm text-on-surface mb-1">
+            Belum ada kandidat lolos filter.
+          </div>
+<div class="font-body-md text-body-md text-on-surface-variant">
+            Semua 24 token tersaring oleh filter likuiditas &amp; klaster sniper.
+          </div>
+<div class="mt-2 pt-2 border-t border-surface-container-highest font-micro-tag text-[10px] text-outline">
+            alasan: likuiditas di bawah ambang (&lt;$15,000) atau kepemilikan dompet sniper &gt;20%.
+          </div>
+</div>
+</section>
+<!-- Status Footer & Telemetry Sync -->
+<footer class="pt-2 pb-4 text-center">
+<div class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded border border-surface-container-highest">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span class="font-micro-tag text-micro-tag text-outline lowercase">
+            pemindaian berikutnya dalam 12 mnt
+          </span>
+</div>
+<div class="font-micro-tag text-[9px] text-outline mt-1.5 uppercase tracking-wider">
+          WAR ROOM CONSOLE • TELEMETRI DISIPLIN TINGGI
+        </div>
+</footer>
+</main>
+<!-- SHARED COMPONENT: BottomNavBar (Fixed docked full-width bottom-0) -->
+<!-- Active Destination determined autonomously: 'Pasar' (index 1) maps directly to PASAR / MEME COIN -->
+<nav aria-label="Navigasi Utama" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- 0: Beranda (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" href="#beranda">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px]">Beranda</span>
+</a>
+<!-- 1: Pasar (ACTIVE: Matches Pasar / Meme Coin scan) -->
+<a aria-current="page" class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" href="#pasar">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">candlestick_chart</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px] text-primary-container font-bold">Pasar</span>
+</a>
+<!-- 2: Berita (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" href="#berita">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px]">Berita</span>
+</a>
+<!-- 3: Sistem (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" href="#sistem">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px]">Sistem</span>
+</a>
+<!-- 4: Lainnya (Inactive) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 hover:text-on-surface active:scale-95 transition-transform duration-100" href="#lainnya">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+<span class="text-micro-tag font-micro-tag uppercase text-[10px]">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>

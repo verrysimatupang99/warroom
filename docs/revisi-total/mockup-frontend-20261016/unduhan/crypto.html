@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - Crypto</title>
+<!-- Google Fonts: Space Mono & IBM Plex Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#0c0e10",
+            "on-error-container": "#ffdad6",
+            "on-secondary-fixed": "#002112",
+            "surface-variant": "#333537",
+            "error": "#ff6b6b",
+            "on-primary-fixed": "#271900",
+            "surface-container-high": "#282a2c",
+            "surface-bright": "#38393c",
+            "primary-fixed-dim": "#fabc41",
+            "on-surface": "#e2e2e5",
+            "on-secondary-fixed-variant": "#005233",
+            "surface-dim": "#121416",
+            "on-tertiary-fixed": "#410006",
+            "on-background": "#e2e2e5",
+            "secondary": "#34e39a",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "secondary-fixed-dim": "#30e198",
+            "on-secondary-container": "#005233",
+            "on-surface-variant": "#9aa1a9",
+            "inverse-primary": "#7c5800",
+            "tertiary": "#ffd4d2",
+            "surface-tint": "#fabc41",
+            "inverse-surface": "#e2e2e5",
+            "primary-container": "#f5b83d",
+            "inverse-on-surface": "#2f3133",
+            "on-primary-container": "#6a4a00",
+            "secondary-fixed": "#59feb2",
+            "primary": "#ffd999",
+            "error-container": "#93000a",
+            "on-error": "#690005",
+            "tertiary-fixed": "#ffdad8",
+            "tertiary-container": "#ffadaa",
+            "surface-container-low": "#1a1c1e",
+            "on-secondary": "#003822",
+            "outline": "#2a2f36",
+            "on-tertiary-container": "#992027",
+            "on-tertiary": "#68000f",
+            "surface": "#101214",
+            "primary-fixed": "#ffdea8",
+            "background": "#101214",
+            "on-primary": "#422d00",
+            "outline-variant": "#333537",
+            "surface-container-highest": "#333537",
+            "on-primary-fixed-variant": "#5e4200",
+            "surface-container": "#17191c",
+            "secondary-container": "#00d089"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.375rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "1.5rem",
+            "space-lg": "1rem",
+            "gutter": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "margin": "1rem"
+          },
+          "fontFamily": {
+            "stat-md": ["Space Mono", "monospace"],
+            "micro-tag": ["Space Mono", "monospace"],
+            "headline-lg": ["IBM Plex Sans", "sans-serif"],
+            "body-lg": ["IBM Plex Sans", "sans-serif"],
+            "body-md": ["IBM Plex Sans", "sans-serif"],
+            "stat-sm": ["Space Mono", "monospace"],
+            "stat-display": ["Space Mono", "monospace"],
+            "stat-lg": ["Space Mono", "monospace"],
+            "headline-sm": ["IBM Plex Sans", "sans-serif"],
+            "headline-md": ["IBM Plex Sans", "sans-serif"],
+            "body-sm": ["IBM Plex Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #101214;
+      color: #E8EAED;
+      font-family: 'IBM Plex Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mobile Viewport Shell (390px baseline) -->
+<div class="relative w-full max-w-[390px] mx-auto min-h-screen bg-surface flex flex-col pb-20 border-x border-outline">
+<!-- 1. Top Bar / App Header (from Shared Component JSON + Custom Module) -->
+<header class="sticky top-0 z-40 bg-surface-container border-b border-outline px-space-md py-space-sm flex justify-between items-center w-full">
+<div class="flex items-center gap-2">
+<button aria-label="Terminal Navigation" class="flex items-center justify-center text-primary-container active:opacity-80 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</button>
+<div class="flex flex-col">
+<span class="font-micro-tag text-micro-tag uppercase text-on-surface-variant tracking-widest">PASAR / CRYPTO</span>
+<h1 class="font-headline-sm text-headline-sm font-bold text-on-surface leading-none mt-0.5">Crypto</h1>
+</div>
+</div>
+<div class="flex items-center">
+<div class="bg-surface-container-high px-2 py-1 rounded-[4px] border border-outline flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-on-surface-variant">07:45 WIB (12M)</span>
+</div>
+</div>
+</header>
+<!-- Main Content Container -->
+<main class="flex-1 px-margin pt-space-md space-y-space-md">
+<!-- 2. Measured Cost Card (Biaya Eksekusi Terukur) -->
+<section class="bg-surface-container border border-outline rounded-[6px] p-space-md">
+<div class="flex items-center justify-between pb-space-sm border-b border-outline mb-space-sm">
+<span class="font-micro-tag text-micro-tag uppercase text-on-surface-variant tracking-wider">BIAYA REALISASI</span>
+<!-- Terukur Tag -->
+<div class="flex items-center gap-1.5 px-1.5 py-0.5 bg-[#1D2126] border border-secondary rounded-[4px]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span>
+<span class="font-micro-tag text-[9px] uppercase text-secondary font-bold tracking-tight">TERUKUR · OKX L2</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="font-stat-md text-stat-md text-on-surface">
+            biaya fee+slippage: <span class="text-on-surface font-bold">BTC 10,0 bps</span> · <span class="text-on-surface font-bold">FET 11,9 bps</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Toleransi slippage aman &lt; 15,0 bps
+          </p>
+</div>
+</section>
+<!-- 3. Section Eyebrow & List: PAIR DIKAWAL -->
+<section>
+<div class="flex items-center justify-between mb-2">
+<h2 class="font-micro-tag text-micro-tag uppercase text-on-surface-variant tracking-wider">PAIR DIKAWAL</h2>
+<span class="font-micro-tag text-[9px] text-on-surface-variant uppercase">3 INSTRUMEN AKTIF</span>
+</div>
+<div class="bg-surface-container border border-outline rounded-[6px] divide-y divide-outline overflow-hidden">
+<!-- Row 1: BTC/USDT -->
+<article class="p-space-md space-y-2">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-stat-md text-stat-md text-on-surface font-bold">BTC/USDT</span>
+<span class="px-1.5 py-0.5 bg-surface-container-high border border-outline font-micro-tag text-[9px] text-secondary">MSS 15M AKTIF</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-stat-md text-stat-md text-on-surface-variant">—</span>
+<div class="border border-dashed border-error px-1 py-0.2 rounded-[2px]">
+<span class="font-micro-tag text-[8px] text-error uppercase">! BELUM TERVERIFIKASI / menunggu snapshot</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-stat-sm text-stat-sm text-secondary font-bold flex items-center justify-end gap-0.5">
+<span>▲</span>
+<span>+1,8% 24h</span>
+</div>
+<span class="font-micro-tag text-[9px] text-on-surface-variant tracking-tight">OKX L2</span>
+</div>
+</div>
+<!-- Track Bar Score -->
+<div class="space-y-1 pt-1">
+<div class="flex justify-between items-center font-micro-tag text-[9px] text-on-surface-variant">
+<span>SKOR SISTEM</span>
+<span class="font-stat-sm text-secondary font-bold">78/100</span>
+</div>
+<div class="w-full bg-[#101214] h-1.5 rounded-[2px] overflow-hidden border border-outline">
+<div class="bg-secondary h-full rounded-[1px]" style="width: 78%;"></div>
+</div>
+</div>
+</article>
+<!-- Row 2: ETH/USDT -->
+<article class="p-space-md space-y-2">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-stat-md text-stat-md text-on-surface font-bold">ETH/USDT</span>
+<span class="px-1.5 py-0.5 bg-surface-container-high border border-outline font-micro-tag text-[9px] text-error">BEARISH BREAKER</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-stat-md text-stat-md text-on-surface-variant">—</span>
+<div class="border border-dashed border-error px-1 py-0.2 rounded-[2px]">
+<span class="font-micro-tag text-[8px] text-error uppercase">! BELUM TERVERIFIKASI / menunggu snapshot</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-stat-sm text-stat-sm text-on-surface-variant font-bold flex items-center justify-end gap-0.5">
+<span>−</span>
+<span>0,0% 24h</span>
+</div>
+<span class="font-micro-tag text-[9px] text-error tracking-tight">belum lolos ambang 75</span>
+</div>
+</div>
+<!-- Track Bar Score -->
+<div class="space-y-1 pt-1">
+<div class="flex justify-between items-center font-micro-tag text-[9px] text-on-surface-variant">
+<span>SKOR SISTEM</span>
+<span class="font-stat-sm text-on-surface font-bold">62/100</span>
+</div>
+<div class="w-full bg-[#101214] h-1.5 rounded-[2px] overflow-hidden border border-outline">
+<div class="bg-on-surface-variant h-full rounded-[1px]" style="width: 62%;"></div>
+</div>
+</div>
+</article>
+<!-- Row 3: SOL/USDT -->
+<article class="p-space-md space-y-2">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-stat-md text-stat-md text-on-surface font-bold">SOL/USDT</span>
+<span class="px-1.5 py-0.5 bg-surface-container-high border border-outline font-micro-tag text-[9px] text-on-surface-variant">RANGE BOUND</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-stat-md text-stat-md text-on-surface-variant">—</span>
+<div class="border border-dashed border-error px-1 py-0.2 rounded-[2px]">
+<span class="font-micro-tag text-[8px] text-error uppercase">! BELUM TERVERIFIKASI / menunggu snapshot</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-stat-sm text-stat-sm text-error font-bold flex items-center justify-end gap-0.5">
+<span>▼</span>
+<span>-2,4% 24h</span>
+</div>
+<span class="font-micro-tag text-[9px] text-on-surface-variant tracking-tight">DEXSCREENER</span>
+</div>
+</div>
+<!-- Track Bar Score -->
+<div class="space-y-1 pt-1">
+<div class="flex justify-between items-center font-micro-tag text-[9px] text-on-surface-variant">
+<span>SKOR SISTEM</span>
+<span class="font-stat-sm text-on-surface font-bold">45/100</span>
+</div>
+<div class="w-full bg-[#101214] h-1.5 rounded-[2px] overflow-hidden border border-outline">
+<div class="bg-outline-variant h-full rounded-[1px]" style="width: 45%;"></div>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- 4. Section Eyebrow & Tactical Card: OVEREXTENDED -->
+<section>
+<h2 class="font-micro-tag text-micro-tag uppercase text-on-surface-variant tracking-wider mb-2">OVEREXTENDED</h2>
+<div class="bg-[#1D2126] border border-outline rounded-[6px] p-space-md space-y-2.5">
+<!-- Alert Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container border border-primary-container rounded-[4px]">
+<span class="font-stat-sm text-primary-container font-bold">!</span>
+<span class="font-micro-tag text-micro-tag uppercase text-primary-container tracking-wider">PERINGATAN RISIKO TEKNIKAL</span>
+</div>
+<span class="font-micro-tag text-[9px] text-on-surface-variant">TELEMETRI</span>
+</div>
+<!-- Reason Text -->
+<p class="font-body-md text-body-md text-on-surface font-medium leading-tight">
+            BTC menuah wilayah jenuh; tunggu konfirmasi
+          </p>
+<!-- Tactical Sub-Metrics -->
+<div class="grid grid-cols-2 gap-2 pt-1 border-t border-outline">
+<div class="bg-surface-container p-2 rounded-[4px] border border-outline">
+<div class="font-micro-tag text-[9px] text-on-surface-variant uppercase">REALIZED VOL ADR 14D</div>
+<div class="font-stat-sm text-stat-sm text-on-surface mt-0.5 font-bold">4,82% <span class="text-[10px] font-normal text-on-surface-variant">(NORMAL)</span></div>
+<div class="font-micro-tag text-[8px] text-primary-container mt-1 uppercase">WASPADA PENURUNAN</div>
+</div>
+<div class="bg-surface-container p-2 rounded-[4px] border border-outline">
+<div class="font-micro-tag text-[9px] text-on-surface-variant uppercase">ESTIMASI DRAWDOWN</div>
+<div class="font-stat-sm text-stat-sm text-error mt-0.5 font-bold flex items-center gap-1">
+<span>▼ !</span>
+<span>-1,4R</span>
+</div>
+<div class="font-micro-tag text-[8px] text-on-surface-variant mt-1 uppercase">AMBANG RISIKO MAKS</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Empty-State Variant Card -->
+<section>
+<h2 class="font-micro-tag text-micro-tag uppercase text-on-surface-variant tracking-wider mb-2">CONTOH STATE KOSONG</h2>
+<div class="bg-surface-container border border-dashed border-outline rounded-[6px] p-space-md text-center py-4">
+<div class="w-7 h-7 mx-auto mb-2 rounded-full bg-surface-container-high border border-outline flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">signal_cellular_nodata</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium">
+            Belum ada sinyal crypto.
+          </p>
+<p class="font-stat-sm text-[11px] text-on-surface-variant mt-1">
+            Alasan: skor di bawah ambang. Pemindaian berikutnya 08:00.
+          </p>
+</div>
+</section>
+<!-- 6. Source Footer Telemetry -->
+<footer class="pt-2 pb-6 text-center">
+<p class="font-micro-tag text-[10px] text-on-surface-variant tracking-wider">
+          GMGN · DexScreener · snapshot 07:45 WIB
+        </p>
+</footer>
+</main>
+<!-- 7. Docked Bottom Navigation (Shared Component JSON exact tokens) -->
+<!-- Active Destination: "Pasar" (Index 1) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest">
+<!-- Item 0: Beranda -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface" href="#beranda">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Beranda</span>
+</a>
+<!-- Item 1: Pasar (ACTIVE: text-primary-container / border-t-2 border-primary-container) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface" href="#pasar">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Pasar</span>
+</a>
+<!-- Item 2: Berita -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface" href="#berita">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Berita</span>
+</a>
+<!-- Item 3: Sistem -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface" href="#sistem">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Sistem</span>
+</a>
+<!-- Item 4: Lainnya -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface" href="#lainnya">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+<span class="font-micro-tag text-micro-tag uppercase mt-0.5">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>

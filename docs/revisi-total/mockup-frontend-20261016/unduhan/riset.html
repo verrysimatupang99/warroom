@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room - Riset &amp; Validasi Model</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-container": "#6a4a00",
+            "secondary-container": "#00d089",
+            "secondary-fixed": "#59feb2",
+            "on-primary-fixed": "#271900",
+            "background": "#101214",
+            "primary-fixed-dim": "#fabc41",
+            "surface-container-low": "#17191C",
+            "on-surface-variant": "#9AA1A9",
+            "error": "#ffb4ab",
+            "on-secondary-fixed-variant": "#005233",
+            "on-error-container": "#ffdad6",
+            "tertiary": "#ffd4d2",
+            "surface": "#101214",
+            "inverse-surface": "#e2e2e5",
+            "secondary-fixed-dim": "#30e198",
+            "outline-variant": "#2A2F36",
+            "on-tertiary": "#68000f",
+            "on-tertiary-fixed": "#410006",
+            "primary": "#ffd999",
+            "on-secondary-fixed": "#002112",
+            "surface-bright": "#38393c",
+            "tertiary-fixed-dim": "#ffb3b0",
+            "surface-container-lowest": "#0c0e10",
+            "surface-container": "#17191C",
+            "on-error": "#690005",
+            "inverse-primary": "#7c5800",
+            "surface-container-high": "#1D2126",
+            "on-primary-fixed-variant": "#5e4200",
+            "error-container": "#93000a",
+            "secondary": "#34E39A",
+            "tertiary-container": "#ffadaa",
+            "on-secondary": "#003822",
+            "surface-variant": "#2A2F36",
+            "primary-container": "#F5B83D",
+            "on-surface": "#E8EAED",
+            "on-secondary-container": "#005233",
+            "on-primary": "#422d00",
+            "tertiary-fixed": "#ffdad8",
+            "outline": "#9AA1A9",
+            "on-tertiary-container": "#992027",
+            "primary-fixed": "#ffdea8",
+            "inverse-on-surface": "#2f3133",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "surface-dim": "#101214",
+            "surface-container-highest": "#2A2F36",
+            "surface-tint": "#fabc41",
+            "on-background": "#E8EAED"
+          },
+          "borderRadius": {
+            "DEFAULT": "6px",
+            "lg": "6px",
+            "xl": "6px",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem",
+            "gutter": "0.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "0.75rem",
+            "margin": "1rem"
+          },
+          "fontFamily": {
+            "stat-display": ["IBM Plex Mono", "Space Mono", "monospace"],
+            "headline-sm": ["IBM Plex Sans", "sans-serif"],
+            "micro-tag": ["IBM Plex Mono", "monospace"],
+            "body-sm": ["IBM Plex Sans", "sans-serif"],
+            "stat-lg": ["IBM Plex Mono", "Space Mono", "monospace"],
+            "stat-sm": ["IBM Plex Mono", "monospace"],
+            "headline-lg": ["IBM Plex Sans", "sans-serif"],
+            "stat-md": ["IBM Plex Mono", "monospace"],
+            "body-lg": ["IBM Plex Sans", "sans-serif"],
+            "body-md": ["IBM Plex Sans", "sans-serif"],
+            "headline-md": ["IBM Plex Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "stat-display": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-sm": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "15px", "fontWeight": "400" }],
+            "stat-lg": ["16px", { "lineHeight": "22px", "fontWeight": "700" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "headline-lg": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "stat-md": ["13px", { "lineHeight": "17px", "fontWeight": "600" }],
+            "body-lg": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "body-md": ["12px", { "lineHeight": "17px", "fontWeight": "400" }],
+            "headline-md": ["17px", { "lineHeight": "22px", "letterSpacing": "-0.005em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased flex justify-center selection:bg-primary-container selection:text-background">
+<!-- Mobile Shell (390px Baseline Viewport) -->
+<main class="w-[390px] min-h-screen bg-background border-x border-surface-container-highest flex flex-col pb-20 relative">
+<!-- TopAppBar Component (from Shared Components JSON) -->
+<header class="flex justify-between items-center w-full px-space-md py-space-sm bg-surface-container border-b border-surface-container-highest sticky top-0 z-40">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
+<div class="flex flex-col">
+<span class="font-micro-tag text-micro-tag text-outline tracking-widest uppercase">ARSIP / RISET</span>
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Riset &amp; Validasi Model</h1>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 bg-surface-container-high border border-surface-container-highest rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block animate-pulse"></span>
+<span class="font-micro-tag text-micro-tag text-on-surface tracking-wider">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Operational Canvas -->
+<div class="flex flex-col px-space-md pt-space-md gap-space-md">
+<!-- Featured Flat Card: Tactical Focal Element (Audited Resolution 200) -->
+<section class="bg-surface-container border-l-2 border-l-primary-container border-y border-r border-surface-container-highest p-space-md rounded flex flex-col gap-space-sm relative">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span>
+<span class="font-micro-tag text-micro-tag text-primary-container uppercase tracking-widest">AUDIT RESOLUSI 200</span>
+</div>
+<!-- Honesty Tag -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-secondary rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase tracking-widest">TERUKUR</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold leading-snug">
+            Audit resolusi 200: 47 jendela peluang nyata, win-rate layak-dagang 14,8%
+          </h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Edge bersih pasca-komisi terkonfirmasi stabil pada regim volatilitas tinggi.
+          </p>
+</div>
+<!-- Telemetry Breakdown Box -->
+<div class="mt-1 pt-space-xs border-t border-surface-container-highest flex items-center justify-between">
+<span class="font-micro-tag text-micro-tag text-outline tracking-wider italic">
+            sumber: walk-forward backtest v2.4 (200 sampel)
+          </span>
+<span class="font-stat-sm text-stat-sm text-primary-container font-mono">
+            EXP: +0,41R
+          </span>
+</div>
+</section>
+<!-- Tactical Segmented Control / Filter Bar -->
+<section class="flex w-full bg-surface-container-lowest border border-surface-container-highest p-0.5 rounded">
+<button class="flex-1 py-1.5 px-2 text-center font-micro-tag text-micro-tag uppercase tracking-widest bg-surface-container-high border border-primary-container text-on-surface rounded">
+          SEMUA (6)
+        </button>
+<button class="flex-1 py-1.5 px-2 text-center font-micro-tag text-micro-tag uppercase tracking-widest text-outline hover:text-on-surface transition-colors">
+          TERVERIFIKASI (4)
+        </button>
+<button class="flex-1 py-1.5 px-2 text-center font-micro-tag text-micro-tag uppercase tracking-widest text-outline hover:text-on-surface transition-colors">
+          DALAM UJI (2)
+        </button>
+</section>
+<!-- Section Title & Inventory Sub-header -->
+<div class="flex items-center justify-between pt-1">
+<span class="font-micro-tag text-micro-tag uppercase tracking-widest text-outline">CATATAN RISET AKTIF</span>
+<span class="font-micro-tag text-micro-tag uppercase tracking-widest text-outline">FILTER: TERBARU</span>
+</div>
+<!-- Research Notes List (Hairline-segmented rows, minimum 48px tap targets) -->
+<div class="flex flex-col border border-surface-container-highest rounded overflow-hidden divide-y divide-surface-container-highest bg-surface-container">
+<!-- Row 1: IDX Pre-Closing -->
+<article class="p-space-md hover:bg-surface-container-high transition-colors flex flex-col gap-space-xs cursor-pointer">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-[13px] leading-snug text-on-surface font-medium flex-1">
+              Uji Validasi Walk-Forward Anomali Pre-Closing IDX (BSJP)
+            </h3>
+<!-- Honesty Tag: TERUKUR -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-secondary rounded shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase tracking-widest">TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline mt-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-[11px] text-outline">2026-10-07</span>
+<span class="text-surface-container-highest">•</span>
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">walk-forward</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">BSJP</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">edge</span>
+</div>
+</div>
+<!-- Metric -->
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">EDGE:</span>
+<span class="font-stat-md text-stat-md text-secondary font-mono">+0,86% ▲</span>
+</div>
+</div>
+<div class="font-micro-tag text-[9px] text-outline italic">
+            sumber: tick-data IDX level-2 snapshot (n=412)
+          </div>
+</article>
+<!-- Row 2: Meteora DLMM -->
+<article class="p-space-md hover:bg-surface-container-high transition-colors flex flex-col gap-space-xs cursor-pointer">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-[13px] leading-snug text-on-surface font-medium flex-1">
+              Meteora DLMM SOL/USDC Bin Concentration &amp; Impermanent Loss
+            </h3>
+<!-- Honesty Tag: TERUKUR -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-secondary rounded shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-micro-tag text-micro-tag text-secondary uppercase tracking-widest">TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline mt-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-[11px] text-outline">2026-10-07</span>
+<span class="text-surface-container-highest">•</span>
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">LP</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">edge</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">walk-forward</span>
+</div>
+</div>
+<!-- Metric -->
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">FEE APR:</span>
+<span class="font-stat-md text-stat-md text-secondary font-mono">+112,4% ▲</span>
+</div>
+</div>
+<div class="font-micro-tag text-[9px] text-outline italic">
+            sumber: RPC Solana on-chain sub-second logs
+          </div>
+</article>
+<!-- Row 3: Polymarket CPI Skew -->
+<article class="p-space-md hover:bg-surface-container-high transition-colors flex flex-col gap-space-xs cursor-pointer">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-[13px] leading-snug text-on-surface font-medium flex-1">
+              Polymarket Implied Probability Skew vs US CPI Expectation
+            </h3>
+<!-- Honesty Tag: BELUM TERVERIFIKASI -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-dashed border-primary-container rounded shrink-0">
+<span class="font-micro-tag text-micro-tag text-primary-container font-mono font-bold">!</span>
+<span class="font-micro-tag text-micro-tag text-primary-container uppercase tracking-widest">BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline mt-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-[11px] text-outline">2026-10-07</span>
+<span class="text-surface-container-highest">•</span>
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">Polymarket</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">edge</span>
+</div>
+</div>
+<!-- Metric -->
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">FAVORIT:</span>
+<span class="font-stat-md text-stat-md text-primary-container font-mono">+4,2%</span>
+</div>
+</div>
+<!-- Reason Underneath -->
+<div class="font-micro-tag text-[9px] text-outline italic text-primary-container/80">
+            alasan: likuiditas orderbook tipis saat sesi malam, slippage di atas ambang 0,2%.
+          </div>
+</article>
+<!-- Row 4: Absent Data Test 1 (GMGN Cluster) -->
+<article class="p-space-md hover:bg-surface-container-high transition-colors flex flex-col gap-space-xs cursor-pointer">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-[13px] leading-snug text-on-surface font-medium flex-1">
+              Evaluasi Breakout Momentum Crypto Low-Cap (GMGN Cluster)
+            </h3>
+<!-- Honesty Tag: BELUM TERVERIFIKASI -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-dashed border-error rounded shrink-0">
+<span class="font-micro-tag text-micro-tag text-error font-mono font-bold">!</span>
+<span class="font-micro-tag text-micro-tag text-error uppercase tracking-widest">BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline mt-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-[11px] text-outline">2026-10-07</span>
+<span class="text-surface-container-highest">•</span>
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">Meme</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">walk-forward</span>
+</div>
+</div>
+<!-- Absent Metric Strictly '—' -->
+<div class="flex items-center gap-1">
+<span class="font-stat-md text-stat-md text-outline font-mono">—</span>
+<span class="font-micro-tag text-[9px] text-outline">| hasil belum dihitung ulang</span>
+</div>
+</div>
+<!-- Mandatory Absent Reason -->
+<div class="font-micro-tag text-[9px] text-outline italic">
+            alasan: antrean prosesor data historical belum selesai dieksekusi node klaster.
+          </div>
+</article>
+<!-- Row 5: Absent Data Test 2 (Forex Overlap) -->
+<article class="p-space-md hover:bg-surface-container-high transition-colors flex flex-col gap-space-xs cursor-pointer">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-[13px] leading-snug text-on-surface font-medium flex-1">
+              Forex London-NY Overlap Volatility &amp; Spread Decay Model
+            </h3>
+<!-- Honesty Tag: BELUM TERVERIFIKASI -->
+<div class="flex items-center gap-1 px-1.5 py-0.5 bg-surface-container-high border border-dashed border-error rounded shrink-0">
+<span class="font-micro-tag text-micro-tag text-error font-mono font-bold">!</span>
+<span class="font-micro-tag text-micro-tag text-error uppercase tracking-widest">BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-outline mt-0.5">
+<div class="flex items-center gap-1.5">
+<span class="font-stat-sm text-[11px] text-outline">2026-10-07</span>
+<span class="text-surface-container-highest">•</span>
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">Forex</span>
+<span class="font-micro-tag text-[9px] px-1 py-0.2 bg-surface-container-high border border-surface-container-highest text-outline rounded">edge</span>
+</div>
+</div>
+<!-- Absent Metric Strictly '—' -->
+<div class="flex items-center gap-1">
+<span class="font-micro-tag text-micro-tag text-outline uppercase">HASIL:</span>
+<span class="font-stat-md text-stat-md text-outline font-mono">—</span>
+</div>
+</div>
+<!-- Mandatory Absent Reason -->
+<div class="font-micro-tag text-[9px] text-outline italic">
+            alasan: sampel trades n=18 masih di bawah batas minimal validitas n=50.
+          </div>
+</article>
+</div>
+<!-- System Protocol Banner / Footer Note -->
+<footer class="bg-surface-container-lowest border border-surface-container-highest p-space-sm rounded mb-4 flex items-start gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] shrink-0 mt-0.5">shield</span>
+<p class="font-micro-tag text-[9px] leading-relaxed text-outline uppercase tracking-wider">
+<strong class="text-on-surface font-bold">DISIPLIN RISET:</strong> Seluruh parameter model wajib lolos walk-forward matrix sebelum diizinkan ke meja eksekusi.
+        </p>
+</footer>
+</div>
+<!-- BottomNavBar Component (from Shared Components JSON) -->
+<!-- Screen 'Riset' maps to JSON item 'Lainnya' as the active destination -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-surface-container max-w-[390px] mx-auto border-t border-surface-container-highest" style="left: 50%; transform: translateX(-50%);">
+<!-- Beranda (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-micro-tag text-micro-tag uppercase text-[9px]">Beranda</span>
+</button>
+<!-- Pasar (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="font-micro-tag text-micro-tag uppercase text-[9px]">Pasar</span>
+</button>
+<!-- Berita (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface">
+<span class="material-symbols-outlined text-[20px]">newspaper</span>
+<span class="font-micro-tag text-micro-tag uppercase text-[9px]">Berita</span>
+</button>
+<!-- Sistem (Inactive) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-outline pt-1 active:scale-95 transition-transform duration-100 hover:text-on-surface">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="font-micro-tag text-micro-tag uppercase text-[9px]">Sistem</span>
+</button>
+<!-- Lainnya (Active: Riset resides in More/Archive suite) -->
+<button class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-primary-container border-t-2 border-primary-container pt-1 active:scale-95 transition-transform duration-100">
+<span class="material-symbols-outlined text-[20px] text-primary-container">more_horiz</span>
+<span class="font-micro-tag text-micro-tag uppercase text-[9px] text-primary-container font-bold">Lainnya</span>
+</button>
+</nav>
+</main>
+</body></html>

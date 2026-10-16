@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>War Room Mobile - Berita</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed-dim": "#ffb3b0",
+            "surface-variant": "#333537",
+            "on-surface-variant": "#d4c4ae",
+            "error": "#ffb4ab",
+            "surface-tint": "#fabc41",
+            "tertiary-fixed": "#ffdad8",
+            "surface": "#121416",
+            "on-primary-fixed-variant": "#5e4200",
+            "primary-fixed": "#ffdea8",
+            "on-background": "#e2e2e5",
+            "secondary-fixed-dim": "#30e198",
+            "on-secondary-container": "#005233",
+            "secondary-container": "#00d089",
+            "on-secondary-fixed-variant": "#005233",
+            "on-error-container": "#ffdad6",
+            "on-secondary": "#003822",
+            "tertiary": "#ffd4d2",
+            "surface-container-high": "#282a2c",
+            "error-container": "#93000a",
+            "primary": "#ffd999",
+            "surface-container-lowest": "#0c0e10",
+            "outline": "#9c8f7b",
+            "on-tertiary-fixed": "#410006",
+            "surface-dim": "#121416",
+            "outline-variant": "#504535",
+            "on-tertiary-fixed-variant": "#8c1520",
+            "inverse-primary": "#7c5800",
+            "surface-container-low": "#1a1c1e",
+            "primary-container": "#f5b83d",
+            "on-primary": "#422d00",
+            "secondary": "#42eca3",
+            "on-tertiary": "#68000f",
+            "on-surface": "#e2e2e5",
+            "on-primary-fixed": "#271900",
+            "surface-container-highest": "#333537",
+            "on-tertiary-container": "#992027",
+            "surface-bright": "#38393c",
+            "on-secondary-fixed": "#002112",
+            "on-error": "#690005",
+            "surface-container": "#1e2022",
+            "tertiary-container": "#ffadaa",
+            "primary-fixed-dim": "#fabc41",
+            "inverse-surface": "#e2e2e5",
+            "on-primary-container": "#6a4a00",
+            "secondary-fixed": "#59feb2",
+            "inverse-on-surface": "#2f3133",
+            "background": "#121416"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "gutter": "0.5rem",
+            "margin": "1rem",
+            "space-xl": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem"
+          },
+          "fontFamily": {
+            "headline-md": ["IBM Plex Sans"],
+            "micro-tag": ["Space Mono"],
+            "headline-lg": ["IBM Plex Sans"],
+            "stat-md": ["Space Mono"],
+            "body-sm": ["IBM Plex Sans"],
+            "stat-lg": ["Space Mono"],
+            "stat-display": ["Space Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans"],
+            "stat-sm": ["Space Mono"],
+            "body-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "micro-tag": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "stat-md": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+            "body-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "stat-lg": ["18px", { "lineHeight": "24px", "fontWeight": "700" }],
+            "stat-display": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "stat-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #101214;
+      color: #E8EAED;
+      font-family: 'IBM Plex Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-border {
+      border: 1px solid #2A2F36;
+    }
+    .mono-num {
+      font-family: 'IBM Plex Mono', 'Space Mono', monospace;
+    }
+    .surface-card {
+      background-color: #17191C;
+    }
+    .surface-nested {
+      background-color: #1D2126;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#101214] text-[#E8EAED] antialiased min-h-screen flex justify-center selection:bg-[#F5B83D] selection:text-[#101214]">
+<!-- Mobile Viewport Container 390px -->
+<div class="w-full max-w-[390px] min-h-screen flex flex-col bg-[#101214] border-x border-[#2A2F36] relative pb-20">
+<!-- Top Navigation Header (Shared Component: TopAppBar docked full-width) -->
+<header class="sticky top-0 z-40 bg-[#17191C] border-b border-[#2A2F36] px-space-md py-space-sm flex justify-between items-center w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#F5B83D] text-[18px]">terminal</span>
+<div class="flex flex-col">
+<span class="text-micro-tag font-micro-tag text-[#9AA1A9] uppercase tracking-wider">PANGGILAN / BERITA</span>
+<h1 class="text-headline-sm font-headline-sm text-[#E8EAED] leading-tight font-semibold">Berita &amp; Intel Pasar</h1>
+</div>
+</div>
+<div class="flex items-center gap-1.5 bg-[#1D2126] border border-[#2A2F36] px-2 py-1 rounded-[4px]">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[10px] font-mono font-medium text-[#E8EAED] tracking-wider uppercase">07:45 WIB (12M)</span>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 px-space-md pt-3 flex flex-col gap-3">
+<!-- Focal Alert Banner / Highlight Row (War-Room Amber Accent Lamp) -->
+<section class="surface-nested border border-[#F5B83D] rounded-[6px] p-3 shadow-none flex flex-col gap-2 relative overflow-hidden">
+<!-- Accent line bar indicator -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[#F5B83D]">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="text-micro-tag font-micro-tag uppercase tracking-wider text-[#F5B83D]">! BERDAMPAK TINGGI: IDX</span>
+</div>
+<div class="flex items-center gap-1 bg-[#101214] border border-[#34E39A] px-1.5 py-0.5 rounded-[3px]">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono text-[#34E39A] tracking-wider uppercase">TERUKUR</span>
+</div>
+</div>
+<!-- Headline (Strictly 2 lines) -->
+<h2 class="text-[13px] leading-[18px] font-semibold text-[#E8EAED] line-clamp-2">
+          Bank Indonesia Pertahankan BI-Rate 6,00%, Tekanan Likuiditas Valas Terpantau Mereda
+        </h2>
+<!-- Metadata Row -->
+<div class="text-[10px] font-mono text-[#9AA1A9] flex items-center justify-between border-t border-[#2A2F36] pt-2">
+<span>sumber: Bank Indonesia Official · 07:42 WIB</span>
+<span class="text-[#E8EAED] font-mono text-[9px] bg-[#101214] px-1 rounded border border-[#2A2F36]">S-GRADE</span>
+</div>
+<!-- Market Impact Note Container -->
+<div class="bg-[#101214] border border-[#2A2F36] p-2 rounded-[4px] flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono text-[#9AA1A9] uppercase">RELASI PASAR:</span>
+<span class="text-[10px] font-mono text-[#E8EAED] bg-[#17191C] px-1.5 py-0.5 border border-[#2A2F36] rounded-[3px]">IDX (Saham)</span>
+</div>
+<div class="text-[11px] text-[#E8EAED] flex items-start gap-1">
+<span class="text-[#9AA1A9] font-mono text-[10px] shrink-0">DAMPAK:</span>
+<span class="text-[#E8EAED] font-normal leading-tight">Volatilitas Perbankan (BBCA, BBRI)</span>
+</div>
+</div>
+</section>
+<!-- Grouped Feed: 07:45 WIB -->
+<section class="flex flex-col gap-2 mt-1">
+<!-- Group Header -->
+<div class="flex items-center gap-2">
+<span class="text-micro-tag font-micro-tag text-[#9AA1A9] uppercase tracking-wider font-semibold">07:45 WIB</span>
+<div class="h-[1px] flex-1 bg-[#2A2F36]"></div>
+</div>
+<!-- Feed Item 1: The Fed -->
+<article class="surface-card border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono uppercase bg-[#1D2126] border border-[#2A2F36] text-[#E8EAED] px-1.5 py-0.5 rounded-[3px]">Macro / Forex</span>
+<span class="text-[10px] font-mono text-[#9AA1A9]">· 07:44 WIB</span>
+</div>
+<!-- Honesty Tag -->
+<div class="flex items-center gap-1 bg-[#101214] border border-[#34E39A] px-1.5 py-0.5 rounded-[3px] shrink-0">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono text-[#34E39A] tracking-wider uppercase">TERUKUR</span>
+</div>
+</div>
+<h3 class="text-[12px] leading-[17px] font-medium text-[#E8EAED] line-clamp-2">
+            Ketua The Fed Tegaskan Jalur Pemangkasan Suku Bunga Bertahap Tanpa Panik
+          </h3>
+<div class="bg-[#1D2126] border border-[#2A2F36] p-1.5 rounded-[4px] flex items-baseline gap-1 text-[11px]">
+<span class="text-[9px] font-mono text-[#9AA1A9] uppercase tracking-wider shrink-0">EDGE:</span>
+<span class="text-[#E8EAED] text-[11px] leading-tight">Dampak netral terhadap yield spread, toleransi risiko terjaga.</span>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9]">
+            sumber: Reuters Feed
+          </div>
+</article>
+<!-- Feed Item 2: ETF Spot Bitcoin -->
+<article class="surface-card border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono uppercase bg-[#1D2126] border border-[#2A2F36] text-[#E8EAED] px-1.5 py-0.5 rounded-[3px]">Crypto</span>
+<span class="text-[10px] font-mono text-[#9AA1A9]">· 07:40 WIB</span>
+</div>
+<!-- Honesty Tag -->
+<div class="flex items-center gap-1 bg-[#101214] border border-[#34E39A] px-1.5 py-0.5 rounded-[3px] shrink-0">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono text-[#34E39A] tracking-wider uppercase">TERUKUR</span>
+</div>
+</div>
+<h3 class="text-[12px] leading-[17px] font-medium text-[#E8EAED] line-clamp-2">
+            Arus Keluar Modal ETF Spot Bitcoin Melambat Jelang Penutupan Pasar Derivatif Mingguan
+          </h3>
+<!-- Strict Honesty Metric Representation: "—" -->
+<div class="bg-[#1D2126] border border-[#2A2F36] p-2 rounded-[4px] flex flex-col gap-0.5">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-[#9AA1A9] uppercase text-[10px]">NET FLOW:</span>
+<span class="text-[#E8EAED] font-semibold tracking-wider">—</span>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9] italic">
+              alasan: data kliring belum dipublikasikan, estimasi 08:30 WIB
+            </div>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9]">
+            sumber: Farside Investors
+          </div>
+</article>
+</section>
+<!-- Grouped Feed: 07:00 WIB -->
+<section class="flex flex-col gap-2 mt-1">
+<!-- Group Header -->
+<div class="flex items-center gap-2">
+<span class="text-micro-tag font-micro-tag text-[#9AA1A9] uppercase tracking-wider font-semibold">07:00 WIB</span>
+<div class="h-[1px] flex-1 bg-[#2A2F36]"></div>
+</div>
+<!-- Feed Item 3: Polymarket (Unverified Risk) -->
+<article class="surface-card border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono uppercase bg-[#1D2126] border border-[#2A2F36] text-[#E8EAED] px-1.5 py-0.5 rounded-[3px]">Polymarket</span>
+<span class="text-[10px] font-mono text-[#9AA1A9]">· 07:15 WIB</span>
+</div>
+<!-- Honesty Tag: BELUM TERVERIFIKASI -->
+<div class="flex items-center gap-1 bg-[#17191C] border border-dashed border-[#FF6B6B] px-1.5 py-0.5 rounded-[3px] shrink-0">
+<span class="text-[9px] font-mono text-[#FF6B6B] tracking-wider uppercase font-semibold">! BELUM TERVERIFIKASI</span>
+</div>
+</div>
+<h3 class="text-[12px] leading-[17px] font-medium text-[#E8EAED] line-clamp-2">
+            Peluang Pelonggaran Kebijakan Moneter Global Menguat di Pasar Taruhan Polymarket
+          </h3>
+<div class="bg-[#1D2126] border border-[#2A2F36] p-2 rounded-[4px] flex flex-col gap-0.5">
+<div class="flex items-start gap-1">
+<span class="text-[#FF6B6B] font-mono text-[10px] font-bold">!</span>
+<span class="text-[10px] font-mono text-[#9AA1A9] uppercase tracking-wider">INTEGRITAS DATA:</span>
+</div>
+<p class="text-[11px] text-[#E8EAED] leading-tight">
+              Likuiditas kontrak tipis (&lt; $20k), risiko manipulasi harga lokal.
+            </p>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9]">
+            sumber: Polymarket CLOB RSS
+          </div>
+</article>
+<!-- Feed Item 4: IDXNet Audit -->
+<article class="surface-card border border-[#2A2F36] rounded-[6px] p-2.5 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono uppercase bg-[#1D2126] border border-[#2A2F36] text-[#E8EAED] px-1.5 py-0.5 rounded-[3px]">IDX</span>
+<span class="text-[10px] font-mono text-[#9AA1A9]">· 07:05 WIB</span>
+</div>
+<!-- Honesty Tag -->
+<div class="flex items-center gap-1 bg-[#101214] border border-[#34E39A] px-1.5 py-0.5 rounded-[3px] shrink-0">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-[#34E39A]"></span>
+<span class="text-[9px] font-mono text-[#34E39A] tracking-wider uppercase">TERUKUR</span>
+</div>
+</div>
+<h3 class="text-[12px] leading-[17px] font-medium text-[#E8EAED] line-clamp-2">
+            Pemeriksaan Audit Laporan Keuangan Kuartal Emiten Sektor Energi dan Petrokimia
+          </h3>
+<!-- Strict Honesty Metric: Kandidat BSJP "—" -->
+<div class="bg-[#1D2126] border border-[#2A2F36] p-2 rounded-[4px] flex flex-col gap-0.5">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-[#9AA1A9] uppercase text-[10px]">KANDIDAT BSJP:</span>
+<span class="text-[#E8EAED] font-semibold tracking-wider">—</span>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9] italic">
+              alasan: menunggu konfirmasi volume pre-closing 15:50 WIB
+            </div>
+</div>
+<div class="text-[10px] font-mono text-[#9AA1A9]">
+            sumber: IDXNet KPEI Direct
+          </div>
+</article>
+</section>
+<!-- Empty-State Ghost Card (Planar Telemetry Box) -->
+<section class="border border-dashed border-[#2A2F36] bg-[#17191C] rounded-[6px] p-3 flex flex-col gap-1.5 my-1">
+<div class="flex items-center gap-1.5 text-[#9AA1A9]">
+<span class="material-symbols-outlined text-[16px]">sync_disabled</span>
+<h4 class="text-[11px] font-mono font-semibold uppercase text-[#E8EAED]">
+            Tidak ada berita baru sejak snapshot 07:45
+          </h4>
+</div>
+<p class="text-[11px] text-[#9AA1A9] leading-relaxed">
+          Sumber dicek tiap siklus (12 menit). Feed terhenti otomatis jika latensi transmisi &gt; 15 detik untuk menjaga kemurnian data.
+        </p>
+<div class="pt-1.5 border-t border-[#2A2F36] flex items-center justify-between">
+<span class="text-[9px] font-mono text-[#9AA1A9]">GATEWAY: OKX, Reuters, IDXNet, Polymarket</span>
+<span class="text-[9px] font-mono text-[#34E39A] uppercase tracking-wider font-semibold">ONLINE</span>
+</div>
+</section>
+<!-- System Convention Footer Note -->
+<footer class="py-3 px-1 text-center">
+<p class="text-[10px] font-mono text-[#9AA1A9] uppercase tracking-wider leading-normal">
+          KONVENSI SISTEM: SEL KOSONG MENAMPILKAN TANDA '—' DISERTAI ALASAN. TIDAK MENGGUNAKAN INTERPOLASI STATISTIK ATAU LOREM.
+        </p>
+</footer>
+</main>
+<!-- Bottom Navigation Bar (Shared Component: BottomNavBar docked full-width) -->
+<!-- Destination count 5: Beranda, Pasar, Berita, Sistem, Lainnya. Active item is Berita -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-14 bg-[#17191C] max-w-[390px] mx-auto border-t border-[#2A2F36]">
+<!-- 1: Beranda -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] active:scale-95 transition-transform duration-100 pt-1" href="#beranda">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="text-[10px] font-mono uppercase tracking-wider mt-0.5">Beranda</span>
+</a>
+<!-- 2: Pasar -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] active:scale-95 transition-transform duration-100 pt-1" href="#pasar">
+<span class="material-symbols-outlined text-[20px]">candlestick_chart</span>
+<span class="text-[10px] font-mono uppercase tracking-wider mt-0.5">Pasar</span>
+</a>
+<!-- 3: Berita (ACTIVE ITEM - AMBER ACCENT LAMP) -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#F5B83D] border-t-2 border-[#F5B83D] pt-1 active:scale-95 transition-transform duration-100" href="#berita">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">newspaper</span>
+<span class="text-[10px] font-mono uppercase tracking-wider mt-0.5 font-bold text-[#F5B83D]">Berita</span>
+</a>
+<!-- 4: Sistem -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] active:scale-95 transition-transform duration-100 pt-1" href="#sistem">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span class="text-[10px] font-mono uppercase tracking-wider mt-0.5">Sistem</span>
+</a>
+<!-- 5: Lainnya -->
+<a class="flex flex-col items-center justify-center min-h-[44px] min-w-[44px] text-[#9AA1A9] hover:text-[#E8EAED] active:scale-95 transition-transform duration-100 pt-1" href="#lainnya">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+<span class="text-[10px] font-mono uppercase tracking-wider mt-0.5">Lainnya</span>
+</a>
+</nav>
+</div>
+</body></html>
