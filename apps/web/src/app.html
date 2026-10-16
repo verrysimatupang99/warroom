@@ -7,13 +7,8 @@
 		<meta name="color-scheme" content="dark" />
 		<title>War Room</title>
 
-		<!-- Font dimuat SUNGGUHAN: Space Grotesk (judul), Inter (teks), JetBrains Mono (angka). -->
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-			rel="stylesheet"
-		/>
+		<!-- Font: IBM Plex Sans + Mono — di-bundle via @fontsource (app.css), bukan CDN.
+		     Tidak ada unduhan font dari domain eksternal → CSP nonce + audit token aman. -->
 
 		%sveltekit.head%
 	</head>
@@ -44,10 +39,10 @@
 				   mustahil, bukan sekadar diperbaiki sekali. */
 				body:has(#konten) #shell-muat { display: none !important; }
 				#shell-muat {
-					--shell-bg: #0b0f14; --shell-line: #1e2833; --shell-tinta: #e6edf3;
-					--shell-mint: #34e39a; --shell-redup: #7d8b99;
+					--shell-bg: #101214; --shell-line: #2a2f36; --shell-tinta: #e6edf3;
+					--shell-mint: #f5b83d; --shell-redup: #7d8b99;
 					background: var(--shell-bg); color: var(--shell-tinta);
-					font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+					font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 					min-height: 100vh; padding: 1.5rem 1rem;
 				}
 				#shell-muat .shell-bar { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 1.25rem; }
@@ -56,12 +51,11 @@
 				#shell-muat .shell-tag { font-size: 0.7rem; color: var(--shell-redup); letter-spacing: 0.08em; text-transform: uppercase; }
 				#shell-muat .shell-isi { display: flex; flex-direction: column; gap: 0.75rem; max-width: 62rem; margin: 0 auto; }
 				#shell-muat .shell-blok {
-					height: 5rem; border: 1px solid var(--shell-line); border-radius: 0.9rem;
-					background: linear-gradient(90deg, #121a22 25%, #18222c 50%, #121a22 75%);
-					background-size: 200% 100%; animation: shell-denyut 1.4s ease-in-out infinite;
+					height: 5rem; border: 1px solid var(--shell-line); border-radius: 6px;
+					background: var(--shell-line); animation: shell-denyut 1.4s ease-in-out infinite;
 				}
 				#shell-muat .shell-blok.pendek { height: 2.5rem; }
-				@keyframes shell-denyut { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+				@keyframes shell-denyut { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 				@media (prefers-reduced-motion: reduce) { #shell-muat .shell-blok { animation: none; } }
 			</style>
 			%sveltekit.body%
