@@ -416,12 +416,10 @@ function pilihSub(s: string) {
 			{@const faktaPolyAlt = konteks.faktaPolyAlt}
 			{@const polyAltObj = konteks.polyAltObj}
 			{@const faktaPosisi = konteks.faktaPosisi}
-			{@const faktaKandidat = temukanFakta(data.facts, 'kandidat')}
 			{@const faktaRisiko = temukanFakta(data.facts, kunci === 'crypto' ? 'risiko' : `${kunci}_risiko`) ?? temukanFakta(data.facts, 'risiko')}
 			{@const faktaEquity = temukanFakta(data.facts, kunci === 'crypto' ? 'equity' : `${kunci}_equity`) ?? temukanFakta(data.facts, 'equity')}
 			{@const faktaLedger = temukanFakta(data.facts, kunci === 'crypto' ? 'ledger' : `${kunci}_ledger`) ?? temukanFakta(data.facts, 'ledger')}
 			{@const faktaVerdict = temukanFakta(data.facts, 'verdict')}
-			{@const faktaPolyPaper = temukanFakta(data.facts, 'poly_paper')}
 			{@const datasetRecorder = temukanFakta(data.facts, 'recorder')}
 			{@const datasetCakupan = temukanFakta(data.facts, 'cakupan')}
 			{@const faktaRadar = temukanFakta(data.facts, 'radar')}
@@ -461,7 +459,6 @@ function pilihSub(s: string) {
 			<!-- Narasi LLM per market (job llm-brief-<market>, kind ai.brief). Hanya ada bila
 			     provider benar-benar menjawab; status/gagal pun ditampilkan apa adanya. -->
 			{@const narasiObj = (data.facts.find((f) => f.kind === 'ai.brief' && f.key === kunci)?.value as any) ?? null}
-			{@const akurasiCrypto = (pasarAkurasiObj?.pasar?.crypto as any) ?? null}
 			{@const akurasiForex = (pasarAkurasiObj?.pasar?.forex as any) ?? null}
 			{@const akurasiGmgn = (pasarAkurasiObj?.pasar?.gmgn as any) ?? null}
 			{@const akurasiPoly = (pasarAkurasiObj?.pasar?.polymarket as any) ?? null}
@@ -470,27 +467,10 @@ function pilihSub(s: string) {
 				const v = verdictSemua.find((x) => x.pasar === mk) as any;
 				return (v?.detail?.bukti?.setup_dikarantina as Record<string, any>) ?? {};
 			}}
-			{@const tandaiKarantina = (blok: any, mk: string): any => {
-				if (!blok?.per_setup) return blok;
-				const kar = karantinaPasar(mk);
-				if (!Object.keys(kar).length) return blok;
-				const per_setup: Record<string, any> = {};
-				let adaPenanda = false;
-				for (const [nama, s] of Object.entries(blok.per_setup as Record<string, any>)) {
-					const info = kar[nama] ?? kar[(s as any)?.nama] ?? null;
-					if (info) {
-						per_setup[nama] = { ...(s as any), dikarantina: true, alasan_karantina: info.alasan ?? null };
-						adaPenanda = true;
-					} else {
-						per_setup[nama] = s;
-					}
-				}
-				return adaPenanda ? { ...blok, per_setup } : blok;
-			}}
-			{@const akurasiCryptoT = tandaiKarantina(akurasiCrypto, 'crypto')}
-			{@const akurasiForexT = tandaiKarantina(akurasiForex, 'forex')}
-			{@const akurasiGmgnT = tandaiKarantina(akurasiGmgn, 'gmgn')}
-			{@const akurasiPolyT = tandaiKarantina(akurasiPoly, 'polymarket')}
+			{@const akurasiCryptoT = konteks.akurasiCryptoT}
+			{@const akurasiForexT = konteks.akurasiForexT}
+			{@const akurasiGmgnT = konteks.akurasiGmgnT}
+			{@const akurasiPolyT = konteks.akurasiPolyT}
 			<!-- Penanda karantina untuk blok IDX (tabel custom, bukan AkurasiPasar). -->
 			{@const idxAkurasiKarantina = karantinaPasar('idx')}
 			{@const idxSetupKarantina = (nama: string, s: any): any =>
@@ -510,11 +490,11 @@ function pilihSub(s: string) {
 						)
 					}
 				: null}
-			{@const gmgnObj = (faktaGmgn?.value as any) ?? null}
+			{@const gmgnObj = konteks.gmgnObj}
 			<!-- kind `gmgn` (job gmgn-sync): `paper` = konfigurasi + kesehatan berkas bot,
 			     `radar` = jendela likuiditas per chain. Kini sampai UI (AREA_KIND). -->
 			{@const faktaGmgnPaper = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'paper')}
-			{@const gmgnPaperObj = (faktaGmgnPaper?.value as any) ?? null}
+			{@const gmgnPaperObj = konteks.gmgnPaperObj}
 			{@const faktaGmgnRadarMentah = data.facts.find((f) => f.kind === 'gmgn' && f.key === 'radar')}
 			{@const gmgnRadarMentahObj = (faktaGmgnRadarMentah?.value as any) ?? null}
 			<!-- Status hasil snapshot GMGN ditampilkan apa adanya dari posisi berjalan. -->
@@ -547,12 +527,12 @@ function pilihSub(s: string) {
 				mode: 'PAPER' as const
 			})) as DecisionItem[]}
 
-			{@const kandidatArray = Array.isArray(faktaKandidat?.value) ? faktaKandidat.value : []}
+			{@const kandidatArray = konteks.kandidatArray}
 			{@const equityObj = (faktaEquity?.value as { points?: { i: number; r: number }[]; stats?: Record<string, number> }) ?? null}
 			{@const risikoObj = (faktaRisiko?.value as Record<string, unknown>) ?? null}
 			{@const posisiMaks = Number(risikoObj?.maks_posisi ?? 3)}
-			{@const verdictObj = (faktaVerdict?.value as Record<string, unknown>) ?? null}
-			{@const polyPaperObj = (faktaPolyPaper?.value as { arms?: { nama: string; balance: number; pnl: number; wins: number; losses: number }[] }) ?? null}
+			{@const verdictObj = konteks.verdictObj}
+			{@const polyPaperObj = konteks.polyPaperObj}
 			{@const tampilGate = Boolean(faktaVerdict || temukanFakta(data.facts, 'gate'))}
 
 			<!-- Panel posisi dan ringkasan risiko disajikan terstruktur di bagian atas cockpit. -->
