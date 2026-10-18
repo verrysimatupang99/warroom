@@ -27,7 +27,15 @@ BASE="http://127.0.0.1:3100"
 API_BASE="http://127.0.0.1:8800"
 BACKUP_DIR="/home/admin/warroom/backups/web-$(date +%Y%m%d-%H%M%S)"
 
-# Identitas build untuk verifikasi build<->proses. Bila tidak diset, diturunkan dari git.
+# Identitas build untuk verifikasi build<->proses.
+# Sumber utama: /etc/warroom/build.env yang ditulis ops/set-build-id.sh — HARUS dipakai
+# agar build_id web sama persis dengan yang dilaporkan API (EnvironmentFile unit yang sama).
+# Dulu skrip ini jatuh ke `git rev-parse --short HEAD` sehingga build-id.txt berisi "b1efa03"
+# sementara API melaporkan "b1efa03-20261018T102646Z" — peringatan palsu di setiap deploy.
+if [[ -z "${WARROOM_BUILD_ID:-}" && -r /etc/warroom/build.env ]]; then
+	# shellcheck disable=SC1091
+	WARROOM_BUILD_ID="$(sed -nE 's/^WARROOM_BUILD_ID=(.*)$/\1/p' /etc/warroom/build.env | tail -n1)"
+fi
 BUILD_ID="${WARROOM_BUILD_ID:-$(git -C "$WEB_DIR" rev-parse --short HEAD 2>/dev/null || echo local)}"
 export WARROOM_BUILD_ID="$BUILD_ID"
 echo "build_id: $BUILD_ID"
