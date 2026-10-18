@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
 """War Room infra watchdog gabungan (read-only, senyap saat sehat).
 
-Cek: systemd units, port loopback, disk, gate live, freshness state/backups.
-State: /home/admin/live-trading/state/watchdog-infra.json (delta antar run).
+Cek: systemd units, port loopback, disk, gate live, dan kesegaran DATA.
+
+Kenapa bagian "freshness" tidak memakai umur berkas untuk semua target:
+dua sumber di sini milik root (mode 600) sehingga UID admin tidak bisa
+membacanya sama sekali. Dulu watchdog memaksakan `os.path.getmtime` dan
+melaporkan "tak-terbaca: PermissionError" untuk snipe-state, sementara arsip
+backup memunculkan galat izin yang sama. Akibatnya dua indikator itu **tidak
+pernah benar-benar diperiksa** — statusnya terbaca "jujur" padahal kosong.
+
+Untuk keduanya dipakai bukti yang memang bisa dibaca tanpa sudo:
+- `klaim-pilot`  : fakta `poly.money/klaim-pilot` yang ditulis worker tiap jam.
+- `lt-backup`    : hasil job `backup` worker, dicatat di journal tiap 6 jam.
+
+State: /home/admin/live-trading/state/watchdog-infra.json
 Keluar 0 selalu saat cek jalan (ALERT = baris teks, bukan exit code).
-UID yang jalan: admin (gate = cek keberadaan berkas; snipe-state = allowlist sudo cat).
 """
 import json
 import os
@@ -25,15 +36,24 @@ SERVICES = ["warroom-api", "warroom-web", "warroom-worker",
             "polymarket-paper-shadow", "polymarket-paper-candidate",
             "polymarket-paper-fade", "polymarket-research-recorder",
             "cloud-ops-api", "cloud-ops-v2",
-            "cloud-ops-web", "cloudflared-cloudops", "nginx",
+            "cloud-ops-web", "nginx",
             "mariadb", "postgresql@16-main", "redis-server", "memcached"]
 TIMERS = ["live-trading-watchdog", "poly-dashboard-sync",
-          "war-room-backup", "polymarket-backup",
           "war-room-git-sync", "polymarket-orderflow-confirm"]
+# Timer arsip Tencent (war-room-backup, polymarket-backup) sengaja TIDAK dipantau:
+# skrip /usr/local/sbin/*-backup-to-tencent sudah tidak ada di host, unit-nya
+# disabled sejak 17 Sep 2026. Penggantinya job `backup` worker (lihat
+# check_backup_job). Memantau unit yang mati by design hanya menghasilkan ALERT
+# permanen yang menyamarkan kegagalan nyata.
+# cloudflared-cloudops juga dilepas: quick tunnel berhenti 5 Okt 2026 dan
+# config-nya tidak ada lagi di host; /ops tidak lagi diekspos lewat tunnel.
 UNITS = SERVICES + [t + ".timer" for t in TIMERS]
 DISK_WARN_PCT = 80
-STATE_FRESH_S = {"paper-shadow-summary": 900, "snipe-state": 300,
-                 "dashboard-data": 120, "lt-backup": 6 * 3600 + 600}
+# Job reconcile (penulis fakta klaim-pilot) berjalan tiap 3600 dtk.
+KLAIM_PILOT_FRESH_S = 6 * 3600
+# Job backup worker menulis arsip tiap 6 jam; toleransi satu siklus terlewat.
+BACKUP_JOB_FRESH_S = 8 * 3600
+STATE_FRESH_S = {"paper-shadow-summary": 900, "dashboard-data": 120}
 
 
 def sh(*a, timeout=15):
@@ -85,25 +105,108 @@ def check_gate():
                  "/var/lib/poly-pilot/snipe-live-v1-state.json")
     if rc2 == 0:
         try:
-            op = json.loads(o2.strip().splitlines()[0] if False else o2)
+            op = json.loads(o2)
         except Exception:
             op = {"_parse": "gagal"}
     return armed, op
 
 
 def mtime_of(path):
-    # `sudo stat` tidak ada di allowlist sudoers dan pasti ditolak di konteks
-    # systemd setelah baris %sudo blanket dicabut — baca langsung, gagal = jujur.
+    # `sudo stat` tidak ada di allowlist sudoers; baca langsung, gagal = jujur.
     return time.time() - os.path.getmtime(path)
 
 
+def _umur_fakta(kind: str, key: str):
+    """(umur_detik, detail) fakta terbaru menurut `observed_at` sebenarnya.
+
+    (None, alasan) bila tak bisa dipastikan — pemanggil wajib melaporkannya,
+    bukan menganggapnya sehat.
+    """
+    rc, o = sh(
+        "sudo", "-n", "-u", "postgres", "psql", "-d", "warroom", "-tAc",
+        "select coalesce(value_json->>'observed_at', observed_at::text) "
+        f"from facts where kind='{kind}' and key='{key}' "
+        "order by observed_at desc limit 1",
+        timeout=20,
+    )
+    if rc != 0:
+        return None, f"psql gagal: {(o or '').strip()[:100]}"
+    baris = [x for x in (o or "").splitlines() if x.strip()]
+    if not baris:
+        return None, "fakta belum pernah ditulis"
+    teks = baris[0].strip()
+    try:
+        ts = datetime.fromisoformat(teks.replace("Z", "+00:00"))
+    except Exception:
+        return None, f"observed_at tak terbaca: {teks[:60]}"
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=UTC)
+    return int(time.time() - ts.timestamp()), teks
+
+
+def check_klaim_pilot(targets: dict) -> list[str]:
+    """Umur DATA snipe/klaim, bukan umur berkas (berkasnya milik root 600).
+
+    /var/lib/poly-pilot/snipe-live-v1-state.json terakhir ditulis 28 Sep 2026.
+    Worker membacanya lewat allowlist sudo; `_mtime()` di jalur itu mengembalikan
+    None sehingga `observed_at` fakta = waktu BACA. Artinya angka 20 hari bisa
+    tampil seolah baru diverifikasi. Yang bisa diperiksa watchdog: fakta itu
+    sendiri masih diproduksi tiap jam atau tidak.
+    """
+    detik, detail = _umur_fakta("poly.money", "klaim-pilot")
+    if detik is None:
+        targets["klaim-pilot"] = f"tak-terbaca: {detail}"
+        return [f"klaim-pilot umurnya tidak bisa dipastikan ({detail})"]
+    targets["klaim-pilot"] = round(detik)
+    if detik > KLAIM_PILOT_FRESH_S:
+        return [f"klaim-pilot basi {int(detik // 3600)} jam "
+                "(job reconcile berhenti menulis fakta)"]
+    return []
+
+
+def check_backup_job(targets: dict) -> list[str]:
+    """Bukti backup dari journal job worker, bukan membaca arsip root 600."""
+    rc, o = sh("journalctl", "-u", "warroom-worker", "--since", "-24h",
+               "--no-pager", "-o", "cat", timeout=30)
+    if rc != 0:
+        targets["lt-backup"] = "tak-terbaca: journalctl"
+        return ["lt-backup: journal worker tak terbaca"]
+    terakhir = None
+    for line in reversed((o or "").splitlines()):
+        i = line.find("{")
+        if i < 0:
+            continue
+        try:
+            d = json.loads(line[i:])
+        except Exception:
+            continue
+        if d.get("job") == "backup":
+            terakhir = d
+            break
+    if terakhir is None:
+        targets["lt-backup"] = "tidak ada job backup dalam 24 jam"
+        return ["lt-backup: job `backup` tidak jalan dalam 24 jam"]
+    status = terakhir.get("status")
+    detail = str(terakhir.get("detail", ""))[:120]
+    try:
+        umur = int(time.time() - datetime.fromisoformat(
+            str(terakhir.get("ts", "")).replace("Z", "+00:00")).timestamp())
+        targets["lt-backup"] = f"{status} {detail} ({umur // 3600} jam lalu)"
+    except Exception:
+        umur = None
+        targets["lt-backup"] = f"{status} {detail}"
+    if status != "ok":
+        return [f"lt-backup GAGAL: {detail}"]
+    if umur is not None and umur > BACKUP_JOB_FRESH_S:
+        return [f"lt-backup basi {umur // 3600} jam (job backup tidak jalan)"]
+    return []
+
+
 def check_fresh():
-    stale = []
-    now = time.time()
-    targets = {}
+    stale: list = []
+    targets: dict = {}
     for label, path in [
         ("paper-shadow-summary", "/var/lib/poly-paper/execution-paper-shadow-summary.json"),
-        ("snipe-state", "/var/lib/poly-pilot/snipe-live-v1-state.json"),
         ("dashboard-data", "/var/www/html/data.json"),
     ]:
         try:
@@ -114,29 +217,13 @@ def check_fresh():
                 stale.append(f"{label} basi {int(age // 60)} mnt")
         except Exception as e:
             targets[label] = f"tak-terbaca: {type(e).__name__}"
-    try:
-        ltd = f"{HOME}/live-trading/backups"
-        cands = sorted((f for f in os.listdir(ltd) if f.endswith(".tar.gz")),
-                       reverse=True)
-        if cands:
-            age = now - os.path.getmtime(os.path.join(ltd, cands[0]))
-            targets["lt-backup"] = f"{cands[0]} umur {int(age // 3600)} jam"
-            if age > STATE_FRESH_S["lt-backup"]:
-                stale.append(f"lt-backup basi {int(age // 3600)} jam")
-        else:
-            stale.append("lt-backup: tidak ada arsip")
-    except Exception as e:
-        stale.append(f"lt-backup tak-terbaca: {type(e).__name__}")
+    stale += check_klaim_pilot(targets)
+    stale += check_backup_job(targets)
     return stale, targets
 
 
 def main():
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    prev = {}
-    try:
-        prev = json.load(open(STATE_F))
-    except Exception:
-        pass
     units_down = check_units()
     ports_dead = check_ports()
     disk_pct, disk_warn = check_disk()
@@ -153,9 +240,6 @@ def main():
         alerts.append("ALERT gate LIVE armed (/etc/poly-pilot/activation-approved ADA)")
     for s in stale:
         alerts.append(f"WARN {s}")
-    for a in alerts:
-        if prev.get("last_alert", {}).get(a) == prev.get("run_at"):
-            pass
     line = (f"{now} units={len(UNITS)-len(units_down)}/{len(UNITS)} "
             f"ports={len(PORTS)-len(ports_dead)}/{len(PORTS)} "
             f"disk={disk_pct}% gate={'ARMED' if gate_armed else 'DISARMED'} "
