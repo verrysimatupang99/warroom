@@ -8,6 +8,11 @@ from sqlalchemy.orm import Session as SASession
 from warroom_core import autonomy
 from warroom_core.db import Event, Job
 from warroom_notifier.dispatch import kirim_tertunda
+from warroom_notifier.strategy_alert import (
+    alert_benched,
+    alert_entry,
+    alert_exit,
+)
 
 from .base import (
     _alert,
@@ -208,19 +213,20 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
         for err in b_crypto.errors:
             hasil_detail.append(f"GAGAL {err}")
         for rec in closed:
-            subjek = f"trade/{rec['signal_id']}"
             r_val = float(rec.get("r", 0))
             is_win = r_val > 0
-            icon = "🎯" if is_win else "🛑"
-            pesan = (
-                f"{icon} [PAPER TRADE DITUTUP - CRYPTO]\n"
-                f"Pair: {rec.get('pair')} ({rec.get('direction')})\n"
-                f"Status: {rec.get('status')} @ {rec.get('note')}\n"
-                f"Hasil R: {r_val:+.3f}R | Signal ID: {rec.get('signal_id')}"
+            # Pesan exit dibangun modul notifier (subjek trade/<id> — dedup per trade).
+            kondisi = alert_exit(
+                str(rec.get("source") or "paper"),
+                signal_id=str(rec["signal_id"]),
+                pair=str(rec.get("pair")),
+                status=str(rec.get("status")),
+                r=r_val,
+                mode="paper",
             )
             _alert(
-                s, subject=subjek, message=pesan,
-                aksi="periksa buku kas di /crypto?sub=eksekusi", severity="info",
+                s, subject=kondisi.subjek, message=kondisi.pesan,
+                aksi=kondisi.subjek_aksi, severity=kondisi.severity,
             )
             s.add(
                 Event(
@@ -350,6 +356,41 @@ def blokir_korelasi_rezim(
     if arah_terbuka.get(arah, 0) >= maks_searah:
         return f"(korelasi searah {arah} ≥ {maks_searah})"
     return None
+
+
+def alert_bench_jika_transisi(
+    s: SASession,
+    bench: Any,
+    nama: str,
+    *,
+    status_sebelum: str,
+    entri: dict[str, Any],
+) -> bool:
+    """Kabarkan transisi aktif→benched — sekali, bukan tiap siklus.
+
+    Keadaan SEBELUM dicatat `bench.catat` disuplai pemanggil (modul alert tidak
+    menyimpan riwayat); strategi yang masih benched di siklus berikutnya tidak
+    memicu apa pun karena tidak ada transisi baru.
+    """
+    if status_sebelum == "benched" or bench.status(nama) != "benched":
+        return False
+    b = bench.batas
+    if int(entri.get("trade", 0)) >= b.maks_trade:
+        alasan = f"batas {b.maks_trade} trade harian tercapai"
+    elif float(entri.get("fee_usd", 0.0)) >= b.maks_fee_usd:
+        alasan = f"batas fee ${b.maks_fee_usd:.2f}/hari tercapai"
+    else:
+        alasan = "batas harian terlampaui"
+    kondisi = alert_benched(
+        nama,
+        alasan=alasan,
+        trade=int(entri.get("trade", 0)),
+        fee_usd=float(entri.get("fee_usd", 0.0)),
+    )
+    return _alert(
+        s, subject=kondisi.subjek, message=kondisi.pesan,
+        aksi=kondisi.subjek_aksi, severity=kondisi.severity,
+    )
 
 
 def handler_paper_scan(s: SASession, job: Job) -> str:
@@ -512,19 +553,23 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                             payload_json={"pair": pair, "direction": direction,
                                           "size_usd": dec.size_usd, **biaya},
                             severity="info"))
-                subjek = f"trade/{pos.signal_id}"
-                pesan = (
-                    f"🟢 [PAPER TRADE DIBUKA - CRYPTO]\n"
-                    f"Pair: {pos.pair} ({pos.direction})\n"
-                    f"Entry: ${pos.entry} | SL: ${pos.stop} | TP1: ${pos.tp1} | TP2: ${pos.tp2}\n"
-                    f"Ukuran: ${pos.size_usd} | Risiko: ${dec.risk_usd} (1.0% equity)\n"
-                    f"Biaya: {biaya.get('total_bps') or '?'} bps "
-                    f"(seragam 0,1%/sisi, fee+slippage)\n"
-                    f"Signal ID: {pos.signal_id}"
+                kondisi = alert_entry(
+                    nama_strategi,
+                    signal_id=pos.signal_id,
+                    pair=pos.pair,
+                    direction=pos.direction,
+                    entry=pos.entry,
+                    stop=pos.stop,
+                    tp1=pos.tp1,
+                    tp2=pos.tp2,
+                    mode="paper",
+                    size_usd=pos.size_usd,
+                    risk_usd=dec.risk_usd,
+                    biaya_bps=biaya.get("total_bps"),
                 )
                 _alert(
-                    s, subject=subjek, message=pesan,
-                    aksi="lihat di /crypto?sub=eksekusi", severity="info",
+                    s, subject=kondisi.subjek, message=kondisi.pesan,
+                    aksi=kondisi.subjek_aksi, severity=kondisi.severity,
                 )
                 s.add(Event(
                     type="trade.opened", actor="paper_scan",
@@ -533,7 +578,11 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                 dibuka.append(f"{pos.signal_id} {pos.pair} {pos.direction}")
                 # Catat trade + fee ke batas harian strategi (bisa membuatnya 'benched').
                 fee_usd = float(kep.size_usd or 0.0) * float(kep.cost_bps or 0.0) / 10_000.0
-                bench.catat(nama_strategi, fee_usd=fee_usd)
+                status_sebelum = bench.status(nama_strategi)
+                entri_bench = bench.catat(nama_strategi, fee_usd=fee_usd)
+                alert_bench_jika_transisi(
+                    s, bench, nama_strategi, status_sebelum=status_sebelum, entri=entri_bench,
+                )
 
     if dibuka:
         kirim_tertunda(s, limit=5)

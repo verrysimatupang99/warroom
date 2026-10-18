@@ -18,6 +18,7 @@ Layanan pengiriman pesan peringatan dan notifikasi sistem via Telegram Bot Herme
 | `dispatch.py` | Router penentu target transport dan antrean notifikasi |
 | `transport.py` | Implementasi klien HTTP untuk Telegram, Webhook, dan Null |
 | `signal_alert.py` | Pemformat pesan sinyal dan peringatan keputusan gate |
+| `strategy_alert.py` | Alert siklus hidup strategi (entry/exit/benched/kill-switch) — subjek tetap per kondisi, angka apa adanya |
 
 ## Pengujian
 

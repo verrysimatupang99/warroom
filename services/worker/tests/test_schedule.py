@@ -52,6 +52,7 @@ _JOB_BERAT = (
     "signal-sync",  # membaca ledger domain + MEMBUAT alert (bisa memicu kirim Telegram)
     "paper-eval",
     "paper-scan",
+    "strategi-alert",  # MEMBUAT alert kill-switch dari fakta (bisa memicu kirim Telegram)
     "retention",  # menghapus baris `facts` di DB nyata — bukan untuk tes
 )
 
@@ -78,12 +79,12 @@ def test_daftar_job_idempoten(db) -> None:
         "publish-facts", "freshness", "notify", "refresh-snapshot", "radar-update", "lp-mark",
         "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
-        "paper-scan", "retention", "source-health", "llm-brief-crypto", "llm-brief-forex",
-        "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket", "reconcile-crypto",
-        "lpagent-sync",
+        "paper-scan", "strategi-alert", "retention", "source-health", "llm-brief-crypto",
+        "llm-brief-forex", "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket",
+        "reconcile-crypto", "lpagent-sync",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 27
+    assert total == 28
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
