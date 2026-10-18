@@ -25,11 +25,18 @@ SERVICES = ["warroom-api", "warroom-web", "warroom-worker",
             "polymarket-paper-shadow", "polymarket-paper-candidate",
             "polymarket-paper-fade", "polymarket-research-recorder",
             "cloud-ops-api", "cloud-ops-v2",
-            "cloud-ops-web", "cloudflared-cloudops", "nginx",
+            "cloud-ops-web", "nginx",
             "mariadb", "postgresql@16-main", "redis-server", "memcached"]
 TIMERS = ["live-trading-watchdog", "poly-dashboard-sync",
-          "war-room-backup", "polymarket-backup",
           "war-room-git-sync", "polymarket-orderflow-confirm"]
+# Timer arsip Tencent (war-room-backup, polymarket-backup) sengaja TIDAK dipantau:
+# skrip /usr/local/sbin/*-backup-to-tencent sudah tidak ada di host, unit-nya
+# disabled sejak 17 Sep 2026. Penggantinya job `backup` di worker War Room
+# (arsip state live-trading tiap 6 jam, lihat check_fresh lt-backup). Memantau
+# unit yang mati by design hanya menghasilkan ALERT permanen yang menyamarkan
+# kegagalan nyata.
+# cloudflared-cloudops juga dilepas: quick tunnel berhenti 5 Okt 2026 dan
+# config-nya tidak ada lagi di host; /ops tidak lagi diekspos lewat tunnel.
 UNITS = SERVICES + [t + ".timer" for t in TIMERS]
 DISK_WARN_PCT = 80
 STATE_FRESH_S = {"paper-shadow-summary": 900, "snipe-state": 300,

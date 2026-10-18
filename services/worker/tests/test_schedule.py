@@ -54,6 +54,7 @@ _JOB_BERAT = (
     "paper-scan",
     "strategi-alert",  # MEMBUAT alert kill-switch dari fakta (bisa memicu kirim Telegram)
     "retention",  # menghapus baris `facts` di DB nyata — bukan untuk tes
+    "polybtc-sync",  # membaca keluaran skill PolyBTC (berkas milik proses lain)
 )
 
 
@@ -81,10 +82,10 @@ def test_daftar_job_idempoten(db) -> None:
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
         "paper-scan", "strategi-alert", "retention", "source-health", "llm-brief-crypto",
         "llm-brief-forex", "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket",
-        "reconcile-crypto", "lpagent-sync",
+        "reconcile-crypto", "lpagent-sync", "polybtc-sync",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 28
+    assert total == 29
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
