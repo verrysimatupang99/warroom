@@ -68,9 +68,14 @@ def _jalankan_lt(subperintah: str, job: Job, *, timeout_s: int) -> str:
         env={**os.environ, "LT_HOME": str(root_dir())},
     )
     if hasil.returncode != 0:
-        raise RuntimeError(
-            f"lt {subperintah} gagal (kode {hasil.returncode}): {hasil.stderr.strip()[:200]}"
-        )
+        # Ambil baris TERAKHIR stderr, bukan potongan awal: Python mencetak traceback
+        # dari header ke pesan akhir, jadi [:200] hanya menyimpan
+        # "Traceback (most recent call last): File ..." dan membuang penyebab aslinya.
+        # Gejala nyata: job `collect` gagal 3x (18 Okt 05:11-06:44) dengan detail
+        # terpotong tepat sebelum exception sesungguhnya, sehingga penyebab tak terlacak.
+        baris = [b.strip() for b in hasil.stderr.splitlines() if b.strip()]
+        sebab = baris[-1][:300] if baris else "(stderr kosong)"
+        raise RuntimeError(f"lt {subperintah} gagal (kode {hasil.returncode}): {sebab}")
     # Penjaga anti-snapshot-separuh. Snapshot ditulis dengan `write_text` (bukan atomik), jadi
     # satu-satunya cara sebuah bagian ("bagian") bisa HILANG sementara prosesnya keluar kode 0
     # adalah snapshot ditulis oleh **kode lama** — mis. satu layanan lain yang masih menjalankan
