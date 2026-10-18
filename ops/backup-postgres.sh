@@ -13,11 +13,32 @@ command -v pg_dump >/dev/null || {
 	exit 1
 }
 
+# WARROOM_DB_URL memakai format SQLAlchemy (postgresql+psycopg://...). libpq tidak
+# mengenal akhiran driver "+psycopg", sehingga pg_dump mengabaikan URL dan jatuh ke
+# koneksi default (socket lokal, user OS "admin") → FATAL: role "admin" does not exist.
+# Dump 17 & 18 Okt 2026 gagal karena ini; buang akhiran drivernya sebelum dipakai.
+PG_URL="$(echo "$WARROOM_DB_URL" | sed -E 's#^(postgresql|postgres)\+[A-Za-z0-9_]+://#\1://#')"
+
 umask 077
 mkdir -p "$OUT_DIR"
 pas="$OUT_DIR/warroom-$(date -u +%Y%m%d-%H%M%S).dump"
 
-pg_dump --format=custom --file="$pas" "$WARROOM_DB_URL"
+# Tulis ke berkas sementara lalu pindahkan: dump gagal tidak boleh meninggalkan
+# berkas 0-byte yang tampak seperti backup sah (persis yang terjadi 17-18 Okt).
+pas_tmp="$pas.part"
+trap 'rm -f "$pas_tmp"' EXIT
+
+pg_dump --format=custom --file="$pas_tmp" "$PG_URL"
+
+# pg_dump bisa keluar 0 dengan berkas kosong pada kegagalan tertentu; ukuran nol
+# berarti tidak ada yang bisa di-restore, jadi perlakukan sebagai gagal.
+if [[ ! -s "$pas_tmp" ]]; then
+	echo "GAGAL: dump kosong (0 byte) — periksa koneksi/kredensial DB"
+	exit 1
+fi
+
+mv -f "$pas_tmp" "$pas"
+trap - EXIT
 
 # Header/TOC terbaca = dump benar-benar berformat; bukan pengganti drill restore.
 pg_restore --list "$pas" >/dev/null
