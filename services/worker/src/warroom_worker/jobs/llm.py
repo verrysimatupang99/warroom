@@ -12,6 +12,7 @@ from warroom_notifier.strategy_alert import (
     alert_benched,
     alert_entry,
     alert_exit,
+    alert_tp1,
 )
 
 from .base import (
@@ -241,19 +242,30 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
         # Cek runner yang baru menyentuh TP1
         for p in b_crypto.positions():
             if p.status == "tp1_hit_runner":
-                ev_subjek = f"tp1/{p.signal_id}"
-                _msg = (
-                    f"🎯 [TP1 TERCAPAI - RUNNER AKTIF]\nPair: {p.pair} ({p.direction})\n"
-                    f"Stop loss digeser ke break-even (${p.stop}). Sisa posisi menuju TP2 (${p.tp2})."
+                kondisi_tp1 = alert_tp1(
+                    p.strategi or p.source or "crypto",
+                    signal_id=p.signal_id,
+                    pair=p.pair,
+                    direction=p.direction,
+                    stop=p.stop,
+                    tp2=p.tp2,
+                    mode="paper",
                 )
                 if _alert(
-                    s, subject=ev_subjek, message=_msg,
-                    aksi="pantau posisi di Command Center", severity="info",
+                    s,
+                    subject=kondisi_tp1.subjek,
+                    message=kondisi_tp1.pesan,
+                    aksi=kondisi_tp1.subjek_aksi,
+                    severity=kondisi_tp1.severity,
                 ):
-                    s.add(Event(
-                        type="trade.tp1", actor="paper_eval",
-                        payload_json=p.to_dict(), severity="info",
-                    ))
+                    s.add(
+                        Event(
+                            type="trade.tp1",
+                            actor="paper_eval",
+                            payload_json=p.to_dict(),
+                            severity="info",
+                        )
+                    )
 
     # Segera kirim alert bila ada perubahan posisi
     if total_closed > 0:

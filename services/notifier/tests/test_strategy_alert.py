@@ -14,6 +14,7 @@ from warroom_notifier.strategy_alert import (
     alert_entry,
     alert_exit,
     alert_kill_switch,
+    alert_tp1,
     to_payload,
 )
 
@@ -120,3 +121,39 @@ def test_subjek_kondisi_berbeda_tidak_saling_menahan():
     benched = alert_benched("smc", alasan="batas")
     kill = alert_kill_switch("smc", alasan="halt")
     assert benched.subjek != kill.subjek
+
+
+def test_tp1_alert_subjek_dan_pesan():
+    a = alert_tp1(
+        "legacy-smc",
+        signal_id="sig-88",
+        pair="BTCUSDT",
+        direction="LONG",
+        stop=67000.0,
+        tp2=70000.0,
+        mode="paper",
+    )
+    assert a.subjek == "tp1/sig-88"
+    assert a.severity == "info"
+    assert a.kondisi == "tp1"
+    assert a.strategi == "legacy-smc"
+    assert "🎯" not in a.pesan
+    assert a.pesan.startswith("[PAPER] [TP1 TERCAPAI - RUNNER AKTIF]")
+    assert "Pair: BTCUSDT (LONG)" in a.pesan
+    assert "Stop loss digeser ke break-even ($67000.0)" in a.pesan
+    assert "Sisa posisi menuju TP2 ($70000.0)" in a.pesan
+
+
+def test_tp1_tanpa_mode():
+    a = alert_tp1(
+        "smc",
+        signal_id="sig-89",
+        pair="ETHUSDT",
+        direction="SHORT",
+        stop=2600.0,
+        tp2=2400.0,
+        mode=None,
+    )
+    assert a.pesan.startswith("[TP1 TERCAPAI")
+    assert "Pair: ETHUSDT (SHORT)" in a.pesan
+

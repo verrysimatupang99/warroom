@@ -27,6 +27,7 @@ __all__ = [
     "alert_entry",
     "alert_exit",
     "alert_kill_switch",
+    "alert_tp1",
     "to_payload",
 ]
 
@@ -186,6 +187,33 @@ def alert_exit(
         severity="info",
         pesan=pesan,
         subjek_aksi="periksa buku kas di /crypto?sub=eksekusi",
+    )
+
+
+def alert_tp1(
+    strategi: str,
+    *,
+    signal_id: str,
+    pair: str,
+    direction: str,
+    stop: float | int | str,
+    tp2: float | int | str,
+    mode: str | None = "paper",
+) -> KondisiStrategi:
+    """TP1 tercapai — runner aktif, stop loss digeser ke break-even."""
+    pesan = (
+        f"[TP1 TERCAPAI - RUNNER AKTIF]\nPair: {pair} ({direction})\n"
+        f"Stop loss digeser ke break-even (${stop}). Sisa posisi menuju TP2 (${tp2})."
+    )
+    if mode:
+        pesan = f"[{mode.upper()}] {pesan}"
+    return KondisiStrategi(
+        strategi=strategi,
+        kondisi="tp1",
+        subjek=f"tp1/{signal_id}",
+        severity="info",
+        pesan=pesan,
+        subjek_aksi="pantau posisi di Command Center",
     )
 
 
