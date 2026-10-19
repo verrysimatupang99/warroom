@@ -12,6 +12,8 @@ Kontrak transport tidak berubah: alert selalu masuk DB lebih dulu; pengiriman
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Fact, Job
@@ -39,6 +41,14 @@ def handler_strategi_alert(s: SASession, job: Job) -> str:
     )
     if len(riwayat) < 2:
         return f"{kind}/{key}: riwayat fakta < 2 — transisi belum bisa dinilai"
+
+    obs = riwayat[0].observed_at
+    if obs.tzinfo is None:
+        obs = obs.replace(tzinfo=UTC)
+    if datetime.now(UTC) - obs > timedelta(hours=26):
+        raise RuntimeError(
+            f"{kind}/{key}: fakta terbaru ({obs.isoformat()}) sudah stale > 26 jam"
+        )
 
     for baru, lama in zip(riwayat, riwayat[1:], strict=False):
         v_baru = baru.value_json if isinstance(baru.value_json, dict) else {}

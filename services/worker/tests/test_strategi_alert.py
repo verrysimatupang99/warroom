@@ -175,3 +175,22 @@ def test_handler_gagal_siklus_berikutnya_tetap_mengabarkan(db) -> None:
     assert status2 == "ok" and "dikabarkan" in detail2
     with session_scope() as s:
         assert len(s.scalars(select(Alert)).all()) == 1
+
+
+def test_sumber_fakta_stale_menghasilkan_status_gagal(db) -> None:
+    """Fakta status yang lebih tua dari 26 jam menandai job gagal agar operator tahu data macet."""
+    with session_scope() as s:
+        _fakta(s, False, menit_lalu=2000)
+        _fakta(s, True, menit_lalu=1600)  # 1600 menit = 26.6 jam > 26 jam
+    job_id = _job_alert(last_run_menit_lalu=None)
+
+    with session_scope() as s:
+        status, detail = schedule.run_one(s, s.get(Job, job_id))
+    assert status == "gagal"
+    assert "stale > 26 jam" in detail
+
+    with session_scope() as s:
+        assert s.scalars(select(Alert)).all() == []
+        evt = s.scalars(select(Event).where(Event.type == "job.ran")).one()
+        assert evt.severity == "warning"
+
