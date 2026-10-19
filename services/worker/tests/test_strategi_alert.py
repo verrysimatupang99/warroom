@@ -57,6 +57,8 @@ def _job_alert(*, last_run_menit_lalu: int | None) -> int:
             if last_run_menit_lalu is not None
             else None
         )
+        if last_run_menit_lalu is not None:
+            job.last_status = "ok"
         s.flush()
         return job.id
 
@@ -145,3 +147,31 @@ def test_riwayat_kurang_dua_fakta_dilewati(db) -> None:
     assert status == "ok" and "riwayat fakta < 2" in detail
     with session_scope() as s:
         assert s.scalars(select(Alert)).all() == []
+
+
+def test_handler_gagal_siklus_berikutnya_tetap_mengabarkan(db) -> None:
+    """Kegagalan handler pada satu siklus (last_run_at maju) tidak menelan transisi."""
+    with session_scope() as s:
+        _fakta(s, False, menit_lalu=70)
+        _fakta(s, True, menit_lalu=10)
+    job_id = _job_alert(last_run_menit_lalu=60)
+
+    handler_asli = schedule.HANDLERS["strategi-alert"]
+    try:
+        def handler_error(s_err, j_err):
+            raise RuntimeError("koneksi facts sesaat terputus")
+
+        schedule.HANDLERS["strategi-alert"] = handler_error
+        with session_scope() as s:
+            status1, _ = schedule.run_one(s, s.get(Job, job_id))
+        assert status1 == "gagal"
+        with session_scope() as s:
+            assert s.scalars(select(Alert)).all() == []
+    finally:
+        schedule.HANDLERS["strategi-alert"] = handler_asli
+
+    with session_scope() as s:
+        status2, detail2 = schedule.run_one(s, s.get(Job, job_id))
+    assert status2 == "ok" and "dikabarkan" in detail2
+    with session_scope() as s:
+        assert len(s.scalars(select(Alert)).all()) == 1
