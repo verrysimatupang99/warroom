@@ -215,7 +215,7 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
         for rec in closed:
             r_val = float(rec.get("r", 0))
             is_win = r_val > 0
-            # Pesan exit dibangun modul notifier (subjek trade/<id> — dedup per trade).
+            # Pesan exit dibangun modul notifier (subjek trade/<id>/exit — dedup per aksi).
             kondisi = alert_exit(
                 str(rec.get("source") or "paper"),
                 signal_id=str(rec["signal_id"]),

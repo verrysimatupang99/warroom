@@ -53,12 +53,21 @@ def test_entry_exit_subjek_per_signal_id():
         stop=98,
     )
     keluar = alert_exit("smc", signal_id="sig-9", pair="BTCUSDT", status="tp1", r=1.2)
-    assert masuk.subjek == "trade/sig-9"
-    assert keluar.subjek == "trade/sig-9"
+    assert masuk.subjek == "trade/sig-9/entry"
+    assert keluar.subjek == "trade/sig-9/exit"
     assert masuk.severity == "info" and keluar.severity == "info"
     assert "LONG" in masuk.pesan and "entry 100" in masuk.pesan
     assert "stop 98" in masuk.pesan
     assert "+1.200R" in keluar.pesan
+
+
+def test_entry_terbuka_tidak_menahan_exit():
+    """Alert entry yang belum di-ack tidak boleh menolak alert exit untuk trade yang sama."""
+    masuk = alert_entry("smc", signal_id="sig-10", pair="BTCUSDT", direction="long")
+    keluar = alert_exit("smc", signal_id="sig-10", pair="BTCUSDT", status="closed_TP1")
+    assert masuk.subjek != keluar.subjek
+    assert masuk.subjek.endswith("/entry")
+    assert keluar.subjek.endswith("/exit")
 
 
 def test_exit_tanpa_r_tak_menyebut_angka():
