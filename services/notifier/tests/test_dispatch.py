@@ -187,6 +187,30 @@ def test_alert_terkirim_tidak_diulang_tiap_siklus(db, server_uji: str) -> None:
     assert hasil == [], "alert yang sudah di-ack tidak boleh dikirim lagi"
 
 
+def test_alert_warning_sukses_tidak_dikirim_ulang_tanpa_ack(db, server_uji: str) -> None:
+    """Alert warning yang sudah sukses terkirim tidak dikirim ulang walau belum di-ack owner."""
+    with session_scope() as s:
+        a = _alert(subject="warning/uji-sukses")
+        s.add(a)
+    # Siklus 1: kirim pertama sukses
+    with session_scope() as s:
+        hasil1 = kirim_tertunda(s, HttpTransport(server_uji))
+    assert len(hasil1) == 1 and hasil1[0]["ok"] is True
+    with session_scope() as s:
+        a_db = s.query(Alert).filter(Alert.subject == "warning/uji-sukses").one()
+        assert a_db.ack_at is None  # tetap terbuka (butuh ack owner)
+        assert a_db.attempts == 1
+        assert a_db.last_error is None
+
+    # Siklus 2: tanpa ack_at, kirim_tertunda berikutnya tidak mengirim ulang
+    with session_scope() as s:
+        hasil2 = kirim_tertunda(s, HttpTransport(server_uji))
+    assert hasil2 == []
+    with session_scope() as s:
+        events = s.scalars(select(Event).where(Event.type == "alert.sent")).all()
+        assert len(events) == 1, "tidak boleh ada event alert.sent kedua untuk alert yang sudah sukses"
+
+
 def test_telegram_transport_mengirim_ke_bot_api(server_uji: str, monkeypatch) -> None:
     """Transport Telegram: badan pesan benar, token hanya di URL (bukan di badan)."""
     monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
