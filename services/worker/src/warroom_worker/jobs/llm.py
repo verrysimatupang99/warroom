@@ -217,7 +217,7 @@ def handler_paper_eval(s: SASession, job: Job) -> str:
             is_win = r_val > 0
             # Pesan exit dibangun modul notifier (subjek trade/<id>/exit — dedup per aksi).
             kondisi = alert_exit(
-                str(rec.get("source") or "paper"),
+                str(rec.get("strategi") or rec.get("source") or "paper"),
                 signal_id=str(rec["signal_id"]),
                 pair=str(rec.get("pair")),
                 status=str(rec.get("status")),
@@ -538,6 +538,7 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
                     size_usd=float(kep.size_usd or 0.0),
                     note=f"jalur-tunggal ({kep.alasan}); biaya {biaya.get('sumber')}",
                     cost_bps=kep.cost_bps,
+                    strategi=nama_strategi,
                 )
                 # Cap korelasi: hitungan searah naik SETELAH sukses buka, supaya
                 # kandidat searah berikutnya dalam siklus yang sama ikut terhitung.

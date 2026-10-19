@@ -83,6 +83,7 @@ class PaperPosition:
     status: str = "open"
     source: str = "paper"
     note: str = ""
+    strategi: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -159,6 +160,7 @@ class PaperBroker:
         source: str = "paper",
         note: str = "",
         cost_bps: float | None = None,
+        strategi: str = "",
     ) -> PaperPosition:
         pos = PaperPosition(
             signal_id=new_signal_id(),
@@ -173,6 +175,7 @@ class PaperBroker:
             cost_bps=cost_bps,
             source=f"paper-{self.venue}" if source == "paper" else source,
             note=note,
+            strategi=strategi,
         )
         compute_r(pos.direction, entry, stop, entry)  # validasi sisi stop
         if not self.pemutus.boleh_jalan():
@@ -211,6 +214,7 @@ class PaperBroker:
             "fee_usd": fee_usd,
             "note": note or f"{status} @ {exit_price}",
             "source": target.source,
+            "strategi": getattr(target, "strategi", "") or "",
         }
         self._append_ledger(record)
         self._save([p for p in positions if p.signal_id != signal_id])
