@@ -19,8 +19,8 @@ from warroom_notifier.strategy_alert import (
 
 
 def test_benched_subjek_tetap_dan_severity_warning():
-    a = alert_benched("smc-tf15", alasan="lewat batas harian")
-    assert a.subjek == "strategi/benched:smc-tf15"
+    a = alert_benched("smc-tf15", alasan="lewat batas harian", hari="2026-10-20")
+    assert a.subjek == "strategi/benched:smc-tf15:2026-10-20"
     assert a.severity == "warning"
     assert a.kondisi == "benched"
 

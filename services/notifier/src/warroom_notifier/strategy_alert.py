@@ -65,12 +65,19 @@ def alert_benched(
     alasan: str,
     trade: int | str | None = None,
     fee_usd: float | None = None,
+    hari: str | None = None,
 ) -> KondisiStrategi:
     """Strategi baru masuk ``benched`` — dipanggil HANYA pada transisi.
 
     ``trade``/``fee_usd`` hanya ditampilkan bila pemanggil benar-benar punya
     nilainya; tanpa itu pesan tidak menyebut angka sama sekali (bukan nol).
+    Subjek menyertakan tanggal hari (WIB) agar tidak menahan dedup lintas hari.
     """
+    if hari is None:
+        from datetime import UTC, datetime, timedelta
+
+        hari = (datetime.now(UTC) + timedelta(hours=7)).strftime("%Y-%m-%d")
+    subjek = f"{_SUBJEK['benched']}:{strategi}:{hari}"
     pesan = f"{strategi} benched: {alasan}"
     bagian = []
     if trade is not None:
@@ -82,7 +89,7 @@ def alert_benched(
     return KondisiStrategi(
         strategi=strategi,
         kondisi="benched",
-        subjek=_subjek_kondisi("benched", strategi),
+        subjek=subjek,
         severity=_SEVERITY["benched"],
         pesan=pesan,
         subjek_aksi="batas harian per strategi — entry baru untuk strategi ini ditahan sampai hari berganti",

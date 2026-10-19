@@ -386,6 +386,7 @@ def alert_bench_jika_transisi(
         alasan=alasan,
         trade=int(entri.get("trade", 0)),
         fee_usd=float(entri.get("fee_usd", 0.0)),
+        hari=bench.hari() if hasattr(bench, "hari") else None,
     )
     return _alert(
         s, subject=kondisi.subjek, message=kondisi.pesan,
