@@ -27,7 +27,7 @@
 	}: Props = $props();
 </script>
 
-<header class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3 mb-4" data-testid="page-header">
+<header class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3" data-testid="page-header">
 	<div class="min-w-0">
 		<span class="label-mikro text-text-3 font-mono block">{eyebrow.toUpperCase()}</span>
 		<div class="flex flex-wrap items-center gap-2 mt-0.5">
