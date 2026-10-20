@@ -111,6 +111,12 @@ def rencana(
             .where(Event.fact_ids.op("@>")(func.to_jsonb(sub.c.id)))
             .exists()
         )
+        .where(
+            ~select(Alert.id)
+            .where(func.jsonb_array_length(Alert.fact_ids) > 0)
+            .where(Alert.fact_ids.op("@>")(func.to_jsonb(sub.c.id)))
+            .exists()
+        )
     )
     n_facts = s.scalar(select(func.count()).select_from(kandidat_facts.subquery())) or 0
 
@@ -176,7 +182,7 @@ def jalankan(
             )
             .subquery()
         )
-        # Penjaga SAMA dengan rencana(): jangan hapus fakta yang masih dirujuk event.
+        # Penjaga SAMA dengan rencana(): jangan hapus fakta yang masih dirujuk event atau alert.
         kandidat = (
             select(sub.c.id)
             .where(sub.c.rn > keep_versi)
@@ -184,6 +190,12 @@ def jalankan(
                 ~select(Event.id)
                 .where(func.jsonb_array_length(Event.fact_ids) > 0)
                 .where(Event.fact_ids.op("@>")(func.to_jsonb(sub.c.id)))
+                .exists()
+            )
+            .where(
+                ~select(Alert.id)
+                .where(func.jsonb_array_length(Alert.fact_ids) > 0)
+                .where(Alert.fact_ids.op("@>")(func.to_jsonb(sub.c.id)))
                 .exists()
             )
         )

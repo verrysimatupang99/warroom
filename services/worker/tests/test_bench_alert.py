@@ -26,12 +26,13 @@ def _bersihkan(db):
     yield
 
 
-def _bench(tmp_path: Path, *, trade: int = 1, fee: float = 999.0):
+def _bench(tmp_path: Path, *, trade: int = 1, fee: float = 999.0, now=None):
     from live_trading.bench import BatasStrategi, BenchHarian
 
     return BenchHarian(
         tmp_path / "bench.json",
         batas=BatasStrategi(maks_trade=trade, maks_fee_usd=fee),
+        now=now,
     )
 
 
@@ -53,7 +54,7 @@ def test_transisi_trade_mengabarkan_sekali(db, tmp_path: Path) -> None:
         ) is False
 
     with session_scope() as s:
-        rows = s.scalars(select(Alert).where(Alert.subject == "strategi/benched:smc")).all()
+        rows = s.scalars(select(Alert).where(Alert.subject == f"strategi/benched:smc:{bench.hari()}")).all()
         assert len(rows) == 1
         assert rows[0].severity == "warning"
         assert "batas 1 trade harian tercapai" in rows[0].message
@@ -85,5 +86,38 @@ def test_transisi_fee_mengabarkan_dengan_alasan_fee(db, tmp_path: Path) -> None:
 
     with session_scope() as s:
         alert = s.scalars(select(Alert)).one()
-        assert alert.subject == "strategi/benched:golden"
+        assert alert.subject == f"strategi/benched:golden:{bench.hari()}"
         assert "batas fee $1.00/hari tercapai" in alert.message
+
+
+def test_benched_hari_berbeda_menghasilkan_alert_baru(db, tmp_path: Path) -> None:
+    import datetime as dt
+
+    waktu_hari1 = dt.datetime(2026, 10, 19, 10, 0, tzinfo=dt.UTC)
+    waktu_hari2 = dt.datetime(2026, 10, 20, 10, 0, tzinfo=dt.UTC)
+
+    # Hari 1: transisi ke benched
+    bench1 = _bench(tmp_path, trade=1, now=lambda: waktu_hari1)
+    status_sebelum = bench1.status("smc")
+    entri1 = bench1.catat("smc", fee_usd=0.05)
+    with session_scope() as s:
+        assert alert_bench_jika_transisi(
+            s, bench1, "smc", status_sebelum=status_sebelum, entri=entri1
+        ) is True
+
+    # Hari 2: status reset ke aktif, lalu trade baru memicu benched lagi
+    bench2 = _bench(tmp_path, trade=1, now=lambda: waktu_hari2)
+    status_sebelum_hari2 = bench2.status("smc")
+    assert status_sebelum_hari2 == "aktif"
+    entri2 = bench2.catat("smc", fee_usd=0.05)
+    with session_scope() as s:
+        assert alert_bench_jika_transisi(
+            s, bench2, "smc", status_sebelum=status_sebelum_hari2, entri=entri2
+        ) is True
+
+    # Kedua alert harus ada di DB dengan subjek tanggal masing-masing
+    with session_scope() as s:
+        rows = s.scalars(select(Alert).order_by(Alert.id)).all()
+        assert len(rows) == 2
+        assert rows[0].subject == "strategi/benched:smc:2026-10-19"
+        assert rows[1].subject == "strategi/benched:smc:2026-10-20"

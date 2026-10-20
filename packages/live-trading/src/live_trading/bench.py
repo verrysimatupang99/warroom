@@ -48,6 +48,10 @@ class BenchHarian:
         # Jam WIB (offset +07:00 jujur) — hari berubah saat WIB berganti hari.
         self._now = now or (lambda: dt.datetime.now(dt.UTC) + dt.timedelta(hours=7))
 
+    def hari(self) -> str:
+        """Tanggal WIB (YYYY-MM-DD) saat ini."""
+        return self._hari()
+
     def _hari(self) -> str:
         return self._now().strftime("%Y-%m-%d")
 

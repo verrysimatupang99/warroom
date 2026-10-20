@@ -156,3 +156,29 @@ def test_closed_at_wib_berlabel_jujur(tmp_path: Path) -> None:
     )
     opened = dt.datetime.fromisoformat(pos2.opened_at)
     assert opened.utcoffset() == dt.timedelta(hours=7)
+
+
+def test_strategi_tersimpan_di_posisi_dan_ledger(tmp_path: Path) -> None:
+    """Field strategi diteruskan dari open_position ke PaperPosition dan record ledger."""
+    b = _broker(tmp_path)
+    pos = b.open_position(
+        pair="SOLUSDT",
+        direction="LONG",
+        entry=150.0,
+        stop=145.0,
+        tp1=155.0,
+        tp2=160.0,
+        size_usd=75.0,
+        strategi="legacy-smc",
+    )
+    assert pos.strategi == "legacy-smc"
+    # Memastikan tersimpan di berkas positions
+    posisi_ulang = b.positions()
+    assert len(posisi_ulang) == 1
+    assert posisi_ulang[0].strategi == "legacy-smc"
+
+    rec = b.close_position(pos.signal_id, 155.0, "closed_TP1")
+    assert rec["strategi"] == "legacy-smc"
+    # Memastikan tertulis di ledger
+    lines = (b.s.ledger_path.read_text(encoding="utf-8")).strip().splitlines()
+    assert json.loads(lines[-1])["strategi"] == "legacy-smc"

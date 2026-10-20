@@ -14,13 +14,14 @@ from warroom_notifier.strategy_alert import (
     alert_entry,
     alert_exit,
     alert_kill_switch,
+    alert_tp1,
     to_payload,
 )
 
 
 def test_benched_subjek_tetap_dan_severity_warning():
-    a = alert_benched("smc-tf15", alasan="lewat batas harian")
-    assert a.subjek == "strategi/benched:smc-tf15"
+    a = alert_benched("smc-tf15", alasan="lewat batas harian", hari="2026-10-20")
+    assert a.subjek == "strategi/benched:smc-tf15:2026-10-20"
     assert a.severity == "warning"
     assert a.kondisi == "benched"
 
@@ -53,12 +54,21 @@ def test_entry_exit_subjek_per_signal_id():
         stop=98,
     )
     keluar = alert_exit("smc", signal_id="sig-9", pair="BTCUSDT", status="tp1", r=1.2)
-    assert masuk.subjek == "trade/sig-9"
-    assert keluar.subjek == "trade/sig-9"
+    assert masuk.subjek == "trade/sig-9/entry"
+    assert keluar.subjek == "trade/sig-9/exit"
     assert masuk.severity == "info" and keluar.severity == "info"
     assert "LONG" in masuk.pesan and "entry 100" in masuk.pesan
     assert "stop 98" in masuk.pesan
     assert "+1.200R" in keluar.pesan
+
+
+def test_entry_terbuka_tidak_menahan_exit():
+    """Alert entry yang belum di-ack tidak boleh menolak alert exit untuk trade yang sama."""
+    masuk = alert_entry("smc", signal_id="sig-10", pair="BTCUSDT", direction="long")
+    keluar = alert_exit("smc", signal_id="sig-10", pair="BTCUSDT", status="closed_TP1")
+    assert masuk.subjek != keluar.subjek
+    assert masuk.subjek.endswith("/entry")
+    assert keluar.subjek.endswith("/exit")
 
 
 def test_exit_tanpa_r_tak_menyebut_angka():
@@ -111,3 +121,39 @@ def test_subjek_kondisi_berbeda_tidak_saling_menahan():
     benched = alert_benched("smc", alasan="batas")
     kill = alert_kill_switch("smc", alasan="halt")
     assert benched.subjek != kill.subjek
+
+
+def test_tp1_alert_subjek_dan_pesan():
+    a = alert_tp1(
+        "legacy-smc",
+        signal_id="sig-88",
+        pair="BTCUSDT",
+        direction="LONG",
+        stop=67000.0,
+        tp2=70000.0,
+        mode="paper",
+    )
+    assert a.subjek == "tp1/sig-88"
+    assert a.severity == "info"
+    assert a.kondisi == "tp1"
+    assert a.strategi == "legacy-smc"
+    assert "🎯" not in a.pesan
+    assert a.pesan.startswith("[PAPER] [TP1 TERCAPAI - RUNNER AKTIF]")
+    assert "Pair: BTCUSDT (LONG)" in a.pesan
+    assert "Stop loss digeser ke break-even ($67000.0)" in a.pesan
+    assert "Sisa posisi menuju TP2 ($70000.0)" in a.pesan
+
+
+def test_tp1_tanpa_mode():
+    a = alert_tp1(
+        "smc",
+        signal_id="sig-89",
+        pair="ETHUSDT",
+        direction="SHORT",
+        stop=2600.0,
+        tp2=2400.0,
+        mode=None,
+    )
+    assert a.pesan.startswith("[TP1 TERCAPAI")
+    assert "Pair: ETHUSDT (SHORT)" in a.pesan
+

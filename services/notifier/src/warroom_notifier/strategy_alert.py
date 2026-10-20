@@ -6,9 +6,9 @@ Aturan yang dikodekan di sini (bukan di pemanggil):
   ``_alert`` di worker menahan alert kedua selama yang pertama belum di-ack.
   Kondisi yang berulang tiap siklus (mis. strategi tetap benched selama sehari)
   karena itu menghasilkan SATU alert, bukan satu per tick.
-- **Kejadian, bukan keadaan.** ``entry``/``exit`` diberi subjek per trade
-  (``trade/<signal_id>``) — trade baru = alert baru; pengulangan trade yang sama
-  tidak pernah menambah alert.
+- **Kejadian, bukan keadaan.** ``entry``/``exit`` diberi subjek per aksi
+  (``trade/<signal_id>/entry`` dan ``trade/<signal_id>/exit``) — trade baru =
+  alert entry; penutupan = alert exit; entry yang belum di-ack tak menahan exit.
 - **Benched/kill hanya saat BERUBAH.** Alert dibangkitkan pada transisi
   aktif→benched dan aktif→kill; pemanggil menyuplai keadaan sebelumnya. Strategi
   yang masih benched pada siklus berikutnya tidak memicu apa pun.
@@ -27,6 +27,7 @@ __all__ = [
     "alert_entry",
     "alert_exit",
     "alert_kill_switch",
+    "alert_tp1",
     "to_payload",
 ]
 
@@ -65,12 +66,19 @@ def alert_benched(
     alasan: str,
     trade: int | str | None = None,
     fee_usd: float | None = None,
+    hari: str | None = None,
 ) -> KondisiStrategi:
     """Strategi baru masuk ``benched`` — dipanggil HANYA pada transisi.
 
     ``trade``/``fee_usd`` hanya ditampilkan bila pemanggil benar-benar punya
     nilainya; tanpa itu pesan tidak menyebut angka sama sekali (bukan nol).
+    Subjek menyertakan tanggal hari (WIB) agar tidak menahan dedup lintas hari.
     """
+    if hari is None:
+        from datetime import UTC, datetime, timedelta
+
+        hari = (datetime.now(UTC) + timedelta(hours=7)).strftime("%Y-%m-%d")
+    subjek = f"{_SUBJEK['benched']}:{strategi}:{hari}"
     pesan = f"{strategi} benched: {alasan}"
     bagian = []
     if trade is not None:
@@ -82,7 +90,7 @@ def alert_benched(
     return KondisiStrategi(
         strategi=strategi,
         kondisi="benched",
-        subjek=_subjek_kondisi("benched", strategi),
+        subjek=subjek,
         severity=_SEVERITY["benched"],
         pesan=pesan,
         subjek_aksi="batas harian per strategi — entry baru untuk strategi ini ditahan sampai hari berganti",
@@ -124,7 +132,7 @@ def alert_entry(
     risk_usd: float | None = None,
     biaya_bps: float | None = None,
 ) -> KondisiStrategi:
-    """Trade paper baru dibuka. Subjek per signal_id → satu alert per trade.
+    """Trade paper baru dibuka. Subjek per aksi → satu alert per entry trade.
 
     ``mode`` (mis. ``paper``) memberi label jujur pada pesan; ukuran/risiko/biaya
     hanya ditampilkan bila pemanggil benar-benar menyuplainya.
@@ -150,7 +158,7 @@ def alert_entry(
     return KondisiStrategi(
         strategi=strategi,
         kondisi="entry",
-        subjek=f"trade/{signal_id}",
+        subjek=f"trade/{signal_id}/entry",
         severity="info",
         pesan=pesan,
         subjek_aksi="lihat posisi terbuka di /crypto?sub=eksekusi",
@@ -166,7 +174,7 @@ def alert_exit(
     r: float | None = None,
     mode: str | None = None,
 ) -> KondisiStrategi:
-    """Trade paper ditutup (SL/TP/manual). Subjek per signal_id → satu alert per trade."""
+    """Trade paper ditutup (SL/TP/manual). Subjek per aksi → satu alert per exit trade."""
     pesan = f"{strategi} {pair} ditutup: {status}"
     if r is not None:
         pesan += f" ({float(r):+.3f}R)"
@@ -175,10 +183,37 @@ def alert_exit(
     return KondisiStrategi(
         strategi=strategi,
         kondisi="exit",
-        subjek=f"trade/{signal_id}",
+        subjek=f"trade/{signal_id}/exit",
         severity="info",
         pesan=pesan,
         subjek_aksi="periksa buku kas di /crypto?sub=eksekusi",
+    )
+
+
+def alert_tp1(
+    strategi: str,
+    *,
+    signal_id: str,
+    pair: str,
+    direction: str,
+    stop: float | int | str,
+    tp2: float | int | str,
+    mode: str | None = "paper",
+) -> KondisiStrategi:
+    """TP1 tercapai — runner aktif, stop loss digeser ke break-even."""
+    pesan = (
+        f"[TP1 TERCAPAI - RUNNER AKTIF]\nPair: {pair} ({direction})\n"
+        f"Stop loss digeser ke break-even (${stop}). Sisa posisi menuju TP2 (${tp2})."
+    )
+    if mode:
+        pesan = f"[{mode.upper()}] {pesan}"
+    return KondisiStrategi(
+        strategi=strategi,
+        kondisi="tp1",
+        subjek=f"tp1/{signal_id}",
+        severity="info",
+        pesan=pesan,
+        subjek_aksi="pantau posisi di Command Center",
     )
 
 

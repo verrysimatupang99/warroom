@@ -50,6 +50,9 @@ def kirim_tertunda(
         if (a.attempts or 0) >= MAX_PERCOBAAN:
             dilewati += 1
             continue
+        if (a.attempts or 0) > 0 and a.last_error is None:
+            # Percobaan terakhir sukses terkirim; jangan kirim ulang walau belum di-ack owner.
+            continue
         if dicoba >= limit:
             break
         res = tr.send(
@@ -75,7 +78,7 @@ def kirim_tertunda(
         )
         # Catat percobaan di baris alert (bukan hanya di event) supaya batas terlihat di UI.
         a.attempts = (a.attempts or 0) + 1
-        a.last_error = None if res.ok else str(res.detail)[:200]
+        a.last_error = None if res.ok else str(res.detail or "gagal kirim")[:200]
         # Auto-ack tier INFO yang TERKIRIM sukses (Keputusan 15 Okt, rekomendasi #6):
         # alert info = pengumuman sinyal/trade — begitu terkirim misinya selesai,
         # tidak boleh menumpuk sebagai "51 alert terbuka". Warning/kritis tetap

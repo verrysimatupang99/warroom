@@ -122,6 +122,36 @@ def test_fact_yang_dirujuk_event_TIDAK_dihapus(db) -> None:
         assert yatim == 0, "tidak boleh ada event yang menunjuk fakta terhapus"
 
 
+def test_fact_yang_dirujuk_alert_TIDAK_dihapus(db) -> None:
+    """Fakta yang dirujuk alerts.fact_ids tidak boleh dihapus retensi."""
+    with session_scope() as s:
+        for m in range(6):
+            _fact(s, "uji", "kunci-alert", m, float(m))
+    with session_scope() as s:
+        tertua = (
+            s.scalars(select(Fact).where(Fact.key == "kunci-alert").order_by(Fact.observed_at)).first()
+        )
+        s.add(
+            Alert(
+                severity="warning",
+                subject="uji/rujuk-fact",
+                message="alert dengan rujukan fact",
+                fact_ids=[tertua.id],
+            )
+        )
+        tertua_id = tertua.id
+
+    with session_scope() as s:
+        r = retention.rencana(s, keep_versi=3)
+        # 6 versi - 3 disimpan = 3 kandidat, tapi 1 dirujuk alert -> hanya 2 kandidat hapus
+        assert r["facts"] == 2
+        hasil = retention.jalankan(s, keep_versi=3, hapus_events=False)
+        assert hasil["dihapus"]["facts"] == 2
+
+    with session_scope() as s:
+        assert s.get(Fact, tertua_id) is not None
+
+
 def test_events_audit_tidak_dihapus_kecuali_diminta(db) -> None:
     lama = datetime.now(UTC) - timedelta(days=400)
     with session_scope() as s:
