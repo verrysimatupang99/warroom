@@ -14,6 +14,7 @@
 	import { AREAS } from '$lib/nav';
 	import { umurDetik, angka, waktuWIB } from '$lib/format';
 	import SubNav from '$lib/components/SubNav.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -176,12 +177,15 @@ function pilihSub(s: string) {
 <svelte:head><title>Riset — War Room</title></svelte:head>
 
 <div class="riset">
-	<header class="kepala">
-		<span class="label-mikro">ANALITIK / RISET</span>
-		<h1>Riset</h1>
-		<span class="badge-sumber badge-{sourceState}">{sourceState.toUpperCase()}</span>
-		<p class="dim">Bukti dari ledger, agenda makro, dan kalkulator. Semua angka dari data nyata.</p>
-	</header>
+	<PageHeader
+		eyebrow="ANALITIK / RISET"
+		title="Riset"
+		tag={sourceState !== 'unknown' ? sourceState : null}
+		terverifikasi={sourceState === 'fresh' ? true : sourceState === 'stale' || sourceState === 'degraded' ? false : null}
+		sumber="/api/v1/areas/crypto"
+		alasan="status kesegaran sumber riset"
+		description="Bukti dari ledger, agenda makro, dan kalkulator. Semua angka dari data nyata."
+	/>
 
 	<SubNav {area} aktif={sub} onpilih={pilihSub} />
 
@@ -344,31 +348,6 @@ function pilihSub(s: string) {
 		display: flex;
 		flex-direction: column;
 		gap: var(--grid-gap);
-	}
-	.kepala h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--text-26);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.badge-sumber {
-		display: inline-flex;
-		align-items: center;
-		border: 1px solid var(--color-line);
-		border-radius: var(--radius-control);
-		padding: 0.15rem 0.45rem;
-		font-size: var(--text-10);
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-	.badge-fresh { color: var(--color-pos); }
-	.badge-stale, .badge-degraded { color: var(--color-warn); }
-	.badge-unknown { color: var(--color-text-3); }
-	.kepala p {
-		margin: 0.15rem 0 0;
-		font-size: var(--text-13);
 	}
 	.kartu {
 		background: var(--color-surface);
