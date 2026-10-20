@@ -7,6 +7,7 @@
 	import type { DocContent, DocsPayload } from '$lib/api/types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
@@ -115,12 +116,16 @@
 
 <svelte:head><title>Catatan — War Room</title></svelte:head>
 
-<div class="catatan">
-	<header class="kepala">
-		<span class="label-mikro">DOKUMEN / CATATAN</span>
-		<h1>Catatan</h1>
-		<p class="dim">Dokumentasi proyek: temuan, keputusan, dan pelajaran. Dibaca dari repo.</p>
-	</header>
+<div class="space-y-4">
+	<PageHeader
+		eyebrow="DOKUMEN / CATATAN"
+		title="Catatan"
+		tag={slugAktif ? `${daftar?.dokumen?.length ?? 0} berkas` : null}
+		terverifikasi={Boolean(daftar?.dokumen?.length)}
+		sumber="/api/v1/areas/catatan"
+		alasan="folder catatan repo belum terbaca"
+		description="Dokumentasi proyek: temuan, keputusan, dan pelajaran. Dibaca langsung dari repo."
+	/>
 
 	<NavInfo />
 
@@ -164,22 +169,6 @@
 </div>
 
 <style>
-	.catatan {
-		display: flex;
-		flex-direction: column;
-		gap: var(--grid-gap);
-	}
-	.kepala h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--text-26);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.kepala p {
-		margin: 0.15rem 0 0;
-		font-size: var(--text-13);
-	}
 	.dua {
 		display: grid;
 		grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);

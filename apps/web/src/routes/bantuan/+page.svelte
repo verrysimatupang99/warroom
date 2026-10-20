@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import NavInfo from '$lib/components/NavInfo.svelte';
 	// Bantuan — padanan /faq algentis, ditulis dari produk kita sendiri.
 	// Setiap jawaban mengacu ke perilaku nyata (bukan janji). Pertanyaan yang
@@ -61,12 +62,16 @@
 
 <svelte:head><title>Bantuan — War Room</title></svelte:head>
 
-<div class="bantuan">
-	<header class="kepala">
-		<span class="label-mikro">DOKUMEN / BANTUAN</span>
-		<h1>Bantuan</h1>
-		<p class="dim">Jawaban dari perilaku nyata sistem. Yang belum ada ditulis belum ada.</p>
-	</header>
+<div class="space-y-4">
+	<PageHeader
+		eyebrow="DOKUMEN / BANTUAN"
+		title="Bantuan"
+		tag={`${tanya.length} Tanya Jawab`}
+		terverifikasi={true}
+		sumber="perilaku nyata sistem"
+		alasan="basis tanya jawab tervalidasi"
+		description="Jawaban dari perilaku nyata sistem. Yang belum ada ditulis belum ada."
+	/>
 
 	<NavInfo />
 
@@ -104,18 +109,6 @@
 </div>
 
 <style>
-	.bantuan {
-		display: flex;
-		flex-direction: column;
-		gap: var(--grid-gap);
-	}
-	.kepala h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--text-26);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
 	/* Perapihan dokumen (DESIGN-USULAN 16 Okt): heading bagian = eyebrow mono. */
 	.kartu h2 {
 		font-family: var(--font-mono);
@@ -123,10 +116,6 @@
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
 		color: var(--color-text-3);
-	}
-	.kepala p {
-		margin: 0.15rem 0 0;
-		font-size: var(--text-13);
 	}
 	.daftar {
 		list-style: none;
@@ -199,9 +188,5 @@
 	}
 	.kartu a {
 		color: var(--color-accent);
-	}
-	.dim {
-		color: var(--color-text-3);
-		font-weight: 400;
 	}
 </style>

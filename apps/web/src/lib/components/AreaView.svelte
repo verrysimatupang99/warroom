@@ -8,7 +8,7 @@
 	import { live } from '$lib/api/live.svelte';
 	import { teksNilai, umurDetik, angka, waktuWIB } from '$lib/format';
 	import AreaLoader from './AreaLoader.svelte';
-import HonestyTag from './HonestyTag.svelte';
+import PageHeader from './PageHeader.svelte';
 import TrackBar from './TrackBar.svelte';
 	import Block from './Block.svelte';
 	import FreshnessBadge from './FreshnessBadge.svelte';
@@ -360,36 +360,26 @@ function pilihSub(s: string) {
 </script>
 
 <div class="space-y-4">
-	<!-- Header Area: eyebrow mono struktural "PASAR / <LABEL>" (label bagian mockup 16 Okt)
-	     + honesty-tag kejujuran data di samping judul, selaras halaman leaderboard. -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-		<div>
-			<span class="label-mikro">PASAR / {(area?.label ?? kunci).toUpperCase()}</span>
-			<div class="flex flex-wrap items-center gap-2">
-				<h1 class="text-26 font-bold tracking-tight text-text font-display">{area?.label ?? kunci}</h1>
-				<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
-					{area?.kunci ?? kunci}
-				</span>
-				<HonestyTag
-					terverifikasi={statusFakta === 'ok' ? true : statusFakta === 'galat' ? false : null}
-					sumber={statusFakta === 'ok' ? `/api/v1/areas/${kunci}` : null}
-					alasan="endpoint area belum menjawab — bukan angka sintetis"
-				/>
-			</div>
-			{#if anak}
-				<p class="text-12 text-text-3 mt-0.5">{anak.label} — {anak.catatan}</p>
-			{/if}
-		</div>
-
-		<!-- Tombol Mode Inspeksi Mentah -->
-		<button
-			type="button"
-			class="rounded-control border border-line bg-surface px-3 py-1.5 text-11 text-text-3 hover:text-text hover:border-line-soft transition-colors"
-			onclick={() => (tampilRaw = !tampilRaw)}
-		>
-			{tampilRaw ? 'Tutup Inspeksi Mentah' : 'FACT: inspeksi mentah'}
-		</button>
-	</div>
+	<!-- Header Area terpadu menggunakan PageHeader -->
+	<PageHeader
+		eyebrow={`PASAR / ${(area?.label ?? kunci).toUpperCase()}`}
+		title={area?.label ?? kunci}
+		tag={area?.kunci ?? kunci}
+		terverifikasi={statusFakta === 'ok' ? true : statusFakta === 'galat' ? false : null}
+		sumber={statusFakta === 'ok' ? `/api/v1/areas/${kunci}` : null}
+		alasan="endpoint area belum menjawab — bukan angka sintetis"
+		description={anak ? `${anak.label} — ${anak.catatan}` : null}
+	>
+		{#snippet action()}
+			<button
+				type="button"
+				class="rounded-control border border-line bg-surface px-3 py-1.5 text-11 font-mono text-text-3 hover:text-text hover:border-line-soft transition-colors"
+				onclick={() => (tampilRaw = !tampilRaw)}
+			>
+				{tampilRaw ? 'Tutup Inspeksi Mentah' : 'FACT: inspeksi mentah'}
+			</button>
+		{/snippet}
+	</PageHeader>
 
 	<!-- Sub-navigasi Tabs -->
 	{#if area?.anak?.length}

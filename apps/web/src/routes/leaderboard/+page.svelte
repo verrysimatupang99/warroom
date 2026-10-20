@@ -2,7 +2,7 @@
 	import { getLeaderboard, getArea } from '$lib/api/client';
 	import type { LeaderboardPayload, LeaderboardStrategy } from '$lib/api/types';
 	import { angka } from '$lib/format';
-	import HonestyTag from '$lib/components/HonestyTag.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
 
 	let payload = $state<LeaderboardPayload | null>(null);
@@ -154,36 +154,27 @@
 </svelte:head>
 
 <div class="space-y-4">
-	<!-- Kepala Halaman -->
-	<!-- Kepala halaman: eyebrow mono (label struktur) + judul + honesty-tag.
-	     Motif DESIGN-USULAN 16 Okt: label bagian mono uppercase, setiap klaim
-	     keberhasilan data membawa status verifikasinya. -->
-	<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-3">
-		<div>
-			<span class="label-mikro">ANALITIK / LEADERBOARD</span>
-			<div class="flex flex-wrap items-center gap-2">
-				<h1 class="text-20 font-bold font-display text-text">Leaderboard Antar-Strategi</h1>
-				<HonestyTag
-					terverifikasi={sumberKeterangan === 'endpoint' ? true : sumberKeterangan === 'fakta_mentah' ? false : null}
-					sumber={sumberKeterangan === 'endpoint' ? '/api/v1/leaderboard' : 'agregasi fakta mentah'}
-					alasan="endpoint atau fakta mentah tidak terbaca — bukan angka sintetis"
-				/>
-			</div>
-			<p class="text-12 text-text-3 mt-1">
-				Membandingkan hasil tiap strategi secara adil dan jujur berdasarkan return terukur, riwayat ledger, dan siklus setup.
-			</p>
-		</div>
-
-		{#if sumberKeterangan === 'fakta_mentah'}
-			<div class="rounded-control border border-warn/30 bg-warn/10 px-2.5 py-1 text-10 font-mono text-warn">
-				! Sumber: agregasi fakta mentah (menunggu sinkronisasi rute endpoint baru)
-			</div>
-		{:else if payload?.diperbarui_pada}
-			<div class="rounded-control border border-line bg-surface px-2.5 py-1 text-10 font-mono text-text-3">
-				Endpoint: /api/v1/leaderboard
-			</div>
-		{/if}
-	</div>
+	<!-- Kepala Halaman terpadu -->
+	<PageHeader
+		eyebrow="ANALITIK / LEADERBOARD"
+		title="Leaderboard Antar-Strategi"
+		terverifikasi={sumberKeterangan === 'endpoint' ? true : sumberKeterangan === 'fakta_mentah' ? false : null}
+		sumber={sumberKeterangan === 'endpoint' ? '/api/v1/leaderboard' : 'agregasi fakta mentah'}
+		alasan="endpoint atau fakta mentah tidak terbaca — bukan angka sintetis"
+		description="Membandingkan hasil tiap strategi secara adil dan jujur berdasarkan return terukur, riwayat ledger, dan siklus setup."
+	>
+		{#snippet action()}
+			{#if sumberKeterangan === 'fakta_mentah'}
+				<div class="rounded-control border border-warn/30 bg-warn/10 px-2.5 py-1 text-10 font-mono text-warn">
+					! Sumber: agregasi fakta mentah (menunggu sinkronisasi rute endpoint baru)
+				</div>
+			{:else if payload?.diperbarui_pada}
+				<div class="rounded-control border border-line bg-surface px-2.5 py-1 text-10 font-mono text-text-3">
+					Endpoint: /api/v1/leaderboard
+				</div>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	<!-- Ubin Metrik Ringkas -->
 	<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">

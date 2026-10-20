@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import NavInfo from '$lib/components/NavInfo.svelte';
 	// Cara kerja — padanan /system algentis. Menjelaskan aliran War Room apa adanya,
 	// bukan aspirasi: alur yang benar-benar jalan (domain → worker → API → web).
@@ -93,12 +94,16 @@
 
 <svelte:head><title>Cara kerja — War Room</title></svelte:head>
 
-<div class="cara">
-	<header class="kepala">
-		<span class="label-mikro">DOKUMEN / CARA-KERJA</span>
-		<h1>Cara kerja</h1>
-		<p class="dim">Aliran yang benar-benar jalan, bukan rencana. Angka hanya dari tabel fakta.</p>
-	</header>
+<div class="space-y-4">
+	<PageHeader
+		eyebrow="DOKUMEN / CARA-KERJA"
+		title="Cara Kerja"
+		tag="arsitektur"
+		terverifikasi={true}
+		sumber="fakta & kode produksi"
+		alasan="dokumentasi arsitektur nyata"
+		description="Aliran yang benar-benar jalan, bukan rencana. Angka hanya dari tabel fakta."
+	/>
 
 	<NavInfo />
 
@@ -163,22 +168,6 @@
 </div>
 
 <style>
-	.cara {
-		display: flex;
-		flex-direction: column;
-		gap: var(--grid-gap);
-	}
-	.kepala h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--text-26);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.kepala p {
-		margin: 0.15rem 0 0;
-		font-size: var(--text-13);
-	}
 	.kartu {
 		background: var(--color-surface);
 		border: 1px solid var(--color-line);
@@ -317,10 +306,6 @@
 	}
 	.batas b {
 		color: var(--color-text);
-	}
-	.dim {
-		color: var(--color-text-3);
-		font-weight: 400;
 	}
 	.angka {
 		font-family: var(--font-mono);
