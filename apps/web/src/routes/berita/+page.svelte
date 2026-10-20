@@ -5,6 +5,7 @@
 	import { getArea } from '$lib/api/client';
 	import type { AreaPayload, Fact } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
@@ -45,14 +46,16 @@
 
 <svelte:head><title>Berita — War Room</title></svelte:head>
 
-<div class="berita">
-	<header class="kepala">
-		<span class="label-mikro">INFORMASI / BERITA</span>
-		<h1>Berita</h1>
-		<p class="dim">
-			Judul + tautan dari feed publik. Ringkasan tidak disalin — klik untuk baca di sumbernya.
-		</p>
-	</header>
+<div class="space-y-4">
+	<PageHeader
+		eyebrow="INFORMASI / BERITA"
+		title="Berita"
+		tag={news?.sumber_data ?? 'RSS'}
+		terverifikasi={Boolean(news?.tersedia && items.length > 0)}
+		sumber={news?.sumber_data ?? 'RSS publik'}
+		alasan="feed publik belum merespons"
+		description="Judul + tautan dari feed publik. Ringkasan tidak disalin — klik untuk baca di sumbernya."
+	/>
 
 	<NavInfo />
 
@@ -98,22 +101,6 @@
 </div>
 
 <style>
-	.berita {
-		display: flex;
-		flex-direction: column;
-		gap: var(--grid-gap);
-	}
-	.kepala h1 {
-		margin: 0;
-		font-family: var(--font-display);
-		font-size: var(--text-26);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-	.kepala p {
-		margin: 0.15rem 0 0;
-		font-size: var(--text-13);
-	}
 	.kartu {
 		background: var(--color-surface);
 		border: 1px solid var(--color-line);
