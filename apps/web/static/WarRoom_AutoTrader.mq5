@@ -117,8 +117,22 @@ void FetchAndExecuteSignal()
          double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
          double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
+         // Proteksi Validasi Stops MT5:
+         // Jika harga pasar (Ask/Bid) sudah melesat MELEWATI target TP atau SL,
+         // jangan paksa masuk karena broker akan menolak [invalid stops] atau posisi langsung minus.
          if(side == "LONG")
          {
+            if(ask >= tp1)
+            {
+               Print("⚠️ Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah berada di atas target TP (", tp1, "). Menunggu retest berikutnya.");
+               return;
+            }
+            if(ask <= sl)
+            {
+               Print("⚠️ Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
+               return;
+            }
+
             Print("🟢 Sinyal War Room Diterima: BUY ", _Symbol, " Entry: ", ask, " SL: ", sl, " TP: ", tp1);
             if(trade.Buy(InpFixedLot, _Symbol, ask, sl, tp1, "WarRoom Signal"))
             {
@@ -132,6 +146,17 @@ void FetchAndExecuteSignal()
          }
          else if(side == "SHORT")
          {
+            if(bid <= tp1)
+            {
+               Print("⚠️ Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah berada di bawah target TP (", tp1, "). Menunggu retest berikutnya.");
+               return;
+            }
+            if(bid >= sl)
+            {
+               Print("⚠️ Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
+               return;
+            }
+
             Print("🔴 Sinyal War Room Diterima: SELL ", _Symbol, " Entry: ", bid, " SL: ", sl, " TP: ", tp1);
             if(trade.Sell(InpFixedLot, _Symbol, bid, sl, tp1, "WarRoom Signal"))
             {
