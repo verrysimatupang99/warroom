@@ -112,6 +112,14 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
             risk = entry - sl
             tp = entry + (risk * rrr)
             risk_pct = round((risk / entry) * 100, 2)
+            
+            # Freqtrade & Hummingbot Guards:
+            # 1. Breakeven Trigger: jika harga capai +1.0R, geser SL ke entry
+            # 2. Trailing Stop Trigger: jika harga capai +1.5R, trail SL 1.0x ATR di bawah harga
+            be_trigger = entry + risk
+            trail_trigger = entry + (risk * 1.5)
+            trail_distance = round(atr_curr * 1.0, 4 if "USD" in pair and pair != "XAUUSD" else 2)
+
             return {
                 "pair": pair,
                 "arah": "LONG",
@@ -120,6 +128,10 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
                 "tp1": round(tp, 4 if "USD" in pair and pair != "XAUUSD" else 2),
                 "risk_pct": risk_pct,
                 "r_r": rrr,
+                "be_trigger": round(be_trigger, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "trail_trigger": round(trail_trigger, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "trail_step": trail_distance,
+                "spread_max_allowed_pct": 0.08,
                 "tier": "PREMIUM",
                 "strategy": "break_retest_15m_tuned",
                 "category": cfg["category"],
@@ -134,6 +146,11 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
             risk = sl - entry
             tp = entry - (risk * rrr)
             risk_pct = round((risk / entry) * 100, 2)
+            
+            be_trigger = entry - risk
+            trail_trigger = entry - (risk * 1.5)
+            trail_distance = round(atr_curr * 1.0, 4 if "USD" in pair and pair != "XAUUSD" else 2)
+
             return {
                 "pair": pair,
                 "arah": "SHORT",
@@ -142,6 +159,10 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
                 "tp1": round(tp, 4 if "USD" in pair and pair != "XAUUSD" else 2),
                 "risk_pct": risk_pct,
                 "r_r": rrr,
+                "be_trigger": round(be_trigger, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "trail_trigger": round(trail_trigger, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "trail_step": trail_distance,
+                "spread_max_allowed_pct": 0.08,
                 "tier": "PREMIUM",
                 "strategy": "break_retest_15m_tuned",
                 "category": cfg["category"],
