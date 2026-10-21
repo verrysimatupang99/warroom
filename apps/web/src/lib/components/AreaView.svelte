@@ -2513,7 +2513,7 @@ function pilihSub(s: string) {
 					</div>
 				{/if}
 
-				{#if sub === 'struktur' || !sub}
+				{#if sub === 'cockpit' || sub === 'struktur' || !sub}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4">
 							<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
@@ -2669,7 +2669,7 @@ function pilihSub(s: string) {
 							data={akurasiForexT}
 						/>
 					</div>
-				{:else if sub === 'sesi'}
+				{:else if sub === 'setup' || sub === 'sesi' || sub === 'kalender'}
 					<div class="space-y-4">
 						<!-- Akurasi juga tampil di tab sesi supaya tak perlu bolak-balik -->
 						<AkurasiPasar market="forex · trade tuntas" judul="Akurasi per Strategi (Forex)" data={akurasiForex} />
@@ -2785,7 +2785,11 @@ function pilihSub(s: string) {
 						{/if}
 					</div>
 					</div>
-				{:else if sub === 'demo'}
+				{:else if sub === 'ukur'}
+					<div class="space-y-4">
+						<AkurasiPasar market="forex · trade tuntas" judul="Akurasi & Validasi Kuantitatif (Forex & Gold)" data={akurasiForex} />
+					</div>
+				{:else if sub === 'eksekusi' || sub === 'demo'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-4 space-y-3">
 							<div class="flex items-center justify-between border-b border-line-soft pb-2">
