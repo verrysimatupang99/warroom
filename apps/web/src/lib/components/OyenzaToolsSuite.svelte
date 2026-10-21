@@ -8,7 +8,7 @@
 	import HonestyTag from './HonestyTag.svelte';
 
 	// Tab aktif di dalam Tools Suite
-	let activeTool = $state<'model' | 'compare' | 'flow' | 'screener'>('model');
+	let activeTool = $state<'model' | 'compare' | 'flow' | 'screener' | 'standdown'>('model');
 
 	// State untuk Tool: Risk & Lot Sizing Model (Global4EX $5K)
 	let accountSize = $state(5000);
@@ -96,6 +96,13 @@
 				onclick={() => activeTool = 'flow'}
 			>
 				<span>04</span> Smart Flow
+			</button>
+			<button 
+				type="button"
+				class="tool-btn {activeTool === 'standdown' ? 'active' : ''}" 
+				onclick={() => activeTool = 'standdown'}
+			>
+				<span>05</span> Stand-Down Guard
 			</button>
 		</div>
 	</div>
@@ -321,6 +328,53 @@
 					<div class="font-bold text-text border-b border-line pb-1.5 mb-2">Gold Institutional Bias</div>
 					<div class="text-20 font-bold text-pos mb-1">68% Bullish</div>
 					<p class="text-11 text-text-3 font-sans">Sentimen sesi London-NY mengarah ke kelanjutan reli emas di atas level support $2,720.</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- TAB CONTENT 5: STAND-DOWN GUARD (CALENDAR) -->
+	{#if activeTool === 'standdown'}
+		<div class="tool-content">
+			<div class="space-y-3 font-mono">
+				<div class="p-3 bg-surface border border-line rounded flex items-center justify-between">
+					<div>
+						<span class="text-12 font-bold text-pos flex items-center gap-2">
+							<span class="inline-block w-2.5 h-2.5 rounded-full bg-pos animate-pulse"></span>
+							ZONE AMAN: TIDAK ADA HIGH-IMPACT NEWS DALAM 60 MENIT
+						</span>
+						<p class="text-11 text-text-3 font-sans mt-0.5">Sistem mengizinkan eksekusi order normal untuk XAUUSD &amp; Crypto.</p>
+					</div>
+					<span class="status-pill bg-pos/10 text-pos border-pos/30 text-11">TRADE ALLOWED</span>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-12">
+					<div class="sc-card">
+						<div class="flex justify-between items-center text-11 text-text-3 border-b border-line-soft pb-1.5 mb-2">
+							<span>US CPI Inflation</span>
+							<span class="text-neg font-bold">HIGH IMPACT</span>
+						</div>
+						<div class="text-16 font-bold text-text mb-1">Kamis, 19:30 WIB</div>
+						<p class="text-11 text-text-3 font-sans">Stand-Down otomatis aktif 15m sebelum &amp; 15m sesudah rilis. Sizing ditahan ke 0 lot.</p>
+					</div>
+
+					<div class="sc-card">
+						<div class="flex justify-between items-center text-11 text-text-3 border-b border-line-soft pb-1.5 mb-2">
+							<span>Fed FOMC Rate Decision</span>
+							<span class="text-neg font-bold">MAX RISK</span>
+						</div>
+						<div class="text-16 font-bold text-text mb-1">Kamis (Malam), 01:00 WIB</div>
+						<p class="text-11 text-text-3 font-sans">Larangan trading ketat di prop-firm Global4EX / GFT saat pengumuman suku bunga.</p>
+					</div>
+
+					<div class="sc-card">
+						<div class="flex justify-between items-center text-11 text-text-3 border-b border-line-soft pb-1.5 mb-2">
+							<span>US Non-Farm Payrolls (NFP)</span>
+							<span class="text-neg font-bold">HIGH IMPACT</span>
+						</div>
+						<div class="text-16 font-bold text-text mb-1">Jumat pertama, 19:30 WIB</div>
+						<p class="text-11 text-text-3 font-sans">Slippage tinggi &amp; spread melebar drastis pada XAU/USD dan EUR/USD.</p>
+					</div>
 				</div>
 			</div>
 		</div>

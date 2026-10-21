@@ -21,6 +21,7 @@
 	import DompetLintasMarket from '$lib/components/DompetLintasMarket.svelte';
 	import KinerjaBukti from '$lib/components/KinerjaBukti.svelte';
 	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
+	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
@@ -312,9 +313,11 @@ function pilihSub(s: string) {
 			{/if}
 		</section>
 	{:else}
-		<!-- ============ ALAT (padanan /tools algentis) ============ -->
+		<!-- ============ ALAT (padanan /tools algentis & oyenza suite) ============ -->
+		<OyenzaToolsSuite />
+
 		<section class="kartu" aria-label="Kalkulator risiko">
-			<h2 class="judul">Position size &amp; risiko <span class="dim">murni hitungan</span></h2>
+			<h2 class="judul">Position size &amp; risiko manual <span class="dim">murni hitungan</span></h2>
 			<div class="form">
 				<label>Modal (USD)<input type="number" bind:value={modal} min="0" step="10" /></label>
 				<label>Risiko per trade (%)<input type="number" bind:value={risikoPct} min="0" max="100" step="0.1" /></label>
