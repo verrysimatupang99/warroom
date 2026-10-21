@@ -54,6 +54,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Pair utama, risiko, posisi, sinyal & entry setup' },
 			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['kandidat', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Kandidat SMC + verdict per aturan + entry setup' },
+			{ slug: 'alat', label: 'Alat / Tools', kunci: ['bagian', 'risiko'], catatan: 'SMC POI Scanner, leverage & kalkulator margin likuidasi' },
 			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['pengukuran', 'backtest', 'pasar_akurasi'], catatan: 'Forward lolos vs ditolak + lab backtest + akurasi' },
 			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, ledger, overextended' }
 		]
@@ -67,6 +68,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Ringkasan pasar Polymarket, akurasi, dan dompet paper' },
 			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'Band favorit 0,70–0,95 + PolyBTC 5m momentum' },
+			{ slug: 'alat', label: 'Alat / Tools', kunci: ['poly_paper'], catatan: 'Kelly sizing binary options & parity drift spot vs binary' },
 			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'poly_paper'], catatan: 'Dataset, parity/drift, katalog replay dan pengujian kuantitatif' },
 			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['equity', 'ledger', 'poly_paper'], catatan: 'Paper trade ledger, arming 3-way, dan eksekusi' }
 		]
@@ -80,6 +82,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['idx_sinyal', 'idx_akurasi', 'bandarmologi_skor', 'bagian', 'dompet'], catatan: 'Overview pasar modal domestik, emiten aktif, dan metrik bandarmologi' },
 			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['bagian', 'bandarmologi_skor', 'idx_sinyal'], catatan: 'Sinyal BSJP, ARA Hunter, dan Broker Summary' },
+			{ slug: 'alat', label: 'Alat / Tools', kunci: ['bandarmologi_skor', 'bagian'], catatan: 'Foreign flow tracker, bandarmologi ATS analyzer & cash risk sizer' },
 			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'idx_akurasi'], catatan: 'Uji statistik BSJP, backtest aturan ARA, dan akurasi emiten' },
 			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['bagian', 'dompet'], catatan: 'Simulasi paper trade portofolio IDX dan riwayat transaksi' }
 		]
@@ -93,6 +96,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'forex_sinyal', 'pasar_akurasi'], catatan: 'Struktur harga Gold (XAU/USD) & Pair Forex, bias EMA, dan metrik kuantitatif' },
 			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['bagian', 'forex_sinyal'], catatan: 'Setup Break & Retest, zona entry, dan jadwal sesi market' },
+			{ slug: 'alat', label: 'Alat / Tools', kunci: ['bagian', 'forex_sinyal'], catatan: 'Prop-firm safety guard $5K Global4Ex, lot sizer & macro stand-down calendar' },
 			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'pasar_akurasi'], catatan: 'Hasil backtest & tuning parameter 15m Gold/Forex' },
 			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['bagian'], catatan: 'Paper execution ledger & Forward trading test' }
 		]
@@ -106,6 +110,7 @@ export const AREAS: Area[] = [
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['radar', 'gmgn', 'pasar_akurasi'], catatan: 'Overview likuiditas on-chain, scanner pool, dan metrik smart money' },
 			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['gmgn', 'bagian'], catatan: 'Deteksi token baru, sinyal pumpfun, dan radar likuiditas' },
+			{ slug: 'alat', label: 'Alat / Tools', kunci: ['gmgn', 'radar'], catatan: 'Smart money inflow radar, dev wallet score & slippage calculator' },
 			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['lp_paper', 'bagian', 'pasar_akurasi'], catatan: 'Ukur IL vs Hold, simulasi yield, dan metrik LP' },
 			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['lp_paper', 'bagian'], catatan: 'Paper trade runner GMGN & transaksi pool' }
 		]

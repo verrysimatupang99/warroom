@@ -39,27 +39,26 @@
    Palet graphite gelap berlapis (16 Okt 2026, keputusan owner): permukaan netral
    (bukan biru) dari DESIGN-USULAN. Sumber: mockup home.html (Tailwind config). */
 @theme {
-	/* Permukaan graphite netral berlapis */
-	--p-ink-950: #0c0e10;
-	--p-ink-900: #101214;
-	--p-ink-800: #17191c;
-	--p-ink-700: #1d2126;
-	--p-ink-600: #2a2f36;
-	--p-ink-500: #2a2f36;
-	--p-ink-400: #23272d;
-	--p-ink-350: #0c0e10;
-	/* Teks (putih-abu netral, bukan krem) */
-	--p-mist-50: #e8eaed;
-	--p-mist-300: #9aa1a9;
-	--p-mist-500: #9aa1a9;
-	--p-slate-400: #9aa1a9;
-	/* Aksen tunggal amber + semantik terbatas mint (positif TERUKUR) dan
-	   merah (risiko — selalu dengan glyph + kata, tidak pernah warna saja). */
-	--p-mint-400: #34e39a;
+	/* Permukaan graphite netral berlapis Oyenza */
+	--p-ink-950: #0c0d0e;
+	--p-ink-900: #0c0d0e;
+	--p-ink-800: #121314;
+	--p-ink-700: #16181a;
+	--p-ink-600: #232629;
+	--p-ink-500: #2f3337;
+	--p-ink-400: #1c1f22;
+	--p-ink-350: #111214;
+	/* Teks (putih-abu netral) */
+	--p-mist-50: #ededec;
+	--p-mist-300: #a6aab0;
+	--p-mist-500: #787d84;
+	--p-slate-400: #787d84;
+	/* Aksen tunggal amber / gold + semantik terbatas mint dan merah */
+	--p-mint-400: #3cc76b;
 	--p-amber-400: #f5b83d;
-	--p-red-400: #ff6b6b;
-	--p-red-300: #ff8a8a;
-	--p-ink-on: #101214;
+	--p-red-400: #f2604f;
+	--p-red-300: #f87171;
+	--p-ink-on: #0c0d0e;
 
 	/* Skala tipografi — satu tangga, tanpa lompatan */
 	--text-10: 10px;

@@ -45,6 +45,7 @@ import PasarForex from './PasarForex.svelte';
 	import QuantStrategyCard from './QuantStrategyCard.svelte';
 	import BentoMetrics4Box from './BentoMetrics4Box.svelte';
 	import DataProvenanceCard from './DataProvenanceCard.svelte';
+	import MarketToolsTabs from './MarketToolsTabs.svelte';
 import PasarGmgn from './PasarGmgn.svelte';
 import PasarPolymarket from './PasarPolymarket.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
@@ -864,6 +865,11 @@ function pilihSub(s: string) {
 						/>
 					</div>
 
+				{:else if sub === 'alat'}
+					<div class="space-y-4">
+						<MarketToolsTabs pasar="crypto" />
+					</div>
+
 				{:else if sub === 'ukur'}
 					<div class="space-y-4">
 						<!-- Ringkasan satu baris yang diturunkan langsung dari data pengukuran lolos vs ditolak. -->
@@ -1418,6 +1424,11 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 
+				{:else if sub === 'alat'}
+					<div class="space-y-4">
+						<MarketToolsTabs pasar="polymarket" />
+					</div>
+
 				{:else if sub === 'ukur'}
 					<div class="space-y-4">
 						<StatisticalEdgeCard
@@ -1893,6 +1904,11 @@ function pilihSub(s: string) {
 						</div>
 					</div>
 
+				{:else if sub === 'alat'}
+					<div class="space-y-4">
+						<MarketToolsTabs pasar="idx" />
+					</div>
+
 				{:else if sub === 'ukur'}
 					<div class="space-y-4">
 						<div class="permukaan-2 rounded-card border border-line p-3">
@@ -2251,6 +2267,11 @@ function pilihSub(s: string) {
 						<KalenderDampak macro={macroObj} />
 					</div>
 
+				{:else if sub === 'alat'}
+					<div class="space-y-4">
+						<MarketToolsTabs pasar="forex" />
+					</div>
+
 				{:else if sub === 'ukur'}
 					<div class="space-y-4">
 						<AkurasiPasar market="forex · trade tuntas" judul="Akurasi & Validasi Kuantitatif (Forex & Gold)" data={akurasiForexT} />
@@ -2515,6 +2536,11 @@ function pilihSub(s: string) {
 								</div>
 							{/if}
 						</div>
+					</div>
+
+				{:else if sub === 'alat'}
+					<div class="space-y-4">
+						<MarketToolsTabs pasar="gmgn" />
 					</div>
 
 				{:else if sub === 'ukur'}

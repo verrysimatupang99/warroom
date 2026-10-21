@@ -20,6 +20,7 @@
 	import TrackBar from '$lib/components/TrackBar.svelte';
 	import QuantStrategyCard from '$lib/components/QuantStrategyCard.svelte';
 	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
+	import SystemArchitectureExplainer from '$lib/components/SystemArchitectureExplainer.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -500,9 +501,13 @@ async function muat() {
 		</details>
 		</section>
 
+		<!-- OYENZA TOOLS SUITE DI ATAS STRATEGY AGAR LANGSUNG KELIHATAN -->
+		<OyenzaToolsSuite />
+
 		<QuantStrategyCard />
 
-		<OyenzaToolsSuite />
+		<!-- TRANSPARANSI SISTEM & ALUR KEPUTUSAN ENGINE -->
+		<SystemArchitectureExplainer />
 
 		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
 		     Format Seragam DEX Confluence Alert (Threads):

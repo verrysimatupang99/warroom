@@ -254,8 +254,13 @@
 		color: var(--color-accent);
 	}
 	@media (max-width: 640px) {
-		.kanan .stat:nth-child(2) {
+		.kanan .stat:nth-child(2),
+		.kanan .stat:nth-child(3),
+		.kanan .stat:nth-child(4) {
 			display: none;
+		}
+		.topbar {
+			padding: 0.35rem 0.65rem;
 		}
 	}
 </style>

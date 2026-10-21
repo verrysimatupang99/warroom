@@ -390,6 +390,30 @@
 		margin-top: 1.25rem;
 		margin-bottom: 1.5rem;
 	}
+	@media (max-width: 640px) {
+		.oyenza-suite {
+			padding: 0.75rem 0.65rem;
+			margin-top: 0.85rem;
+			margin-bottom: 1rem;
+		}
+		.suite-title {
+			font-size: var(--text-14);
+		}
+		.tools-nav {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			gap: 0.35rem;
+			width: 100%;
+		}
+		.tools-nav .tool-btn:last-child {
+			grid-column: span 2;
+		}
+		.tool-btn {
+			justify-content: center;
+			padding: 0.45rem 0.5rem;
+			font-size: 11px;
+		}
+	}
 	.suite-header {
 		display: flex;
 		flex-direction: column;
