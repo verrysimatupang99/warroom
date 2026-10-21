@@ -86,3 +86,79 @@ async def tencent_klines(
     """Tarik data candle OHLCV langsung dari feed Tencent."""
     path = f"/{market}/klines"
     return await _fetch_tencent(path, params={"symbol": symbol, "interval": interval, "limit": limit})
+
+
+# --- Telemetry In-Memory State untuk MT5 Live Execution ---
+import time
+from pydantic import BaseModel
+from typing import Optional, List
+
+class MT5PositionReport(BaseModel):
+    ticket: int
+    symbol: str
+    side: str
+    volume: float
+    open_price: float
+    current_price: float
+    sl: float
+    tp: float
+    pnl_usd: float
+
+class MT5TelemetryPayload(BaseModel):
+    account: str
+    broker: str
+    balance: float
+    equity: float
+    margin: float
+    free_margin: float
+    floating_pnl: float
+    positions: List[MT5PositionReport] = []
+    total_trades_today: Optional[int] = 0
+    win_rate_pct: Optional[float] = 0.0
+
+latest_mt5_telemetry = {
+    "connected": False,
+    "last_seen_ts": 0,
+    "account": "416510164",
+    "broker": "Exness",
+    "balance": 535.31,
+    "equity": 535.31,
+    "floating_pnl": 0.0,
+    "margin": 0.0,
+    "free_margin": 535.31,
+    "positions": [],
+    "total_trades_today": 6,
+    "win_rate_pct": 66.7,
+}
+
+@router.post("/mt5/telemetry")
+async def report_mt5_telemetry(payload: MT5TelemetryPayload):
+    """Endpoint yang dipanggil oleh MT5 EA setiap beberapa detik untuk melaporkan status live."""
+    global latest_mt5_telemetry
+    latest_mt5_telemetry = {
+        "connected": True,
+        "last_seen_ts": int(time.time()),
+        "account": payload.account,
+        "broker": payload.broker,
+        "balance": payload.balance,
+        "equity": payload.equity,
+        "floating_pnl": payload.floating_pnl,
+        "margin": payload.margin,
+        "free_margin": payload.free_margin,
+        "positions": [p.dict() for p in payload.positions],
+        "total_trades_today": payload.total_trades_today,
+        "win_rate_pct": payload.win_rate_pct
+    }
+    return {"status": "OK", "received_at": latest_mt5_telemetry["last_seen_ts"]}
+
+@router.get("/mt5/status")
+async def get_mt5_status():
+    """Mengembalikan status live MT5 dan posisi terbuka untuk dashboard Beranda."""
+    now = int(time.time())
+    last_seen = latest_mt5_telemetry.get("last_seen_ts", 0)
+    # Jika tidak ada update dalam 20 detik, tandai offline / laptop tidur
+    is_live = (now - last_seen) < 20 if last_seen > 0 else False
+    data = dict(latest_mt5_telemetry)
+    data["connected"] = is_live
+    data["seconds_ago"] = now - last_seen if last_seen > 0 else 999999
+    return data

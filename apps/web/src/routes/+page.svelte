@@ -21,6 +21,7 @@
 	import QuantStrategyCard from '$lib/components/QuantStrategyCard.svelte';
 	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
 	import SystemArchitectureExplainer from '$lib/components/SystemArchitectureExplainer.svelte';
+	import LiveMT5ExecutionCard from '$lib/components/LiveMT5ExecutionCard.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -301,6 +302,7 @@ async function muat() {
 	</div>
 
 	<div class="isi">
+		<LiveMT5ExecutionCard />
 		{#if sumber.length}
 			<section class="dompet20-strip" aria-label="Dompet paper $20 per market">
 				<span class="sumber-judul">Dompet paper $20</span>
