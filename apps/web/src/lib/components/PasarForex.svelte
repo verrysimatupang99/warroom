@@ -1,6 +1,4 @@
 <script lang="ts">
-	// Cabang tampilan pasar Forex & Komoditas.
-	// Dipindah dari AreaView.svelte (Level 1 normalisasi). Isi & perilaku tidak berubah.
 	import JudulBagian from './JudulBagian.svelte';
 
 	interface Props {
@@ -9,12 +7,12 @@
 	let { sub }: Props = $props();
 </script>
 
-{#if sub === 'struktur' || !sub}
-	<JudulBagian nomor="1" judul="Struktur" tujuan="Pandangan harga emas (XAU/USD) + sinyal & titik masuk dari jurnal mesin" ikon="◈" />
-{:else if sub === 'sesi'}
-	<JudulBagian nomor="2" judul="Sesi" tujuan="Kapan tiap bursa buka/tutup + ramai-tidaknya tiap jam sesi" ikon="◷" />
-{:else if sub === 'kalender'}
-	<JudulBagian nomor="3" judul="Kalender" tujuan="Agenda berita besar + hitung mundur: apakah aman masuk posisi sekarang" ikon="⌗" />
-{:else if sub === 'demo'}
-	<JudulBagian nomor="4" judul="Keterbatasan & Demo" tujuan="Apa yang belum ada (akun broker, biaya) — dinyatakan terbuka" ikon="⚠" />
+{#if sub === 'cockpit' || !sub}
+	<JudulBagian nomor="1" judul="Cockpit Forex & Gold" tujuan="Struktur harga Gold (XAU/USD), bias EMA, status sesi pasar, dan metrik kuantitatif" ikon="◎" />
+{:else if sub === 'setup'}
+	<JudulBagian nomor="2" judul="Sinyal & Setup" tujuan="Setup Break & Retest XAU/USD, zona POI, jadwal sesi London/NY, dan kalender makro" ikon="◈" />
+{:else if sub === 'ukur'}
+	<JudulBagian nomor="3" judul="Kuantitatif / Backtest" tujuan="Validasi forward walk-forward, tuning parameter EMA/ATR 15m, dan akurasi" ikon="⚖" />
+{:else if sub === 'eksekusi'}
+	<JudulBagian nomor="4" judul="Eksekusi / Paper Ledger" tujuan="Forward paper trading execution ledger, forward testing, dan riwayat posisi" ikon="⇄" />
 {/if}
