@@ -320,6 +320,25 @@
 	.delta-turun {
 		color: var(--color-neg);
 	}
+
+	/* ---------------------------------------------------------------------
+	   MICRO-ANIMATION FLASH (Standar UI-UX Pro Max)
+	   Flash halus hijau/merah saat ada data tick harga/sinyal baru via SSE.
+	   --------------------------------------------------------------------- */
+	@keyframes flash-green-fade {
+		0% { background-color: rgba(52, 227, 154, 0.28); }
+		100% { background-color: transparent; }
+	}
+	@keyframes flash-red-fade {
+		0% { background-color: rgba(255, 107, 107, 0.28); }
+		100% { background-color: transparent; }
+	}
+	.flash-tick-up {
+		animation: flash-green-fade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+	.flash-tick-down {
+		animation: flash-red-fade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
 }
 
 

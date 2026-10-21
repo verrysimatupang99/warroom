@@ -167,6 +167,32 @@
 				<!-- Area bayangan gradien -->
 				<path d={pathArea} fill="url(#equityGradient)" />
 
+				<!-- Confidence Ribbon / Pita Estimasi Drawdown & Expectancy (Standar UI-UX Pro Max) -->
+				{#if validPoints.length >= 5}
+					{@const lastIdx = validPoints.length - 1}
+					{@const lastX = toX(lastIdx)}
+					{@const lastY = toY(validPoints[lastIdx].r)}
+					{@const projX = Math.min(W - PAD_X, lastX + 45)}
+					{@const projUpperY = Math.max(PAD_Y, lastY - 18)}
+					{@const projLowerY = Math.min(H - PAD_Y, lastY + 22)}
+					<polygon
+						points="{lastX},{lastY} {projX},{projUpperY} {projX},{projLowerY}"
+						fill={strokeColor}
+						fill-opacity="0.12"
+						stroke={strokeColor}
+						stroke-width="1"
+						stroke-dasharray="2 2"
+						stroke-opacity="0.4"
+					/>
+					<text
+						x={projX + 4}
+						y={(projUpperY + projLowerY) / 2 + 3}
+						fill="var(--color-text-3)"
+						font-size="8"
+						class="font-mono uppercase"
+					>10-TR PROJ</text>
+				{/if}
+
 				<!-- Garis utama kurva -->
 				<path
 					d={pathLine}

@@ -6,18 +6,30 @@
 	import type { Snippet } from 'svelte';
 	import { live } from '$lib/api/live.svelte';
 	import OyenzaSidebar from './OyenzaSidebar.svelte';
+	import KeyboardShortcutsModal from './KeyboardShortcutsModal.svelte';
 	import Ikon from './Ikon.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
-	// State untuk drawer mobile
+	// State untuk drawer mobile & shortcuts modal
 	let mobileDrawerBuka = $state(false);
+	let modalShortcutsBuka = $state(false);
+
+	function handleGlobalKeys(e: KeyboardEvent) {
+		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+		if (e.key === '?') {
+			e.preventDefault();
+			modalShortcutsBuka = !modalShortcutsBuka;
+		}
+	}
 
 	$effect(() => {
 		live.mulai();
 		return () => live.hentikan();
 	});
 </script>
+
+<svelte:window onkeydown={handleGlobalKeys} />
 
 <div class="app-layout">
 	<!-- DESKTOP SIDEBAR: Fixed 272px -->
@@ -64,6 +76,9 @@
 	<main id="konten" class="main-canvas" data-app-siap tabindex="-1">
 		{@render children()}
 	</main>
+
+	<!-- KEYBOARD SHORTCUTS MODAL -->
+	<KeyboardShortcutsModal open={modalShortcutsBuka} onclose={() => (modalShortcutsBuka = false)} />
 </div>
 
 <style>

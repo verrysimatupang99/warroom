@@ -47,6 +47,7 @@ import PasarForex from './PasarForex.svelte';
 	import DataProvenanceCard from './DataProvenanceCard.svelte';
 	import MarketToolsTabs from './MarketToolsTabs.svelte';
 	import MacroFundamentalLab from './MacroFundamentalLab.svelte';
+	import ExportLedgerCsv from './ExportLedgerCsv.svelte';
 import PasarGmgn from './PasarGmgn.svelte';
 import PasarPolymarket from './PasarPolymarket.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
@@ -1082,7 +1083,7 @@ function pilihSub(s: string) {
 					{@const rugi = hr != null ? Math.max(0, -Number(hr)) : null}
 					{@const profit = hr != null ? Math.max(0, Number(hr)) : null}
 					<div class="space-y-4">
-						<div class="rounded-card border border-line bg-surface px-3 py-2.5">
+						<div class="rounded-card border border-line bg-surface px-3 py-2.5 flex items-center justify-between flex-wrap gap-2">
 							<span class="text-13 text-text-2">
 								Saat ini <b class="angka">{posisiJumlah}</b> posisi terbuka dari
 								<b class="angka">{posisiMaks}</b> slot
@@ -1095,6 +1096,7 @@ function pilihSub(s: string) {
 								{/if}
 								· <b class="angka">{ledgerObj?.trade ?? 0}</b> trade tuntas tercatat di ledger.
 							</span>
+							<ExportLedgerCsv pasar="crypto" entries={ledgerObj?.terakhir ?? []} />
 						</div>
 
 						{@render panelPosisi(false)}
