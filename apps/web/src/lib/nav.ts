@@ -152,6 +152,14 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'tencent',
+		label: 'Server Tencent',
+		rute: '/tencent',
+		ikon: 'mesin',
+		kategori: 'sistem',
+		anak: []
+	},
+	{
 		// Halaman penjelas — mengikuti /learn, /news, /system, /faq algentis.
 		// Isi kita sendiri; berita dari RSS publik.
 		kunci: 'info',

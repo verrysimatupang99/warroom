@@ -29,6 +29,7 @@ from warroom_api.routers import llm as llm_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
+from warroom_api.routers import tencent as tencent_router
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
 
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
+    app.include_router(tencent_router.router)
 
     # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---
     app.include_router(leaderboard_router.router)

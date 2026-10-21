@@ -26,10 +26,11 @@
 	];
 
 	const system = [
-		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '7', ikon: 'riset' },
-		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '8', ikon: 'riset' },
-		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '9', ikon: 'sistem' },
-		{ rute: '/catatan', label: 'Catatan & Alur Engine', num: '0', ikon: 'info' }
+		{ rute: '/tencent', label: 'Server Tencent (Tailscale)', num: '7', ikon: 'mesin', tag: 'NODE' },
+		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '8', ikon: 'riset' },
+		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '9', ikon: 'riset' },
+		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '0', ikon: 'sistem' },
+		{ rute: '/catatan', label: 'Catatan & Alur Engine', num: 'K', ikon: 'info' }
 	];
 
 	function isAktif(rute: string): boolean {
