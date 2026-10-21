@@ -53,9 +53,9 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		anak: [
 			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'risiko', 'posisi', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Pair utama, risiko, posisi, sinyal & entry setup' },
-			{ slug: 'setup', label: 'Setup', kunci: ['kandidat', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Kandidat SMC + verdict per aturan + entry setup' },
-			{ slug: 'ukur', label: 'Ukur', kunci: ['pengukuran', 'backtest', 'pasar_akurasi'], catatan: 'Forward lolos vs ditolak + lab backtest + akurasi' },
-			{ slug: 'eksekusi', label: 'Eksekusi', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, ledger, overextended' }
+			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['kandidat', 'crypto_sinyal', 'pasar_akurasi'], catatan: 'Kandidat SMC + verdict per aturan + entry setup' },
+			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['pengukuran', 'backtest', 'pasar_akurasi'], catatan: 'Forward lolos vs ditolak + lab backtest + akurasi' },
+			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['posisi', 'ledger'], catatan: 'Paper, fill, ledger, overextended' }
 		]
 	},
 	{
@@ -65,13 +65,10 @@ export const AREAS: Area[] = [
 		ikon: 'polymarket',
 		kategori: 'pasar',
 		anak: [
-			// Keputusan owner 7 Okt: fokus ke SETUP B KANDIDAT; arm A/C/D dibekukan (diarsipkan,
-			// tidak dihapus — bukti tetap ada, hanya tidak lagi jadi pusat perhatian).
-			{ slug: 'setup-b', label: 'Favorit 0,70–0,95', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Arm B = beli favorit di band 0,70–0,95 (yang dipakai): dompet, akurasi, verdict' },
-			{ slug: 'btc-5m', label: 'BTC 5m (Alt)', kunci: ['poly_paper'], catatan: 'Alternatif: skill PolyBTC Momentum — BTC 5m up/down, momentum ke penutupan (dry-run)' },
-			{ slug: 'riset', label: 'Riset', kunci: ['bagian', 'poly_paper'], catatan: 'Dataset, parity/drift, katalog replay (bekas dataset+verdict)' },
-			{ slug: 'arsip', label: 'Arm Lain (Beku)', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'A momentum · C fade · D favorit — dibekukan, disimpan sebagai bukti' },
-			{ slug: 'live', label: 'Live', kunci: ['equity', 'ledger'], catatan: 'Arming 3-way, dana nyata (status: belum arming)' }
+			{ slug: 'cockpit', label: 'Cockpit', kunci: ['poly_paper', 'pasar_akurasi', 'dompet'], catatan: 'Ringkasan pasar Polymarket, akurasi, dan dompet paper' },
+			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['poly_paper', 'pasar_akurasi'], catatan: 'Band favorit 0,70–0,95 + PolyBTC 5m momentum' },
+			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'poly_paper'], catatan: 'Dataset, parity/drift, katalog replay dan pengujian kuantitatif' },
+			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['equity', 'ledger', 'poly_paper'], catatan: 'Paper trade ledger, arming 3-way, dan eksekusi' }
 		]
 	},
 	{
@@ -81,13 +78,10 @@ export const AREAS: Area[] = [
 		ikon: 'idx',
 		kategori: 'pasar',
 		anak: [
-			// Keputusan owner 7 Okt: "screener" diganti "Sinyal" yang isinya bandarmologi + BSJP.
-			// Sumbernya tetap sama (Arjum + ledger 616), tapi yang ditonjolkan adalah SINYALNYA,
-			// bukan daftar screener mentah.
-			{ slug: 'sinyal', label: 'Sinyal', kunci: ['idx_sinyal', 'idx_akurasi', 'bandarmologi_skor', 'bagian', 'dompet'], catatan: 'Bandarmologi + BSJP + ARA: sinyal, skor, dan akurasi' },
-			{ slug: 'bandarmologi', label: 'Bandarmologi', kunci: ['bagian', 'bandarmologi_skor'], catatan: 'Broker summary, ATS, skor 0–100 per emiten' },
-			{ slug: 'bsjp', label: 'BSJP', kunci: ['bagian', 'idx_akurasi', 'idx_sinyal'], catatan: 'Beli Sore Jual Pagi + ARA Hunter (ledger mesin)' },
-			{ slug: 'aliran', label: 'Aliran', kunci: ['bagian'], catatan: 'Modal asing vs lokal, akumulasi senyap, konflik distribusi' }
+			{ slug: 'cockpit', label: 'Cockpit', kunci: ['idx_sinyal', 'idx_akurasi', 'bandarmologi_skor', 'bagian', 'dompet'], catatan: 'Overview pasar modal domestik, emiten aktif, dan metrik bandarmologi' },
+			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['bagian', 'bandarmologi_skor', 'idx_sinyal'], catatan: 'Sinyal BSJP, ARA Hunter, dan Broker Summary' },
+			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'idx_akurasi'], catatan: 'Uji statistik BSJP, backtest aturan ARA, dan akurasi emiten' },
+			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['bagian', 'dompet'], catatan: 'Simulasi paper trade portofolio IDX dan riwayat transaksi' }
 		]
 	},
 	{
@@ -97,10 +91,10 @@ export const AREAS: Area[] = [
 		ikon: 'forex',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'struktur', label: 'Struktur', kunci: ['bagian', 'forex_sinyal', 'pasar_akurasi'], catatan: 'Bias, EMA, ATR + sinyal & entry setup' },
-			{ slug: 'sesi', label: 'Sesi', kunci: ['bagian', 'pasar_akurasi'], catatan: 'Asia/London/NY (WIB) + akurasi' },
-			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda + dampak' },
-			{ slug: 'demo', label: 'Demo', kunci: ['bagian'], catatan: 'OANDA demo (label DEMO)' }
+			{ slug: 'cockpit', label: 'Cockpit', kunci: ['bagian', 'forex_sinyal', 'pasar_akurasi'], catatan: 'Struktur harga Gold (XAU/USD) & Pair Forex, bias EMA, dan metrik kuantitatif' },
+			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['bagian', 'forex_sinyal'], catatan: 'Setup Break & Retest, zona entry, dan jadwal sesi market' },
+			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['bagian', 'pasar_akurasi'], catatan: 'Hasil backtest & tuning parameter 15m Gold/Forex' },
+			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['bagian'], catatan: 'Paper execution ledger & Forward trading test' }
 		]
 	},
 	{
@@ -110,9 +104,10 @@ export const AREAS: Area[] = [
 		ikon: 'gmgn',
 		kategori: 'pasar',
 		anak: [
-			{ slug: 'radar', label: 'Radar', kunci: ['radar'], catatan: 'Window per chain (lokal Webdock)' },
-			{ slug: 'lp', label: 'LP', kunci: ['lp_paper', 'bagian', 'pasar_akurasi'], catatan: 'Posisi paper LP, V/L, IL vs hold + akurasi' },
-			{ slug: 'memecoin', label: 'Memecoin', kunci: ['gmgn', 'bagian'], catatan: 'Smart money, whale, pumpfun' }
+			{ slug: 'cockpit', label: 'Cockpit', kunci: ['radar', 'gmgn', 'pasar_akurasi'], catatan: 'Overview likuiditas on-chain, scanner pool, dan metrik smart money' },
+			{ slug: 'setup', label: 'Sinyal & Setup', kunci: ['gmgn', 'bagian'], catatan: 'Deteksi token baru, sinyal pumpfun, dan radar likuiditas' },
+			{ slug: 'ukur', label: 'Kuantitatif / Backtest', kunci: ['lp_paper', 'bagian', 'pasar_akurasi'], catatan: 'Ukur IL vs Hold, simulasi yield, dan metrik LP' },
+			{ slug: 'eksekusi', label: 'Eksekusi / Paper Ledger', kunci: ['lp_paper', 'bagian'], catatan: 'Paper trade runner GMGN & transaksi pool' }
 		]
 	},
 	{

@@ -18,6 +18,7 @@
 	// status verifikasi, track bar untuk skor ber-maksimum.
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import TrackBar from '$lib/components/TrackBar.svelte';
+	import QuantStrategyCard from '$lib/components/QuantStrategyCard.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -497,6 +498,8 @@ async function muat() {
 			</div>
 		</details>
 		</section>
+
+		<QuantStrategyCard />
 
 		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
 		     Format Seragam DEX Confluence Alert (Threads):
