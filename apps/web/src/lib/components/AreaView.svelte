@@ -46,6 +46,7 @@ import PasarForex from './PasarForex.svelte';
 	import BentoMetrics4Box from './BentoMetrics4Box.svelte';
 	import DataProvenanceCard from './DataProvenanceCard.svelte';
 	import MarketToolsTabs from './MarketToolsTabs.svelte';
+	import MacroFundamentalLab from './MacroFundamentalLab.svelte';
 import PasarGmgn from './PasarGmgn.svelte';
 import PasarPolymarket from './PasarPolymarket.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
@@ -2268,8 +2269,11 @@ function pilihSub(s: string) {
 					</div>
 
 				{:else if sub === 'alat'}
-					<div class="space-y-4">
+					<div class="space-y-6">
 						<MarketToolsTabs pasar="forex" />
+						<div class="pt-2">
+							<MacroFundamentalLab />
+						</div>
 					</div>
 
 				{:else if sub === 'ukur'}
