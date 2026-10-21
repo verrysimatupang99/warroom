@@ -36,7 +36,7 @@ from .llm import (
     handler_paper_scan,
     handler_prompts_sync,
 )
-from .strategi import handler_strategi_alert
+from .strategi import handler_break_retest_scanner, handler_strategi_alert
 
 
 def register_handlers() -> dict[str, Any]:
@@ -70,6 +70,7 @@ def register_handlers() -> dict[str, Any]:
             "llm-brief-polymarket": handler_llm_brief,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
+            "break-retest-scan": handler_break_retest_scanner,
             "strategi-alert": handler_strategi_alert,
             "retention": handler_retensi,
             "source-health": handler_source_health,

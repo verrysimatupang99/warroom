@@ -255,12 +255,12 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
     ),
     JobSpec(
         name="collect",
-        interval_s=1800,
+        interval_s=300,
         enabled=True,
-        payload={"timeout_s": 900},
+        payload={"timeout_s": 300},
         note=(
-            "`lt scan` — pindahan dari `live-trading-collect.timer` (irama 30 mnt). "
-            "Tanpa kuota Arjum (kripto saja). Cutover 3 Okt: timer domain dimatikan."
+            "`lt scan` — dipindahkan dari `live-trading-collect.timer`. "
+            "Irama 5 menit (300s): sinkron dengan penutupan candle untuk presisi sinyal."
         ),
     ),
     JobSpec(
@@ -286,6 +286,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         enabled=True,
         payload={"timeout_s": 60},
         note="pemindaian kuantitatif SMC & auto-open posisi paper saat lolos 5 risk gates + alert Telegram.",
+    ),
+    JobSpec(
+        name="break-retest-scan",
+        interval_s=300,
+        enabled=True,
+        payload={"timeout_s": 120},
+        note=(
+            "scanner real-time multi-asset (Gold, BTC, SOL, EUR, GBP) Break & Retest 15m "
+            "dengan parameter tuned presisi & macro stand-down guard."
+        ),
     ),
     JobSpec(
         name="strategi-alert",

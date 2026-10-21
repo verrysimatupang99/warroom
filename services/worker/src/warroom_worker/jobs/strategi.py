@@ -1,28 +1,219 @@
-"""Alert transisi status strategi dari fakta — kill-switch/HALTED (per strategi).
-
-Modul alert (`warroom_notifier.strategy_alert`) membangkitkan kill HANYA pada
-transisi aktif→kill; keadaan sebelumnya disuplai pemanggil. Di sini riwayat itu
-adalah fakta-fakta terbaru `harian/status`: transisi terbaca dari pasangan
-(belum HALTED → HALTED), dan penanda eksplisit (alert yang menautkan `baru.id`)
-menahan pasangan lama supaya transisi yang faktanya masih tersimpan tidak berkabar ulang.
-
-Kontrak transport tidak berubah: alert selalu masuk DB lebih dulu; pengiriman
-(termasuk percobaan ulang) tetap urusan tabel `alerts` + job notify.
-"""
+"""Alert transisi status strategi & Multi-Asset Break-Retest Scanner Engine."""
 
 from __future__ import annotations
 
+import csv
+import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Fact, Job
 from warroom_notifier.dispatch import kirim_tertunda
 from warroom_notifier.strategy_alert import alert_kill_switch
+from warroom_worker.facts_publish import canonical_hash
 
-from .base import _alert
+from .base import _alert, root_dir
 
-__all__ = ["handler_strategi_alert"]
+log = logging.getLogger("warroom_worker.strategi")
+
+__all__ = ["handler_strategi_alert", "handler_break_retest_scanner"]
+
+
+CONFIG_TUNED = {
+    "XAUUSD": {"lookback": 35, "sl_atr": 1.6, "rrr": 3.0, "tol": 0.0020, "req_rej": True, "category": "forex"},
+    "BTCUSDT": {"lookback": 20, "sl_atr": 1.2, "rrr": 2.0, "tol": 0.0030, "req_rej": False, "category": "crypto"},
+    "SOLUSDT": {"lookback": 15, "sl_atr": 1.8, "rrr": 3.0, "tol": 0.0040, "req_rej": True, "category": "crypto"},
+    "EURUSD": {"lookback": 30, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True, "category": "forex"},
+    "GBPUSD": {"lookback": 15, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True, "category": "forex"},
+}
+
+
+def _hitung_atr(candles: list[dict[str, float]], period: int = 14) -> list[float]:
+    trs = []
+    for i in range(len(candles)):
+        if i == 0:
+            trs.append(candles[i]["high"] - candles[i]["low"])
+        else:
+            prev_close = candles[i - 1]["close"]
+            tr = max(
+                candles[i]["high"] - candles[i]["low"],
+                abs(candles[i]["high"] - prev_close),
+                abs(candles[i]["low"] - prev_close),
+            )
+            trs.append(tr)
+
+    atrs = [0.0] * len(candles)
+    if len(trs) < period:
+        return atrs
+
+    atrs[period - 1] = sum(trs[:period]) / period
+    for i in range(period, len(candles)):
+        atrs[i] = (atrs[i - 1] * (period - 1) + trs[i]) / period
+    return atrs
+
+
+def _baca_candles(csv_path: Path) -> list[dict[str, float]]:
+    candles = []
+    if not csv_path.exists():
+        return []
+    with open(csv_path, "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        try:
+            next(reader)
+        except StopIteration:
+            return []
+        for row in reader:
+            if not row or len(row) < 5:
+                continue
+            try:
+                candles.append({
+                    "time": float(row[0]),
+                    "open": float(row[1]),
+                    "high": float(row[2]),
+                    "low": float(row[3]),
+                    "close": float(row[4]),
+                })
+            except (ValueError, TypeError):
+                continue
+    return candles
+
+
+def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | None:
+    csv_file = Path("/home/admin/warroom/data/hist") / f"{pair}_15m.csv"
+    candles = _baca_candles(csv_file)
+    if len(candles) < cfg["lookback"] + 20:
+        return None
+
+    atrs = _hitung_atr(candles, period=14)
+    lookback = cfg["lookback"]
+    c_curr = candles[-1]
+    c_prev = candles[-2]
+    atr_curr = atrs[-1]
+    if atr_curr <= 0:
+        return None
+
+    highs = [c["high"] for c in candles[-lookback - 1:-1]]
+    lows = [c["low"] for c in candles[-lookback - 1:-1]]
+    res_level = max(highs)
+    sup_level = min(lows)
+
+    # Long setup
+    tol = cfg["tol"]
+    sl_atr = cfg["sl_atr"]
+    rrr = cfg["rrr"]
+
+    if c_prev["close"] > res_level and c_curr["low"] <= res_level * (1 + tol) and c_curr["close"] >= res_level * (1 - tol):
+        if not cfg["req_rej"] or c_curr["close"] > c_curr["open"]:
+            entry = c_curr["close"]
+            sl = entry - (atr_curr * sl_atr)
+            risk = entry - sl
+            tp = entry + (risk * rrr)
+            risk_pct = round((risk / entry) * 100, 2)
+            return {
+                "pair": pair,
+                "arah": "LONG",
+                "entry": round(entry, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "sl": round(sl, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "tp1": round(tp, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "risk_pct": risk_pct,
+                "r_r": rrr,
+                "tier": "PREMIUM",
+                "strategy": "break_retest_15m_tuned",
+                "category": cfg["category"],
+                "aturan_gagal": [],
+            }
+
+    # Short setup
+    if c_prev["close"] < sup_level and c_curr["high"] >= sup_level * (1 - tol) and c_curr["close"] <= sup_level * (1 + tol):
+        if not cfg["req_rej"] or c_curr["close"] < c_curr["open"]:
+            entry = c_curr["close"]
+            sl = entry + (atr_curr * sl_atr)
+            risk = sl - entry
+            tp = entry - (risk * rrr)
+            risk_pct = round((risk / entry) * 100, 2)
+            return {
+                "pair": pair,
+                "arah": "SHORT",
+                "entry": round(entry, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "sl": round(sl, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "tp1": round(tp, 4 if "USD" in pair and pair != "XAUUSD" else 2),
+                "risk_pct": risk_pct,
+                "r_r": rrr,
+                "tier": "PREMIUM",
+                "strategy": "break_retest_15m_tuned",
+                "category": cfg["category"],
+                "aturan_gagal": [],
+            }
+    return None
+
+
+def handler_break_retest_scanner(s: SASession, job: Job) -> str:
+    """Scan multi-asset (Gold, BTC, SOL, EUR, GBP) dengan konfigurasi presisi hasil tuning."""
+    now = datetime.now(UTC)
+    wib_hour = (now.hour + 7) % 24
+    wib_minute = now.minute
+
+    # Macro Stand-Down Guard check (contoh jendela rilis data AS 19:15 - 19:45 WIB)
+    stand_down = False
+    alasan_guard = ""
+    if (wib_hour == 19 and 15 <= wib_minute <= 45) or (wib_hour == 1 and 0 <= wib_minute <= 30):
+        stand_down = True
+        alasan_guard = "Macro Stand-Down Window (High Impact US Release / FOMC)"
+
+    ditemukan = 0
+    dipublikasikan = 0
+    kandidat_list = []
+
+    for pair, cfg in CONFIG_TUNED.items():
+        sig = _scan_pair_break_retest(pair, cfg)
+        if not sig:
+            continue
+        ditemukan += 1
+        if stand_down and cfg["category"] == "forex":
+            sig["tier"] = "STAND_DOWN"
+            sig["aturan_gagal"] = [alasan_guard]
+
+        sumber = f"break_retest_engine#{now.strftime('%Y%m%d%H%M')}"
+        nilai = {
+            **sig,
+            "ts": now.isoformat(),
+            "diambil": now.isoformat(),
+            "label": "Tuned Break & Retest (Backtest Profitable Multi-Asset)",
+        }
+        fakta = Fact(
+            kind="signal",
+            key=f"{sig['pair']}_TUNED",
+            value_json=nilai,
+            source=sumber,
+            observed_at=now,
+            ttl_s=1800,
+            hash=canonical_hash(nilai),
+        )
+        s.add(fakta)
+        kandidat_list.append(f"{sig['pair']}:{sig['arah']}")
+        dipublikasikan += 1
+
+        # Kirim notifikasi jika bukan stand down
+        if sig["tier"] != "STAND_DOWN":
+            _alert(
+                s,
+                subject=f"sinyal/{sig['pair']}/{sig['arah']}",
+                message=(
+                    f"🎯 WAR ROOM TUNED SIGNAL — {sig['pair']} ({sig['arah']})\n"
+                    f"Entry: {sig['entry']} | SL: {sig['sl']} | TP: {sig['tp1']}\n"
+                    f"R:R 1:{sig['r_r']} | Stop: {sig['risk_pct']}%\n"
+                    f"Strategi: Break & Retest 15m (Grid Tuned)"
+                ),
+                aksi="Tinjau setup di Cockpit / Alat. Keputusan eksekusi manual ada di tangan Anda.",
+                severity="info",
+                fact_ids=[fakta.id],
+            )
+
+    s.flush()
+    return f"scan=5_pairs ditemukan={ditemukan} terbit={dipublikasikan} {' '.join(kandidat_list)}"
 
 
 def handler_strategi_alert(s: SASession, job: Job) -> str:
@@ -57,16 +248,12 @@ def handler_strategi_alert(s: SASession, job: Job) -> str:
             continue
         alasan = str(v_baru.get("alasan_halted") or "kondisi risk engine (alasan tidak tercatat)")
         kondisi = alert_kill_switch(nama, alasan=alasan)
-        # Penanda eksplisit: alert yang fact_ids-nya memuat baru.id sudah pernah dibuat.
-        # Menghindari hilangnya alert bila siklus sebelumnya gagal saat run_one.
         sudah_ada = any(
             isinstance(a.fact_ids, list) and baru.id in a.fact_ids
             for a in s.scalars(select(Alert).where(Alert.subject == kondisi.subjek)).all()
         )
         if sudah_ada:
             break
-        # Jika siklus sebelumnya sukses ('ok') dan lebih baru dari fakta ini, fakta sudah diproses.
-        # Bila siklus sebelumnya gagal (last_status != 'ok'), jangan lewati fakta transisi.
         if (
             job.last_status == "ok"
             and job.last_run_at is not None
@@ -85,3 +272,4 @@ def handler_strategi_alert(s: SASession, job: Job) -> str:
             f" — {alasan}"
         )
     return f"{kind}/{key}: {len(riwayat)} fakta diperiksa — tidak ada transisi HALTED baru"
+

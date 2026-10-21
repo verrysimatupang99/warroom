@@ -51,7 +51,7 @@ from .llm import (
     handler_paper_scan,  # noqa: F401
     handler_prompts_sync,  # noqa: F401
 )
-from .strategi import handler_strategi_alert  # noqa: F401
+from .strategi import handler_break_retest_scanner, handler_strategi_alert  # noqa: F401
 
 __all__ = [
     "root_dir",
@@ -91,6 +91,7 @@ __all__ = [
     "_kandidat_terbaru_dari_ledger",
     "handler_paper_scan",
     "alert_bench_jika_transisi",
+    "handler_break_retest_scanner",
     "handler_strategi_alert",
     "register_handlers",
 ]
