@@ -173,6 +173,7 @@
 		flex-direction: column;
 		justify-content: space-between;
 		min-height: 104px;
+		font-variant-numeric: tabular-nums;
 	}
 	.box-header {
 		display: flex;
@@ -194,6 +195,7 @@
 		line-height: 1.2;
 		color: var(--color-text);
 		margin-bottom: 0.25rem;
+		font-variant-numeric: tabular-nums;
 	}
 	.box-sub {
 		font-size: var(--text-11);

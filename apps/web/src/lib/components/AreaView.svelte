@@ -44,6 +44,7 @@ import PasarIdx from './PasarIdx.svelte';
 import PasarForex from './PasarForex.svelte';
 	import QuantStrategyCard from './QuantStrategyCard.svelte';
 	import BentoMetrics4Box from './BentoMetrics4Box.svelte';
+	import DataProvenanceCard from './DataProvenanceCard.svelte';
 import PasarGmgn from './PasarGmgn.svelte';
 import PasarPolymarket from './PasarPolymarket.svelte';
 	import { getEvents, getVerdict, getAreaFakta, getArea } from '$lib/api/client';
@@ -636,6 +637,13 @@ function pilihSub(s: string) {
 						activePositions={posisiArray.length}
 						maxPositions={posisiMaks}
 						positionsDetail="Posisi OKX Paper"
+					/>
+					<DataProvenanceCard
+						pasar="Crypto (OKX)"
+						sumber="OKX Swap & Binance FAPI"
+						keterangan="Harga real-time, depth, taker ratio, dan orderbook diekstraksi langsung dari REST/WS OKX & Binance FAPI tanpa distorsi."
+						frekuensi="Real-time WebSocket + 15m Klines"
+						metode="OKX v5 Public API"
 					/>
 				{/if}
 				<!-- Navigasi sub-halaman crypto memisahkan ringkasan cockpit, setup, ukur, dan eksekusi.
@@ -2499,6 +2507,13 @@ function pilihSub(s: string) {
 						activePositions={0}
 						maxPositions={2}
 						positionsDetail="Posisi Paper Spot/Valuta"
+					/>
+					<DataProvenanceCard
+						pasar="Forex & Gold (XAUUSD)"
+						sumber="TradingView (TVC:GOLD & OANDA)"
+						keterangan="Series tick & candle spot emas dan valuta global disinkronkan langsung via feed TradingView TVC untuk pembacaan bias, EMA, dan Break-Retest."
+						frekuensi="15m Klines & Sesi London/NY"
+						metode="TradingView Data Series"
 					/>
 				{/if}
 				{#if isWeekendWIB}
