@@ -7,6 +7,8 @@ import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+import urllib.request
+import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
@@ -188,6 +190,59 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
     dipublikasikan = 0
     kandidat_list = []
 
+    # 1. Integrasi Sensor Level Presisi dari Tencent Node (XAUUSD & BTC) via Tailscale
+    try:
+        req_tc = urllib.request.Request("http://100.126.10.74:8790/forex/levels?symbol=XAUUSD", headers={"User-Agent": "WarRoomWorker/2.0"})
+        with urllib.request.urlopen(req_tc, timeout=4) as resp:
+            if resp.status == 200:
+                tc_data = json.loads(resp.read().decode("utf-8"))
+                if tc_data.get("status") == "OK" and tc_data.get("levels"):
+                    lv = tc_data["levels"]
+                    sig_tc = {
+                        "pair": "XAUUSD",
+                        "arah": tc_data.get("side", "LONG"),
+                        "entry": round(float(lv["entry"]), 2),
+                        "sl": round(float(lv["sl"]), 2),
+                        "tp1": round(float(lv["tp1"]), 2),
+                        "risk_pct": round(float(lv.get("risk_pct", 0.09)), 3),
+                        "r_r": 2.0,
+                        "be_trigger": round(float(lv["entry"]) + abs(float(lv["entry"]) - float(lv["sl"])), 2),
+                        "trail_trigger": round(float(lv["entry"]) + (abs(float(lv["entry"]) - float(lv["sl"])) * 1.5), 2),
+                        "trail_step": round(float(tc_data.get("atr", 3.8)) * 1.0, 2),
+                        "tier": "PREMIUM",
+                        "strategy": "tencent_sensor_sr_scalping",
+                        "category": "forex",
+                        "zone": lv.get("zone"),
+                        "aturan_gagal": [],
+                    }
+                    if stand_down:
+                        sig_tc["tier"] = "STAND_DOWN"
+                        sig_tc["aturan_gagal"] = [alasan_guard]
+
+                    sumber_tc = f"tencent_node#{now.strftime('%Y%m%d%H%M')}"
+                    val_tc = {
+                        **sig_tc,
+                        "ts": now.isoformat(),
+                        "diambil": now.isoformat(),
+                        "label": "Tencent Node S/R Scalping Sensor (WireGuard)",
+                    }
+                    fakta_tc = Fact(
+                        kind="signal",
+                        key="XAUUSD_TENCENT_SENSOR",
+                        value_json=val_tc,
+                        source=sumber_tc,
+                        observed_at=now,
+                        ttl_s=1800,
+                        hash=canonical_hash(val_tc),
+                    )
+                    s.add(fakta_tc)
+                    kandidat_list.append(f"XAUUSD_TC:{sig_tc['arah']}")
+                    ditemukan += 1
+                    dipublikasikan += 1
+    except Exception as e:
+        log.warning("Gagal query level Tencent node di worker: %s", e)
+
+    # 2. Scanning Tuned Break & Retest Multi-Asset
     for pair, cfg in CONFIG_TUNED.items():
         sig = _scan_pair_break_retest(pair, cfg)
         if not sig:
