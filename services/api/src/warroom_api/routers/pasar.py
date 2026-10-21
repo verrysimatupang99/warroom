@@ -250,3 +250,54 @@ def pasar_quant_backtest() -> dict[str, Any]:
             {"symbol": "GBPUSD", "name": "GBP / USD", "category": "Forex", "win_rate": 42.4, "pf": 2.10, "pnl": 2.04, "max_dd": 0.58, "trades": 33, "config": "LB:15, SL:2.0x, RRR:1:3"}
         ]
     }
+
+
+class SizingRequest(BaseModel):
+    pair: str
+    account_size: float
+    risk_pct: float
+    entry_price: float
+    sl_price: float
+    leverage: float = 1.0
+
+
+@router.post("/api/v1/tools/sizing")
+def calculate_position_sizing(req: SizingRequest) -> dict[str, Any]:
+    """Standarisasi Schema Sizing Tool (awesome-omni-skills standard)."""
+    dollar_risk = req.account_size * (req.risk_pct / 100.0)
+    sl_dist = abs(req.entry_price - req.sl_price)
+    if sl_dist <= 0 or req.entry_price <= 0:
+        raise HTTPException(status_code=400, detail="Invalid price parameters: entry and sl must differ")
+
+    sl_dist_pct = (sl_dist / req.entry_price) * 100.0
+
+    if "XAU" in req.pair.upper():
+        # Gold: 1 standard lot = 100 oz. 1 pip (0.10) = $10 per lot
+        pips = sl_dist * 10.0
+        risk_per_point = dollar_risk / max(0.1, sl_dist)
+        lot = round((risk_per_point / 100.0), 2)
+        return {
+            "pair": req.pair,
+            "account_size": req.account_size,
+            "risk_usd": round(dollar_risk, 2),
+            "sl_pips": round(pips, 1),
+            "calculated_lot": max(0.01, lot),
+            "lot_step": 0.01,
+            "risk_model": "GOLD_PIP_SIZING",
+        }
+    else:
+        # Crypto or standard FX percentage sizing
+        pos_size_usd = dollar_risk / (sl_dist_pct / 100.0)
+        units = pos_size_usd / req.entry_price
+        liq_price = req.entry_price * (1 - (1 / max(1.0, req.leverage)) * 0.9) if req.sl_price < req.entry_price else req.entry_price * (1 + (1 / max(1.0, req.leverage)) * 0.9)
+        return {
+            "pair": req.pair,
+            "account_size": req.account_size,
+            "risk_usd": round(dollar_risk, 2),
+            "sl_distance_pct": round(sl_dist_pct, 2),
+            "position_size_usd": round(pos_size_usd, 2),
+            "units": round(units, 4),
+            "est_liquidation_price": round(liq_price, 2),
+            "risk_model": "LEVERAGE_NOTIONAL_SIZING",
+        }
+
