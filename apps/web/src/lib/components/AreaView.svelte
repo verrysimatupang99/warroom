@@ -2152,19 +2152,19 @@ function pilihSub(s: string) {
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono mb-3">
 								<div class="rounded bg-surface p-2.5 border border-line">
 									<span class="text-10 text-text-3 block">HARGA EMAS</span>
-									<span class="text-16 font-bold text-text">${forexObj?.harga ?? '—'}</span>
+									<span class="text-16 font-bold text-text">${forexObj?.close ?? forexObj?.harga ?? '—'}</span>
+								</div>
+								<div class="rounded bg-surface p-2.5 border border-line">
+									<span class="text-10 text-text-3 block">EMA 20 (1H)</span>
+									<span class="text-16 font-bold text-accent">${forexObj?.ema20 ?? '—'}</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
 									<span class="text-10 text-text-3 block">EMA 50 (1H)</span>
-									<span class="text-16 font-bold text-accent">${forexObj?.ema50 ?? '—'}</span>
+									<span class="text-16 font-bold text-accent-2">${forexObj?.ema50 ?? '—'}</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
-									<span class="text-10 text-text-3 block">EMA 200 (1H)</span>
-									<span class="text-16 font-bold text-accent-2">${forexObj?.ema200 ?? '—'}</span>
-								</div>
-								<div class="rounded bg-surface p-2.5 border border-line">
-									<span class="text-10 text-text-3 block">RSI (14)</span>
-									<span class="text-16 font-bold text-text">{forexObj?.rsi ?? '—'}</span>
+									<span class="text-10 text-text-3 block">ATR (14)</span>
+									<span class="text-16 font-bold text-text">{forexObj?.atr14 ? `${forexObj.atr14} (${forexObj?.atr_pct ?? '—'}%)` : '—'}</span>
 								</div>
 							</div>
 
