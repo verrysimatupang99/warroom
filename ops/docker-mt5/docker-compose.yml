@@ -1,0 +1,22 @@
+services:
+  mt5:
+    image: lscr.io/linuxserver/webtop:ubuntu-xfce
+    container_name: warroom-mt5-node
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Jakarta
+      - SUBFOLDER=/mt5/
+      - WINEDEBUG=-all
+    volumes:
+      - /home/admin/warroom/ops/docker-mt5/config:/config
+    ports:
+      - "127.0.0.1:3300:3000"
+    restart: unless-stopped
+    shm_size: "1gb"

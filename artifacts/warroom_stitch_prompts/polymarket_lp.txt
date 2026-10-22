@@ -1,0 +1,19 @@
+Quantitative Prediction Markets & Solana Meteora DLMM Liquidity Pool Terminal for War Room.
+Design theme: Dark obsidian #0d0e11, card surface #181a1d, border #24262a, indigo #6366f1, cyan #06b6d4.
+Top header: Market selector tabs: [Favorit 0.70–0.95 (Active)], [Riset & Backtest], [Arm Lain (Beku)], [Live Arming].
+
+Section 1 - Polymarket 5-Minute Favorite Band (Arm B):
+- Header badge: [YANG DIPAKAI: ARM B - BELI FAVORIT 0.70–0.95].
+- Metric Cards: Saldo Awal Rp 10.000.000, Saldo Kini Rp 7.987.443 (-20.13%), Total Trades 142, Win Rate 78.4% (Confidence Interval 71.2% - 84.1%).
+- Active Markets Ladder:
+  - Table of monitored binary outcome markets:
+    * "US CPI YoY >= 3.1% in Oct": Current Prob 0.88, Orderbook Spread 0.015, Depth $42,500, Slippage 0.22%, Signal [HOLD/PAPER EXECUTE].
+    * "Bitcoin above $65,000 at expiry": Current Prob 0.76, Spread 0.020, Depth $18,200, Slippage 0.45%, Signal [REJECTED: Depth Insufficient].
+  - Resolution countdown clocks and edge vs market estimation.
+
+Section 2 - Solana Meteora Dynamic Liquidity Provisioning (DLMM):
+- Header badge: [TELEMETRI SOLANA / METEORA DLMM].
+- Active LP Pools breakdown:
+  - Pool: SOL/USDC Dynamic Fee Pool (Bin Step 20) -> Current Price $148.20, Fee APR 112.4%, V/L Ratio 2.45, Impermanent Loss vs HODL: -0.18%, Net Fee Accrued +$14.80.
+  - Pool: JUP/SOL Dynamic Pool -> Fee APR 76.8%, V/L Ratio 1.15, IL: -0.62%, Net Fee +$8.12.
+- Curve rebalancing alert status: [OPTIMAL RANGE - NO REBALANCE NEEDED].

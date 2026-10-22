@@ -347,8 +347,8 @@
 
 <style>
 	.market-tools-container {
-		background: #121314;
-		border: 1px solid #232629;
+		background: var(--color-surface);
+		border: 1px solid var(--color-line);
 		border-radius: 8px;
 		padding: 1rem;
 		margin-block: 1rem;
@@ -357,18 +357,18 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		border-bottom: 1px solid #232629;
+		border-bottom: 1px solid var(--color-line);
 		padding-bottom: 0.75rem;
 	}
 	.oy-tag {
 		font-size: 9.5px;
 		font-weight: 700;
-		color: #f5b83d;
+		color: var(--color-accent);
 		letter-spacing: 0.08em;
 	}
 	.oy-panel {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 0.85rem;
 	}
@@ -376,7 +376,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		border-bottom: 1px solid #232629;
+		border-bottom: 1px solid var(--color-line);
 		padding-bottom: 0.45rem;
 		margin-bottom: 0.75rem;
 	}
@@ -385,33 +385,33 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: #ededec;
+		color: var(--color-text);
 	}
 	.input-lbl {
 		display: block;
 		font-size: 11px;
-		color: #a6aab0;
+		color: var(--color-text-3);
 	}
 	.oy-input {
 		width: 100%;
-		background: #0c0d0e;
-		border: 1px solid #232629;
+		background: var(--color-bg);
+		border: 1px solid var(--color-line);
 		border-radius: 4px;
-		color: #ededec;
+		color: var(--color-text);
 		padding: 0.35rem 0.55rem;
 		font-size: 13px;
 	}
 	.preset-btn {
-		background: #1c1f22;
-		border: 1px solid #2f3337;
-		color: #a6aab0;
+		background: var(--color-surface-3);
+		border: 1px solid var(--color-line);
+		color: var(--color-text-2);
 		border-radius: 4px;
 		padding: 0.35rem 0.6rem;
 		font-size: 11px;
 	}
 	.preset-btn:hover {
-		color: #f5b83d;
-		border-color: #f5b83d;
+		color: var(--color-accent);
+		border-color: var(--color-accent);
 	}
 	.status-pill {
 		font-size: 9.5px;
@@ -421,18 +421,18 @@
 		border: 1px solid;
 	}
 	.status-pill.pos {
-		color: #3cc76b;
-		background: rgba(60, 199, 107, 0.12);
-		border-color: rgba(60, 199, 107, 0.3);
+		color: var(--color-pos);
+		background: color-mix(in srgb, var(--color-pos) 12%, transparent);
+		border-color: color-mix(in srgb, var(--color-pos) 30%, transparent);
 	}
 	.status-pill.warn {
-		color: #f5b83d;
-		background: rgba(245, 184, 61, 0.12);
-		border-color: rgba(245, 184, 61, 0.3);
+		color: var(--color-warn);
+		background: color-mix(in srgb, var(--color-warn) 12%, transparent);
+		border-color: color-mix(in srgb, var(--color-warn) 30%, transparent);
 	}
 	.kpi-cell {
-		background: #0c0d0e;
-		border: 1px solid #232629;
+		background: var(--color-bg);
+		border: 1px solid var(--color-line);
 		border-radius: 4px;
 		padding: 0.5rem 0.6rem;
 		display: flex;
@@ -440,7 +440,7 @@
 	}
 	.kpi-cell .lbl {
 		font-size: 9.5px;
-		color: #787d84;
+		color: var(--color-text-3);
 		text-transform: uppercase;
 	}
 	.kpi-cell .val {
@@ -450,12 +450,12 @@
 	}
 	.kpi-cell .sub {
 		font-size: 10px;
-		color: #787d84;
+		color: var(--color-text-3);
 		font-family: sans-serif;
 	}
 	.standdown-box {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 0.85rem;
 	}

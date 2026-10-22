@@ -20,9 +20,12 @@ from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
 from warroom_api.routers import alert as alert_router
 from warroom_api.routers import auth as auth_router
+from warroom_api.routers import cron as cron_router
 from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
+from warroom_api.routers import idx as idx_router
+from warroom_api.routers import journal as journal_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
 from warroom_api.routers import llm as llm_router
@@ -88,6 +91,9 @@ def create_app() -> FastAPI:
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
     app.include_router(tencent_router.router)
+    app.include_router(idx_router.router)
+    app.include_router(journal_router.router)
+    app.include_router(cron_router.router)
 
     # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---
     app.include_router(leaderboard_router.router)

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WAR ROOM · Quantitative Prediction Markets &amp; DLMM Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-low": "#1b1b1f",
+            "on-background": "#e3e2e6",
+            "surface-variant": "#343538",
+            "surface-container-lowest": "#0d0e11",
+            "on-primary-fixed": "#07006c",
+            "on-secondary-container": "#00311f",
+            "secondary-fixed-dim": "#4edea3",
+            "on-surface-variant": "#c7c4d7",
+            "inverse-on-surface": "#303034",
+            "primary-container": "#8083ff",
+            "surface-dim": "#121316",
+            "on-surface": "#e3e2e6",
+            "error-container": "#93000a",
+            "tertiary": "#ffb3ad",
+            "on-primary": "#1000a9",
+            "surface-container-highest": "#343538",
+            "tertiary-fixed": "#ffdad7",
+            "surface-container": "#1f1f23",
+            "outline-variant": "#464554",
+            "on-secondary-fixed": "#002113",
+            "error": "#ffb4ab",
+            "on-secondary": "#003824",
+            "on-tertiary-container": "#5c0008",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "tertiary-container": "#ff5451",
+            "surface-bright": "#38393c",
+            "inverse-surface": "#e3e2e6",
+            "primary-fixed": "#e1e0ff",
+            "secondary-container": "#00a572",
+            "surface-container-high": "#292a2d",
+            "primary": "#c0c1ff",
+            "secondary": "#4edea3",
+            "on-primary-container": "#0d0096",
+            "on-error-container": "#ffdad6",
+            "tertiary-fixed-dim": "#ffb3ad",
+            "primary-fixed-dim": "#c0c1ff",
+            "on-tertiary-fixed-variant": "#930013",
+            "outline": "#908fa0",
+            "on-tertiary-fixed": "#410004",
+            "secondary-fixed": "#6ffbbe",
+            "background": "#121316",
+            "inverse-primary": "#494bd6",
+            "on-tertiary": "#68000a",
+            "surface-tint": "#c0c1ff",
+            "on-secondary-fixed-variant": "#005236",
+            "surface": "#121316",
+            "on-error": "#690005"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-xl": "1rem",
+            "space-md": "0.5rem",
+            "space-lg": "0.75rem",
+            "gutter": "0.5rem",
+            "space-sm": "0.375rem",
+            "gutter-compact": "0.25rem",
+            "margin": "0.75rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Inter"],
+            "mono-sm": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "body-md": ["Inter"],
+            "mono-md": ["JetBrains Mono"],
+            "headline-lg-mobile": ["Inter"],
+            "label-caps": ["Inter"],
+            "mono-lg": ["JetBrains Mono"],
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "mono-sm": ["0.6875rem", { "lineHeight": "1rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-lg": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+            "body-md": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+            "mono-md": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-caps": ["0.625rem", { "lineHeight": "0.875rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "mono-lg": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0d0e11;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #292a2d;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased font-body-md select-none min-h-screen flex flex-col">
+<!-- TOP APP BAR (Shared Component: TopNavBar Anchor) -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-lowest flex justify-between items-center w-full px-space-md py-space-xs h-10 border-b border-outline-variant dark:border-outline-variant sticky top-0 z-50">
+<!-- Left Cluster: Product & Links -->
+<div class="flex items-center space-x-space-md">
+<div class="flex items-center space-x-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-headline-sm font-headline-sm font-semibold tracking-wider text-on-surface dark:text-on-surface uppercase">WAR ROOM</span>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-space-xs"></div>
+<nav class="hidden md:flex items-center space-x-space-md text-mono-sm font-mono-sm">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">Overview</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">Crypto (SMC)</a>
+<!-- Active Nav: Polymarket (Favorit) -->
+<a class="text-primary dark:text-primary border-b-2 border-primary dark:border-primary font-semibold px-space-xs py-0.5" href="#">Polymarket (Favorit)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">IDX (Saham)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">Forex</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">GMGN/LP</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high px-space-xs py-0.5 rounded transition-colors duration-150" href="#">Sistem &amp; Mesin</a>
+</nav>
+</div>
+<!-- Right Cluster: Telemetry Indicators & Action Triggers -->
+<div class="flex items-center space-x-space-sm text-mono-sm font-mono-sm">
+<div class="flex items-center space-x-space-xs px-space-sm py-0.5 bg-surface-container-low rounded border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-secondary font-semibold">LIVE TELEMETRY · 100% FRESH</span>
+<span class="text-on-surface-variant">· 18ms WIB</span>
+</div>
+<button class="flex items-center space-x-space-xs px-space-sm py-0.5 bg-surface-container border border-outline-variant text-primary hover:bg-surface-container-high transition-colors duration-150 rounded active:scale-95">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<span class="text-label-caps font-label-caps">Raw Facts Inspector</span>
+</button>
+<div class="flex items-center space-x-1 text-on-surface-variant">
+<button class="p-1 hover:text-on-surface hover:bg-surface-container-high rounded transition-colors duration-150">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</button>
+<button class="p-1 hover:text-on-surface hover:bg-surface-container-high rounded transition-colors duration-150 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-tertiary-container rounded-full"></span>
+</button>
+</div>
+</div>
+</header>
+<!-- SUB-HEADER TELEMETRY STRIP & ARM SELECTOR -->
+<div class="bg-surface-container-low border-b border-outline-variant px-space-md py-space-xs flex flex-wrap justify-between items-center gap-space-xs">
+<!-- Market Selector Tabs -->
+<div class="flex items-center space-x-space-xs overflow-x-auto custom-scroll">
+<button class="px-space-md py-1 bg-surface-container-high border border-primary text-primary font-mono-sm text-mono-sm rounded flex items-center space-x-1 shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+<span class="font-semibold">Favorit 0.70–0.95 (Active)</span>
+</button>
+<button class="px-space-md py-1 bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-mono-sm text-mono-sm rounded transition-colors duration-150">
+        Riset &amp; Backtest
+      </button>
+<button class="px-space-md py-1 bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-mono-sm text-mono-sm rounded transition-colors duration-150 flex items-center space-x-1">
+<span class="material-symbols-outlined text-outline" data-icon="lock" style="font-size:12px">lock</span>
+<span>Arm Lain (Beku)</span>
+</button>
+<button class="px-space-md py-1 bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-mono-sm text-mono-sm rounded transition-colors duration-150">
+        Live Arming
+      </button>
+</div>
+<!-- Quick Telemetry Chips -->
+<div class="flex items-center space-x-space-sm text-mono-sm font-mono-sm">
+<div class="flex items-center space-x-1 px-space-sm py-0.5 bg-surface-container border border-outline-variant rounded">
+<span class="text-on-surface-variant">ENGINE:</span>
+<span class="text-secondary font-semibold">B RUNNING</span>
+</div>
+<div class="flex items-center space-x-1 px-space-sm py-0.5 bg-surface-container border border-outline-variant rounded">
+<span class="text-on-surface-variant">SOLANA JITO:</span>
+<span class="text-secondary font-semibold">24ms</span>
+</div>
+<div class="flex items-center space-x-1 px-space-sm py-0.5 bg-surface-container border border-outline-variant rounded">
+<span class="text-on-surface-variant">POLY CLOB:</span>
+<span class="text-primary font-semibold">42ms NOMINAL</span>
+</div>
+</div>
+</div>
+<!-- MAIN VIEWPORT GRID -->
+<main class="flex-1 p-space-md space-y-space-md overflow-y-auto custom-scroll">
+<!-- SECTION 1: POLYMARKET 5-MINUTE FAVORITE BAND (ARM B) -->
+<section class="border border-outline-variant bg-surface-container-low rounded p-space-md space-y-space-md">
+<!-- Section Header & Active Parameter Band -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-space-xs pb-space-sm border-b border-outline-variant">
+<div class="flex items-center space-x-space-sm">
+<div class="flex items-center space-x-1.5 px-space-sm py-0.5 bg-primary/10 border border-primary/30 rounded text-primary text-mono-sm font-mono-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-semibold">[YANG DIPAKAI: ARM B - BELI FAVORIT 0.70–0.95]</span>
+</div>
+<div class="px-space-sm py-0.5 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant text-mono-sm font-mono-sm flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>PAPER / REJECT GUARD ACTIVE</span>
+</div>
+</div>
+<!-- Favorit Probability Distribution Band Visualizer -->
+<div class="flex items-center space-x-space-sm w-full md:w-auto">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase">Favorit Range Gate:</span>
+<div class="w-56 h-3.5 bg-surface-container-lowest border border-outline-variant rounded relative flex items-center">
+<div class="absolute left-0 w-[70%] h-full bg-surface-container-highest/30"></div>
+<!-- Target Band 0.70 - 0.95 -->
+<div class="absolute left-[70%] w-[25%] h-full bg-primary-container/40 border-l border-r border-primary">
+<span class="absolute inset-0 flex items-center justify-center text-[8px] font-mono-sm text-primary font-semibold">0.70 – 0.95</span>
+</div>
+<div class="absolute right-0 w-[5%] h-full bg-error-container/20"></div>
+</div>
+<span class="text-mono-sm font-mono-sm text-secondary font-semibold">95% CI Lolos</span>
+</div>
+</div>
+<!-- 4-Column Key Telemetry Metric Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Metric Card 1: Balance Drawdown -->
+<div class="bg-surface-container border border-outline-variant p-space-sm rounded space-y-1 relative overflow-hidden">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Saldo Awal &amp; Saldo Kini</span>
+<span class="text-error font-mono-sm font-semibold">-20.13% DD</span>
+</div>
+<div class="flex items-baseline space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-on-surface font-mono-lg">Rp 7.987.443</span>
+<span class="text-body-sm font-mono-sm text-outline">/ 10M</span>
+</div>
+<!-- Sparkline representation -->
+<div class="w-full h-5 flex items-end space-x-0.5 pt-1">
+<div class="w-1 bg-secondary/40 h-5"></div>
+<div class="w-1 bg-secondary/40 h-4"></div>
+<div class="w-1 bg-secondary/40 h-4"></div>
+<div class="w-1 bg-secondary/40 h-4.5"></div>
+<div class="w-1 bg-tertiary-container/60 h-3"></div>
+<div class="w-1 bg-tertiary-container/60 h-2.5"></div>
+<div class="w-1 bg-tertiary-container/60 h-2"></div>
+<div class="w-1 bg-tertiary-container/80 h-3.5"></div>
+<div class="w-1 bg-tertiary-container/80 h-3"></div>
+<div class="w-1 bg-tertiary-container h-2.5"></div>
+<div class="w-1 bg-tertiary-container h-2"></div>
+<div class="w-1 bg-tertiary-container h-2"></div>
+<div class="w-1 bg-tertiary-container h-1.5"></div>
+</div>
+<div class="text-mono-sm font-mono-sm text-tertiary flex justify-between">
+<span>Deficit Threshold: 25%</span>
+<span>Risk Guard: ARMED</span>
+</div>
+</div>
+<!-- Metric Card 2: Total Trades -->
+<div class="bg-surface-container border border-outline-variant p-space-sm rounded space-y-1">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Total Executions</span>
+<span class="text-on-surface font-mono-sm">Avg Hold 4m 12s</span>
+</div>
+<div class="flex items-baseline space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-on-surface font-mono-lg">142 Trades</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-2 rounded overflow-hidden flex">
+<div class="bg-secondary h-full" style="width: 78.17%;"></div>
+<div class="bg-tertiary-container h-full" style="width: 21.83%;"></div>
+</div>
+<div class="flex justify-between text-mono-sm font-mono-sm">
+<span class="text-secondary">111 Won</span>
+<span class="text-tertiary">31 Lost</span>
+</div>
+</div>
+<!-- Metric Card 3: Win Rate & CI -->
+<div class="bg-surface-container border border-outline-variant p-space-sm rounded space-y-1">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Win Rate &amp; Statistical CI</span>
+<span class="text-primary font-mono-sm font-semibold">95% CI Level</span>
+</div>
+<div class="flex items-baseline space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-secondary font-mono-lg">78.4%</span>
+<span class="text-body-sm font-mono-sm text-on-surface-variant">[71.2% - 84.1%]</span>
+</div>
+<div class="flex items-center justify-between text-mono-sm font-mono-sm pt-1">
+<span class="text-on-surface-variant">Kelly Criterion:</span>
+<span class="text-primary font-semibold">0.18f (Fractional)</span>
+</div>
+<div class="flex items-center justify-between text-mono-sm font-mono-sm">
+<span class="text-on-surface-variant">Z-Score:</span>
+<span class="text-on-surface">+3.22 (Significant)</span>
+</div>
+</div>
+<!-- Metric Card 4: Spread & Efficiency -->
+<div class="bg-surface-container border border-outline-variant p-space-sm rounded space-y-1">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Median Spread &amp; Fill</span>
+<span class="text-secondary font-mono-sm font-semibold">EV: +4.2%/ticket</span>
+</div>
+<div class="flex items-baseline space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-primary font-mono-lg">1.65 bps</span>
+<span class="text-body-sm font-mono-sm text-on-surface-variant">Spread</span>
+</div>
+<div class="flex items-center justify-between text-mono-sm font-mono-sm pt-1">
+<span class="text-on-surface-variant">Fill Efficiency:</span>
+<span class="text-secondary font-semibold">94.2%</span>
+</div>
+<div class="flex items-center justify-between text-mono-sm font-mono-sm">
+<span class="text-on-surface-variant">Reject Rate:</span>
+<span class="text-outline">5.8% (Gate Block)</span>
+</div>
+</div>
+</div>
+<!-- Active Markets Ladder & Gate Matrix Table -->
+<div class="border border-outline-variant rounded overflow-hidden">
+<div class="bg-surface-container px-space-md py-space-xs border-b border-outline-variant flex justify-between items-center">
+<div class="flex items-center space-x-space-xs">
+<span class="material-symbols-outlined text-primary" data-icon="grid_view" style="font-size:14px">grid_view</span>
+<span class="text-label-caps font-label-caps uppercase text-on-surface">CLOB Execution Gate Matrix (Arm B Active Polling)</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline">Tick Interval: 250ms</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-mono-sm text-mono-sm border-collapse">
+<thead>
+<tr class="bg-surface-container-high border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase tracking-wider">
+<th class="py-space-xs px-space-md">Target Prediction Market</th>
+<th class="py-space-xs px-space-md">Current Prob</th>
+<th class="py-space-xs px-space-md">CLOB Spread</th>
+<th class="py-space-xs px-space-md">Depth ($USD)</th>
+<th class="py-space-xs px-space-md">Slippage</th>
+<th class="py-space-xs px-space-md">Edge vs Mkt</th>
+<th class="py-space-xs px-space-md">Expiry Clock</th>
+<th class="py-space-xs px-space-md text-right">Gate Decision</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
+<!-- Market 1: Lolos Gate -->
+<tr class="hover:bg-surface-container-high/40 transition-colors duration-150">
+<td class="py-space-xs px-space-md font-medium text-on-surface flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>US CPI YoY &gt;= 3.1% in Oct</span>
+</td>
+<td class="py-space-xs px-space-md text-secondary font-semibold">0.88 (88%)</td>
+<td class="py-space-xs px-space-md text-on-surface">0.015 (1.5c)</td>
+<td class="py-space-xs px-space-md text-on-surface font-semibold">$42,500</td>
+<td class="py-space-xs px-space-md text-on-surface-variant">0.22%</td>
+<td class="py-space-xs px-space-md text-secondary font-semibold">+3.4%</td>
+<td class="py-space-xs px-space-md text-primary flex items-center space-x-1">
+<span class="material-symbols-outlined" data-icon="timer" style="font-size:12px">timer</span>
+<span>04:18m left</span>
+</td>
+<td class="py-space-xs px-space-md text-right">
+<span class="px-space-sm py-0.5 bg-secondary/10 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded uppercase font-semibold">
+                    HOLD / PAPER EXECUTE
+                  </span>
+</td>
+</tr>
+<!-- Market 2: Gate Fail / Reject -->
+<tr class="hover:bg-surface-container-high/40 transition-colors duration-150 bg-tertiary-container/5">
+<td class="py-space-xs px-space-md font-medium text-on-surface flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Bitcoin above $65,000 at expiry</span>
+</td>
+<td class="py-space-xs px-space-md text-on-surface">0.76 (76%)</td>
+<td class="py-space-xs px-space-md text-tertiary">0.020 (2.0c)</td>
+<td class="py-space-xs px-space-md text-tertiary font-semibold">$18,200</td>
+<td class="py-space-xs px-space-md text-tertiary">0.45%</td>
+<td class="py-space-xs px-space-md text-outline">+1.1%</td>
+<td class="py-space-xs px-space-md text-tertiary flex items-center space-x-1">
+<span class="material-symbols-outlined" data-icon="timer" style="font-size:12px">timer</span>
+<span>01:45m left</span>
+</td>
+<td class="py-space-xs px-space-md text-right">
+<span class="px-space-sm py-0.5 bg-tertiary-container/20 border border-tertiary-container text-tertiary text-label-caps font-label-caps rounded uppercase font-semibold">
+                    REJECTED: Depth &lt; $25k min
+                  </span>
+</td>
+</tr>
+<!-- Market 3: Active Execute -->
+<tr class="hover:bg-surface-container-high/40 transition-colors duration-150">
+<td class="py-space-xs px-space-md font-medium text-on-surface flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Fed Rate Cut 25bps Nov</span>
+</td>
+<td class="py-space-xs px-space-md text-secondary font-semibold">0.92 (92%)</td>
+<td class="py-space-xs px-space-md text-on-surface">0.011 (1.1c)</td>
+<td class="py-space-xs px-space-md text-on-surface font-semibold">$68,400</td>
+<td class="py-space-xs px-space-md text-secondary">0.14%</td>
+<td class="py-space-xs px-space-md text-secondary font-semibold">+4.8%</td>
+<td class="py-space-xs px-space-md text-primary flex items-center space-x-1">
+<span class="material-symbols-outlined" data-icon="timer" style="font-size:12px">timer</span>
+<span>12:05m left</span>
+</td>
+<td class="py-space-xs px-space-md text-right">
+<span class="px-space-sm py-0.5 bg-primary/20 border border-primary text-primary text-label-caps font-label-caps rounded uppercase font-semibold">
+                    ACTIVE EXECUTE
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- SECTION 2: SOLANA METEORA DYNAMIC LIQUIDITY PROVISIONING (DLMM) -->
+<section class="border border-outline-variant bg-surface-container-low rounded p-space-md space-y-space-md">
+<!-- Section Header & Rebalance Shield -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-space-xs pb-space-sm border-b border-outline-variant">
+<div class="flex items-center space-x-space-sm">
+<div class="flex items-center space-x-1.5 px-space-sm py-0.5 bg-secondary/10 border border-secondary/30 rounded text-secondary text-mono-sm font-mono-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-semibold">[TELEMETRI SOLANA / METEORA DLMM]</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline">Network TVL Monitored: $3.84M</span>
+</div>
+<!-- Alert Status Banner -->
+<div class="flex items-center space-x-space-xs px-space-md py-1 bg-secondary/10 border border-secondary/40 rounded text-secondary text-mono-sm font-mono-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="shield" style="font-size:16px">shield</span>
+<span class="font-semibold uppercase tracking-wider text-label-caps font-label-caps">OPTIMAL RANGE · NO REBALANCE NEEDED</span>
+<span class="text-on-surface-variant font-normal">| Vol Regime: Low Beta (0.42)</span>
+</div>
+</div>
+<!-- Active LP Pools Breakdown (Two Bento Style Structural Cards) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-space-md">
+<!-- Pool Card 1: SOL / USDC Dynamic Fee Pool -->
+<div class="bg-surface-container border border-outline-variant rounded p-space-md space-y-space-md">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-on-surface">SOL / USDC</span>
+<span class="text-label-caps font-label-caps uppercase px-space-xs py-0.5 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant">Bin Step 20</span>
+<span class="text-label-caps font-label-caps uppercase px-space-xs py-0.5 bg-primary/10 border border-primary/30 text-primary rounded">Curve / Bid-Ask Concentrated</span>
+</div>
+<div class="text-mono-sm font-mono-sm text-outline pt-0.5">Pool Address: 2zMM...8P9q · Fee Tier: Dynamic Base 0.05%</div>
+</div>
+<div class="text-right">
+<span class="text-label-caps font-label-caps uppercase text-outline">Current Price</span>
+<div class="text-headline-sm font-headline-sm text-secondary font-mono-lg">$148.20</div>
+</div>
+</div>
+<!-- Key Metrics Quad -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs font-mono-sm text-mono-sm">
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">Fee APR</div>
+<div class="text-primary font-semibold text-body-lg">112.4%</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">V/L Velocity</div>
+<div class="text-secondary font-semibold text-body-lg">2.45x</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">IL vs HODL</div>
+<div class="text-on-surface font-semibold text-body-lg">-0.18%</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">Net 24h Fee</div>
+<div class="text-secondary font-semibold text-body-lg">+$14.80</div>
+</div>
+</div>
+<!-- Active Bin Distribution Histogram / Chart -->
+<div class="space-y-1">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Active Bin Depth Distribution</span>
+<span class="text-primary font-mono-sm font-semibold">Active Bin: #148.20</span>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<!-- Visual Bin Bars -->
+<div class="h-20 flex items-end justify-between space-x-1 px-1 pt-2">
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-5 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">142</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-8 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">144</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-primary/40 h-12 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">146</span>
+</div>
+<!-- ACTIVE BIN CENTER -->
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-secondary h-16 rounded-t border-t-2 border-primary relative">
+<span class="absolute -top-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+</div>
+<span class="text-[8px] font-mono-sm text-secondary font-bold mt-1">148.2</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-primary/40 h-14 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">150</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-9 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">152</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-4 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">154</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between text-mono-sm font-mono-sm text-outline pt-0.5">
+<span>Boundary Low: $142.00</span>
+<span>Spread Range: ±4.05%</span>
+<span>Boundary High: $154.00</span>
+</div>
+</div>
+</div>
+<!-- Pool Card 2: JUP / SOL Dynamic Pool -->
+<div class="bg-surface-container border border-outline-variant rounded p-space-md space-y-space-md">
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center space-x-space-xs">
+<span class="text-headline-sm font-headline-sm text-on-surface">JUP / SOL</span>
+<span class="text-label-caps font-label-caps uppercase px-space-xs py-0.5 bg-surface-container-high border border-outline-variant rounded text-on-surface-variant">Bin Step 10</span>
+<span class="text-label-caps font-label-caps uppercase px-space-xs py-0.5 bg-secondary/10 border border-secondary/30 text-secondary rounded">Spot Concentrated DLMM</span>
+</div>
+<div class="text-mono-sm font-mono-sm text-outline pt-0.5">Pool Address: 7kTY...v2K1 · Base Curve Strategy</div>
+</div>
+<div class="text-right">
+<span class="text-label-caps font-label-caps uppercase text-outline">Current Price</span>
+<div class="text-headline-sm font-headline-sm text-secondary font-mono-lg">0.00712 SOL <span class="text-body-sm text-on-surface-variant">($1.05)</span></div>
+</div>
+</div>
+<!-- Key Metrics Quad -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs font-mono-sm text-mono-sm">
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">Fee APR</div>
+<div class="text-primary font-semibold text-body-lg">76.8%</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">V/L Velocity</div>
+<div class="text-secondary font-semibold text-body-lg">1.15x</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">IL vs HODL</div>
+<div class="text-on-surface font-semibold text-body-lg">-0.62%</div>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<div class="text-label-caps font-label-caps uppercase text-outline">Net 24h Fee</div>
+<div class="text-secondary font-semibold text-body-lg">+$8.12</div>
+</div>
+</div>
+<!-- Active Bin Distribution Histogram / Chart -->
+<div class="space-y-1">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant uppercase">
+<span>Active Bin Depth Distribution</span>
+<span class="text-secondary font-mono-sm font-semibold">Active Bin: #0.00712</span>
+</div>
+<div class="bg-surface-container-lowest p-space-xs border border-outline-variant rounded">
+<!-- Visual Bin Bars -->
+<div class="h-20 flex items-end justify-between space-x-1 px-1 pt-2">
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-3 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0068</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-7 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0069</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-primary/40 h-11 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0070</span>
+</div>
+<!-- ACTIVE BIN CENTER -->
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-secondary h-16 rounded-t border-t-2 border-primary relative">
+<span class="absolute -top-3 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+</div>
+<span class="text-[8px] font-mono-sm text-secondary font-bold mt-1">.0071</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-primary/40 h-10 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0073</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-6 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0074</span>
+</div>
+<div class="flex-1 flex flex-col items-center">
+<div class="w-full bg-outline-variant h-3 rounded-t"></div>
+<span class="text-[8px] font-mono-sm text-outline mt-1">.0076</span>
+</div>
+</div>
+</div>
+<div class="flex justify-between text-mono-sm font-mono-sm text-outline pt-0.5">
+<span>Boundary Low: 0.0068 SOL</span>
+<span>Spread Range: ±5.62%</span>
+<span>Boundary High: 0.0076 SOL</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: FOOTER & TELEMETRY AUDIT TRAIL / CONTROLS -->
+<footer class="border border-outline-variant bg-surface-container rounded p-space-sm flex flex-col md:flex-row justify-between items-center gap-space-sm text-mono-sm font-mono-sm">
+<!-- Micro Event Log Ticker -->
+<div class="flex items-center space-x-space-sm w-full md:w-auto overflow-hidden">
+<span class="text-label-caps font-label-caps uppercase text-outline flex items-center space-x-1 shrink-0">
+<span class="material-symbols-outlined" data-icon="sync" style="font-size:12px">sync</span>
+<span>AUDIT LOG:</span>
+</span>
+<div class="truncate text-on-surface-variant space-x-space-sm">
+<span class="text-on-surface">14:02:18.042</span>
+<span class="text-secondary">[METEORA-DLMM]</span>
+<span>Sync OK slot #294819441 · No drift</span>
+<span class="text-outline">|</span>
+<span class="text-primary">[POLY-CLOB]</span>
+<span>Orderbook sync US CPI 88c depth filled</span>
+</div>
+</div>
+<!-- Quick Emergency Controls -->
+<div class="flex items-center space-x-space-xs shrink-0">
+<button class="px-space-sm py-1 bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary hover:border-primary text-label-caps font-label-caps rounded transition-colors duration-150 flex items-center space-x-1">
+<span class="material-symbols-outlined" data-icon="download" style="font-size:12px">download</span>
+<span>EXPORT CSV</span>
+</button>
+<button class="px-space-sm py-1 bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface-variant text-label-caps font-label-caps rounded transition-colors duration-150 flex items-center space-x-1">
+<span class="material-symbols-outlined" data-icon="cleaning_services" style="font-size:12px">cleaning_services</span>
+<span>FLUSH CACHE</span>
+</button>
+<button class="px-space-sm py-1 bg-tertiary-container/20 border border-tertiary-container text-tertiary hover:bg-tertiary-container hover:text-on-tertiary text-label-caps font-label-caps rounded transition-colors duration-150 flex items-center space-x-1 font-semibold">
+<span class="material-symbols-outlined" data-icon="stop_circle" style="font-size:12px">stop_circle</span>
+<span>HALT STRATEGY [ESC]</span>
+</button>
+</div>
+</footer>
+</main>
+</body></html>

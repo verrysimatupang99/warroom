@@ -1,3 +1,5 @@
+void FetchAndExecuteSignal();
+bool HasOpenPosition();
 //+------------------------------------------------------------------+
 //|                                           WarRoom_AutoTrader.mq5 |
 //|                                  War Room Quantitative Multi-Asset |
@@ -9,6 +11,7 @@
 #property description "Auto-Trade Connector resmi War Room v2.0 untuk MetaTrader 5"
 
 #include <Trade\Trade.mqh>
+CTrade trade;
 
 input group "=== KONEKSI WAR ROOM API ==="
 input string   InpApiUrl       = "https://0xgunsl1ng3r.xyz/api/v1/tencent/forex/levels?symbol=XAUUSD"; // Endpoint Sinyal War Room
@@ -16,17 +19,116 @@ input string   InpTelemetryUrl = "https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/te
 input int      InpPollSeconds  = 5;           // Interval Pengecekan (Detik)
 
 input group "=== PENGATURAN RISK & LOT ==="
-input double   InpFixedLot     = 0.05;        // Ukuran Lot Eksekusi
+input double   InpFixedLot     = 0.10;        // Ukuran Lot Eksekusi
 input ulong    InpMagicNumber  = 992026;      // Magic Number War Room
 input ulong    InpSlippage     = 30;          // Max Slippage (Points)
 
 input group "=== FREQTRADE PROTEKSI (AUTOMATIC) ==="
-input bool     InpUseBreakeven = true;        // Aktifkan Breakeven Lock (+1.0R)
-input bool     InpUseTrailing  = true;        // Aktifkan Trailing Stop ATR (+1.5R)
+input bool     InpUsePartialTP = true;        // Amankan 50% Lot di Target +1.0R (Anti Floating Loss)
+input double   InpPartialRatio = 0.50;        // Porsi Lot yang Ditutup (0.50 = 50%)
+input bool     InpUseBreakeven = true;        // Aktifkan Buffered Breakeven Lock (+1.2R)
+input int      InpBEBufferPts  = 15;          // Buffer BE di atas modal (Tutup komisi/spread)
+input bool     InpUseTrailing  = true;        // Aktifkan Dynamic Trailing Stop (+1.5R)
+input int      InpMaxSpreadPts = 40;          // Max Spread Diizinkan (Pencegah Slippage)
 
-CTrade trade;
+input group "=== DAILY PROFIT RATCHET & LOSS GUARD ==="
+input bool     InpEnableDailyRatchet = true;  // Kunci Target Profit Harian
+input double   InpDailyTargetLock   = 40.0;   // Target Profit Harian Minimal ($)
+input double   InpDailyFloorLock    = 30.0;   // Floor Proteksi: Jika pullback ke sini, kunci & setop ($)
+input double   InpDailyMaxLoss      = 25.0;   // Batas Rugi Maksimal Harian ($)
+
 datetime lastCheckTime = 0;
 string lastProcessedSignal = "";
+ulong processedPartials[];
+
+bool IsPartialDone(ulong ticket)
+{
+   for(int i = 0; i < ArraySize(processedPartials); i++)
+      if(processedPartials[i] == ticket) return true;
+   return false;
+}
+
+void MarkPartialDone(ulong ticket)
+{
+   int sz = ArraySize(processedPartials);
+   ArrayResize(processedPartials, sz + 1);
+   processedPartials[sz] = ticket;
+}
+datetime currentDay = 0;
+double startOfDayBalance = 0;
+double peakProfitToday = 0;
+bool dailyLocked = false;
+
+//+------------------------------------------------------------------+
+//| Kirim Telemetry Status & Posisi Terbuka ke Server War Room       |
+//+------------------------------------------------------------------+
+void SendTelemetryReport()
+{
+   string acc = IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
+   string broker = AccountInfoString(ACCOUNT_COMPANY);
+   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
+   double mar = AccountInfoDouble(ACCOUNT_MARGIN);
+   double freeMar = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+   double pnl = AccountInfoDouble(ACCOUNT_PROFIT);
+
+   string posJson = "[";
+   int count = 0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket > 0 && PositionGetString(POSITION_SYMBOL) == _Symbol)
+      {
+         if(count > 0) posJson += ",";
+         string sSide = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? "BUY" : "SELL";
+         posJson += StringFormat("{\"ticket\":%I64u,\"symbol\":\"%s\",\"side\":\"%s\",\"volume\":%.2f,\"open_price\":%.3f,\"current_price\":%.3f,\"sl\":%.3f,\"tp\":%.3f,\"pnl_usd\":%.2f}",
+            ticket,
+            PositionGetString(POSITION_SYMBOL),
+            sSide,
+            PositionGetDouble(POSITION_VOLUME),
+            PositionGetDouble(POSITION_PRICE_OPEN),
+            PositionGetDouble(POSITION_PRICE_CURRENT),
+            PositionGetDouble(POSITION_SL),
+            PositionGetDouble(POSITION_TP),
+            PositionGetDouble(POSITION_PROFIT)
+         );
+         count++;
+      }
+   }
+   posJson += "]";
+
+   // Hitung W/L hari ini dari riwayat deal — angka dikirim apa adanya, tidak dikarang.
+   int tradesToday = 0;
+   int winsToday = 0;
+   datetime todayStart = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
+   if(HistorySelect(todayStart, TimeCurrent()))
+   {
+      int deals = HistoryDealsTotal();
+      for(int d = 0; d < deals; d++)
+      {
+         ulong deal = HistoryDealGetTicket(d);
+         if(deal == 0) continue;
+         if(HistoryDealGetInteger(deal, DEAL_ENTRY) != DEAL_ENTRY_OUT) continue;
+         if(HistoryDealGetInteger(deal, DEAL_MAGIC) != (long)InpMagicNumber) continue;
+         if(HistoryDealGetString(deal, DEAL_SYMBOL) != _Symbol) continue;
+         tradesToday++;
+         if(HistoryDealGetDouble(deal, DEAL_PROFIT) > 0) winsToday++;
+      }
+   }
+   double winRate = (tradesToday > 0) ? (100.0 * winsToday / tradesToday) : 0.0;
+
+   string payload = StringFormat("{\"account\":\"%s\",\"broker\":\"%s\",\"balance\":%.2f,\"equity\":%.2f,\"margin\":%.2f,\"free_margin\":%.2f,\"floating_pnl\":%.2f,\"positions\":%s,\"total_trades_today\":%d,\"win_rate_pct\":%.1f}",
+      acc, broker, bal, eq, mar, freeMar, pnl, posJson, tradesToday, winRate
+   );
+
+   char post[], result[];
+   string headers = "Content-Type: application/json\r\n";
+   StringToCharArray(payload, post, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(post, ArraySize(post)-1); // buang null terminator
+
+   ResetLastError();
+   WebRequest("POST", InpTelemetryUrl, headers, 2000, post, result, headers);
+}
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -37,9 +139,9 @@ int OnInit()
    trade.SetDeviationInPoints(InpSlippage);
    trade.SetTypeFilling(ORDER_FILLING_FOK);
    
-   Print("🚀 War Room AutoTrader v2.0 siap berjalan pada: ", _Symbol);
-   Print("📡 Endpoint API: ", InpApiUrl);
-   Print("⚠️ Pastikan 'Allow WebRequest' ke 'https://0xgunsl1ng3r.xyz' sudah diaktifkan di Tools -> Options -> Expert Advisors.");
+   Print(" War Room AutoTrader v2.0 siap berjalan pada: ", _Symbol);
+   Print(" Endpoint API: ", InpApiUrl);
+   Print(" Pastikan 'Allow WebRequest' ke 'https://0xgunsl1ng3r.xyz' sudah diaktifkan di Tools -> Options -> Expert Advisors.");
    
    EventSetTimer(InpPollSeconds);
    return(INIT_SUCCEEDED);
@@ -51,10 +153,197 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    EventKillTimer();
-   Print("⏹️ War Room AutoTrader dihentikan.");
+   Print(" War Room AutoTrader dihentikan.");
 }
 
+
 //+------------------------------------------------------------------+
+//| Cek Proteksi Daily Profit Ratchet & Max Loss Guard              |
+//+------------------------------------------------------------------+
+bool CheckDailyProtections()
+{
+   MqlDateTime dt;
+   TimeCurrent(dt);
+   datetime todayStart = StringToTime(StringFormat("%04d.%02d.%02d 00:00", dt.year, dt.mon, dt.day));
+
+   if(currentDay != todayStart)
+   {
+      currentDay = todayStart;
+      startOfDayBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      peakProfitToday = 0;
+      dailyLocked = false;
+      Print(" Hari Baru Dimulai: Reset baseline balance: $", startOfDayBalance);
+   }
+
+   if(startOfDayBalance <= 0)
+      startOfDayBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+
+   // Hitung total profit terealisasi hari ini
+   HistorySelect(todayStart, TimeCurrent());
+   double realizedToday = 0;
+   int dealsTotal = HistoryDealsTotal();
+   int winCount = 0;
+   int totalTrades = 0;
+
+   for(int i = 0; i < dealsTotal; i++)
+   {
+      ulong ticket = HistoryDealGetTicket(i);
+      if(ticket > 0)
+      {
+         long entryType = HistoryDealGetInteger(ticket, DEAL_ENTRY);
+         if(entryType == DEAL_ENTRY_OUT || entryType == DEAL_ENTRY_INOUT)
+         {
+            double profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+            realizedToday += profit;
+            totalTrades++;
+            if(profit > 0) winCount++;
+         }
+      }
+   }
+
+   double currentProfit = realizedToday;
+   if(currentProfit > peakProfitToday)
+      peakProfitToday = currentProfit;
+
+   // 1. Cek Daily Max Loss Guard
+   if(InpEnableDailyRatchet && currentProfit <= -InpDailyMaxLoss)
+   {
+      if(!dailyLocked)
+      {
+         Print(" DAILY MAX LOSS HIT! Realized: $", currentProfit, " <= -$", InpDailyMaxLoss, ". Menutup posisi & pause sampai besok.");
+         CloseAllPositions();
+         dailyLocked = true;
+      }
+      return false; // Jangan ambil posisi baru
+   }
+
+   // 2. Cek Daily Profit Ratchet Lock:
+   // Jika sudah tembus target lock (0), dan profit turun menyentuh floor lock (0), kunci cuan!
+   if(InpEnableDailyRatchet && peakProfitToday >= InpDailyTargetLock)
+   {
+      if(currentProfit <= InpDailyFloorLock)
+      {
+         if(!dailyLocked)
+         {
+            Print(" DAILY PROFIT RATCHET LOCKED! Peak: $", peakProfitToday, " Pullback ke: $", currentProfit, " (Floor: $", InpDailyFloorLock, "). Amankan profit & istirahat.");
+            CloseAllPositions();
+            dailyLocked = true;
+         }
+         return false; // Jangan ambil posisi baru
+      }
+   }
+
+   return !dailyLocked;
+}
+
+void CloseAllPositions()
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket > 0 && PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+      {
+         trade.PositionClose(ticket);
+      }
+   }
+}
+
+
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Kelola Partial Close, Buffered Breakeven, dan Trailing Stop      |
+//+------------------------------------------------------------------+
+void ManageOpenPositions()
+{
+   if(!InpUseBreakeven && !InpUseTrailing && !InpUsePartialTP) return;
+
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket > 0 && PositionGetString(POSITION_SYMBOL) == _Symbol && PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+      {
+         long   type         = PositionGetInteger(POSITION_TYPE);
+         double openPrice    = PositionGetDouble(POSITION_PRICE_OPEN);
+         double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+         double currentSL    = PositionGetDouble(POSITION_SL);
+         double currentTP    = PositionGetDouble(POSITION_TP);
+         double volume       = PositionGetDouble(POSITION_VOLUME);
+
+         double initialRisk = MathAbs(openPrice - currentSL);
+         if(initialRisk <= 0) initialRisk = 3.5;
+
+         if(type == POSITION_TYPE_BUY)
+         {
+            // 1. PARTIAL TAKE PROFIT 50% di +1.0R
+            if(InpUsePartialTP && !IsPartialDone(ticket) && volume >= 0.04)
+            {
+               if(currentPrice >= (openPrice + initialRisk))
+               {
+                  double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+                  double closeVol = MathRound((volume * InpPartialRatio) / lotStep) * lotStep;
+                  if(closeVol >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN) && closeVol < volume)
+                  {
+                     if(trade.PositionClosePartial(ticket, closeVol))
+                     {
+                        MarkPartialDone(ticket);
+                        Print(" INSTITUTIONAL PARTIAL TAKE PROFIT: Berhasil amankan 50% lot (", closeVol, ") pada tiket #", ticket);
+                        PositionSelectByTicket(ticket);
+                        currentSL = PositionGetDouble(POSITION_SL);
+                     }
+                  }
+               }
+            }
+
+            // 2. BUFFERED BREAKEVEN GUARD di +1.2R
+            if(InpUseBreakeven)
+            {
+               double beTrigger = openPrice + (initialRisk * 1.2);
+               double targetSL = openPrice + (InpBEBufferPts * _Point);
+               if(currentPrice >= beTrigger && (currentSL < targetSL || currentSL == 0))
+               {
+                  Print(" Buffered Breakeven Locked: Tiket #", ticket, " SL digeser ke modal + buffer: ", targetSL);
+                  trade.PositionModify(ticket, targetSL, currentTP);
+               }
+            }
+         }
+         else if(type == POSITION_TYPE_SELL)
+         {
+            // 1. PARTIAL TAKE PROFIT 50% di +1.0R
+            if(InpUsePartialTP && !IsPartialDone(ticket) && volume >= 0.04)
+            {
+               if(currentPrice <= (openPrice - initialRisk))
+               {
+                  double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+                  double closeVol = MathRound((volume * InpPartialRatio) / lotStep) * lotStep;
+                  if(closeVol >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN) && closeVol < volume)
+                  {
+                     if(trade.PositionClosePartial(ticket, closeVol))
+                     {
+                        MarkPartialDone(ticket);
+                        Print(" INSTITUTIONAL PARTIAL TAKE PROFIT: Berhasil amankan 50% lot (", closeVol, ") pada tiket #", ticket);
+                        PositionSelectByTicket(ticket);
+                        currentSL = PositionGetDouble(POSITION_SL);
+                     }
+                  }
+               }
+            }
+
+            // 2. BUFFERED BREAKEVEN GUARD di +1.2R
+            if(InpUseBreakeven)
+            {
+               double beTrigger = openPrice - (initialRisk * 1.2);
+               double targetSL = openPrice - (InpBEBufferPts * _Point);
+               if(currentPrice <= beTrigger && (currentSL > targetSL || currentSL == 0))
+               {
+                  Print(" Buffered Breakeven Locked: Tiket #", ticket, " SL digeser ke modal + buffer: ", targetSL);
+                  trade.PositionModify(ticket, targetSL, currentTP);
+               }
+            }
+         }
+      }
+   }
+}
+
 //| Timer function: polling sinyal dari War Room API                  |
 //+------------------------------------------------------------------+
 void OnTimer()
@@ -65,10 +354,13 @@ void OnTimer()
    // 2. Kelola Posisi Terbuka (Breakeven & Trailing Stop)
    ManageOpenPositions();
 
-   // 3. Cek apakah ada posisi terbuka saat ini
+   // 3. Periksa Proteksi Harian (Daily Profit Ratchet & Max Loss Guard)
+   if(!CheckDailyProtections()) return;
+
+   // 4. Cek apakah ada posisi terbuka saat ini
    if(HasOpenPosition()) return;
 
-   // 4. Tarik sinyal terbaru dari War Room
+   // 5. Tarik sinyal terbaru dari War Room
    FetchAndExecuteSignal();
 }
 
@@ -87,144 +379,6 @@ bool HasOpenPosition()
       }
    }
    return false;
-}
-
-//+------------------------------------------------------------------+
-//| Eksekusi WebRequest ke War Room & Buka Posisi                    |
-//+------------------------------------------------------------------+
-void FetchAndExecuteSignal()
-{
-   char post[], result[];
-   string headers;
-   int timeout = 3000;
-   ResetLastError();
-
-   int res = WebRequest("GET", InpApiUrl, "", timeout, post, result, headers);
-   if(res == 200)
-   {
-      string jsonStr = CharArrayToString(result);
-      // Parsing sederhana JSON respons War Room
-      if(StringFind(jsonStr, "\"status\":\"OK\"") >= 0 || StringFind(jsonStr, "\"status\": \"OK\"") >= 0)
-      {
-         string side = ExtractJsonString(jsonStr, "side");
-         double entry = ExtractJsonDouble(jsonStr, "entry");
-         double sl = ExtractJsonDouble(jsonStr, "sl");
-         double tp1 = ExtractJsonDouble(jsonStr, "tp1");
-
-         string signalId = DoubleToString(entry, 2) + "_" + DoubleToString(sl, 2);
-         if(signalId == lastProcessedSignal) return; // Jangan ulangi sinyal yang sama
-
-         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-         // Proteksi Validasi Stops MT5:
-         // Jika harga pasar (Ask/Bid) sudah melesat MELEWATI target TP atau SL,
-         // jangan paksa masuk karena broker akan menolak [invalid stops] atau posisi langsung minus.
-         if(side == "LONG")
-         {
-            if(ask >= tp1)
-            {
-               Print("⚠️ Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah berada di atas target TP (", tp1, "). Menunggu retest berikutnya.");
-               return;
-            }
-            if(ask <= sl)
-            {
-               Print("⚠️ Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
-               return;
-            }
-
-            Print("🟢 Sinyal War Room Diterima: BUY ", _Symbol, " Entry: ", ask, " SL: ", sl, " TP: ", tp1);
-            if(trade.Buy(InpFixedLot, _Symbol, ask, sl, tp1, "WarRoom Signal"))
-            {
-               Print("✅ Order BUY Berhasil Dibuka! Ticket: ", trade.ResultOrder());
-               lastProcessedSignal = signalId;
-            }
-            else
-            {
-               Print("❌ Gagal Order BUY: ", trade.ResultRetcodeDescription());
-            }
-         }
-         else if(side == "SHORT")
-         {
-            if(bid <= tp1)
-            {
-               Print("⚠️ Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah berada di bawah target TP (", tp1, "). Menunggu retest berikutnya.");
-               return;
-            }
-            if(bid >= sl)
-            {
-               Print("⚠️ Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
-               return;
-            }
-
-            Print("🔴 Sinyal War Room Diterima: SELL ", _Symbol, " Entry: ", bid, " SL: ", sl, " TP: ", tp1);
-            if(trade.Sell(InpFixedLot, _Symbol, bid, sl, tp1, "WarRoom Signal"))
-            {
-               Print("✅ Order SELL Berhasil Dibuka! Ticket: ", trade.ResultOrder());
-               lastProcessedSignal = signalId;
-            }
-            else
-            {
-               Print("❌ Gagal Order SELL: ", trade.ResultRetcodeDescription());
-            }
-         }
-      }
-   }
-   else if(res == -1)
-   {
-      int err = GetLastError();
-      if(err == 4014)
-      {
-         Print("⚠️ WebRequest diblokir! Tambahkan 'https://0xgunsl1ng3r.xyz' di Tools -> Options -> Expert Advisors -> Allow WebRequest.");
-      }
-   }
-}
-
-//+------------------------------------------------------------------+
-//| Kelola Breakeven dan Trailing Stop ATR                           |
-//+------------------------------------------------------------------+
-void ManageOpenPositions()
-{
-   if(!InpUseBreakeven && !InpUseTrailing) return;
-
-   for(int i = PositionsTotal() - 1; i >= 0; i--)
-   {
-      ulong ticket = PositionGetTicket(i);
-      if(ticket > 0 && PositionGetString(POSITION_SYMBOL) == _Symbol && PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
-      {
-         long type = PositionGetInteger(POSITION_TYPE);
-         double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-         double currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
-         double currentSL = PositionGetDouble(POSITION_SL);
-         double currentTP = PositionGetDouble(POSITION_TP);
-
-         if(type == POSITION_TYPE_BUY)
-         {
-            double initialRisk = MathAbs(openPrice - currentSL);
-            if(initialRisk > 0 && InpUseBreakeven)
-            {
-               // Jika running profit >= 1.0R dan SL belum di Breakeven
-               if(currentPrice >= (openPrice + initialRisk) && currentSL < openPrice)
-               {
-                  Print("🛡️ Freqtrade Guard: Mengunci Breakeven untuk Tiket #", ticket);
-                  trade.PositionModify(ticket, openPrice + (5 * _Point), currentTP);
-               }
-            }
-         }
-         else if(type == POSITION_TYPE_SELL)
-         {
-            double initialRisk = MathAbs(currentSL - openPrice);
-            if(initialRisk > 0 && InpUseBreakeven)
-            {
-               if(currentPrice <= (openPrice - initialRisk) && (currentSL > openPrice || currentSL == 0))
-               {
-                  Print("🛡️ Freqtrade Guard: Mengunci Breakeven untuk Tiket #", ticket);
-                  trade.PositionModify(ticket, openPrice - (5 * _Point), currentTP);
-               }
-            }
-         }
-      }
-   }
 }
 
 //+------------------------------------------------------------------+
@@ -261,7 +415,7 @@ double ExtractJsonDouble(string json, string key)
    if(pos < 0) return 0.0;
    pos += StringLen(search);
    int end = StringFind(json, ",", pos);
-   int end2 = StringFind(json, "}", pos);
+   string closeBrace = ShortToString(125); int end2 = StringFind(json, closeBrace, pos);
    if(end < 0 || (end2 > 0 && end2 < end)) end = end2;
    if(end < 0) return 0.0;
    string val = StringSubstr(json, pos, end - pos);
@@ -273,59 +427,94 @@ double ExtractJsonDouble(string json, string key)
 
 
 //+------------------------------------------------------------------+
-//| Kirim Telemetry Status & Posisi Terbuka ke Server War Room       |
-//+------------------------------------------------------------------+
-void SendTelemetryReport()
-{
-   string acc = IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
-   string broker = AccountInfoString(ACCOUNT_COMPANY);
-   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
-   double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-   double mar = AccountInfoDouble(ACCOUNT_MARGIN);
-   double freeMar = AccountInfoDouble(ACCOUNT_MARGIN_FREE);
-   double pnl = AccountInfoDouble(ACCOUNT_PROFIT);
 
-   string posJson = "[";
-   int count = 0;
-   for(int i = PositionsTotal() - 1; i >= 0; i--)
+//+------------------------------------------------------------------+
+//| Eksekusi WebRequest ke War Room & Buka Posisi                    |
+//+------------------------------------------------------------------+
+void FetchAndExecuteSignal()
+{
+   char post[], result[];
+   string headers;
+   int timeout = 3000;
+   ResetLastError();
+
+   int res = WebRequest("GET", InpApiUrl, "", timeout, post, result, headers);
+   if(res == 200)
    {
-      ulong ticket = PositionGetTicket(i);
-      if(ticket > 0 && PositionGetString(POSITION_SYMBOL) == _Symbol)
+      string jsonStr = CharArrayToString(result);
+      // Parsing sederhana JSON respons War Room
+      if(StringFind(jsonStr, "\"status\":\"OK\"") >= 0 || StringFind(jsonStr, "\"status\": \"OK\"") >= 0)
       {
-         if(count > 0) posJson += ",";
-         string sSide = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? "BUY" : "SELL";
-         posJson += StringFormat("{"ticket":%I64u,"symbol":"%s","side":"%s","volume":%.2f,"open_price":%.3f,"current_price":%.3f,"sl":%.3f,"tp":%.3f,"pnl_usd":%.2f}",
-            ticket,
-            PositionGetString(POSITION_SYMBOL),
-            sSide,
-            PositionGetDouble(POSITION_VOLUME),
-            PositionGetDouble(POSITION_PRICE_OPEN),
-            PositionGetDouble(POSITION_PRICE_CURRENT),
-            PositionGetDouble(POSITION_SL),
-            PositionGetDouble(POSITION_TP),
-            PositionGetDouble(POSITION_PROFIT)
-         );
-         count++;
+         string side = ExtractJsonString(jsonStr, "side");
+         double entry = ExtractJsonDouble(jsonStr, "entry");
+         double sl = ExtractJsonDouble(jsonStr, "sl");
+         double tp1 = ExtractJsonDouble(jsonStr, "tp1");
+
+         string signalId = DoubleToString(entry, 2) + "_" + DoubleToString(sl, 2);
+         if(signalId == lastProcessedSignal) return; // Jangan ulangi sinyal yang sama
+
+         long curSpread = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+         if(curSpread > InpMaxSpreadPts)
+         {
+            Print(" Sinyal dilewati: Spread pasar saat ini (", curSpread, " pts) melebihi batas toleransi (", InpMaxSpreadPts, " pts). Melindungi dari slippage.");
+            return;
+         }
+
+         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+
+         // Proteksi Validasi Stops MT5:
+         // Jika harga pasar (Ask/Bid) sudah melesat MELEWATI target TP atau SL,
+         // jangan paksa masuk karena broker akan menolak [invalid stops] atau posisi langsung minus.
+         if(side == "LONG")
+         {
+            if(ask >= tp1)
+            {
+               Print(" Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah berada di atas target TP (", tp1, "). Menunggu retest berikutnya.");
+               return;
+            }
+            if(ask <= sl)
+            {
+               Print(" Sinyal LONG dilewati: Harga pasar saat ini (", ask, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
+               return;
+            }
+
+            Print(" Sinyal War Room Diterima: BUY ", _Symbol, " Entry: ", ask, " SL: ", sl, " TP: ", tp1);
+            if(trade.Buy(InpFixedLot, _Symbol, ask, sl, tp1, "WarRoom Signal"))
+            {
+               Print(" Order BUY Berhasil Dibuka! Ticket: ", trade.ResultOrder());
+               lastProcessedSignal = signalId;
+            }
+            else
+            {
+               Print(" Gagal Order BUY: ", trade.ResultRetcodeDescription());
+            }
+         }
+         else if(side == "SHORT")
+         {
+            if(bid <= tp1)
+            {
+               Print(" Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah berada di bawah target TP (", tp1, "). Menunggu retest berikutnya.");
+               return;
+            }
+            if(bid >= sl)
+            {
+               Print(" Sinyal SHORT dilewati: Harga pasar saat ini (", bid, ") sudah menembus Stop Loss (", sl, "). Dibatalkan.");
+               return;
+            }
+
+            Print(" Sinyal War Room Diterima: SELL ", _Symbol, " Entry: ", bid, " SL: ", sl, " TP: ", tp1);
+            if(trade.Sell(InpFixedLot, _Symbol, bid, sl, tp1, "WarRoom Signal"))
+            {
+               Print(" Order SELL Berhasil Dibuka! Ticket: ", trade.ResultOrder());
+               lastProcessedSignal = signalId;
+            }
+            else
+            {
+               Print(" Gagal Order SELL: ", trade.ResultRetcodeDescription());
+            }
+         }
       }
    }
-   posJson += "]";
-
-   string payload = StringFormat("{"account":"%s","broker":"%s","balance":%.2f","equity":%.2f","margin":%.2f","free_margin":%.2f","floating_pnl":%.2f","positions":%s,"total_trades_today":6,"win_rate_pct":66.7}",
-      acc, broker, bal, eq, mar, freeMar, pnl, posJson
-   );
-
-   // Fix quotes in string format
-   StringReplace(payload, "\"balance\":%.2f\"", StringFormat(""balance":%.2f", bal));
-   StringReplace(payload, "\"equity\":%.2f\"", StringFormat(""equity":%.2f", eq));
-   StringReplace(payload, "\"margin\":%.2f\"", StringFormat(""margin":%.2f", mar));
-   StringReplace(payload, "\"free_margin\":%.2f\"", StringFormat(""free_margin":%.2f", freeMar));
-   StringReplace(payload, "\"floating_pnl\":%.2f\"", StringFormat(""floating_pnl":%.2f", pnl));
-
-   char post[], result[];
-   string headers = "Content-Type: application/json\r\n";
-   StringToCharArray(payload, post, 0, WHOLE_ARRAY, CP_UTF8);
-   ArrayResize(post, ArraySize(post)-1); // buang null terminator
-
-   ResetLastError();
-   WebRequest("POST", InpTelemetryUrl, headers, 2000, post, result, headers);
 }
+

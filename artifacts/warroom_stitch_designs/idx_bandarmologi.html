@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WAR ROOM · IDX Bandarmologi &amp; BSJP Signal Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-error": "#690005",
+            "inverse-on-surface": "#303034",
+            "surface-container-highest": "#343538",
+            "primary": "#c0c1ff",
+            "outline-variant": "#464554",
+            "surface-bright": "#38393c",
+            "on-surface-variant": "#c7c4d7",
+            "on-surface": "#e3e2e6",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "surface-container-low": "#1b1b1f",
+            "secondary-fixed-dim": "#4edea3",
+            "primary-fixed": "#e1e0ff",
+            "on-primary-fixed": "#07006c",
+            "on-background": "#e3e2e6",
+            "on-tertiary": "#68000a",
+            "tertiary-fixed": "#ffdad7",
+            "primary-fixed-dim": "#c0c1ff",
+            "error": "#ffb4ab",
+            "on-secondary-fixed-variant": "#005236",
+            "tertiary-container": "#ff5451",
+            "on-secondary-container": "#00311f",
+            "error-container": "#93000a",
+            "primary-container": "#8083ff",
+            "secondary": "#4edea3",
+            "on-tertiary-fixed": "#410004",
+            "inverse-surface": "#e3e2e6",
+            "surface-variant": "#343538",
+            "surface-container": "#1f1f23",
+            "on-error-container": "#ffdad6",
+            "surface-tint": "#c0c1ff",
+            "secondary-container": "#00a572",
+            "on-secondary-fixed": "#002113",
+            "secondary-fixed": "#6ffbbe",
+            "on-secondary": "#003824",
+            "outline": "#908fa0",
+            "surface-dim": "#121316",
+            "background": "#121316",
+            "inverse-primary": "#494bd6",
+            "surface-container-lowest": "#0d0e11",
+            "on-tertiary-container": "#5c0008",
+            "tertiary": "#ffb3ad",
+            "surface": "#121316",
+            "surface-container-high": "#292a2d",
+            "on-tertiary-fixed-variant": "#930013",
+            "tertiary-fixed-dim": "#ffb3ad",
+            "on-primary-container": "#0d0096",
+            "on-primary": "#1000a9"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-compact": "0.25rem",
+            "space-md": "0.5rem",
+            "space-lg": "0.75rem",
+            "space-xl": "1rem",
+            "margin": "0.75rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.375rem",
+            "gutter": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Inter"],
+            "mono-md": ["JetBrains Mono"],
+            "mono-sm": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "mono-lg": ["JetBrains Mono"],
+            "headline-lg-mobile": ["Inter"],
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "mono-md": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "mono-sm": ["0.6875rem", { "lineHeight": "1rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-caps": ["0.625rem", { "lineHeight": "0.875rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "fontWeight": "400" }],
+            "body-md": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+            "body-lg": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+            "mono-lg": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 16px;
+      line-height: 1;
+      display: inline-block;
+    }
+    /* Subtle custom telemetry scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d0e11;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #24262a;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #464554;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased min-h-screen flex flex-col font-body-sm selection:bg-primary-container selection:text-on-primary">
+<!-- TOP APP BAR (Shared Component Contract strictly implemented) -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-lowest border-b border-outline-variant dark:border-outline-variant flex justify-between items-center w-full px-space-md py-space-xs h-10 sticky top-0 z-50">
+<!-- Brand Anchor & Product Label -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-headline-sm font-headline-sm font-semibold tracking-wider text-on-surface dark:text-on-surface uppercase">WAR ROOM</span>
+</div>
+<span class="text-outline text-label-caps font-label-caps tracking-widest px-1 py-0.5 border border-outline-variant rounded bg-surface-container-low hidden sm:inline-block">
+        IDX (SAHAM) BANDARMOLOGI &amp; BSJP DESK
+      </span>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden lg:flex items-center gap-space-md text-label-caps font-label-caps uppercase tracking-wider">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">Overview</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">Crypto (SMC)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">Polymarket (Favorit)</a>
+<a class="text-primary dark:text-primary border-b-2 border-primary dark:border-primary font-semibold px-2 py-1" href="#">IDX (Saham)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">Forex</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">GMGN/LP</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors duration-150 px-2 py-1 rounded" href="#">Sistem &amp; Mesin</a>
+</nav>
+<!-- Trailing Actions & Micro Status Indicators -->
+<div class="flex items-center gap-space-sm text-mono-sm font-mono-sm">
+<div class="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container border border-outline-variant/60 text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-label-caps font-label-caps">LIVE TELEMETRY · 100% FRESH</span>
+</div>
+<div class="flex items-center gap-1 border border-outline-variant rounded px-2 py-0.5 bg-surface-container-low text-on-surface-variant">
+<span class="text-label-caps font-label-caps text-outline">15:14:02 WIB</span>
+</div>
+<button class="bg-surface-container-high hover:bg-surface-variant text-primary border border-outline-variant px-2.5 py-1 rounded text-label-caps font-label-caps transition-all duration-150 active:scale-95 flex items-center gap-1">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="hidden sm:inline">Raw Facts Inspector</span>
+</button>
+<div class="flex items-center gap-1 text-on-surface-variant border-l border-outline-variant pl-2 ml-1">
+<button class="p-1 hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="Schedule">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</button>
+<button class="p-1 hover:text-on-surface hover:bg-surface-container-high rounded transition-colors" title="Notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SUB-DESK NAVIGATION BAR -->
+<div class="bg-surface-container-low border-b border-outline-variant/50 px-space-md py-1 flex items-center justify-between">
+<div class="flex items-center gap-space-xs text-mono-sm font-mono-sm">
+<button class="bg-primary text-on-primary-fixed font-semibold px-2.5 py-1 rounded text-label-caps font-label-caps tracking-wider flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-on-primary-fixed"></span>
+        Sinyal &amp; BSJP (Active)
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container px-2.5 py-1 rounded text-label-caps font-label-caps tracking-wider transition-colors">
+        Bandarmologi Broker Summary
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container px-2.5 py-1 rounded text-label-caps font-label-caps tracking-wider transition-colors">
+        ARA Hunter
+      </button>
+<button class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container px-2.5 py-1 rounded text-label-caps font-label-caps tracking-wider transition-colors">
+        Aliran Dana Asing (Foreign Flow)
+      </button>
+</div>
+<div class="hidden sm:flex items-center gap-space-md text-mono-sm font-mono-sm">
+<div class="flex items-center gap-1 text-tertiary-container bg-error-container/20 border border-error-container/60 px-2 py-0.5 rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container animate-ping"></span>
+<span class="text-label-caps font-label-caps">IDXNet KPEI Direct: 88ms DEGRADED</span>
+</div>
+<span class="text-outline text-label-caps font-label-caps">PORT: 8089/FIX</span>
+</div>
+</div>
+<!-- MAIN TELEMETRY CONTENT CANVAS -->
+<main class="flex-1 p-margin space-y-gutter">
+<!-- TOP INCIDENT / MODEL BREACH WARNING BANNER -->
+<section class="border border-error-container bg-surface-container-low rounded p-space-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-space-sm relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary-container"></div>
+<div class="flex items-start md:items-center gap-space-md pl-2">
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-error-container text-tertiary border border-error/40 font-mono-sm text-mono-sm tracking-wide">
+<span class="material-symbols-outlined text-tertiary" data-icon="gpp_bad" style="font-variation-settings: 'FILL' 1;">gpp_bad</span>
+<span>[BEKU / HISTORIS - MODEL BREACH DETECTED]</span>
+</div>
+<div class="text-on-surface-variant font-mono-sm text-mono-sm">
+<span class="text-tertiary font-semibold">CIRCUIT LOCK:</span> Slippage &amp; fee drag breach detected (-1.4R). Live auto-execution disabled. Running under shadow simulation &amp; telemetry observation only.
+        </div>
+</div>
+<div class="flex items-center gap-2 font-mono-sm text-mono-sm pl-2 md:pl-0 self-end md:self-auto">
+<span class="text-outline">RISK DESK LOCK:</span>
+<span class="text-tertiary font-semibold bg-surface-container px-2 py-0.5 border border-outline-variant rounded">HARD-STOP #IDX-9021</span>
+</div>
+</section>
+<!-- QUICK TELEMETRY KPI TILES -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-gutter">
+<!-- Monitored Tickers -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-caps font-label-caps">
+<span>MONITORED TICKERS</span>
+<span class="material-symbols-outlined text-outline" data-icon="radar">radar</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="text-headline-md font-mono-lg text-on-surface">42</span>
+<span class="text-mono-sm font-mono-sm text-secondary bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant/40">100% COVERAGE</span>
+</div>
+<div class="text-outline text-mono-sm font-mono-sm mt-1">Top Tier 1 &amp; Liquid Second Liners</div>
+</div>
+<!-- Foreign Net Flow -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-caps font-label-caps">
+<span>FOREIGN NET FLOW (RG)</span>
+<span class="material-symbols-outlined text-error" data-icon="trending_down">trending_down</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="text-headline-md font-mono-lg text-error">-Rp 412.5M</span>
+<span class="text-mono-sm font-mono-sm text-error bg-error-container/20 px-1.5 py-0.5 rounded border border-error/30">NET SELL</span>
+</div>
+<div class="text-outline text-mono-sm font-mono-sm mt-1">Outflow concentrated in Banks</div>
+</div>
+<!-- IHSG Status -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-caps font-label-caps">
+<span>IHSG BENCHMARK STATUS</span>
+<span class="material-symbols-outlined text-outline" data-icon="show_chart">show_chart</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="text-headline-md font-mono-lg text-on-surface">7,180.45</span>
+<span class="text-mono-sm font-mono-sm text-error font-semibold">-0.42%</span>
+</div>
+<div class="text-outline text-mono-sm font-mono-sm mt-1">Val: Rp 9.84T · Vol: 16.4B Lembar</div>
+</div>
+<!-- Broker Concentration HHI -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline text-label-caps font-label-caps">
+<span>TOP 3 BROKER CONCENTRATION</span>
+<span class="material-symbols-outlined text-primary" data-icon="pie_chart">pie_chart</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="text-headline-md font-mono-lg text-primary">68.4%</span>
+<span class="text-mono-sm font-mono-sm text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/30">HIGH HHI</span>
+</div>
+<div class="text-outline text-mono-sm font-mono-sm mt-1">Heavy Institutional Accumulation/Wash</div>
+</div>
+</section>
+<!-- SECTION 1: BANDARMOLOGI BROKER SUMMARY SURVEILLANCE TABLE -->
+<section class="bg-surface-container-low border border-outline-variant rounded flex flex-col overflow-hidden">
+<!-- Section Header -->
+<div class="bg-surface-container border-b border-outline-variant/80 px-space-md py-space-xs flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface tracking-wide uppercase">
+            Section 1 · Bandarmologi &amp; Flow Dynamics (Broker Summary Surveillance)
+          </h2>
+<span class="text-mono-sm font-mono-sm text-outline px-1.5 py-0.5 bg-surface-container-lowest border border-outline-variant rounded">T+0 SETTLEMENT FEED</span>
+</div>
+<div class="flex items-center gap-space-md text-mono-sm font-mono-sm">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="w-2.5 h-2 rounded-sm bg-primary inline-block"></span>
+<span class="text-label-caps font-label-caps">Institusi / Bandar</span>
+<span class="w-2.5 h-2 rounded-sm bg-outline-variant inline-block ml-2"></span>
+<span class="text-label-caps font-label-caps">Ritel (YP/PD/XC/XL)</span>
+</div>
+<span class="text-outline-variant">|</span>
+<span class="text-secondary text-label-caps font-label-caps">REAL-TIME VWAP ENGINE ACTIVE</span>
+</div>
+</div>
+<!-- High Density Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-mono-sm text-mono-sm border-collapse">
+<thead>
+<tr class="bg-surface-container border-b border-outline-variant/80 text-outline text-label-caps font-label-caps">
+<th class="py-2 px-space-md">EMITEN / TICKER</th>
+<th class="py-2 px-space-md">TOP 3 BUYERS (BANDAR)</th>
+<th class="py-2 px-space-md">TOP 3 SELLERS (DISTRIBUSI)</th>
+<th class="py-2 px-space-md">ACCUMULATION SCORE</th>
+<th class="py-2 px-space-md text-right">NET VOL DELTA</th>
+<th class="py-2 px-space-md text-center">FOREIGN RATIO</th>
+<th class="py-2 px-space-md">BUYER DOMINANCE RATIO</th>
+<th class="py-2 px-space-md text-center">AUDIT FLAG</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40">
+<!-- ROW 1: BBCA -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-2.5 px-space-md font-semibold text-on-surface flex items-center gap-2">
+<span class="text-primary text-mono-md font-mono-md">BBCA</span>
+<span class="text-label-caps font-label-caps bg-surface-container px-1 py-0.5 rounded text-outline">Rp 10,125</span>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">ZP</span>
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">CC</span>
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">AK</span>
+<span class="text-secondary font-semibold ml-1">+Rp 184.2B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">YP</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">PD</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">NI</span>
+<span class="text-error font-medium ml-1">-Rp 142.0B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-bold text-secondary">78/100</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary">NORMAL AKUMULASI</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-right font-semibold text-secondary">
+                +42.2k Lot
+              </td>
+<td class="py-2.5 px-space-md text-center">
+<span class="font-bold text-secondary">1.45x</span>
+<span class="text-outline text-label-caps font-label-caps block">Net Foreign Buy</span>
+</td>
+<td class="py-2.5 px-space-md w-48">
+<div class="flex items-center justify-between text-label-caps font-label-caps mb-1">
+<span class="text-primary font-semibold">64% Inst</span>
+<span class="text-outline">36% Ret</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 64%"></div>
+<div class="bg-outline-variant h-full" style="width: 36%"></div>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-center">
+<span class="px-2 py-0.5 rounded text-label-caps font-label-caps bg-secondary/10 border border-secondary/30 text-secondary">CLEAN FLOW</span>
+</td>
+</tr>
+<!-- ROW 2: BBRI -->
+<tr class="hover:bg-surface-container-high/40 transition-colors bg-surface-container-lowest/30">
+<td class="py-2.5 px-space-md font-semibold text-on-surface flex items-center gap-2">
+<span class="text-tertiary text-mono-md font-mono-md">BBRI</span>
+<span class="text-label-caps font-label-caps bg-surface-container px-1 py-0.5 rounded text-outline">Rp 4,520</span>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">RX</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">KZ</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">BK</span>
+<span class="text-secondary font-semibold ml-1">+Rp 95.6B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="px-1 py-0.2 rounded bg-error-container/20 border border-error/30 text-tertiary font-bold">YP</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">CC</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">XC</span>
+<span class="text-error font-medium ml-1">-Rp 138.4B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-bold text-error">41/100</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 rounded bg-error/10 border border-error/30 text-error">DISTRIBUSI TIPIS</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-right font-semibold text-error">
+                -18.9k Lot
+              </td>
+<td class="py-2.5 px-space-md text-center">
+<span class="font-bold text-error">0.72x</span>
+<span class="text-outline text-label-caps font-label-caps block">Net Foreign Sell</span>
+</td>
+<td class="py-2.5 px-space-md w-48">
+<div class="flex items-center justify-between text-label-caps font-label-caps mb-1">
+<span class="text-outline font-semibold">41% Inst</span>
+<span class="text-error">59% Ret</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 41%"></div>
+<div class="bg-outline-variant h-full" style="width: 59%"></div>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-center">
+<span class="px-2 py-0.5 rounded text-label-caps font-label-caps bg-error/10 border border-error/30 text-error">RETAIL TRAP</span>
+</td>
+</tr>
+<!-- ROW 3: BMRI -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-2.5 px-space-md font-semibold text-on-surface flex items-center gap-2">
+<span class="text-primary text-mono-md font-mono-md">BMRI</span>
+<span class="text-label-caps font-label-caps bg-surface-container px-1 py-0.5 rounded text-outline">Rp 6,650</span>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">AK</span>
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">CS</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">ZP</span>
+<span class="text-secondary font-semibold ml-1">+Rp 120.1B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">PD</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">XL</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">KK</span>
+<span class="text-error font-medium ml-1">-Rp 84.3B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-bold text-secondary">72/100</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary">AKUMULASI SEDANG</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-right font-semibold text-secondary">
+                +28.5k Lot
+              </td>
+<td class="py-2.5 px-space-md text-center">
+<span class="font-bold text-secondary">1.31x</span>
+<span class="text-outline text-label-caps font-label-caps block">Net Foreign Buy</span>
+</td>
+<td class="py-2.5 px-space-md w-48">
+<div class="flex items-center justify-between text-label-caps font-label-caps mb-1">
+<span class="text-primary font-semibold">59% Inst</span>
+<span class="text-outline">41% Ret</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 59%"></div>
+<div class="bg-outline-variant h-full" style="width: 41%"></div>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-center">
+<span class="px-2 py-0.5 rounded text-label-caps font-label-caps bg-secondary/10 border border-secondary/30 text-secondary">INST OVERBUY</span>
+</td>
+</tr>
+<!-- ROW 4: BREN -->
+<tr class="hover:bg-surface-container-high/40 transition-colors bg-surface-container-lowest/30">
+<td class="py-2.5 px-space-md font-semibold text-on-surface flex items-center gap-2">
+<span class="text-primary-fixed-dim text-mono-md font-mono-md">BREN</span>
+<span class="text-label-caps font-label-caps bg-surface-container px-1 py-0.5 rounded text-outline">Rp 8,900</span>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.2 rounded bg-tertiary-container/20 border border-tertiary-container/40 text-tertiary font-bold">MG</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">CP</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">YP</span>
+<span class="text-secondary font-semibold ml-1">+Rp 210.4B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">DR</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">OD</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">EP</span>
+<span class="text-error font-medium ml-1">-Rp 195.2B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">65/100</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 rounded bg-primary/10 border border-primary/30 text-primary">SPEKULATIF BANDAR</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-right font-semibold text-secondary">
+                +12.1k Lot
+              </td>
+<td class="py-2.5 px-space-md text-center">
+<span class="font-bold text-error">0.38x</span>
+<span class="text-outline text-label-caps font-label-caps block">Domestic Heavy</span>
+</td>
+<td class="py-2.5 px-space-md w-48">
+<div class="flex items-center justify-between text-label-caps font-label-caps mb-1">
+<span class="text-primary font-semibold">52% Inst</span>
+<span class="text-outline">48% Ret</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 52%"></div>
+<div class="bg-outline-variant h-full" style="width: 48%"></div>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-center">
+<span class="px-2 py-0.5 rounded text-label-caps font-label-caps bg-outline/20 border border-outline-variant text-on-surface-variant">HIGH CHURN</span>
+</td>
+</tr>
+<!-- ROW 5: AMMN -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-2.5 px-space-md font-semibold text-on-surface flex items-center gap-2">
+<span class="text-primary text-mono-md font-mono-md">AMMN</span>
+<span class="text-label-caps font-label-caps bg-surface-container px-1 py-0.5 rounded text-outline">Rp 9,450</span>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">BK</span>
+<span class="px-1.5 py-0.2 rounded bg-primary/10 border border-primary/30 text-primary font-bold">ZP</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface">CC</span>
+<span class="text-secondary font-semibold ml-1">+Rp 88.4B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">NI</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">XC</span>
+<span class="px-1 py-0.2 rounded bg-surface-container border border-outline-variant text-on-surface-variant">AZ</span>
+<span class="text-error font-medium ml-1">-Rp 62.0B</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md">
+<div class="flex items-center gap-2">
+<span class="font-bold text-secondary">69/100</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary">AKUMULASI ASING</span>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-right font-semibold text-secondary">
+                +19.4k Lot
+              </td>
+<td class="py-2.5 px-space-md text-center">
+<span class="font-bold text-secondary">1.88x</span>
+<span class="text-outline text-label-caps font-label-caps block">Foreign Inflow</span>
+</td>
+<td class="py-2.5 px-space-md w-48">
+<div class="flex items-center justify-between text-label-caps font-label-caps mb-1">
+<span class="text-primary font-semibold">58% Inst</span>
+<span class="text-outline">42% Ret</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 58%"></div>
+<div class="bg-outline-variant h-full" style="width: 42%"></div>
+</div>
+</td>
+<td class="py-2.5 px-space-md text-center">
+<span class="px-2 py-0.5 rounded text-label-caps font-label-caps bg-secondary/10 border border-secondary/30 text-secondary">FLOW CLEAN</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- SECTION 2: BSJP & ARA HUNTER SIGNALS + CIRCUIT BREAKER REJECTION AUDIT -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- LEFT/MAIN: High-Priority Candidate Signal Ledger (8 Cols) -->
+<div class="lg:col-span-8 bg-surface-container-low border border-outline-variant rounded flex flex-col">
+<!-- Card Header -->
+<div class="bg-surface-container border-b border-outline-variant/80 px-space-md py-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary" data-icon="security">security</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface uppercase tracking-wide">
+              Section 2 · BSJP (Beli Sore Jual Pagi) &amp; ARA Hunter Candidate Ledger
+            </h2>
+</div>
+<span class="text-mono-sm font-mono-sm text-outline border border-outline-variant px-2 py-0.5 rounded bg-surface-container-lowest">
+            GATE: REJECTION MODE ACTIVE
+          </span>
+</div>
+<div class="p-space-md space-y-space-sm flex-1">
+<!-- CANDIDATE 1: BBRI -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-space-md hover:border-outline transition-colors">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-2 border-b border-outline-variant/40">
+<div class="flex items-center gap-space-md">
+<span class="text-headline-sm font-mono-md text-on-surface">BBRI</span>
+<span class="text-mono-sm font-mono-sm bg-surface-container text-primary px-2 py-0.5 rounded border border-outline-variant">
+                  SCORE: 82/100
+                </span>
+<span class="text-mono-sm font-mono-sm text-outline">STRATEGY: BSJP PRE-CLOSE MOMENTUM</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-error-container/30 border border-error/40 text-error font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-error" data-icon="block">block</span>
+<span class="font-semibold">[DITOLAK: Jam Beli Sore belum aktif (Aktif 15:50-16:00 WIB)]</span>
+</div>
+</div>
+<!-- Gate Audit Micro-telemetry -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-sm mt-space-sm text-mono-sm font-mono-sm">
+<div class="bg-surface-container p-2 rounded border border-outline-variant/40">
+<div class="text-outline text-label-caps font-label-caps">CONDITION 1 (VOLUME SPIKE)</div>
+<div class="text-secondary font-semibold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-secondary" data-icon="check_circle">check_circle</span>
+                  PASSED (1.82x &gt; 1.5x Threshold)
+                </div>
+</div>
+<div class="bg-surface-container p-2 rounded border border-error/30">
+<div class="text-outline text-label-caps font-label-caps">CONDITION 2 (TIME WINDOW)</div>
+<div class="text-error font-semibold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-error" data-icon="cancel">cancel</span>
+                  FAILED (Current: 15:14 WIB)
+                </div>
+</div>
+<div class="bg-surface-container p-2 rounded border border-outline-variant/40 flex flex-col justify-between">
+<div class="text-outline text-label-caps font-label-caps">WINDOW COUNTDOWN</div>
+<div class="text-primary font-bold mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-primary" data-icon="timer">timer</span>
+<span>35m 58s to Pre-Closing</span>
+</div>
+</div>
+</div>
+</div>
+<!-- CANDIDATE 2: BREN -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-space-md hover:border-outline transition-colors">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-2 border-b border-outline-variant/40">
+<div class="flex items-center gap-space-md">
+<span class="text-headline-sm font-mono-md text-on-surface">BREN</span>
+<span class="text-mono-sm font-mono-sm bg-surface-container text-primary px-2 py-0.5 rounded border border-outline-variant">
+                  SCORE: 91/100
+                </span>
+<span class="text-mono-sm font-mono-sm text-outline">STRATEGY: ARA BREAKOUT HUNTER</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-error-container/30 border border-error/40 text-error font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-error" data-icon="error">error</span>
+<span class="font-semibold">[DITOLAK: Historical Breakeven below confidence lower bound]</span>
+</div>
+</div>
+<!-- Mathematical / Statistical Gate Details -->
+<div class="bg-surface-container/60 p-space-sm rounded mt-space-sm border border-outline-variant/30 text-mono-sm font-mono-sm space-y-1">
+<div class="flex flex-wrap justify-between text-on-surface-variant">
+<span>STATISTICAL EDGE VERDICT:</span>
+<span class="text-error font-semibold">Expected EV negative under current broker fee tier</span>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-label-caps font-label-caps">
+<div>Mean Edge: <span class="text-on-surface font-mono-sm">+0.65%</span></div>
+<div>Fee + Slippage Cost: <span class="text-error font-mono-sm">0.70%</span></div>
+<div>95% CI Lower Bound: <span class="text-error font-mono-sm font-bold">-0.12%</span></div>
+<div>Kelly Fraction: <span class="text-outline font-mono-sm">0.00 (Zero Alloc)</span></div>
+</div>
+</div>
+</div>
+<!-- CANDIDATE 3: BRPT -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-space-md hover:border-outline transition-colors">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-2 border-b border-outline-variant/40">
+<div class="flex items-center gap-space-md">
+<span class="text-headline-sm font-mono-md text-on-surface">BRPT</span>
+<span class="text-mono-sm font-mono-sm bg-surface-container text-primary px-2 py-0.5 rounded border border-outline-variant">
+                  SCORE: 74/100
+                </span>
+<span class="text-mono-sm font-mono-sm text-outline">STRATEGY: BSJP ACCUMULATION CONTINUATION</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-error-container/30 border border-error/40 text-error font-mono-sm text-mono-sm">
+<span class="material-symbols-outlined text-error" data-icon="do_not_disturb_on">do_not_disturb_on</span>
+<span class="font-semibold">[DITOLAK: Volatilitas melebihi batas ADR (ATR 14d: 6.8% &gt; Max 4.5%)]</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-space-sm text-mono-sm font-mono-sm text-outline">
+<div>Risk Parity Max Limit: <span class="text-on-surface">4.50% Daily Vol</span></div>
+<div>Calculated Realized ATR: <span class="text-error font-semibold">6.82% [FAT-TAIL HAZARD]</span></div>
+<div>State: <span class="text-error">EXECUTION HARD BLOCKED</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT: Ledger Audit Callout, Circuit Breakers & Action Controls (4 Cols) -->
+<div class="lg:col-span-4 space-y-gutter flex flex-col justify-between">
+<!-- AUDIT SAFETY CALLOUT CARD -->
+<div class="bg-surface-container-low border border-error-container rounded p-space-md space-y-space-md">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-semibold font-mono-md text-mono-md">LEDGER AUDIT &amp; SAFETY GATE</span>
+</div>
+<p class="text-on-surface-variant font-body-sm leading-relaxed text-justify">
+            Historical performance indicates negative edge under current commission structure. Automatic live execution strictly blocked by safety gate. Manual override disabled by <span class="text-primary font-mono-sm font-semibold">Risk Officer Alpha-01</span> to prevent algorithmic capital erosion.
+          </p>
+<div class="border-t border-outline-variant/60 pt-space-sm space-y-2 font-mono-sm text-mono-sm">
+<div class="flex justify-between items-center text-outline">
+<span>FEE TIER MULTIPLIER:</span>
+<span class="text-on-surface font-semibold">0.15% Buy / 0.25% Sell</span>
+</div>
+<div class="flex justify-between items-center text-outline">
+<span>AVERAGE SLIPPAGE DRAG:</span>
+<span class="text-error font-semibold">0.30% (Pre-close fill)</span>
+</div>
+<div class="flex justify-between items-center text-outline">
+<span>GATE SAFETY INTEGRITY:</span>
+<span class="text-secondary font-semibold">PASSIVE DEFENSE ACTIVE</span>
+</div>
+</div>
+</div>
+<!-- ACTION CONTROL STRIP -->
+<div class="bg-surface-container border border-outline-variant rounded p-space-md space-y-2">
+<div class="text-outline text-label-caps font-label-caps mb-2">TELEMETRY DESK CONTROLS</div>
+<button class="w-full bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant px-3 py-2 rounded text-mono-sm font-mono-sm font-medium transition-all duration-150 active:scale-95 flex items-center justify-between">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="data_object">data_object</span>
+              Inspect Raw Broker Summary (JSON)
+            </span>
+<span class="text-outline text-label-caps font-label-caps">ALT+J</span>
+</button>
+<button class="w-full bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant px-3 py-2 rounded text-mono-sm font-mono-sm font-medium transition-all duration-150 active:scale-95 flex items-center justify-between">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="play_circle">play_circle</span>
+              Simulate Paper Fill (BSJP)
+            </span>
+<span class="text-outline text-label-caps font-label-caps">ALT+S</span>
+</button>
+<button class="w-full bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant px-3 py-2 rounded text-mono-sm font-mono-sm font-medium transition-all duration-150 active:scale-95 flex items-center justify-between">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline" data-icon="download">download</span>
+              Export Gate Audit Log CSV
+            </span>
+<span class="text-outline text-label-caps font-label-caps">CSV</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BOTTOM TELEMETRY DOCK / STATUS BAR -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/60 px-space-md py-1 flex flex-wrap items-center justify-between gap-space-md text-mono-sm font-mono-sm text-outline">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>IDXNet KPEI FEED: SYNCED</span>
+</div>
+<span>·</span>
+<span>PACKET DROP: 0 / 1.48M</span>
+<span>·</span>
+<span>MEM: 412MB / 2048MB</span>
+<span>·</span>
+<span>BROKER REGIME: RG REGULAR ONLY</span>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined text-tertiary" data-icon="lock">lock</span>
+<span>LIVE AUTO-EXECUTION BLOCKED</span>
+</div>
+<span class="text-outline-variant">|</span>
+<span>HASH: 0x8F9B..E41D</span>
+</div>
+</footer>
+</body></html>

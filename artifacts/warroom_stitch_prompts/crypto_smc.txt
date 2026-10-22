@@ -1,0 +1,24 @@
+Institutional Crypto SMC (Smart Money Concepts) Execution Cockpit for War Room.
+Design theme: Dark obsidian #0d0e11, card surface #181a1d, border #24262a, indigo accent #6366f1.
+Top bar with pair switcher: [BTC/USDT Perp], [ETH/USDT Perp], [SOL/USDT Perp].
+Sub-navigation tabs: [Cockpit (Active)], [Setup], [Ukur / Backtest], [Eksekusi & Ledger].
+
+Main Area Split View:
+Left Column (Chart & Structure Analysis):
+- Candlestick trading chart view with institutional Smart Money Concepts indicators:
+  - Fair Value Gaps (FVG) highlight boxes (green for bullish, red for bearish).
+  - Liquidity Pools (BSL/SSL) horizontal dashed lines.
+  - Market Structure Shift (MSS) breakout tags.
+- Setup Details card: Entry price $64,250, Stop Loss $63,800 (-0.7%), Take Profit 1 $65,500 (+1.9%), Take Profit 2 $66,200.
+
+Right Column (Gate Verdict Engine & Rule Evaluation):
+- Header: "VERDICT ENGINE EVALUATION" with live status badge [LOLOS GATE].
+- Gate breakdown table showing strict pass/fail criteria:
+  1. Multi-timeframe trend alignment (H4/H1/M15): [PASS]
+  2. Risk-Reward ratio >= 1:2.5: [PASS] (Actual 1:3.1)
+  3. Slippage & Fee Breakeven buffer: [PASS] (0.08% net fee buffer)
+  4. Portfolio Correlation & Max Open Risk: [PASS] (1/3 slots filled)
+- Log Aksi & Ditolak:
+  - List of recent candidates evaluated this cycle with failure reasons: "SOL/USDT: DITOLAK (Spread > 0.05%)", "AVAX/USDT: DITOLAK (Daily Drawdown close to boundary)".
+Bottom Panel (Execution Ledger & Positions):
+- Active paper positions table with real-time unrealized PnL, trailing stop, and liquidation proximity indicator.

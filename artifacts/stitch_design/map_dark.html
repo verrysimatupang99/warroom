@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KOMUTER - Peta Transit</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "tertiary-container": "#4cef74",
+            "tertiary-fixed-dim": "#3ce36a",
+            "surface-dim": "#111317",
+            "error": "#ffb4ab",
+            "outline": "#9a9078",
+            "on-secondary": "#002780",
+            "tertiary": "#bbffbd",
+            "surface": "#111317",
+            "on-tertiary-fixed": "#002108",
+            "on-surface-variant": "#d2c5ab",
+            "primary": "#ffedc3",
+            "surface-container-low": "#1a1c1f",
+            "on-tertiary-fixed-variant": "#00531e",
+            "surface-container-lowest": "#0c0e11",
+            "secondary-fixed": "#dce1ff",
+            "on-secondary-container": "#e4e7ff",
+            "on-primary": "#3d2f00",
+            "surface-container": "#1e2023",
+            "on-tertiary": "#003912",
+            "inverse-primary": "#745b00",
+            "on-primary-container": "#6f5700",
+            "on-secondary-fixed-variant": "#0039b3",
+            "on-background": "#e2e2e6",
+            "surface-container-high": "#282a2d",
+            "primary-container": "#ffcc00",
+            "outline-variant": "#4e4632",
+            "on-surface": "#e2e2e6",
+            "inverse-surface": "#e2e2e6",
+            "inverse-on-surface": "#2f3034",
+            "primary-fixed-dim": "#f1c100",
+            "on-secondary-fixed": "#001551",
+            "surface-container-highest": "#333538",
+            "on-primary-fixed": "#241a00",
+            "on-tertiary-container": "#006928",
+            "tertiary-fixed": "#69ff87",
+            "secondary-fixed-dim": "#b6c4ff",
+            "surface-bright": "#37393d",
+            "on-error": "#690005",
+            "on-error-container": "#ffdad6",
+            "primary-fixed": "#ffe08b",
+            "secondary": "#b6c4ff",
+            "surface-tint": "#f1c100",
+            "on-primary-fixed-variant": "#584400",
+            "error-container": "#93000a",
+            "surface-variant": "#333538",
+            "secondary-container": "#0356ff",
+            "background": "#111317"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-lg": "1.5rem",
+            "margin-tablet": "1.5rem",
+            "space-2xl": "3rem",
+            "space-md": "1rem",
+            "gutter": "0.75rem",
+            "gutter-tablet": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "margin-desktop": "2.5rem"
+          },
+          fontFamily: {
+            "label-md": ["Space Grotesk"],
+            "code-ticker": ["Space Grotesk"],
+            "display": ["Space Grotesk"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "label-lg": ["Space Grotesk"],
+            "headline-md": ["Space Grotesk"],
+            "label-sm": ["Space Grotesk"],
+            "headline-lg": ["Space Grotesk"],
+            "body-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-sm": ["Space Grotesk"]
+          },
+          fontSize: {
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "700" }],
+            "code-ticker": ["15px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "display": ["48px", { lineHeight: "52px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.06em", fontWeight: "700" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.1em", fontWeight: "700" }],
+            "headline-lg": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400" }],
+            "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }],
+            "title-md": ["16px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.15); }
+    }
+
+    .animate-pulse-live {
+      animation: pulse-dot 2s infinite ease-in-out;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#0B0D10] text-[#ECEAE3] min-h-screen font-body-md antialiased flex flex-col justify-between selection:bg-[#FFCC00] selection:text-black">
+<!-- TOP APP BAR -->
+<header class="bg-surface dark:bg-surface border-b-2 border-outline-variant dark:border-outline-variant shadow-[0_2px_0_0_#000000] sticky top-0 z-40">
+<div class="flex justify-between items-center w-full px-margin py-space-sm max-w-7xl mx-auto">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 bg-[#FFCC00] border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-black font-bold text-lg" data-icon="directions_bus">directions_bus</span>
+</div>
+<span class="font-display text-headline-lg-mobile font-bold tracking-tight text-primary-container dark:text-primary-container uppercase leading-none">KOMUTER</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-[#00C853]/20 text-[#00C853] border border-[#00C853] text-[10px] font-mono font-bold px-2 py-0.5 tracking-wider uppercase flex items-center gap-1 shadow-[1px_1px_0_0_#000000]">
+<span class="w-1.5 h-1.5 rounded-none bg-[#00C853] animate-pulse-live"></span>
+          LIVE
+        </span>
+<button aria-label="Toggle Mode" class="w-8 h-8 bg-[#171B21] border-2 border-[#2C333C] text-[#ECEAE3] flex items-center justify-center hover:bg-surface-container-high transition-none active:translate-x-[2px] active:translate-y-[2px] shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-sm" data-icon="dark_mode">dark_mode</span>
+</button>
+</div>
+</div>
+<!-- Subheader Strip with Brutalist Filter Chips -->
+<div class="px-margin pb-space-sm pt-1 bg-[#12151A] border-t border-[#2C333C]/60 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="bg-[#FFCC00] text-black font-black uppercase text-xs px-2 py-0.5 border-2 border-black shadow-[2px_2px_0_0_#000000]">PETA TRANSIT</span>
+<span class="font-headline-sm text-headline-sm text-[#ECEAE3] tracking-tight">Bus Live &amp; Jalur</span>
+</div>
+<span class="font-label-sm text-label-sm text-[#8A93A0] tracking-widest font-mono">JKT-SYS: 09:42</span>
+</div>
+<!-- Scrollable Corridor Filter Bar -->
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+<button class="shrink-0 bg-[#FFCC00] text-black font-label-sm text-label-sm px-2.5 py-1.5 border-2 border-black font-bold uppercase shadow-[2px_2px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px]">
+          Semua Koridor
+        </button>
+<button class="shrink-0 bg-[#171B21] text-[#ECEAE3] hover:text-white font-label-sm text-label-sm px-2.5 py-1.5 border-2 border-[#2C333C] font-semibold uppercase shadow-[2px_2px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#FFCC00] border border-black inline-block"></span>
+          K1 Blok M - Kota
+        </button>
+<button class="shrink-0 bg-[#171B21] text-[#ECEAE3] hover:text-white font-label-sm text-label-sm px-2.5 py-1.5 border-2 border-[#2C333C] font-semibold uppercase shadow-[2px_2px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#0055FF] border border-black inline-block"></span>
+          K6 Ragunan
+        </button>
+<button class="shrink-0 bg-[#171B21] text-[#ECEAE3] hover:text-white font-label-sm text-label-sm px-2.5 py-1.5 border-2 border-[#2C333C] font-semibold uppercase shadow-[2px_2px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px] flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#E63B2E] border border-black inline-block"></span>
+          K9 Pinang Ranti
+        </button>
+<button class="shrink-0 bg-[#171B21] text-[#8A93A0] hover:text-[#ECEAE3] font-label-sm text-label-sm px-2.5 py-1.5 border-2 border-[#2C333C] font-semibold uppercase shadow-[2px_2px_0_0_#000000]">
+          Feeder &amp; Mikrotrans
+        </button>
+</div>
+</div>
+</header>
+<!-- MAIN VIEWPORT: Map Canvas + Floating Modules -->
+<main class="relative flex-1 w-full bg-[#0B0D10] overflow-hidden flex flex-col justify-between">
+<!-- SVG Vector Dark Transit Schematic Map -->
+<div class="relative w-full h-[410px] bg-[#0A0D12] overflow-hidden select-none border-b-2 border-[#2C333C]">
+<!-- Vector Grid Background & Roadways -->
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="xMidYMid slice" viewbox="0 0 390 410" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="26" id="brutalist-grid" patternunits="userSpaceOnUse" width="26">
+<path d="M 26 0 L 0 0 0 26" fill="none" stroke="#161A22" stroke-width="1.2"></path>
+</pattern>
+</defs>
+<!-- Base Grid -->
+<rect fill="url(#brutalist-grid)" height="100%" width="100%"></rect>
+<!-- Water Body: Banjir Kanal Barat (Stylized Geometric) -->
+<path d="M -20,290 L 110,240 L 260,255 L 420,205" fill="none" stroke="#182736" stroke-linecap="square" stroke-width="14"></path>
+<text fill="#2E4A62" font-family="'Space Grotesk'" font-size="9" font-weight="700" letter-spacing="1" x="32" y="278">BKB CANAL</text>
+<!-- Utilitarian Arterial Roads -->
+<path d="M 60,-20 L 60,430" fill="none" stroke="#171C24" stroke-width="12"></path>
+<path d="M 195,-20 L 195,430" fill="none" stroke="#171C24" stroke-width="18"></path>
+<path d="M 330,-20 L 330,430" fill="none" stroke="#171C24" stroke-width="12"></path>
+<path d="M -20,110 L 410,110" fill="none" stroke="#171C24" stroke-width="14"></path>
+<path d="M -20,230 L 410,230" fill="none" stroke="#171C24" stroke-width="16"></path>
+<path d="M -20,340 L 410,340" fill="none" stroke="#171C24" stroke-width="10"></path>
+<!-- Diagonal Arteries (Sudirman - Thamrin Axis) -->
+<!-- Transit Line 9: Pinang Ranti - Pluit (RED #E63B2E) -->
+<path d="M -10,345 L 120,345 L 290,230 L 410,230" fill="none" stroke="#E63B2E" stroke-linecap="square" stroke-linejoin="miter" stroke-width="4.5"></path>
+<!-- Transit Line 6: Ragunan - Dukuh Atas (BLUE #0055FF) -->
+<path d="M 130,430 L 130,260 L 195,200 L 195,140" fill="none" stroke="#0055FF" stroke-linecap="square" stroke-linejoin="miter" stroke-width="4.5"></path>
+<!-- Transit Line 1: Blok M - Kota (MAIN YELLOW #FFCC00) -->
+<path d="M 195,-20 L 195,430" fill="none" stroke="#FFCC00" stroke-linecap="square" stroke-width="6"></path>
+<!-- STATION NODES (Geometric Bauhaus Circles/Squares) -->
+<!-- Node 1: Bundaran HI -->
+<g transform="translate(195, 65)">
+<circle fill="#000000" r="6" stroke="#FFCC00" stroke-width="2.5"></circle>
+<circle fill="#FFFFFF" r="2.5"></circle>
+</g>
+<!-- Node 2: Tosari ICBC -->
+<g transform="translate(195, 125)">
+<circle fill="#000000" r="6" stroke="#FFCC00" stroke-width="2.5"></circle>
+<circle fill="#FFFFFF" r="2.5"></circle>
+</g>
+<!-- Node 3: Dukuh Atas 1 (TRANSFER HUB) -->
+<g transform="translate(195, 200)">
+<!-- Transfer Station Double Enclosure -->
+<rect fill="#12151A" height="20" stroke="#FFCC00" stroke-width="2.5" width="20" x="-10" y="-10"></rect>
+<rect fill="#0055FF" height="10" stroke="#000000" stroke-width="1.5" width="10" x="-5" y="-5"></rect>
+</g>
+<!-- Node 4: Karet Sudirman -->
+<g transform="translate(195, 280)">
+<circle fill="#000000" r="6" stroke="#FFCC00" stroke-width="2.5"></circle>
+<circle fill="#FFFFFF" r="2.5"></circle>
+</g>
+<!-- Node 5: Bendungan Hilir -->
+<g transform="translate(195, 360)">
+<circle fill="#000000" r="6" stroke="#FFCC00" stroke-width="2.5"></circle>
+<circle fill="#FFFFFF" r="2.5"></circle>
+</g>
+<!-- Node 6: Line 6 Setiabudi Utara -->
+<g transform="translate(130, 310)">
+<circle fill="#000000" r="5" stroke="#0055FF" stroke-width="2"></circle>
+<circle fill="#FFFFFF" r="2"></circle>
+</g>
+</svg>
+<!-- SVG Map Station Labels (HTML Overlay for crisp rendering) -->
+<div class="absolute left-[214px] top-[54px] bg-[#12151A] border border-[#2C333C] px-1.5 py-0.5 shadow-[2px_2px_0_0_#000000]">
+<span class="font-label-sm text-[10px] text-[#ECEAE3] font-bold block leading-none">Bundaran HI</span>
+<span class="text-[8px] text-[#8A93A0] font-mono leading-none">M1 • K1</span>
+</div>
+<div class="absolute left-[214px] top-[114px] bg-[#12151A] border border-[#2C333C] px-1.5 py-0.5 shadow-[2px_2px_0_0_#000000]">
+<span class="font-label-sm text-[10px] text-[#ECEAE3] font-bold block leading-none">Tosari ICBC</span>
+<span class="text-[8px] text-[#FFCC00] font-mono leading-none">K1 • 1B • 4C</span>
+</div>
+<div class="absolute left-[218px] top-[190px] bg-[#FFCC00] text-black border-2 border-black px-2 py-0.5 shadow-[2px_2px_0_0_#000000]">
+<span class="font-label-sm text-[10px] font-black uppercase block leading-none">DUKUH ATAS 1</span>
+<span class="text-[9px] font-mono font-bold leading-none tracking-tight">HUB TRANSIT [K1/K6]</span>
+</div>
+<div class="absolute left-[214px] top-[270px] bg-[#12151A] border border-[#2C333C] px-1.5 py-0.5 shadow-[2px_2px_0_0_#000000]">
+<span class="font-label-sm text-[10px] text-[#ECEAE3] font-bold block leading-none">Karet Sudirman</span>
+<span class="text-[8px] text-[#8A93A0] font-mono leading-none">K1</span>
+</div>
+<!-- Real-Time Bus Markers (Neo-Brutalist Badges with directional chevrons) -->
+<!-- Bus 1: TJ-104 [K1] Moving North -->
+<div class="absolute left-[175px] top-[90px] -translate-x-1/2 flex items-center gap-1 z-20">
+<div class="bg-[#FFCC00] text-black px-1.5 py-0.5 border-2 border-black font-mono font-bold text-[10px] flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-xs leading-none" data-icon="north">north</span>
+<span>TJ-104 [K1]</span>
+</div>
+</div>
+<!-- Bus 2: TJ-082 [6A] Moving to Hub -->
+<div class="absolute left-[134px] top-[242px] -translate-x-1/2 flex items-center gap-1 z-20">
+<div class="bg-[#0055FF] text-white px-1.5 py-0.5 border-2 border-black font-mono font-bold text-[10px] flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-xs leading-none" data-icon="north_east">north_east</span>
+<span>TJ-082 [6A]</span>
+</div>
+</div>
+<!-- Bus 3: TJ-319 [9D] on Line 9 -->
+<div class="absolute left-[270px] top-[214px] -translate-x-1/2 flex items-center gap-1 z-20">
+<div class="bg-[#E63B2E] text-white px-1.5 py-0.5 border-2 border-black font-mono font-bold text-[10px] flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-xs leading-none" data-icon="east">east</span>
+<span>TJ-319 [9D]</span>
+</div>
+</div>
+<!-- USER LIVE GPS POSITION PIN -->
+<div class="absolute left-[195px] top-[200px] -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+<div class="relative flex items-center justify-center">
+<!-- Geometric target pulse ring -->
+<div class="w-10 h-10 border-2 border-[#00C853] animate-ping opacity-60"></div>
+<div class="w-5 h-5 bg-[#00C853] border-2 border-black shadow-[2px_2px_0_0_#000000] absolute"></div>
+<div class="w-2 h-2 bg-black absolute"></div>
+</div>
+</div>
+<!-- User Location Tag Tagged Below Target -->
+<div class="absolute left-[195px] top-[226px] -translate-x-1/2 bg-[#00C853] text-black font-mono text-[9px] font-black uppercase px-1.5 py-0.5 border-2 border-black shadow-[2px_2px_0_0_#000000] whitespace-nowrap z-30">
+        ● LOKASI ANDA (DUKUH ATAS)
+      </div>
+<!-- MAP MINI-LEGEND CARD (Docked Top-Left over Map) -->
+<div class="absolute top-2.5 left-2.5 bg-[#12151A] border-2 border-[#2C333C] p-2 shadow-[2px_2px_0_0_#000000] max-w-[155px] z-20">
+<div class="font-label-sm text-[9px] text-[#8A93A0] uppercase font-bold tracking-widest border-b border-[#2C333C] pb-1 mb-1.5 flex justify-between items-center">
+<span>FREKUENSI ARMADA</span>
+<span class="w-1.5 h-1.5 bg-[#00C853]"></span>
+</div>
+<div class="space-y-1.5 font-mono text-[9px]">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#FFCC00] border border-black shrink-0"></span>
+<span class="text-[#ECEAE3] font-semibold">K1:</span>
+<span class="text-[#FFCC00]">Tiap 3 mnt</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#0055FF] border border-black shrink-0"></span>
+<span class="text-[#ECEAE3] font-semibold">K6:</span>
+<span class="text-[#8A93A0]">Tiap 7 mnt</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 bg-[#E63B2E] border border-black shrink-0"></span>
+<span class="text-[#ECEAE3] font-semibold">K9:</span>
+<span class="text-[#8A93A0]">Tiap 5 mnt</span>
+</div>
+</div>
+</div>
+<!-- FLOATING NEO-BRUTALIST MAP CONTROLS (Right-stacked vertical cluster) -->
+<div class="absolute right-2.5 top-2.5 flex flex-col gap-2 z-20">
+<!-- Recenter Button (Prominent Signal Yellow) -->
+<button class="w-9 h-9 bg-[#FFCC00] text-black border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000000] active:translate-x-[2px] active:translate-y-[2px]" title="Pusatkan Lokasi Saya">
+<span class="material-symbols-outlined text-base font-bold" data-icon="my_location">my_location</span>
+</button>
+<!-- Layers Toggle -->
+<button class="w-9 h-9 bg-[#171B21] text-[#ECEAE3] border-2 border-[#2C333C] flex items-center justify-center shadow-[2px_2px_0_0_#000000] active:translate-x-[2px] active:translate-y-[2px]" title="Lapisan Peta">
+<span class="material-symbols-outlined text-base" data-icon="layers">layers</span>
+</button>
+<!-- Zoom Controls Block -->
+<div class="flex flex-col border-2 border-[#2C333C] shadow-[2px_2px_0_0_#000000] bg-[#171B21]">
+<button class="w-9 h-8 text-[#ECEAE3] border-b border-[#2C333C] flex items-center justify-center font-bold text-base hover:bg-surface-container-high active:bg-[#FFCC00] active:text-black" title="Perbesar">
+            +
+          </button>
+<button class="w-9 h-8 text-[#ECEAE3] flex items-center justify-center font-bold text-base hover:bg-surface-container-high active:bg-[#FFCC00] active:text-black" title="Perkecil">
+            −
+          </button>
+</div>
+</div>
+<!-- Watermark Coordinate Stamp -->
+<div class="absolute bottom-2 left-2.5 bg-[#0B0D10]/80 border border-[#2C333C] px-1.5 py-0.5 text-[8px] font-mono text-[#8A93A0]">
+        GPS: -6.2018° S, 106.8227° E • GRID REF: 32-D
+      </div>
+</div>
+<!-- BOTTOM SHEET: HALTE TRANSIT TERDEKAT -->
+<section class="w-full bg-[#12151A] border-t-2 border-[#2C333C] shadow-[0_-3px_0_0_#000000] pb-24 z-30">
+<!-- Drag handle indicator & header bar -->
+<div class="pt-2 px-margin pb-2 border-b border-[#2C333C]">
+<div class="w-10 h-1 bg-[#2C333C] mx-auto mb-2"></div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-[13px] font-bold uppercase tracking-wider text-[#ECEAE3]">HALTE TRANSIT TERDEKAT</span>
+<span class="bg-[#171B21] text-[#FFCC00] border border-[#FFCC00] text-[9px] font-mono font-bold px-1.5 py-0.2">RADAR 500M</span>
+</div>
+<button class="text-[#FFCC00] font-label-sm text-[11px] uppercase font-bold flex items-center gap-0.5 hover:underline">
+<span>Lihat Semua</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Transit Stops List -->
+<div class="divide-y-2 divide-[#1F242C]">
+<!-- STOP ROW 1: Halte Dukuh Atas 1 -->
+<article class="p-space-sm hover:bg-[#171B21] transition-none border-l-4 border-[#FFCC00]">
+<div class="flex items-start justify-between gap-2 mb-1.5">
+<div class="flex items-start gap-2.5">
+<!-- Stop Icon Frame -->
+<div class="w-9 h-9 bg-[#171B21] border-2 border-[#2C333C] flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-[#FFCC00]" data-icon="directions_bus">directions_bus</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-sm font-bold text-[#ECEAE3] leading-snug">Halte Dukuh Atas 1</h2>
+<span class="bg-[#1F242C] text-[#8A93A0] text-[9px] font-mono px-1 border border-[#2C333C]">PLATFORM 2</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-[#8A93A0] font-mono mt-0.5">
+<span class="text-[#ECEAE3] font-bold">120 m</span>
+<span>•</span>
+<span class="text-[#3ce36a] font-semibold">2 mnt jalan kaki</span>
+</div>
+</div>
+</div>
+<!-- Direction Action Button -->
+<button aria-label="Navigasi ke Halte Dukuh Atas 1" class="w-7 h-7 bg-[#171B21] border border-[#2C333C] text-[#ECEAE3] flex items-center justify-center shadow-[1px_1px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px]">
+<span class="material-symbols-outlined text-xs" data-icon="navigation">navigation</span>
+</button>
+</div>
+<!-- Estimated Bus Arrival Chips -->
+<div class="flex items-center gap-2 pl-[46px]">
+<!-- Bus 1 Badge -->
+<div class="bg-[#FFCC00] text-black border-2 border-black px-2 py-0.5 flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="font-mono font-black text-xs">K1</span>
+<span class="text-[10px] font-bold uppercase">• 2 mnt lagi</span>
+</div>
+<!-- Bus 2 Badge -->
+<div class="bg-[#0055FF] text-white border-2 border-black px-2 py-0.5 flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="font-mono font-black text-xs">6A</span>
+<span class="text-[10px] font-bold uppercase">• 5 mnt</span>
+</div>
+<!-- More indicator -->
+<span class="text-[10px] text-[#8A93A0] font-mono font-bold">+3 rute</span>
+</div>
+</article>
+<!-- STOP ROW 2: Halte Tosari ICBC -->
+<article class="p-space-sm hover:bg-[#171B21] transition-none border-l-4 border-transparent">
+<div class="flex items-start justify-between gap-2 mb-1.5">
+<div class="flex items-start gap-2.5">
+<!-- Stop Icon Frame -->
+<div class="w-9 h-9 bg-[#171B21] border-2 border-[#2C333C] flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000000]">
+<span class="material-symbols-outlined text-[#8A93A0]" data-icon="directions_bus">directions_bus</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-sm font-bold text-[#ECEAE3] leading-snug">Halte Tosari ICBC</h2>
+<span class="bg-[#1F242C] text-[#8A93A0] text-[9px] font-mono px-1 border border-[#2C333C]">PLATFORM 1</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-[#8A93A0] font-mono mt-0.5">
+<span class="text-[#ECEAE3] font-bold">380 m</span>
+<span>•</span>
+<span>5 mnt jalan kaki</span>
+</div>
+</div>
+</div>
+<button aria-label="Navigasi ke Halte Tosari" class="w-7 h-7 bg-[#171B21] border border-[#2C333C] text-[#ECEAE3] flex items-center justify-center shadow-[1px_1px_0_0_#000000] active:translate-x-[1px] active:translate-y-[1px]">
+<span class="material-symbols-outlined text-xs" data-icon="navigation">navigation</span>
+</button>
+</div>
+<!-- Estimated Bus Arrival Chips -->
+<div class="flex items-center gap-2 pl-[46px]">
+<!-- Bus 1 Badge -->
+<div class="bg-[#FFCC00] text-black border-2 border-black px-2 py-0.5 flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="font-mono font-black text-xs">K1</span>
+<span class="text-[10px] font-bold uppercase">• 4 mnt lagi</span>
+</div>
+<!-- Bus 2 Badge -->
+<div class="bg-[#00C853] text-black border-2 border-black px-2 py-0.5 flex items-center gap-1 shadow-[2px_2px_0_0_#000000]">
+<span class="font-mono font-black text-xs">1B</span>
+<span class="text-[10px] font-bold uppercase">• 9 mnt</span>
+</div>
+<!-- More indicator -->
+<span class="text-[10px] text-[#8A93A0] font-mono font-bold">+5 rute</span>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- SHARED COMPONENT: BottomNavBar (Active on 'Peta Transit') -->
+<nav aria-label="Main Navigation" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter py-space-xs max-w-7xl mx-auto bg-surface-container dark:bg-surface-container border-t-2 border-outline-variant dark:border-outline-variant shadow-[0_-2px_0_0_#000000]">
+<!-- Tab 1: Cari Rute -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-space-xs hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container-high active:translate-x-[1px] active:translate-y-[1px]" href="#">
+<span class="material-symbols-outlined" data-icon="route">route</span>
+<span class="font-label-sm text-label-sm uppercase mt-0.5">Cari Rute</span>
+</a>
+<!-- Tab 2: Tarif Hemat -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-space-xs hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container-high active:translate-x-[1px] active:translate-y-[1px]" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-sm text-label-sm uppercase mt-0.5">Tarif Hemat</span>
+</a>
+<!-- Tab 3: Tiket QR (Prominent Action Center Button) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-space-xs hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container-high active:translate-x-[1px] active:translate-y-[1px]" href="#">
+<div class="bg-[#171B21] border-2 border-[#2C333C] p-1 shadow-[2px_2px_0_0_#000000] -mt-2">
+<span class="material-symbols-outlined text-[#FFCC00]" data-icon="qr_code_scanner">qr_code_scanner</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase mt-0.5">Tiket QR</span>
+</a>
+<!-- Tab 4: Peta Transit (ACTIVE DESTINATION) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container border-2 border-surface-container-lowest shadow-[2px_2px_0_0_#000000] p-space-xs active:translate-x-[1px] active:translate-y-[1px]" href="#">
+<span class="material-symbols-outlined text-black font-bold" data-icon="map">map</span>
+<span class="font-label-sm text-label-sm uppercase text-black font-extrabold mt-0.5">Peta Transit</span>
+</a>
+<!-- Tab 5: Saldo Kartu -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-space-xs hover:text-on-surface dark:hover:text-on-surface hover:bg-surface-container-high dark:hover:bg-surface-container-high active:translate-x-[1px] active:translate-y-[1px] relative" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-label-sm text-label-sm uppercase mt-0.5">Saldo Kartu</span>
+<span class="absolute top-0 right-1 bg-[#00C853] text-black font-mono font-bold text-[8px] px-1 border border-black shadow-[1px_1px_0_0_#000000]">42K</span>
+</a>
+</nav>
+<!-- Interactive Map Simulation Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Brutalist tap ripple simulation for tactile buttons
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          this.classList.add('brightness-125');
+          setTimeout(() => {
+            this.classList.remove('brightness-125');
+          }, 120);
+        });
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,21 @@
+System Health, Machine Telemetry & Agent Policy Console for War Room.
+Design theme: Dark obsidian #0d0e11, card surface #181a1d, border #24262a, indigo #6366f1.
+Top header: Sub-tabs: [Layanan & Mesin (Active)], [Kesegaran Fakta], [Biaya & Token], [Event Log], [AI Console], [Kebijakan], [Audit].
+
+Section 1 - Service Fleet & Machine Health:
+- Grid of core system daemons:
+  * warroom-api (FastAPI / Uvicorn Port 8800): [ACTIVE · UPTIME 99.98% · 12ms avg response]
+  * warroom-worker (Celery / Background tasks): [ACTIVE · 30s cycle · 0 dropped tasks]
+  * lp-agent (Solana RPC Telemetry): [CONNECTED · Block Height 328,190,442]
+  * poly-agent (Polymarket CLOB recorder): [RUNNING · 0 errors]
+  * nginx reverse proxy (:443 -> :3100 / :8800): [HEALTHY · SSL Valid]
+
+Section 2 - AI Token Consumption & Model Quota:
+- Daily AI spend chart (Gemini Flash, Claude, OpenAI): Total spend $0.42 / $10.00 daily limit.
+- Token latency distribution and cache hit rate (88.4% cached).
+
+Section 3 - Governance & Policy Proposal Review:
+- Pending proposals cards for Owner / Operator:
+  - Proposal #104: "Update OKX Crypto SMC stop-loss buffer from 0.7% to 0.8% based on ATR spike".
+  - Status: [BUTUH MANUSIA (Review Required)].
+  - Action buttons: [Terapkan (Apply)] in indigo, [Tolak / Rollback] in red.

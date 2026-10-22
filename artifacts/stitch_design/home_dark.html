@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>KOMUTER - Navigasi TransJakarta</title>
+<!-- Google Fonts: Space Grotesk & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with form plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed": "#241a00",
+            "error": "#ffb4ab",
+            "secondary-fixed": "#dce1ff",
+            "secondary-container": "#0356ff",
+            "on-tertiary": "#003912",
+            "tertiary-fixed": "#69ff87",
+            "primary-fixed-dim": "#f1c100",
+            "surface-container-high": "#282a2d",
+            "on-primary-fixed-variant": "#584400",
+            "tertiary": "#bbffbd",
+            "secondary-fixed-dim": "#b6c4ff",
+            "error-container": "#93000a",
+            "on-surface-variant": "#d2c5ab",
+            "surface-container-lowest": "#0c0e11",
+            "on-tertiary-fixed": "#002108",
+            "on-background": "#e2e2e6",
+            "on-error-container": "#ffdad6",
+            "secondary": "#b6c4ff",
+            "on-surface": "#e2e2e6",
+            "tertiary-container": "#4cef74",
+            "on-primary-container": "#6f5700",
+            "primary": "#ffedc3",
+            "on-tertiary-container": "#006928",
+            "on-secondary-container": "#e4e7ff",
+            "surface-variant": "#333538",
+            "background": "#0B0D10",
+            "surface-tint": "#f1c100",
+            "primary-fixed": "#ffe08b",
+            "inverse-on-surface": "#2f3034",
+            "surface-container-highest": "#333538",
+            "primary-container": "#ffcc00",
+            "on-tertiary-fixed-variant": "#00531e",
+            "surface-bright": "#37393d",
+            "outline": "#9a9078",
+            "on-secondary-fixed": "#001551",
+            "surface-container-low": "#1a1c1f",
+            "inverse-primary": "#745b00",
+            "outline-variant": "#2C333C",
+            "surface": "#12151A",
+            "inverse-surface": "#e2e2e6",
+            "surface-container": "#171B21",
+            "on-secondary-fixed-variant": "#0039b3",
+            "on-error": "#690005",
+            "tertiary-fixed-dim": "#3ce36a",
+            "on-primary": "#3d2f00",
+            "surface-dim": "#111317",
+            "on-secondary": "#002780",
+            "neo-black": "#000000",
+            "neo-border": "#2C333C",
+            "neo-card": "#171B21",
+            "neo-surface": "#12151A",
+            "neo-bg": "#0B0D10",
+            "neo-text": "#ECEAE3",
+            "neo-muted": "#8A93A0",
+            "accent-yellow": "#FFCC00",
+            "accent-blue": "#0055FF",
+            "accent-red": "#E63B2E",
+            "accent-green": "#00C853"
+          },
+          "borderRadius": {
+            "DEFAULT": "0px",
+            "lg": "0px",
+            "xl": "0px",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline-lg-mobile": ["Space Grotesk", "sans-serif"],
+            "label-md": ["Space Grotesk", "sans-serif"],
+            "headline-lg": ["Space Grotesk", "sans-serif"],
+            "headline-sm": ["Space Grotesk", "sans-serif"],
+            "headline-md": ["Space Grotesk", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-lg": ["Space Grotesk", "sans-serif"],
+            "title-md": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "display": ["Space Grotesk", "sans-serif"],
+            "code-ticker": ["Space Grotesk", "sans-serif"],
+            "label-sm": ["Space Grotesk", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-lg-mobile": ["26px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+            "headline-lg": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+            "title-md": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "display": ["48px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" }],
+            "code-ticker": ["15px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Hide scrollbars for tool chips scroll row */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased flex justify-center min-h-screen">
+<!-- Mobile Container (Max 390px, simulating high-density mobile canvas) -->
+<div class="w-full max-w-[390px] min-h-screen bg-background border-x-2 border-outline-variant flex flex-col relative pb-28">
+<!-- 1. TopAppBar (Shared Component Implementation) -->
+<header class="sticky top-0 z-40 flex justify-between items-center w-full px-4 py-3 bg-surface border-b-2 border-outline-variant shadow-[0_2px_0_0_#000000]">
+<!-- Brand & Glyphs -->
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary-container text-neo-black border-2 border-neo-black flex items-center justify-center shadow-[2px_2px_0px_#000000]">
+<span class="material-symbols-outlined text-[20px]" data-icon="directions_bus" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+</div>
+<span class="font-headline-sm text-headline-sm uppercase tracking-wider text-primary-container font-bold">KOMUTER</span>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-2">
+<!-- Language Switcher Pill -->
+<button class="bg-surface-container text-on-surface border-2 border-outline-variant px-2.5 py-1 font-label-md text-label-md uppercase shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:bg-surface-container-high">
+          ID
+        </button>
+<!-- Dark Mode Indicator Pill -->
+<button class="w-8 h-8 bg-surface-container text-primary-container border-2 border-outline-variant flex items-center justify-center shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:bg-surface-container-high" title="Mode Gelap Aktif">
+<span class="material-symbols-outlined text-[18px]" data-icon="dark_mode" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+</button>
+</div>
+</header>
+<!-- Operational Status Bar (Ticker Pill) -->
+<div class="px-4 pt-3 pb-1">
+<div class="w-full bg-surface-container border-2 border-outline-variant px-2.5 py-1.5 flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-[#00C853] border border-neo-black animate-pulse"></span>
+<span class="font-label-sm text-label-sm uppercase text-neo-text">STATUS KORIDOR 1-13</span>
+</div>
+<span class="font-label-sm text-label-sm uppercase text-primary-container font-bold bg-[#000000] px-1.5 py-0.5 border border-outline-variant">LANCAR (NORMAL)</span>
+</div>
+</div>
+<!-- 2. Quick-Tool Chips (Horizontal scrollable neo-brutalist row) -->
+<section class="py-2.5">
+<div class="px-4 pb-1.5 flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0] tracking-wider">FITUR CEPAT</span>
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0]">8 ALAT</span>
+</div>
+<div class="flex gap-2.5 overflow-x-auto px-4 no-scrollbar pb-1">
+<!-- Chip 1: Alarm Turun -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-primary-container" data-icon="notifications_active">notifications_active</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Alarm Turun</span>
+</button>
+<!-- Chip 2: Bus Live (with pulsing green badge) -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="relative flex items-center">
+<span class="material-symbols-outlined text-[18px] text-[#00C853]" data-icon="directions_bus" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-[#00C853] border border-neo-black"></span>
+</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Bus Live</span>
+</button>
+<!-- Chip 3: Katalog Rute -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="alt_route">alt_route</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Katalog Rute</span>
+</button>
+<!-- Chip 4: Favorit -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-primary-container" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Favorit</span>
+</button>
+<!-- Chip 5: Panduan -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-[#ECEAE3]" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Panduan</span>
+</button>
+<!-- Chip 6: Jadwal Live -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-[#FFCC00]" data-icon="schedule">schedule</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Jadwal Live</span>
+</button>
+<!-- Chip 7: Laporan -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container">
+<span class="material-symbols-outlined text-[18px] text-[#E63B2E]" data-icon="report_problem">report_problem</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Laporan</span>
+</button>
+<!-- Chip 8: Tentang -->
+<button class="shrink-0 flex items-center gap-2 bg-[#171B21] border-2 border-outline-variant px-3 py-2 text-on-surface shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-transform hover:border-primary-container mr-2">
+<span class="material-symbols-outlined text-[18px] text-[#8A93A0]" data-icon="info">info</span>
+<span class="font-label-md text-label-md uppercase whitespace-nowrap">Tentang</span>
+</button>
+</div>
+</section>
+<!-- 3. Main Route Finder Card -->
+<main class="px-4 py-2 space-y-4">
+<div class="bg-[#171B21] border-2 border-outline-variant shadow-[4px_4px_0px_#000000] p-3.5 space-y-3.5">
+<!-- Header & Filter Tag -->
+<div class="flex items-center justify-between gap-2 border-b-2 border-outline-variant pb-2.5">
+<div class="bg-primary-container text-neo-black font-label-md text-label-md px-2 py-0.5 border-2 border-neo-black uppercase tracking-wider font-bold">
+            CARI RUTE PALING HEMAT
+          </div>
+<div class="bg-[#12151A] text-secondary border border-outline-variant px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-wider font-semibold">
+            TRANSJAKARTA BRT
+          </div>
+</div>
+<!-- Wayfinding Inputs Wrapper -->
+<div class="relative space-y-2 pt-1">
+<!-- Origin Input Block -->
+<div class="bg-[#12151A] border-2 border-outline-variant p-2.5 focus-within:border-primary-container transition-colors shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0] tracking-wider font-bold">DARI MANA?</span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-[#00C853]">
+<span class="w-2 h-2 bg-[#00C853] border border-neo-black inline-block"></span>
+                ASAL
+              </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="directions_bus">directions_bus</span>
+<input class="bg-transparent border-0 p-0 text-[#ECEAE3] font-body-md text-body-md font-semibold w-full focus:ring-0 focus:outline-none" readonly="" type="text" value="Blok M (Halte Sentral)"/>
+</div>
+</div>
+<!-- Swap Button (Neo-Brutalist Center Badge) -->
+<div class="absolute right-3.5 top-1/2 -translate-y-1/2 z-10">
+<button class="w-8 h-8 bg-surface-container-high border-2 border-neo-black text-primary-container flex items-center justify-center shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 hover:bg-primary-container hover:text-neo-black transition-colors" title="Tukar Asal dan Tujuan">
+<span class="material-symbols-outlined text-[18px]" data-icon="swap_vert">swap_vert</span>
+</button>
+</div>
+<!-- Destination Input Block -->
+<div class="bg-[#12151A] border-2 border-outline-variant p-2.5 focus-within:border-primary-container transition-colors shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0] tracking-wider font-bold">MAU KE MANA?</span>
+<span class="flex items-center gap-1 font-label-sm text-label-sm text-[#E63B2E]">
+<span class="w-2 h-2 bg-[#E63B2E] border border-neo-black inline-block"></span>
+                TUJUAN
+              </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#E63B2E] text-[20px]" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<input class="bg-transparent border-0 p-0 text-[#ECEAE3] font-body-md text-body-md font-semibold w-full focus:ring-0 focus:outline-none" readonly="" type="text" value="Monumen Nasional (Monas)"/>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="space-y-2 pt-1">
+<div class="flex gap-2">
+<!-- Secondary Button: Dari Lokasiku -->
+<button class="w-full flex items-center justify-center gap-1.5 bg-[#12151A] text-[#ECEAE3] border-2 border-outline-variant py-2 px-3 font-label-md text-label-md uppercase shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[16px] text-[#0055FF]" data-icon="my_location">my_location</span>
+<span>Dari Lokasiku</span>
+</button>
+<!-- Departure Time Quick Filter -->
+<button class="shrink-0 flex items-center justify-center gap-1 bg-[#12151A] text-[#8A93A0] border-2 border-outline-variant px-3 py-2 font-label-md text-label-md uppercase shadow-[2px_2px_0px_#000000] hover:text-[#ECEAE3]">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+<span>Kini</span>
+</button>
+</div>
+<!-- Primary Button: CARI RUTE -->
+<button class="w-full bg-primary-container text-neo-black border-2 border-neo-black py-3 px-4 font-label-lg text-label-lg uppercase tracking-wider font-bold shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 hover:bg-[#ffe08b] flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="directions">directions</span>
+<span>CARI RUTE SEKARANG</span>
+</button>
+</div>
+</div>
+<!-- 4. Recommended Route Result Card ("JALUR 1") -->
+<div class="space-y-2">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0] tracking-wider">HASIL REKOMENDASI TERBAIK</span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold uppercase">LANGSUNG TANPA TRANSIT</span>
+</div>
+<div class="bg-[#171B21] border-2 border-outline-variant shadow-[4px_4px_0px_#000000] p-3.5 space-y-3">
+<!-- Header Row -->
+<div class="flex items-center justify-between border-b-2 border-outline-variant pb-2.5">
+<div class="flex items-center gap-2">
+<span class="bg-[#0055FF] text-[#ECEAE3] font-headline-sm text-headline-sm px-2.5 py-0.5 border-2 border-neo-black shadow-[2px_2px_0px_#000000]">
+                K1
+              </span>
+<div>
+<div class="font-label-md text-label-md text-[#ECEAE3] uppercase">JALUR 1 (Blok M - Kota)</div>
+<div class="font-body-sm text-body-sm text-[#8A93A0]">Koridor Utama Jalur Khusus</div>
+</div>
+</div>
+<!-- Real-Time Countdown -->
+<div class="text-right">
+<div class="bg-[#12151A] border border-outline-variant px-2 py-0.5 flex items-center gap-1 shadow-[2px_2px_0px_#000000]">
+<span class="w-2 h-2 bg-[#00C853] inline-block animate-ping"></span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold uppercase">4 MNT LAGI</span>
+</div>
+</div>
+</div>
+<!-- Stats Bar (Flat Utilitarian Grid) -->
+<div class="grid grid-cols-3 gap-2 bg-[#12151A] p-2 border-2 border-outline-variant">
+<!-- Transfer Badge -->
+<div class="border-r border-outline-variant pr-1">
+<span class="block font-label-sm text-label-sm uppercase text-[#8A93A0]">TRANSIT</span>
+<span class="font-label-md text-label-md uppercase text-[#ECEAE3] font-bold">0X PINDAH</span>
+</div>
+<!-- Duration Badge -->
+<div class="border-r border-outline-variant px-1 text-center">
+<span class="block font-label-sm text-label-sm uppercase text-[#8A93A0]">DURASI</span>
+<div class="flex items-center justify-center gap-0.5 text-primary-container font-label-md text-label-md font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]" data-icon="timer">timer</span>
+<span>35 MENIT</span>
+</div>
+</div>
+<!-- Fare Badge -->
+<div class="pl-1 text-right">
+<span class="block font-label-sm text-label-sm uppercase text-[#8A93A0]">TARIF FLAT</span>
+<span class="font-label-md text-label-md text-[#00C853] font-bold">RP 3.500</span>
+</div>
+</div>
+<!-- Route Progression Snippet (Utilitarian Stop Timeline) -->
+<div class="border-l-4 border-primary-container pl-3 py-1 space-y-2 bg-[#12151A]/60">
+<!-- Start Node -->
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-[#00C853] border-2 border-neo-black"></span>
+<div>
+<span class="font-label-md text-label-md text-[#ECEAE3] uppercase block leading-tight">Blok M</span>
+<span class="font-body-sm text-body-sm text-[#8A93A0]">Peron Pintu 2 • Bus TJ-882</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container font-mono bg-neo-black px-1.5 py-0.5 border border-outline-variant">08:15</span>
+</div>
+<!-- Intermediary Waypoints -->
+<div class="pl-5 text-[#8A93A0] font-body-sm text-body-sm flex items-center gap-1.5 py-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="more_vert">more_vert</span>
+<span class="truncate">Lewat: GBK Senayan → Tosari ICBC → Sarinah</span>
+</div>
+<!-- Destination Node -->
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-[#E63B2E] border-2 border-neo-black"></span>
+<div>
+<span class="font-label-md text-label-md text-[#ECEAE3] uppercase block leading-tight">Monas</span>
+<span class="font-body-sm text-body-sm text-[#8A93A0]">Sisi Barat • Halte Koridor 1</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-primary-container font-mono bg-neo-black px-1.5 py-0.5 border border-outline-variant">08:50</span>
+</div>
+</div>
+<!-- Action Pill: LIHAT DETAIL PANDUAN -->
+<button class="w-full bg-[#12151A] hover:bg-surface-container text-primary-container border-2 border-outline-variant py-2.5 px-3 flex items-center justify-between font-label-md text-label-md uppercase shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 transition-all">
+<span class="tracking-wider">LIHAT DETAIL PANDUAN PERJALANAN</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Quick Tips Micro-Card -->
+<div class="bg-[#12151A] border-2 border-outline-variant p-3 flex items-center gap-3 shadow-[2px_2px_0px_#000000]">
+<div class="w-8 h-8 bg-surface-container text-secondary flex items-center justify-center border border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-[18px]" data-icon="contactless">contactless</span>
+</div>
+<div class="leading-tight">
+<span class="font-label-sm text-label-sm uppercase text-primary-container block font-bold">INFO TIKET &amp; KARTU</span>
+<p class="font-body-sm text-body-sm text-[#8A93A0]">Pastikan saldo e-money minimal Rp 5.000 saat tap-in di gate halte.</p>
+</div>
+</div>
+</main>
+<!-- 5. Neo-brutalist Bottom Navigation Bar (5 flat modular items from Shared Components & Specification) -->
+<!-- Destination labels aligned strictly with Shared Component anchors: Rute, Jadwal, Tiket QR, Peta, Akun -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1.5 bg-surface-container-low border-t-2 border-outline-variant shadow-[0_-3px_0_0_#000000]">
+<!-- Nav 1: Rute (ACTIVE STATE) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-fixed border-2 border-surface-container-lowest shadow-[2px_2px_0px_#000000] px-3 py-1" href="#rute">
+<span class="material-symbols-outlined text-[20px]" data-icon="explore" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider mt-0.5">Rute</span>
+</a>
+<!-- Nav 2: Jadwal -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-colors" href="#jadwal">
+<span class="material-symbols-outlined text-[20px]" data-icon="schedule">schedule</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider mt-0.5">Jadwal</span>
+</a>
+<!-- Nav 3: Tiket QR (Central raised modular pass) -->
+<a class="flex flex-col items-center justify-center -translate-y-2 bg-primary-container text-neo-black border-2 border-neo-black shadow-[3px_3px_0px_#000000] px-3 py-1.5 active:translate-y-0 transition-transform" href="#tiket">
+<span class="material-symbols-outlined text-[24px]" data-icon="qr_code_scanner" style="font-variation-settings: 'FILL' 1;">qr_code_scanner</span>
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Tiket QR</span>
+</a>
+<!-- Nav 4: Peta -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-colors" href="#peta">
+<span class="material-symbols-outlined text-[20px]" data-icon="map">map</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider mt-0.5">Peta</span>
+</a>
+<!-- Nav 5: Akun -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1 hover:bg-surface-container-high transition-colors" href="#akun">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider mt-0.5">Akun</span>
+</a>
+</nav>
+</div>
+</body></html>

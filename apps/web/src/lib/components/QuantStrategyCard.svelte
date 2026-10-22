@@ -222,8 +222,8 @@
 
 <style>
 	.quant-card {
-		background: var(--permukaan, #121417);
-		border: 1px solid var(--garis, rgba(255, 255, 255, 0.08));
+		background: var(--permukaan, var(--color-surface));
+		border: 1px solid var(--garis, var(--color-line));
 		border-radius: var(--radius-card, 8px);
 		padding: 1.25rem;
 		margin-bottom: 1.5rem;
@@ -234,7 +234,7 @@
 		align-items: flex-start;
 		gap: 1rem;
 		margin-bottom: 1.25rem;
-		border-bottom: 1px solid var(--garis, rgba(255, 255, 255, 0.08));
+		border-bottom: 1px solid var(--garis, var(--color-line));
 		padding-bottom: 0.85rem;
 	}
 	.badge-quant {
@@ -243,18 +243,18 @@
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--mint, #34e39a);
+		color: var(--mint, var(--color-pos));
 		margin-bottom: 0.25rem;
 	}
 	.title {
 		font-size: 1.15rem;
 		font-weight: 700;
-		color: var(--tinta, #f3f4f6);
+		color: var(--tinta, var(--color-text));
 		margin: 0 0 0.25rem;
 	}
 	.subtitle {
 		font-size: 0.8rem;
-		color: var(--redup, #9ca3af);
+		color: var(--redup, var(--color-text-3));
 		margin: 0;
 	}
 	.status-pill {
@@ -262,9 +262,9 @@
 		font-weight: 700;
 		padding: 0.25rem 0.6rem;
 		border-radius: 4px;
-		background: color-mix(in srgb, var(--mint, #34e39a) 15%, transparent);
-		color: var(--mint, #34e39a);
-		border: 1px solid color-mix(in srgb, var(--mint, #34e39a) 40%, transparent);
+		background: color-mix(in srgb, var(--mint, var(--color-pos)) 15%, transparent);
+		color: var(--mint, var(--color-pos));
+		border: 1px solid color-mix(in srgb, var(--mint, var(--color-pos)) 40%, transparent);
 	}
 	.bento-grid {
 		display: grid;
@@ -273,16 +273,16 @@
 		margin-bottom: 1.25rem;
 	}
 	.bento-item {
-		background: color-mix(in srgb, var(--latar, #0a0b0d) 65%, var(--permukaan, #121417));
-		border: 1px solid var(--garis, rgba(255, 255, 255, 0.08));
+		background: color-mix(in srgb, var(--latar, var(--color-bg)) 65%, var(--permukaan, var(--color-surface)));
+		border: 1px solid var(--garis, var(--color-line));
 		border-radius: 6px;
 		padding: 1rem;
 	}
 	.gold-box {
-		border-left: 3px solid #eab308;
+		border-left: 3px solid var(--color-accent);
 	}
 	.sol-box {
-		border-left: 3px solid var(--mint, #34e39a);
+		border-left: 3px solid var(--mint, var(--color-pos));
 	}
 	.item-head {
 		display: flex;
@@ -293,11 +293,11 @@
 	.symbol {
 		font-size: 0.95rem;
 		font-weight: 700;
-		color: var(--tinta, #f3f4f6);
+		color: var(--tinta, var(--color-text));
 	}
 	.subtext {
 		font-size: 0.72rem;
-		color: var(--redup, #9ca3af);
+		color: var(--redup, var(--color-text-3));
 	}
 	.stats-row {
 		display: grid;
@@ -313,22 +313,22 @@
 	.lbl {
 		font-size: 0.62rem;
 		text-transform: uppercase;
-		color: var(--redup, #9ca3af);
+		color: var(--redup, var(--color-text-3));
 	}
 	.val {
 		font-size: 1.05rem;
 		font-weight: 700;
-		color: var(--tinta, #f3f4f6);
+		color: var(--tinta, var(--color-text));
 	}
 	.formula-desc {
 		font-size: 0.72rem;
-		color: var(--redup, #9ca3af);
+		color: var(--redup, var(--color-text-3));
 		margin: 0;
 		line-height: 1.4;
 	}
 	.table-container {
-		background: color-mix(in srgb, var(--latar, #0a0b0d) 50%, var(--permukaan, #121417));
-		border: 1px solid var(--garis, rgba(255, 255, 255, 0.08));
+		background: color-mix(in srgb, var(--latar, var(--color-bg)) 50%, var(--permukaan, var(--color-surface)));
+		border: 1px solid var(--garis, var(--color-line));
 		border-radius: 6px;
 		padding: 0.85rem;
 	}
@@ -337,7 +337,7 @@
 		justify-content: space-between;
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: var(--tinta, #f3f4f6);
+		color: var(--tinta, var(--color-text));
 		margin-bottom: 0.65rem;
 	}
 	.table-scroll {
@@ -353,25 +353,25 @@
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: var(--redup, #9ca3af);
+		color: var(--redup, var(--color-text-3));
 		padding: 0.5rem;
-		border-bottom: 1px solid var(--garis, rgba(255, 255, 255, 0.08));
+		border-bottom: 1px solid var(--garis, var(--color-line));
 	}
 	.quant-table td {
 		padding: 0.55rem 0.5rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+		border-bottom: 1px solid var(--color-line-soft);
 	}
 	.cat-pill {
 		font-size: 0.68rem;
 		padding: 0.15rem 0.4rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface-2);
 		border-radius: 3px;
-		color: var(--tinta, #f3f4f6);
+		color: var(--tinta, var(--color-text));
 	}
 	.ka { text-align: right; }
 	.bold { font-weight: 700; }
-	.pos { color: var(--mint, #34e39a); }
-	.dim { color: var(--redup, #9ca3af); }
+	.pos { color: var(--mint, var(--color-pos)); }
+	.dim { color: var(--redup, var(--color-text-3)); }
 	.code { font-family: monospace; font-size: 0.72rem; }
 	.angka { font-family: monospace; }
 </style>

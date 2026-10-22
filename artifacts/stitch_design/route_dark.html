@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KOMUTER - Rute Detail Koridor 1</title>
+<!-- Google Fonts: Space Grotesk & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary-fixed-variant": "#584400",
+            "on-error": "#690005",
+            "primary-fixed-dim": "#f1c100",
+            "secondary-fixed-dim": "#b6c4ff",
+            "surface-container-low": "#1a1c1f",
+            "surface-container-high": "#282a2d",
+            "background": "#111317",
+            "surface-container-lowest": "#0c0e11",
+            "on-secondary-container": "#e4e7ff",
+            "outline-variant": "#4e4632",
+            "inverse-on-surface": "#2f3034",
+            "surface-container": "#1e2023",
+            "surface-bright": "#37393d",
+            "surface-dim": "#111317",
+            "on-tertiary": "#003912",
+            "on-tertiary-container": "#006928",
+            "inverse-surface": "#e2e2e6",
+            "on-background": "#e2e2e6",
+            "outline": "#9a9078",
+            "on-error-container": "#ffdad6",
+            "on-primary-container": "#6f5700",
+            "surface-tint": "#f1c100",
+            "on-primary-fixed": "#241a00",
+            "tertiary-fixed": "#69ff87",
+            "surface-variant": "#333538",
+            "inverse-primary": "#745b00",
+            "tertiary-container": "#4cef74",
+            "secondary-container": "#0356ff",
+            "primary-container": "#ffcc00",
+            "on-tertiary-fixed": "#002108",
+            "on-surface-variant": "#d2c5ab",
+            "on-secondary": "#002780",
+            "secondary": "#b6c4ff",
+            "on-surface": "#e2e2e6",
+            "surface": "#111317",
+            "tertiary-fixed-dim": "#3ce36a",
+            "primary": "#ffedc3",
+            "on-secondary-fixed-variant": "#0039b3",
+            "on-primary": "#3d2f00",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "surface-container-highest": "#333538",
+            "primary-fixed": "#ffe08b",
+            "secondary-fixed": "#dce1ff",
+            "on-tertiary-fixed-variant": "#00531e",
+            "on-secondary-fixed": "#001551",
+            "tertiary": "#bbffbd"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-2xl": "3rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2rem",
+            "margin": "1rem",
+            "gutter-tablet": "1rem",
+            "space-md": "1rem",
+            "margin-desktop": "2.5rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem",
+            "margin-tablet": "1.5rem",
+            "gutter": "0.75rem"
+          },
+          fontFamily: {
+            "label-lg": ["Space Grotesk"],
+            "code-ticker": ["Space Grotesk"],
+            "label-sm": ["Space Grotesk"],
+            "headline-sm": ["Space Grotesk"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Space Grotesk"],
+            "headline-md": ["Space Grotesk"],
+            "title-md": ["Inter"],
+            "label-md": ["Space Grotesk"],
+            "display": ["Space Grotesk"],
+            "body-md": ["Inter"],
+            "headline-lg": ["Space Grotesk"],
+            "body-sm": ["Inter"]
+          },
+          fontSize: {
+            "label-lg": ["14px", { lineHeight: "18px", letterSpacing: "0.06em", fontWeight: "700" }],
+            "code-ticker": ["15px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.1em", fontWeight: "700" }],
+            "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "600" }],
+            "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "title-md": ["16px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "700" }],
+            "display": ["48px", { lineHeight: "52px", letterSpacing: "-0.03em", fontWeight: "700" }],
+            "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-lg": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Hard Neo-brutalist baseline */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#0B0D10] text-[#ECEAE3] font-body-md text-body-md antialiased min-h-screen selection:bg-primary-container selection:text-black pb-28">
+<!-- Mobile Wrapper / Kiosk Frame max-w-md (390px-440px target centered) -->
+<div class="max-w-[420px] mx-auto min-h-screen flex flex-col relative border-x-2 border-[#2C333C] bg-[#0B0D10]">
+<!-- 1. TOP APP BAR (TASK/DETAIL FOCUSED WITH BRUTALIST BACK ACTION) -->
+<header class="sticky top-0 z-40 bg-[#12151A] border-b-2 border-[#2C333C] px-margin py-space-sm shadow-[0_2px_0_0_#000000]">
+<div class="flex items-center justify-between gap-space-sm">
+<!-- Back Button -->
+<button aria-label="Kembali" class="w-10 h-10 flex items-center justify-center bg-[#171B21] border-2 border-[#2C333C] shadow-[2px_2px_0_0_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-none" type="button">
+<span class="material-symbols-outlined text-[#ECEAE3] text-[20px]">arrow_back</span>
+</button>
+<!-- Route Indicator Header -->
+<div class="flex-1 min-w-0 px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 bg-[#00C853] inline-block border border-black animate-pulse"></span>
+<span class="font-label-sm text-label-sm uppercase text-[#8A93A0] tracking-wider">KORIDOR 1 AKTIF</span>
+</div>
+<h1 class="font-headline-sm text-headline-sm text-[#ECEAE3] truncate tracking-tight uppercase">Blok M → Monas</h1>
+</div>
+<!-- Yellow Badge: RUTE ASLI -->
+<div class="bg-primary-container text-black font-label-sm text-label-sm px-space-sm py-1 border-2 border-black shadow-[2px_2px_0_0_#000000] uppercase font-bold tracking-widest whitespace-nowrap">
+          RUTE UTAMA
+        </div>
+</div>
+</header>
+<!-- MAIN SCROLLABLE CONTENT -->
+<main class="flex-1 p-margin space-y-space-md">
+<!-- 2. ROUTE SUMMARY HEADER CARD (BRUTALIST BENTO ARCHITECTURE) -->
+<section class="bg-[#171B21] border-2 border-[#2C333C] shadow-[3px_3px_0px_#000000]">
+<!-- Top Corridor Header Bar -->
+<div class="p-space-md border-b-2 border-[#2C333C] bg-[#12151A]">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<!-- Giant Geometric Route Badge -->
+<div class="bg-primary-container text-black border-2 border-black shadow-[2px_2px_0px_#000000] px-3 py-1 flex items-center justify-center">
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold tracking-tight">K1</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-[#ECEAE3] tracking-wide uppercase">KORIDOR 1 BRT</span>
+<span class="bg-[#0055FF] text-white text-[9px] font-bold px-1.5 py-0.2 border border-black uppercase">Jalur Steril</span>
+</div>
+<p class="font-body-sm text-body-sm text-[#8A93A0] mt-0.5">Blok M — Kota (Jalur Khusus Busway)</p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-[#8A93A0] block uppercase">KODE RUTE</span>
+<span class="font-code-ticker text-code-ticker text-primary-container font-bold">BRT-01A</span>
+</div>
+</div>
+</div>
+<!-- Live Status Banner (Mechanical Ticker) -->
+<div class="px-space-md py-space-sm bg-[#12151A] border-b-2 border-[#2C333C] flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-primary-container text-[18px]">directions_bus</span>
+<div class="font-label-sm text-label-sm tracking-wider uppercase truncate text-[#ECEAE3]">
+              ARMADA TERDEKAT: <span class="text-primary-container font-bold">3 MNT LAGI</span> (TJ-0428)
+            </div>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-1.5 h-3 bg-[#00C853] border border-black"></span>
+<span class="w-1.5 h-3 bg-[#00C853] border border-black"></span>
+<span class="w-1.5 h-3 bg-[#2C333C] border border-black"></span>
+<span class="text-[9px] font-label-sm text-[#8A93A0] ml-1">LENGANG</span>
+</div>
+</div>
+<!-- 3 Flat Brutalist Stat Blocks -->
+<div class="grid grid-cols-3 divide-x-2 divide-[#2C333C]">
+<!-- Stat 1 -->
+<div class="p-space-sm text-center bg-[#171B21]">
+<span class="block font-label-sm text-label-sm text-[#8A93A0] uppercase">TRANSIT</span>
+<span class="block font-headline-sm text-headline-sm text-[#ECEAE3] font-bold mt-0.5">0x</span>
+<span class="block font-body-sm text-[10px] text-[#8A93A0] uppercase">LANGSUNG</span>
+</div>
+<!-- Stat 2 -->
+<div class="p-space-sm text-center bg-[#171B21]">
+<span class="block font-label-sm text-label-sm text-[#8A93A0] uppercase">ESTIMASI</span>
+<span class="block font-headline-sm text-headline-sm text-primary-container font-bold mt-0.5">35 MNT</span>
+<span class="block font-body-sm text-[10px] text-[#8A93A0] uppercase">12 HALTE</span>
+</div>
+<!-- Stat 3 -->
+<div class="p-space-sm text-center bg-[#171B21]">
+<span class="block font-label-sm text-label-sm text-[#8A93A0] uppercase">TARIF FLAT</span>
+<span class="block font-headline-sm text-headline-sm text-[#ECEAE3] font-bold mt-0.5">RP 3.500</span>
+<span class="block font-body-sm text-[10px] text-[#00C853] uppercase font-bold">SUBSIDI DKJ</span>
+</div>
+</div>
+</section>
+<!-- 3. TRANSIT INFORMATION & TRANSFER ACCENT CARD -->
+<section class="bg-[#12151A] border-2 border-primary-container shadow-[3px_3px_0px_#000000] p-space-md relative overflow-hidden">
+<div class="flex items-start gap-space-sm">
+<div class="bg-primary-container text-black p-1.5 border-2 border-black flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">transfer_within_a_station</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="bg-primary-container text-black font-label-sm text-label-sm px-1.5 py-0.5 font-bold uppercase border border-black">INTEGRASI TRANSIT</span>
+<span class="font-label-sm text-label-sm text-[#ECEAE3] uppercase">HALTE MONAS &amp; DUKUH ATAS</span>
+</div>
+<p class="font-body-md text-body-md text-[#ECEAE3] mt-1.5 leading-snug">
+              Pindah koridor K2 (Pulogadung), K3 (Kalideres), dan MRT Jakarta di halte transfer <strong class="text-primary-container">tanpa tap-out</strong> (bebas biaya tambahan).
+            </p>
+</div>
+</div>
+<!-- Facilities Chip Row -->
+<div class="mt-space-md pt-space-sm border-t-2 border-[#2C333C] flex items-center gap-space-xs overflow-x-auto no-scrollbar">
+<div class="shrink-0 bg-[#171B21] border border-[#2C333C] px-2 py-1 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary-container text-[14px]">ac_unit</span>
+<span class="font-label-sm text-label-sm text-[#ECEAE3] uppercase">AC DINGIN</span>
+</div>
+<div class="shrink-0 bg-[#171B21] border border-[#2C333C] px-2 py-1 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary-container text-[14px]">accessible</span>
+<span class="font-label-sm text-label-sm text-[#ECEAE3] uppercase">RAMAH DISABILITAS</span>
+</div>
+<div class="shrink-0 bg-[#171B21] border border-[#2C333C] px-2 py-1 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary-container text-[14px]">contactless</span>
+<span class="font-label-sm text-label-sm text-[#ECEAE3] uppercase">TAP-IN ELEKTRONIK</span>
+</div>
+</div>
+</section>
+<!-- 4. LIVE VEHICLE RADAR PULLOUT (BRUTALIST LIVE PULLOUT) -->
+<section class="bg-[#171B21] border-2 border-[#2C333C] p-space-sm flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 bg-[#0055FF] text-white border-2 border-black flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[18px]">radar</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md uppercase text-[#ECEAE3]">POSISI BUS SAAT INI</span>
+<span class="w-2 h-2 rounded-full bg-[#00C853] animate-ping"></span>
+</div>
+<p class="font-body-sm text-body-sm text-[#8A93A0]">TJ-0428 sedang di <strong class="text-white">Bundaran Senayan</strong></p>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-primary-container font-bold uppercase block">KECEPATAN</span>
+<span class="font-code-ticker text-code-ticker text-[#ECEAE3]">38 KM/J</span>
+</div>
+</section>
+<!-- 5. VERTICAL STOP TIMELINE (CORE TRANSIT WAYFINDING) -->
+<section class="bg-[#171B21] border-2 border-[#2C333C] shadow-[3px_3px_0px_#000000] p-space-md">
+<div class="flex items-center justify-between pb-space-sm mb-space-md border-b-2 border-[#2C333C]">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary-container text-[20px]">timeline</span>
+<h2 class="font-headline-sm text-headline-sm uppercase text-[#ECEAE3]">TIMELINE PERJALANAN</h2>
+</div>
+<span class="font-label-sm text-label-sm text-[#8A93A0] uppercase tracking-wider">12 HALTE BRT</span>
+</div>
+<!-- The Timeline Track Container -->
+<div class="relative pl-6">
+<!-- Vertical Track Line (Signal Yellow Solid Rail) -->
+<div class="absolute left-[11px] top-2 bottom-3 w-[4px] bg-primary-container"></div>
+<!-- STOP 1: BLOK M (ASAL) -->
+<div class="relative mb-6 group">
+<!-- Node Dot -->
+<div class="absolute -left-[23px] top-1 w-5 h-5 bg-primary-container border-2 border-black shadow-[1px_1px_0px_#000000] flex items-center justify-center">
+<span class="w-2 h-2 bg-black"></span>
+</div>
+<div class="bg-[#12151A] border-2 border-[#2C333C] p-space-sm shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center justify-between">
+<span class="bg-primary-container text-black font-label-sm text-label-sm px-1.5 py-0.2 font-bold uppercase">HALTE SENTRAL AWAL</span>
+<span class="font-code-ticker text-code-ticker text-primary-container">08:15 WIB</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-[#ECEAE3] uppercase font-bold mt-1">1. Blok M</h3>
+<div class="flex items-center gap-space-xs mt-1.5 flex-wrap">
+<span class="font-body-sm text-body-sm text-[#8A93A0]">Platform A-B-C</span>
+<span class="text-[#2C333C]">|</span>
+<span class="bg-[#171B21] border border-[#2C333C] text-primary-container px-1 font-label-sm text-label-sm uppercase">Peron 3 (Pintu Selatan)</span>
+</div>
+</div>
+</div>
+<!-- STOP 2: MASJID AGUNG -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<div>
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">2. Masjid Agung</h4>
+<p class="font-body-sm text-[11px] text-[#8A93A0]">Pintu 1 &amp; 2 Aktif</p>
+</div>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:19 WIB</span>
+</div>
+</div>
+<!-- STOP 3: BUNDARAN SENAYAN (CURRENT BUS POSITION) -->
+<div class="relative mb-6">
+<!-- Pulsating Current Position Node -->
+<div class="absolute -left-[25px] top-2 w-6 h-6 bg-[#00C853] border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000000]">
+<span class="material-symbols-outlined text-black text-[16px] font-bold">directions_bus</span>
+</div>
+<!-- Active Stop Card -->
+<div class="bg-[#12151A] border-2 border-[#00C853] p-space-sm shadow-[3px_3px_0px_#000000]">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 bg-[#00C853] animate-ping"></span>
+<span class="bg-[#00C853] text-black font-label-sm text-label-sm px-1.5 py-0.2 font-bold uppercase">POSISI BUS ANDA</span>
+</div>
+<span class="font-code-ticker text-code-ticker text-[#00C853] font-bold">08:24 WIB</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-[#ECEAE3] uppercase font-bold mt-1">3. Bundaran Senayan</h3>
+<div class="flex items-center gap-space-xs mt-1 text-[#8A93A0] font-body-sm text-body-sm">
+<span>Pintu 2 (Platform D-E)</span>
+<span>•</span>
+<span class="text-white font-medium">Turun 14 Penumpang</span>
+</div>
+</div>
+</div>
+<!-- STOP 4: GELORA BUNG KARNO -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<div>
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">4. Gelora Bung Karno (GBK)</h4>
+<p class="font-body-sm text-[11px] text-[#8A93A0]">Jembatan Akses FX Sudirman</p>
+</div>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:27 WIB</span>
+</div>
+</div>
+<!-- STOP 5: POLDA METRO JAYA -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">5. Polda Metro Jaya</h4>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:31 WIB</span>
+</div>
+</div>
+<!-- STOP 6: BENDUNGAN HILIR -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<div>
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">6. Bendungan Hilir</h4>
+<p class="font-body-sm text-[11px] text-[#8A93A0]">Plat B (Integrasi Semanggi 9)</p>
+</div>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:34 WIB</span>
+</div>
+</div>
+<!-- STOP 7: KARET SUDIRMAN -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">7. Karet Sudirman</h4>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:37 WIB</span>
+</div>
+</div>
+<!-- STOP 8: DUKUH ATAS (MAJOR TRANSFER HUB) -->
+<div class="relative mb-6">
+<!-- Intermodal Transit Square Node -->
+<div class="absolute -left-[23px] top-1 w-5 h-5 bg-[#0055FF] border-2 border-black shadow-[1px_1px_0px_#000000] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[13px]">sync_alt</span>
+</div>
+<div class="bg-[#12151A] border-2 border-[#0055FF] p-space-sm shadow-[2px_2px_0px_#000000]">
+<div class="flex items-center justify-between">
+<span class="bg-[#0055FF] text-white font-label-sm text-label-sm px-1.5 py-0.2 font-bold uppercase">TRANSIT HUB TERPADU</span>
+<span class="font-code-ticker text-code-ticker text-[#ECEAE3]">08:40 WIB</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-[#ECEAE3] uppercase font-bold mt-1">8. Dukuh Atas</h3>
+<div class="flex items-center gap-1 mt-1.5 flex-wrap">
+<span class="bg-[#171B21] border border-[#2C333C] text-[10px] px-1 py-0.2 font-label-sm text-primary-container uppercase">LRT JABODEBEK</span>
+<span class="bg-[#171B21] border border-[#2C333C] text-[10px] px-1 py-0.2 font-label-sm text-white uppercase">KORIDOR 4 &amp; 6</span>
+<span class="bg-[#171B21] border border-[#2C333C] text-[10px] px-1 py-0.2 font-label-sm text-[#00C853] uppercase">COMMUTER LINE</span>
+</div>
+</div>
+</div>
+<!-- STOP 9: TOSARI ICBC -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<div>
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">9. Tosari ICBC</h4>
+<p class="font-body-sm text-[11px] text-[#8A93A0]">Anjungan Dek Pandang Lantai 2</p>
+</div>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:43 WIB</span>
+</div>
+</div>
+<!-- STOP 10: BUNDARAN HI ASTRA -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#FFCC00] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<div>
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">10. Bundaran HI Astra</h4>
+<span class="bg-[#0055FF] text-[9px] font-bold text-white px-1 uppercase">INTEGRASI MRTJ</span>
+</div>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:45 WIB</span>
+</div>
+</div>
+<!-- STOP 11: MH THAMRIN -->
+<div class="relative mb-6">
+<div class="absolute -left-[20px] top-2 w-3.5 h-3.5 bg-[#8A93A0] border-2 border-black"></div>
+<div class="flex items-center justify-between py-1 px-space-sm bg-[#12151A] border border-[#2C333C]">
+<h4 class="font-title-md text-title-md text-[#ECEAE3] uppercase">11. MH Thamrin</h4>
+<span class="font-code-ticker text-body-sm text-[#8A93A0]">08:47 WIB</span>
+</div>
+</div>
+<!-- STOP 12: MONUMEN NASIONAL (TUJUAN) -->
+<div class="relative group">
+<!-- Destination Target Node -->
+<div class="absolute -left-[23px] top-1 w-5 h-5 bg-[#E63B2E] border-2 border-black shadow-[1px_1px_0px_#000000] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[14px]">flag</span>
+</div>
+<div class="bg-[#12151A] border-2 border-primary-container p-space-sm shadow-[3px_3px_0px_#000000]">
+<div class="flex items-center justify-between">
+<span class="bg-primary-container text-black font-label-sm text-label-sm px-1.5 py-0.2 font-bold uppercase">HALTE TUJUAN ANDA</span>
+<span class="font-code-ticker text-code-ticker text-primary-container font-bold">EST. 08:50 WIB</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-[#ECEAE3] uppercase font-bold mt-1">12. Monumen Nasional (Monas)</h3>
+<div class="flex items-center gap-space-xs mt-1.5 flex-wrap">
+<span class="font-body-sm text-body-sm text-[#8A93A0]">Platform Barat (Pintu 3)</span>
+<span class="text-[#2C333C]">|</span>
+<span class="text-primary-container font-label-sm text-label-sm uppercase">Pintu Keluar Gambir &amp; Lapangan Merdeka</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. COMMUTER ADVISORY / REGULATORY BANNER -->
+<section class="border-2 border-[#2C333C] bg-[#12151A] p-space-sm flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[#8A93A0] text-[20px]">info</span>
+<p class="font-body-sm text-[11px] text-[#8A93A0] leading-snug">
+          Pastikan saldo minimum kartu KMT/e-Money minimal <strong>Rp 5.000</strong> sebelum melakukan tap-in di gerbang halte. Hubungi petugas rompi merah jika butuh bantuan ramah disabilitas.
+        </p>
+</section>
+</main>
+<!-- 7. STICKY BOTTOM ACTION BAR (DUAL CTAS WITH BRUTALIST OFFSETS) -->
+<div class="fixed bottom-0 left-0 right-0 z-50 bg-[#12151A] border-t-2 border-[#2C333C] py-space-sm px-margin">
+<div class="max-w-[420px] mx-auto flex items-center gap-space-sm">
+<!-- Secondary Button: Simpan Favorit -->
+<button aria-label="Simpan Favorit" class="w-12 h-12 shrink-0 bg-[#171B21] border-2 border-[#2C333C] shadow-[2px_2px_0_0_#000000] flex items-center justify-center text-[#ECEAE3] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none hover:bg-surface-container-high transition-none" type="button">
+<span class="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+<!-- Primary CTA Button: Mulai Navigasi -->
+<button class="flex-1 h-12 bg-primary-container text-black border-2 border-black shadow-[3px_3px_0_0_#000000] flex items-center justify-center gap-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0_0_#000000] transition-none cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[20px]">navigation</span>
+<span class="font-label-lg text-label-lg font-bold tracking-wider uppercase">MULAI NAVIGASI</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

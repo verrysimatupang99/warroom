@@ -1,0 +1,17 @@
+Indonesian Stock Exchange (IDX) Bandarmologi & BSJP Signal Dashboard for War Room.
+Design theme: Dark obsidian #0d0e11, card surface #181a1d, border #24262a, indigo #6366f1, gold/amber #f59e0b.
+Top header: Sub-tabs: [Sinyal & BSJP (Active)], [Bandarmologi Broker Summary], [ARA Hunter], [Aliran Dana Asing].
+
+Section 1 - Bandarmologi & Flow Dynamics:
+- Market Regime status badge: [BEKU / HISTORIS - MODEL BREACH DETECTED].
+- Broker Summary Accumulation / Distribution Tracker:
+  - Table of top monitored tickers (BBCA, BBRI, BMRI, BREN, AMMN).
+  - Columns: Ticker, Top 3 Buyer Brokers (e.g. ZP, CC, AK) vs Top 3 Seller Brokers (e.g. YP, PD, NI), Accumulation Score (0-100), Net Volume Delta, Foreign Buy/Sell ratio.
+  - Visual horizontal bar showing institutional buyer dominance percentage.
+
+Section 2 - BSJP (Beli Sore Jual Pagi) & ARA Hunter Signals:
+- Candidates table with strict verification:
+  - Ticker: BBRI (Score 82) -> Status [DITOLAK: Jam Beli Sore belum aktif (Aktif 15:50-16:00 WIB)].
+  - Ticker: BREN (Score 91) -> Status [DITOLAK: Historical Breakeven below confidence lower bound].
+- Ledger audit note:
+  - "Historical performance indicates negative edge under current commission structure. Automatic live execution strictly blocked by safety gate."

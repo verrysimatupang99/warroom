@@ -1,0 +1,136 @@
+# Proposal patch: perbaikan risiko integritas state pada jalur eksekusi paper
+#
+# Risiko: runner TP1 (stop sudah digeser ke break-even) tidak pernah bisa
+# ditutup — close_position -> compute_r melempar ValueError, evaluate berhenti
+# di tengah loop, penutupan yang sudah terjadi tidak sampai ke Alert/Event.
+#
+# Terapkan dari root repo (JANGAN dijalankan tanpa review):
+#     cd /home/admin/warroom && git apply --check proposal.patch && git apply proposal.patch
+# Repo bersifat baca-saja untuk pemeriksaan ini; patch ini BELUM diterapkan.
+#
+--- a/packages/live-trading/src/live_trading/execution/paper.py
++++ b/packages/live-trading/src/live_trading/execution/paper.py
+@@ -45,6 +45,11 @@
+     return round(entry * (1.0 - fee_buffer_pct), 8)
+ 
+ 
++def _risk_init(direction: str, entry: float, stop_init: float) -> float:
++    """Risiko awal posisi dari stop yang belum pernah digeser."""
++    return (entry - stop_init) if direction.upper() == "LONG" else (stop_init - entry)
++
++
+ @dataclass
+ class PaperPosition:
+     signal_id: str
+@@ -55,6 +60,7 @@
+     tp1: float
+     tp2: float
+     size_usd: float
++    stop_init: float = 0.0  # stop asli saat open; `stop` boleh digeser ke break-even
+     opened_at: str = field(default_factory=_now_wib)
+     status: str = "open"
+     source: str = "paper"
+@@ -64,6 +70,23 @@
+         return asdict(self)
+ 
+ 
++def compute_r_exit(pos: PaperPosition, exit_price: float) -> float:
++    """R untuk PENUTUPAN, tahan terhadap stop yang sudah digeser ke break-even.
++
++    ``compute_r`` menolak stop di sisi yang salah — benar untuk validasi saat
++    open, tapi salah untuk runner: setelah TP1 stop digeser ke entry / net
++    break-even sehingga risikonya 0 atau negatif. Kondisi itu dulu membuat
++    ``close_position`` melempar ValueError dan ``evaluate`` berhenti di tengah,
++    sehingga runner tidak pernah bisa ditutup sama sekali.
++    """
++    risk = _risk_init(pos.direction, pos.entry, pos.stop_init or pos.stop)
++    if risk <= 0:
++        # Posisi lama tanpa stop_init yang sudah di-BE: exit break-even ≈ 0R.
++        return 0.0
++    move = (exit_price - pos.entry) if pos.direction == "LONG" else (pos.entry - exit_price)
++    return round(move / risk, 3)
++
++
+ class PaperBroker:
+     def __init__(self, settings: Settings, venue: str = "crypto") -> None:
+         from live_trading.guards import SpendLimitGuard, TradingCircuitBreaker
+@@ -72,6 +95,7 @@
+         self.pemutus = TradingCircuitBreaker()
+         self.s = settings
+         self.venue = (venue or "crypto").lower()
++        self.errors: list[str] = []
+ 
+     # ------------------------------------------------------------------ berkas
+     @property
+@@ -126,6 +150,7 @@
+             tp1=tp1,
+             tp2=tp2,
+             size_usd=size_usd,
++            stop_init=stop,
+             source=f"paper-{self.venue}" if source == "paper" else source,
+             note=note,
+         )
+@@ -146,7 +171,7 @@
+         if target is None:
+             raise KeyError(f"posisi {signal_id} tidak ditemukan")
+ 
+-        r = compute_r(target.direction, target.entry, target.stop, exit_price)
++        r = compute_r_exit(target, exit_price)
+         record = {
+             "signal_id": target.signal_id,
+             "pair": target.pair,
+@@ -166,8 +191,12 @@
+ 
+         TP1 kena → stop digeser ke entry (atau True Net Break-Even bila net_be=True)
+         dan status jadi ``tp1_hit_runner``; sisa posisi dibiarkan jalan ke TP2.
++
++        Error pada SATU posisi dicatat ke ``self.errors`` dan posisinya tetap
++        disimpan — evaluasi posisi lain tetap jalan.
+         """
+         closed: list[dict[str, Any]] = []
++        self.errors = []
+         positions = self.positions()
+         keep: list[PaperPosition] = []
+ 
+@@ -176,22 +205,27 @@
+             if price is None:
+                 keep.append(p)
+                 continue
+-            long = p.direction == "LONG"
++            try:
++                long = p.direction == "LONG"
+ 
+-            hit_sl = price <= p.stop if long else price >= p.stop
+-            hit_tp2 = price >= p.tp2 if long else price <= p.tp2
+-            hit_tp1 = price >= p.tp1 if long else price <= p.tp1
+-
+-            if hit_sl:
+-                closed.append(self.close_position(p.signal_id, p.stop, "closed_SL"))
+-            elif hit_tp2:
+-                closed.append(self.close_position(p.signal_id, p.tp2, "closed_TP2"))
+-            elif hit_tp1 and p.status == "open":
+-                p.status = "tp1_hit_runner"
+-                p.stop = compute_be_stop(p.direction, p.entry) if net_be else p.entry
+-                keep.append(p)
+-            else:
++                hit_sl = price <= p.stop if long else price >= p.stop
++                hit_tp2 = price >= p.tp2 if long else price <= p.tp2
++                hit_tp1 = price >= p.tp1 if long else price <= p.tp1
++
++                if hit_sl:
++                    closed.append(self.close_position(p.signal_id, p.stop, "closed_SL"))
++                elif hit_tp2:
++                    closed.append(self.close_position(p.signal_id, p.tp2, "closed_TP2"))
++                elif hit_tp1 and p.status == "open":
++                    p.status = "tp1_hit_runner"
++                    p.stop = compute_be_stop(p.direction, p.entry) if net_be else p.entry
++                    keep.append(p)
++                else:
++                    keep.append(p)
++            except Exception as exc:  # noqa: BLE001 — satu posisi rusak tidak boleh mematikan evaluasi
++                self.errors.append(f"{p.signal_id} {p.pair}: {type(exc).__name__}: {exc}")
+                 keep.append(p)
++                continue
+ 
+         if len(keep) != len(positions):
+             self._save(keep)

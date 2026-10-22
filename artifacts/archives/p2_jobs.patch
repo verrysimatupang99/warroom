@@ -1,0 +1,11 @@
+--- a/services/worker/src/warroom_worker/jobs.py
++++ b/services/worker/src/warroom_worker/jobs.py
+@@ -722,6 +722,8 @@
+         closed = b_crypto.evaluate(prices, net_be=True)
+         total_eval += len(positions)
+         total_closed += len(closed)
++        for err in b_crypto.errors:
++            hasil_detail.append(f"GAGAL {err}")
+         for rec in closed:
+             subjek = f"trade/{rec['signal_id']}"
+             r_val = float(rec.get("r", 0))

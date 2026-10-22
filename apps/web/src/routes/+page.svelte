@@ -22,6 +22,7 @@
 	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
 	import SystemArchitectureExplainer from '$lib/components/SystemArchitectureExplainer.svelte';
 	import LiveMT5ExecutionCard from '$lib/components/LiveMT5ExecutionCard.svelte';
+	import IdxMarketRadarCard from '$lib/components/IdxMarketRadarCard.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -505,6 +506,9 @@ async function muat() {
 
 		<!-- OYENZA TOOLS SUITE DI ATAS STRATEGY AGAR LANGSUNG KELIHATAN -->
 		<OyenzaToolsSuite />
+
+		<!-- RADAR INTELIJEN PASAR SAHAM INDONESIA (IDX) -->
+		<IdxMarketRadarCard />
 
 		<QuantStrategyCard />
 

@@ -362,8 +362,8 @@
 
 <style>
 	.fundamental-lab {
-		background: #121314;
-		border: 1px solid #232629;
+		background: var(--color-surface);
+		border: 1px solid var(--color-line);
 		border-radius: 8px;
 		padding: 1.25rem;
 		margin-block: 1rem 1.5rem;
@@ -372,7 +372,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		border-bottom: 1px solid #232629;
+		border-bottom: 1px solid var(--color-line);
 		padding-bottom: 0.85rem;
 		margin-bottom: 1rem;
 	}
@@ -386,18 +386,18 @@
 	.oy-tag {
 		font-size: 9.5px;
 		font-weight: 700;
-		color: #f5b83d;
+		color: var(--color-accent);
 		letter-spacing: 0.08em;
 	}
 	.lab-title {
 		font-size: 18px;
 		font-weight: 700;
-		color: #ededec;
+		color: var(--color-text);
 		margin: 0;
 	}
 	.lab-subtitle {
 		font-size: 13px;
-		color: #a6aab0;
+		color: var(--color-text-2);
 		margin: 0.25rem 0 0;
 	}
 	.topic-nav {
@@ -411,9 +411,9 @@
 		font-weight: 500;
 		padding: 0.45rem 0.75rem;
 		border-radius: 6px;
-		background: #16181a;
-		color: #a6aab0;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		color: var(--color-text-3);
+		border: 1px solid var(--color-line);
 		display: inline-flex;
 		align-items: center;
 		gap: 0.45rem;
@@ -424,22 +424,22 @@
 		font-size: 10px;
 	}
 	.topic-btn:hover {
-		color: #ededec;
-		border-color: #2f3337;
+		color: var(--color-text);
+		border-color: var(--color-line-soft);
 	}
 	.topic-btn.active {
-		background: #f5b83d;
-		color: #0c0d0e;
-		border-color: #f5b83d;
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border-color: var(--color-accent);
 		font-weight: 700;
 	}
 	.topic-btn.active span {
-		color: #0c0d0e;
+		color: var(--color-on-accent);
 		opacity: 0.8;
 	}
 	.concept-card {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 0.95rem;
 	}
@@ -447,20 +447,20 @@
 		font-size: 11px;
 		padding: 0.35rem 0.65rem;
 		border-radius: 4px;
-		background: #1c1f22;
-		color: #a6aab0;
-		border: 1px solid #2f3337;
+		background: var(--color-surface-2);
+		color: var(--color-text-2);
+		border: 1px solid var(--color-line);
 		transition: all 120ms;
 	}
 	.chip-btn.on {
-		background: #f5b83d;
-		color: #0c0d0e;
-		border-color: #f5b83d;
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		border-color: var(--color-accent);
 		font-weight: 700;
 	}
 	.sc-result-box {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 1rem;
 	}

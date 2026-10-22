@@ -38,3 +38,16 @@ qa-hasil/
 # Tangkapan layar bukti P2 — biner, churn tinggi, bukan sumber.
 # Disimpan lokal/arsip saja; jangan commit PNG ke riwayat git.
 docs/bukti-p2/
+
+# Artefak desain & screenshot Stitch/QA — biner, churn tinggi, bukan sumber.
+# Prompt teks (.txt) & dokumen hasil (.md) tetap boleh masuk sebagai rujukan.
+artifacts/**/*.png
+artifacts/**/stitch-artifacts/
+
+# Image Windows/Wine untuk MT5 — 1.8 GB, milik ubuntu, contains cert & .ssh.
+# Hanya compose + skrip inisialisasi yang versioned; sisanya state lokal.
+ops/docker-mt5/config/
+
+# Data candle historis — diunduh ulang dari feed, bukan sumber repo.
+data/hist/
+

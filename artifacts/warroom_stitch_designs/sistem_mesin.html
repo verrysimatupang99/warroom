@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WAR ROOM · System Health, Machine Telemetry &amp; Agent Policy Console</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed": "#ffdad7",
+            "secondary-container": "#00a572",
+            "primary-fixed-dim": "#c0c1ff",
+            "outline": "#908fa0",
+            "on-secondary-container": "#00311f",
+            "on-error": "#690005",
+            "error-container": "#93000a",
+            "surface-container-highest": "#343538",
+            "primary-fixed": "#e1e0ff",
+            "on-tertiary-container": "#5c0008",
+            "surface": "#121316",
+            "outline-variant": "#464554",
+            "secondary": "#4edea3",
+            "on-secondary-fixed-variant": "#005236",
+            "surface-variant": "#343538",
+            "on-tertiary": "#68000a",
+            "on-error-container": "#ffdad6",
+            "tertiary-fixed-dim": "#ffb3ad",
+            "on-primary-container": "#0d0096",
+            "on-tertiary-fixed": "#410004",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "on-surface": "#e3e2e6",
+            "on-primary": "#1000a9",
+            "tertiary-container": "#ff5451",
+            "surface-tint": "#c0c1ff",
+            "primary": "#c0c1ff",
+            "on-secondary-fixed": "#002113",
+            "error": "#ffb4ab",
+            "secondary-fixed": "#6ffbbe",
+            "inverse-primary": "#494bd6",
+            "surface-container-high": "#292a2d",
+            "primary-container": "#8083ff",
+            "surface-container-low": "#1b1b1f",
+            "on-tertiary-fixed-variant": "#930013",
+            "tertiary": "#ffb3ad",
+            "secondary-fixed-dim": "#4edea3",
+            "on-background": "#e3e2e6",
+            "inverse-surface": "#e3e2e6",
+            "surface-container": "#1f1f23",
+            "on-surface-variant": "#c7c4d7",
+            "surface-dim": "#121316",
+            "inverse-on-surface": "#303034",
+            "on-primary-fixed": "#07006c",
+            "on-secondary": "#003824",
+            "surface-container-lowest": "#0d0e11",
+            "surface-bright": "#38393c",
+            "background": "#121316"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-xl": "1rem",
+            "space-md": "0.5rem",
+            "space-lg": "0.75rem",
+            "margin": "0.75rem",
+            "space-sm": "0.375rem",
+            "gutter-compact": "0.25rem",
+            "gutter": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-caps": ["Inter"],
+            "mono-sm": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-md": ["Inter"],
+            "mono-lg": ["JetBrains Mono"],
+            "mono-md": ["JetBrains Mono"],
+            "headline-sm": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "fontWeight": "400" }],
+            "label-caps": ["0.625rem", { "lineHeight": "0.875rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "mono-sm": ["0.6875rem", { "lineHeight": "1rem", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-lg": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-md": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+            "mono-lg": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "mono-md": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 16px;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased min-h-screen flex flex-col font-body-sm selection:bg-primary-container selection:text-on-primary-container">
+<!-- ========================================================================= -->
+<!-- TopNavBar (Shared Component JSON Source of Truth)                        -->
+<!-- ========================================================================= -->
+<header class="bg-surface-container-lowest text-primary border-b border-outline-variant flex justify-between items-center w-full px-space-md py-space-xs h-10 select-none z-50 sticky top-0">
+<!-- Left Cluster: Product Brand & Global Nav Links -->
+<div class="flex items-center space-x-space-lg h-full">
+<div class="flex items-center space-x-space-sm pr-space-md border-r border-outline-variant h-6">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse-fast"></span>
+<span class="text-headline-sm font-headline-sm font-semibold tracking-wider text-on-surface uppercase">WAR ROOM</span>
+</div>
+<!-- Navigation Links from JSON with exact labels & casing -->
+<!-- Active Link determined: "Sistem & Mesin" matches this console context -->
+<nav class="hidden md:flex items-center space-x-space-md h-full">
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">Overview</a>
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">Crypto (SMC)</a>
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">Polymarket (Favorit)</a>
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">IDX (Saham)</a>
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">Forex</a>
+<a class="text-on-surface-variant hover:text-on-surface font-medium px-space-xs h-full flex items-center transition-colors duration-150 text-body-sm" href="#">GMGN/LP</a>
+<a class="text-primary border-b-2 border-primary font-semibold px-space-xs h-full flex items-center text-body-sm" href="#">Sistem &amp; Mesin</a>
+</nav>
+</div>
+<!-- Right Cluster: Telemetry Status, Raw Facts & Trailing Icons -->
+<div class="flex items-center space-x-space-md">
+<!-- Trailing Secondary Action -->
+<div class="hidden sm:flex items-center space-x-space-xs px-space-sm py-0.5 rounded bg-surface-container-high border border-outline-variant text-label-caps font-label-caps text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+<span>LIVE TELEMETRY · 100% FRESH</span>
+</div>
+<div class="hidden lg:flex items-center font-mono-sm text-mono-sm text-on-surface-variant border-l border-outline-variant pl-space-md">
+<span class="mr-1 text-on-surface-variant" data-icon="schedule">
+<span class="material-symbols-outlined">schedule</span>
+</span>
+<span id="current-clock">20:24:10 WIB</span>
+</div>
+<!-- Trailing Primary Action -->
+<button class="hidden sm:inline-flex items-center px-space-sm py-1 bg-surface-container border border-outline-variant text-primary text-label-caps font-label-caps font-semibold rounded hover:bg-surface-container-high hover:text-on-surface transition-colors duration-150 active:scale-95">
+        Raw Facts Inspector
+      </button>
+<!-- Trailing Icon Actions from JSON: terminal, schedule, notifications -->
+<div class="flex items-center space-x-space-xs text-on-surface-variant">
+<button class="p-1 rounded hover:bg-surface-container-high hover:text-on-surface transition-colors duration-150" title="Terminal Interface">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high hover:text-on-surface transition-colors duration-150" title="System Schedule">
+<span class="material-symbols-outlined">schedule</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container-high hover:text-on-surface transition-colors duration-150 relative" title="Alert Notifications">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-1.5 h-1.5 bg-tertiary-container rounded-full"></span>
+</button>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- Secondary Sub-Navigation & Cluster Telemetry Strip                        -->
+<!-- ========================================================================= -->
+<div class="bg-surface-container-low border-b border-outline-variant px-space-md py-1 flex flex-wrap items-center justify-between gap-y-1 text-label-caps font-label-caps">
+<!-- Sub-navigation Sub-tabs Bar -->
+<div class="flex items-center space-x-space-sm overflow-x-auto py-0.5">
+<button class="px-space-sm py-1 bg-surface-container-high text-primary font-semibold rounded border border-outline-variant flex items-center space-x-1">
+<span class="w-1.5 h-1.5 bg-secondary rounded-full"></span>
+<span>Layanan &amp; Mesin</span>
+</button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150">
+        Kesegaran Fakta
+      </button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150">
+        Biaya &amp; Token
+      </button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150 flex items-center space-x-1">
+<span>Event Log</span>
+<span class="px-1 py-0.2 bg-surface-container-highest text-on-surface-variant rounded text-[9px] font-mono-sm">99+</span>
+</button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150">
+        AI Console
+      </button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150 flex items-center space-x-1">
+<span>Kebijakan</span>
+<span class="px-1 py-0.2 bg-tertiary-container text-on-tertiary-container font-bold rounded text-[9px] font-mono-sm">2 REQ</span>
+</button>
+<button class="px-space-sm py-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors duration-150">
+        Audit
+      </button>
+</div>
+<!-- Trailing Cluster Vital Metrics -->
+<div class="flex items-center space-x-space-lg font-mono-sm text-mono-sm text-on-surface-variant divide-x divide-outline-variant">
+<div class="flex items-center space-x-1 pl-space-xs">
+<span class="text-on-surface-variant">Fleet Status:</span>
+<span class="text-secondary font-semibold">5/5 OPERATIONAL</span>
+</div>
+<div class="flex items-center space-x-1 pl-space-md">
+<span class="text-on-surface-variant">Cluster CPU:</span>
+<span class="text-on-surface font-semibold">18.4%</span>
+<div class="w-10 h-1.5 bg-surface-container-highest rounded-full overflow-hidden ml-1 inline-flex">
+<div class="bg-secondary h-full" style="width: 18.4%;"></div>
+</div>
+</div>
+<div class="flex items-center space-x-1 pl-space-md">
+<span class="text-on-surface-variant">RAM:</span>
+<span class="text-on-surface font-semibold">4.8GB / 16GB</span>
+</div>
+<div class="hidden xl:flex items-center space-x-1 pl-space-md">
+<span class="text-on-surface-variant">Network Out:</span>
+<span class="text-primary font-semibold">4.2 MB/s</span>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- Main Telemetry Workspace Canvas                                          -->
+<!-- ========================================================================= -->
+<main class="flex-1 p-margin space-y-space-lg max-w-[1920px] mx-auto w-full">
+<!-- ======================================================================= -->
+<!-- SECTION 1: Service Fleet & Machine Health                               -->
+<!-- ======================================================================= -->
+<section class="space-y-space-xs">
+<!-- Section Header -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs">
+<div class="flex items-center space-x-space-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse-fast"></span>
+<h2 class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+            INFRASTRUCTURE &amp; DAEMON STATUS
+          </h2>
+<span class="text-mono-sm font-mono-sm text-on-surface-variant">· 5 DAEMONS BINDING 100% HEALTH</span>
+</div>
+<div class="flex items-center space-x-space-md font-mono-sm text-mono-sm">
+<span class="text-on-surface-variant">Ping Rate: <span class="text-secondary font-medium">1000ms</span></span>
+<button class="hover:text-on-surface text-primary flex items-center space-x-1 transition-colors">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span>Force Healthprobe</span>
+</button>
+</div>
+</div>
+<!-- 5 Core System Daemon Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-gutter">
+<!-- Daemon 1: warroom-api -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-colors duration-150">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface block tracking-tight">warroom-api</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant text-[11px] block mt-0.5">FastAPI / Uvicorn Port 8800</span>
+</div>
+<span class="px-1.5 py-0.5 bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>ACTIVE</span>
+</span>
+</div>
+<!-- Status Badges -->
+<div class="flex flex-wrap gap-1 mt-space-sm">
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-on-surface-variant font-mono-sm text-[10px] rounded">
+                UPTIME 99.98%
+              </span>
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-secondary font-mono-sm text-[10px] rounded">
+                12ms avg resp
+              </span>
+</div>
+</div>
+<!-- Micro Metrics Table -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Throughput:</span>
+<span class="text-on-surface font-medium">14,200 req/min</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>5xx Errors:</span>
+<span class="text-secondary font-medium">0.00%</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Port 8800 Binding:</span>
+<span class="text-secondary font-medium">OK · LISTENING</span>
+</div>
+</div>
+</div>
+<!-- Daemon 2: warroom-worker -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-colors duration-150">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface block tracking-tight">warroom-worker</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant text-[11px] block mt-0.5">Celery / Background Tasks &amp; Redis Broker</span>
+</div>
+<span class="px-1.5 py-0.5 bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>ACTIVE</span>
+</span>
+</div>
+<!-- Status Badges -->
+<div class="flex flex-wrap gap-1 mt-space-sm">
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-on-surface-variant font-mono-sm text-[10px] rounded">
+                30s cycle
+              </span>
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-secondary font-mono-sm text-[10px] rounded">
+                0 dropped tasks
+              </span>
+</div>
+</div>
+<!-- Micro Metrics Table -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Active Queues:</span>
+<span class="text-on-surface font-medium">4 (High, Exec, Poller, ML)</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Tasks Executed:</span>
+<span class="text-on-surface font-medium">284,910</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Queue Lag:</span>
+<span class="text-secondary font-medium">0.1s (Nominal)</span>
+</div>
+</div>
+</div>
+<!-- Daemon 3: lp-agent -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-colors duration-150">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface block tracking-tight">lp-agent</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant text-[11px] block mt-0.5">Solana RPC Telemetry &amp; Meteora DLMM Tracker</span>
+</div>
+<span class="px-1.5 py-0.5 bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>CONNECTED</span>
+</span>
+</div>
+<!-- Status Badges -->
+<div class="flex flex-wrap gap-1 mt-space-sm">
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-primary font-mono-sm text-[10px] rounded">
+                Block Height 328,190,442
+              </span>
+</div>
+</div>
+<!-- Micro Metrics Table -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>RPC Ping:</span>
+<span class="text-secondary font-medium">18ms (Triton/Helius)</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Jito Bundle Tip:</span>
+<span class="text-secondary font-medium">OK · 0.001 SOL</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Slot Drift:</span>
+<span class="text-secondary font-medium">0 blocks (In-sync)</span>
+</div>
+</div>
+</div>
+<!-- Daemon 4: poly-agent -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-colors duration-150">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface block tracking-tight">poly-agent</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant text-[11px] block mt-0.5">Polymarket CLOB WebSocket &amp; Orderbook</span>
+</div>
+<span class="px-1.5 py-0.5 bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>RUNNING</span>
+</span>
+</div>
+<!-- Status Badges -->
+<div class="flex flex-wrap gap-1 mt-space-sm">
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-secondary font-mono-sm text-[10px] rounded">
+                0 errors / 24h
+              </span>
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-on-surface-variant font-mono-sm text-[10px] rounded">
+                250ms polling
+              </span>
+</div>
+</div>
+<!-- Micro Metrics Table -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Snapshots Rate:</span>
+<span class="text-on-surface font-medium">12,410 / hr</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>CLOB WS Streams:</span>
+<span class="text-on-surface font-medium">16 Active Pairs</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Resident Memory:</span>
+<span class="text-primary font-medium">142MB RSS</span>
+</div>
+</div>
+</div>
+<!-- Daemon 5: nginx-gateway -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-colors duration-150">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-mono-md text-mono-md font-semibold text-on-surface block tracking-tight">nginx-gateway</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant text-[11px] block mt-0.5">Nginx Reverse Proxy (:443 -&gt; :3100 / :8800)</span>
+</div>
+<span class="px-1.5 py-0.5 bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps rounded flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>HEALTHY</span>
+</span>
+</div>
+<!-- Status Badges -->
+<div class="flex flex-wrap gap-1 mt-space-sm">
+<span class="px-1 py-0.5 bg-surface-container-high border border-outline-variant text-secondary font-mono-sm text-[10px] rounded">
+                SSL Valid (Expires 82d)
+              </span>
+</div>
+</div>
+<!-- Micro Metrics Table -->
+<div class="mt-space-md pt-space-xs border-t border-outline-variant/60 font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Cert Authority:</span>
+<span class="text-on-surface font-medium">Let's Encrypt Wildcard</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Transport:</span>
+<span class="text-on-surface font-medium">HTTP/2 Multiplexed</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Rate Violations:</span>
+<span class="text-secondary font-medium">0 Drop / 0 Ban</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================================= -->
+<!-- SECTION 2: AI Token Consumption & Model Quota                          -->
+<!-- ======================================================================= -->
+<section class="space-y-space-xs">
+<!-- Section Header -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs">
+<div class="flex items-center space-x-space-sm">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<h2 class="text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
+            COGNITIVE INFERENCE &amp; TOKEN QUOTA TELEMETRY
+          </h2>
+<span class="text-mono-sm font-mono-sm text-on-surface-variant">· DAILY HARD BUDGET $10.00 UTC RESET</span>
+</div>
+<span class="text-label-caps font-label-caps text-on-surface-variant font-mono-sm">
+          RESET CYCLE IN 03H:35M:50S
+        </span>
+</div>
+<!-- 2 Analytic Cards Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Card A: Daily AI Spend & Budget Tracking -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-space-sm">
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Daily AI Token Spend &amp; Model Budget</h3>
+<span class="text-mono-sm font-mono-sm text-secondary font-medium px-2 py-0.5 rounded bg-surface-container-high border border-outline-variant">
+                BURN RATE: $0.018/hr
+              </span>
+</div>
+<!-- Spend Counter & Progress Bar -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-md mb-space-md">
+<div class="flex justify-between items-baseline mb-1">
+<span class="text-mono-lg font-mono-lg text-on-surface font-bold tracking-tight">
+                  $0.42 <span class="text-mono-md font-mono-md text-on-surface-variant font-normal">/ $10.00 daily limit</span>
+</span>
+<span class="text-mono-sm font-mono-sm text-primary font-semibold">4.2% Consumed</span>
+</div>
+<!-- Visual Linear Progress Gauge -->
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="h-full bg-primary-container" style="width: 4.2%;"></div>
+<!-- Hard-stop Marker indicator at 80% and 100% -->
+<div class="absolute top-0 bottom-0 left-[80%] w-0.5 bg-tertiary-container/80" title="Soft Warning at 80%"></div>
+</div>
+<div class="flex justify-between items-center text-mono-sm font-mono-sm text-on-surface-variant mt-1.5">
+<span>Remaining Budget: <strong class="text-secondary">$9.58</strong></span>
+<span>Hard Threshold: $10.00 (Agent Autocut)</span>
+</div>
+</div>
+<!-- Model Breakdown Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-mono-sm text-mono-sm">
+<thead>
+<tr class="border-b border-outline-variant text-on-surface-variant text-[10px] tracking-wider uppercase bg-surface-container-low/50">
+<th class="py-1 px-2 font-medium">Model Engine</th>
+<th class="py-1 px-2 font-medium text-right">Tokens In</th>
+<th class="py-1 px-2 font-medium text-right">Tokens Out</th>
+<th class="py-1 px-2 font-medium text-right">Spend</th>
+<th class="py-1 px-2 font-medium text-right">% Quota</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40">
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-1.5 px-2 text-on-surface font-medium flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 bg-primary-fixed-dim rounded-full"></span>
+<span>Gemini 1.5 Flash</span>
+</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">420,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">68,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface font-semibold">$0.08</td>
+<td class="py-1.5 px-2 text-right text-secondary">19.0%</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-1.5 px-2 text-on-surface font-medium flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 bg-primary-container rounded-full"></span>
+<span>Claude 3.5 Sonnet</span>
+</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">85,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">18,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface font-semibold">$0.28</td>
+<td class="py-1.5 px-2 text-right text-primary">66.7%</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-1.5 px-2 text-on-surface font-medium flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 bg-secondary-container rounded-full"></span>
+<span>OpenAI GPT-4o-mini</span>
+</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">110,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface-variant">24,000</td>
+<td class="py-1.5 px-2 text-right text-on-surface font-semibold">$0.06</td>
+<td class="py-1.5 px-2 text-right text-secondary">14.3%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant flex items-center justify-between text-mono-sm font-mono-sm text-on-surface-variant">
+<span>Aggregated Inference Calls: <span class="text-on-surface font-medium">842 calls</span></span>
+<span class="text-secondary font-medium">Cost per Decision: $0.00049</span>
+</div>
+</div>
+<!-- Card B: Token Latency & Cache Efficiency -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-space-sm">
+<h3 class="text-headline-sm font-headline-sm font-semibold text-on-surface">Token Latency &amp; Cache Efficiency</h3>
+<span class="px-2 py-0.5 rounded bg-secondary-container/20 border border-secondary/40 text-secondary text-label-caps font-label-caps font-semibold">
+                HIGH EFFICIENCY
+              </span>
+</div>
+<!-- Big Stat & Cache Impact Box -->
+<div class="grid grid-cols-2 gap-space-sm mb-space-md">
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-sm flex flex-col justify-between">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block uppercase">Context Cache Hit</span>
+<span class="text-mono-lg font-mono-lg font-bold text-secondary block mt-0.5">88.4%</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-on-surface-variant mt-2 text-[10px]">
+                  Estimated Savings: <span class="text-secondary font-medium">~$2.40/day</span>
+</span>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-sm flex flex-col justify-between">
+<div>
+<span class="text-label-caps font-label-caps text-on-surface-variant block uppercase">Active Cache Scope</span>
+<span class="text-mono-md font-mono-md font-semibold text-primary block mt-0.5">SMC Orderbook &amp; Context</span>
+</div>
+<span class="text-mono-sm font-mono-sm text-secondary mt-2 text-[10px] flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>100% In-Memory Sync</span>
+</span>
+</div>
+</div>
+<!-- Latency Distribution Histogram / Telemetry Bars -->
+<div class="space-y-space-sm">
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase block font-semibold">Inference Latency Percentiles (End-to-End)</span>
+<!-- P50 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-mono-sm font-mono-sm">
+<span class="text-on-surface-variant">P50 (Median Response)</span>
+<span class="text-secondary font-semibold">310ms</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 25.8%;"></div>
+</div>
+</div>
+<!-- P90 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-mono-sm font-mono-sm">
+<span class="text-on-surface-variant">P90 (Tail Distribution)</span>
+<span class="text-primary font-semibold">680ms</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container" style="width: 56.6%;"></div>
+</div>
+</div>
+<!-- P99 -->
+<div class="space-y-0.5">
+<div class="flex justify-between text-mono-sm font-mono-sm">
+<span class="text-on-surface-variant">P99 (Max Tolerable Spike)</span>
+<span class="text-tertiary font-semibold">1.2s</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container" style="width: 100%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-sm pt-space-xs border-t border-outline-variant text-mono-sm font-mono-sm text-on-surface-variant flex items-center justify-between">
+<span class="flex items-center space-x-1">
+<span class="material-symbols-outlined text-secondary text-[14px]">check_circle</span>
+<span>Prompt Caching Active for Market Context &amp; Orderbook</span>
+</span>
+<span class="text-on-surface font-medium">TTL: 300s Refresh</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================================= -->
+<!-- SECTION 3: Governance & Policy Proposal Review (HITL)                   -->
+<!-- ======================================================================= -->
+<section class="space-y-space-xs">
+<!-- Section Header -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-space-xs">
+<div class="flex items-center space-x-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse-fast"></span>
+<h2 class="text-label-caps font-label-caps text-on-surface uppercase tracking-wider font-semibold">
+            GOVERNANCE &amp; POLICY PROPOSAL REVIEW (HITL - HUMAN-IN-THE-LOOP)
+          </h2>
+<span class="px-1.5 py-0.2 bg-tertiary-container/20 border border-tertiary-container/50 text-tertiary text-label-caps font-label-caps rounded font-semibold">
+            2 PENDING SIGNATURES
+          </span>
+</div>
+<div class="flex items-center space-x-space-sm font-mono-sm text-mono-sm text-on-surface-variant">
+<span>Authority Level: <strong class="text-on-surface">LEAD OPERATOR</strong></span>
+<span class="text-outline-variant">|</span>
+<button class="text-primary hover:underline">Policy Protocol Specs</button>
+</div>
+</div>
+<!-- Proposal Cards Awaiting Review Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Proposal #104 -->
+<div class="bg-surface border-2 border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-all duration-150">
+<div class="space-y-space-sm">
+<!-- Header & Badge -->
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-mono-md font-mono-md font-bold text-primary">#104</span>
+<span class="px-1.5 py-0.5 bg-surface-container-high border border-outline-variant text-label-caps font-label-caps text-on-surface-variant rounded">
+                    SMC RISK ENGINE
+                  </span>
+</div>
+<h3 class="text-body-lg font-body-lg font-semibold text-on-surface mt-1 leading-snug">
+                  Update OKX Crypto SMC stop-loss buffer from 0.7% to 0.8% based on ATR spike
+                </h3>
+</div>
+<!-- Warning Badge -->
+<span class="px-2 py-1 bg-tertiary-container/20 border border-tertiary-container text-tertiary text-label-caps font-label-caps font-semibold rounded flex items-center space-x-1 shrink-0 animate-pulse">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>BUTUH MANUSIA (Review Required)</span>
+</span>
+</div>
+<!-- Origin & Context Telemetry -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-sm font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Originating System:</span>
+<span class="text-on-surface font-medium">Automated Risk Engine Alpha-01</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Trigger Vector:</span>
+<span class="text-tertiary font-medium">15m ATR surge &gt; 2.4 sigma (OKX-BTC-SWAP)</span>
+</div>
+</div>
+<!-- Parameter Delta Comparison View -->
+<div class="border border-outline-variant rounded bg-surface-container-lowest p-space-sm font-mono-sm text-mono-sm">
+<span class="text-label-caps font-label-caps text-on-surface-variant block uppercase mb-1">Parameter Delta:</span>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+<div class="p-2 rounded bg-surface-container-low border border-outline-variant/50">
+<span class="text-on-surface-variant text-[10px] block">CURRENT PARAMETER</span>
+<span class="text-tertiary font-bold text-body-md block">sl_buffer = 0.007 (0.7%)</span>
+</div>
+<div class="p-2 rounded bg-surface-container-high border border-primary/50 relative">
+<span class="text-primary text-[10px] block">PROPOSED PARAMETER</span>
+<span class="text-secondary font-bold text-body-md block">sl_buffer = 0.008 (0.8%)</span>
+</div>
+</div>
+</div>
+<!-- Expected Impact Statement -->
+<div class="flex items-start space-x-2 p-2 rounded bg-surface-container-low/40 border border-outline-variant/40 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-secondary text-[16px] shrink-0 mt-0.5">trending_up</span>
+<span class="text-on-surface-variant">
+<strong class="text-on-surface">Expected Impact:</strong> Reduces stop-hunt false wick triggers by estimated <span class="text-secondary font-semibold font-mono-sm">+14.2%</span> on high volatility cycles. Backtested across 42 prior ATR expansion phases.
+              </span>
+</div>
+</div>
+<!-- Execution Action Buttons Strip -->
+<div class="mt-space-md pt-space-sm border-t border-outline-variant flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Expires in: 18m:22s</span>
+<div class="flex items-center space-x-space-sm">
+<button class="px-space-md py-1.5 rounded bg-surface-container-highest border border-outline-variant text-tertiary hover:bg-error-container/30 hover:border-tertiary font-mono-sm text-mono-sm font-semibold transition-colors duration-150 flex items-center space-x-1 active:scale-95">
+<span class="material-symbols-outlined text-[14px]">close</span>
+<span>Tolak / Rollback</span>
+<span class="text-outline text-[10px] ml-1">[ESC]</span>
+</button>
+<button class="px-space-lg py-1.5 rounded bg-primary-container hover:bg-inverse-primary text-on-primary font-mono-sm text-mono-sm font-semibold transition-all duration-150 flex items-center space-x-1.5 shadow-sm active:scale-95">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span>Terapkan (Apply)</span>
+<span class="bg-primary/20 text-on-primary text-[10px] px-1 rounded ml-1">[ENTER]</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Proposal #105 -->
+<div class="bg-surface border border-outline-variant rounded p-space-md flex flex-col justify-between hover:border-primary transition-all duration-150">
+<div class="space-y-space-sm">
+<!-- Header & Badge -->
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="text-mono-md font-mono-md font-bold text-primary">#105</span>
+<span class="px-1.5 py-0.5 bg-surface-container-high border border-outline-variant text-label-caps font-label-caps text-on-surface-variant rounded">
+                    NETWORK OPTIMIZER
+                  </span>
+</div>
+<h3 class="text-body-lg font-body-lg font-semibold text-on-surface mt-1 leading-snug">
+                  Throttle Polymarket CLOB Polling Interval from 250ms to 500ms on Inactive Hours
+                </h3>
+</div>
+<!-- Status Badge -->
+<span class="px-2 py-1 bg-surface-container-high border border-outline-variant text-primary text-label-caps font-label-caps font-semibold rounded flex items-center space-x-1 shrink-0">
+<span class="material-symbols-outlined text-[14px]">assignment_turned_in</span>
+<span>SIAP REVIEW</span>
+</span>
+</div>
+<!-- Origin & Context Telemetry -->
+<div class="bg-surface-container-low border border-outline-variant/60 rounded p-space-sm font-mono-sm text-mono-sm space-y-1">
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Originating System:</span>
+<span class="text-on-surface font-medium">Cost Optimization Policy v2.1</span>
+</div>
+<div class="flex justify-between">
+<span class="text-on-surface-variant">Target Window:</span>
+<span class="text-secondary font-medium">00:00 - 06:00 WIB (Low-Volume Window)</span>
+</div>
+</div>
+<!-- Parameter Delta Comparison View -->
+<div class="border border-outline-variant rounded bg-surface-container-lowest p-space-sm font-mono-sm text-mono-sm">
+<span class="text-label-caps font-label-caps text-on-surface-variant block uppercase mb-1">Parameter Delta:</span>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+<div class="p-2 rounded bg-surface-container-low border border-outline-variant/50">
+<span class="text-on-surface-variant text-[10px] block">CURRENT PARAMETER</span>
+<span class="text-on-surface font-bold text-body-md block">poll_interval = 250ms</span>
+</div>
+<div class="p-2 rounded bg-surface-container-high border border-secondary/50 relative">
+<span class="text-secondary text-[10px] block">PROPOSED PARAMETER</span>
+<span class="text-secondary font-bold text-body-md block">500ms (00:00 - 06:00 WIB)</span>
+</div>
+</div>
+</div>
+<!-- Expected Impact Statement -->
+<div class="flex items-start space-x-2 p-2 rounded bg-surface-container-low/40 border border-outline-variant/40 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-secondary text-[16px] shrink-0 mt-0.5">bolt</span>
+<span class="text-on-surface-variant">
+<strong class="text-on-surface">Expected Impact:</strong> Reduces RPC and WebSocket egress costs by ~48% overnight with zero impact on order fill SLA. Auto-reverts to 250ms at 06:01 WIB.
+              </span>
+</div>
+</div>
+<!-- Execution Action Buttons Strip -->
+<div class="mt-space-md pt-space-sm border-t border-outline-variant flex items-center justify-between">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Priority: MEDIUM</span>
+<div class="flex items-center space-x-space-sm">
+<button class="px-space-md py-1.5 rounded bg-surface-container-highest border border-outline-variant text-tertiary hover:bg-error-container/30 hover:border-tertiary font-mono-sm text-mono-sm font-semibold transition-colors duration-150 flex items-center space-x-1 active:scale-95">
+<span class="material-symbols-outlined text-[14px]">close</span>
+<span>Tolak</span>
+</button>
+<button class="px-space-lg py-1.5 rounded bg-primary-container hover:bg-inverse-primary text-on-primary font-mono-sm text-mono-sm font-semibold transition-all duration-150 flex items-center space-x-1.5 shadow-sm active:scale-95">
+<span class="material-symbols-outlined text-[14px]">check</span>
+<span>Terapkan (Apply)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ========================================================================= -->
+<!-- Footer Status Strip (Tactical Hardware & Node Telemetry)                 -->
+<!-- ========================================================================= -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant px-space-md py-1.5 flex flex-wrap items-center justify-between text-mono-sm font-mono-sm text-on-surface-variant">
+<div class="flex items-center space-x-space-md">
+<span class="flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-on-surface font-medium">HOST: debian-warroom-node-01</span>
+</span>
+<span>·</span>
+<span>KERNEL: 6.1.0-lts</span>
+<span>·</span>
+<span>DOCKER DAEMONS: <span class="text-secondary font-medium">7 ACTIVE</span></span>
+<span>·</span>
+<span>LOG INTEGRITY: <span class="text-primary font-medium">VERIFIED SHA-256</span></span>
+<span>·</span>
+<span>TELEMETRY PORT: 8800/WSS</span>
+</div>
+<div class="flex items-center space-x-space-sm text-on-surface-variant text-[10px]">
+<span class="text-secondary">● SYNCHRONIZED</span>
+<span>|</span>
+<span>WAR ROOM MISSION RUNTIME v3.4.1</span>
+</div>
+</footer>
+<!-- Realtime Clock Micro-Interaction -->
+<script>
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const clockElem = document.getElementById('current-clock');
+      if (clockElem) {
+        clockElem.textContent = `${hours}:${minutes}:${seconds} WIB`;
+      }
+    }
+    setInterval(updateClock, 1000);
+  </script>
+</body></html>

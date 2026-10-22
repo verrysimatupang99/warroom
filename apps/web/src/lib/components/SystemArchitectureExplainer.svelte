@@ -70,8 +70,8 @@
 
 <style>
 	.system-explainer {
-		background: #121314;
-		border: 1px solid #232629;
+		background: var(--color-surface);
+		border: 1px solid var(--color-line);
 		border-radius: 8px;
 		padding: 1.25rem;
 		margin-block: 1rem 1.5rem;
@@ -80,7 +80,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		border-bottom: 1px solid #232629;
+		border-bottom: 1px solid var(--color-line);
 		padding-bottom: 0.75rem;
 		margin-bottom: 0.75rem;
 	}
@@ -95,27 +95,27 @@
 		font-size: 10px;
 		font-weight: 700;
 		letter-spacing: 0.08em;
-		color: #f5b83d;
+		color: var(--color-accent);
 	}
 	.title {
 		font-size: 17px;
 		font-weight: 700;
-		color: #ededec;
+		color: var(--color-text);
 		margin: 0;
 	}
 	.badge {
 		font-size: 10.5px;
 		font-weight: 700;
-		color: #3cc76b;
-		background: rgba(60, 199, 107, 0.1);
-		border: 1px solid rgba(60, 199, 107, 0.25);
+		color: var(--color-pos);
+		background: color-mix(in srgb, var(--color-pos) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-pos) 25%, transparent);
 		border-radius: 4px;
 		padding: 2px 8px;
 		align-self: flex-start;
 	}
 	.desc {
 		font-size: 13px;
-		color: #a6aab0;
+		color: var(--color-text-2);
 		line-height: 1.5;
 		margin-bottom: 1.15rem;
 	}
@@ -135,8 +135,8 @@
 		}
 	}
 	.flow-card {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 1rem;
 		display: flex;
@@ -145,53 +145,53 @@
 		position: relative;
 	}
 	.flow-card.active {
-		border-color: rgba(245, 184, 61, 0.4);
-		background: #1b1e21;
+		border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+		background: var(--color-surface-3);
 	}
 	.step-num {
 		font-size: 22px;
 		font-weight: 700;
-		color: #787d84;
+		color: var(--color-text-3);
 		line-height: 1;
 	}
 	.flow-card.active .step-num {
-		color: #f5b83d;
+		color: var(--color-accent);
 	}
 	.step-title {
 		font-size: 13.5px;
 		font-weight: 700;
-		color: #ededec;
+		color: var(--color-text);
 	}
 	.step-desc {
 		font-size: 11.5px;
-		color: #a6aab0;
+		color: var(--color-text-2);
 		line-height: 1.45;
 		flex: 1;
 	}
 	.step-badge {
 		font-size: 9px;
 		font-weight: 700;
-		color: #787d84;
-		border: 1px solid #232629;
+		color: var(--color-text-3);
+		border: 1px solid var(--color-line);
 		border-radius: 3px;
 		padding: 1px 5px;
 		width: max-content;
 		margin-top: 0.25rem;
 	}
 	.step-badge.active {
-		color: #f5b83d;
-		border-color: rgba(245, 184, 61, 0.35);
-		background: rgba(245, 184, 61, 0.08);
+		color: var(--color-accent);
+		border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+		background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 	}
 	.provenance-strip {
 		margin-top: 1rem;
 		padding-top: 0.75rem;
-		border-top: 1px solid #232629;
+		border-top: 1px solid var(--color-line);
 	}
 	.dot-prov {
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: #3cc76b;
+		background: var(--color-pos);
 	}
 </style>

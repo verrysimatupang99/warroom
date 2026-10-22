@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WAR ROOM // Crypto (SMC) Execution Cockpit</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#ff5451",
+            "secondary-container": "#00a572",
+            "primary-container": "#8083ff",
+            "surface-variant": "#343538",
+            "on-error-container": "#ffdad6",
+            "inverse-surface": "#e3e2e6",
+            "surface-tint": "#c0c1ff",
+            "surface-dim": "#121316",
+            "tertiary-fixed": "#ffdad7",
+            "on-secondary-fixed": "#002113",
+            "secondary-fixed-dim": "#4edea3",
+            "on-primary": "#1000a9",
+            "surface": "#121316",
+            "primary-fixed-dim": "#c0c1ff",
+            "on-error": "#690005",
+            "on-secondary-fixed-variant": "#005236",
+            "on-background": "#e3e2e6",
+            "on-tertiary-container": "#5c0008",
+            "primary": "#c0c1ff",
+            "surface-bright": "#38393c",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "secondary-fixed": "#6ffbbe",
+            "surface-container-low": "#1b1b1f",
+            "on-tertiary-fixed-variant": "#930013",
+            "outline-variant": "#464554",
+            "outline": "#908fa0",
+            "on-primary-container": "#0d0096",
+            "error-container": "#93000a",
+            "surface-container-highest": "#343538",
+            "on-secondary": "#003824",
+            "on-surface": "#e3e2e6",
+            "on-secondary-container": "#00311f",
+            "error": "#ffb4ab",
+            "surface-container-lowest": "#0d0e11",
+            "surface-container": "#1f1f23",
+            "primary-fixed": "#e1e0ff",
+            "on-tertiary": "#68000a",
+            "tertiary-fixed-dim": "#ffb3ad",
+            "background": "#121316",
+            "tertiary": "#ffb3ad",
+            "surface-container-high": "#292a2d",
+            "inverse-primary": "#494bd6",
+            "inverse-on-surface": "#303034",
+            "on-primary-fixed": "#07006c",
+            "on-surface-variant": "#c7c4d7",
+            "on-tertiary-fixed": "#410004",
+            "secondary": "#4edea3"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "margin": "0.75rem",
+            "gutter-compact": "0.25rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.375rem",
+            "space-xl": "1rem",
+            "space-md": "0.5rem",
+            "space-lg": "0.75rem",
+            "gutter": "0.5rem"
+          },
+          "fontFamily": {
+            "mono-lg": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "mono-md": ["JetBrains Mono"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "mono-sm": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "mono-lg": ["1.125rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-caps": ["0.625rem", { "lineHeight": "0.875rem", "letterSpacing": "0.06em", "fontWeight": "600" }],
+            "mono-md": ["0.8125rem", { "lineHeight": "1.25rem", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "body-sm": ["0.75rem", { "lineHeight": "1.125rem", "fontWeight": "400" }],
+            "body-md": ["0.8125rem", { "lineHeight": "1.25rem", "fontWeight": "400" }],
+            "headline-sm": ["1rem", { "lineHeight": "1.5rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-lg": ["1.75rem", { "lineHeight": "2.25rem", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-lg": ["0.875rem", { "lineHeight": "1.375rem", "fontWeight": "400" }],
+            "headline-lg-mobile": ["1.25rem", { "lineHeight": "1.75rem", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "mono-sm": ["0.6875rem", { "lineHeight": "1rem", "letterSpacing": "0em", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0d0e11;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #24262a;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-md antialiased min-h-screen flex flex-col select-none overflow-x-hidden">
+<!-- ================= TOP BAR COMPONENT (Shared Components JSON Anchor) ================= -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-lowest border-b border-outline-variant dark:border-outline-variant flex justify-between items-center w-full px-space-md py-space-xs h-10 sticky top-0 z-50">
+<!-- Brand & Left Navigation Links -->
+<div class="flex items-center gap-space-lg h-full">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="text-headline-sm font-headline-sm font-semibold tracking-wider text-on-surface dark:text-on-surface uppercase">WAR ROOM</span>
+<span class="text-label-caps font-label-caps text-on-surface-variant font-medium tracking-widest pl-1.5 border-l border-outline-variant">SMC COCKPIT</span>
+</div>
+<!-- Navigation Links from Shared Components JSON -->
+<nav class="hidden xl:flex items-center gap-space-md h-full ml-2">
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">Overview</a>
+<!-- Crypto (SMC) is Active Match -->
+<a class="text-primary dark:text-primary border-b-2 border-primary dark:border-primary font-semibold text-body-sm px-2 py-1 h-full flex items-center" href="#">Crypto (SMC)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">Polymarket (Favorit)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">IDX (Saham)</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">Forex</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">GMGN/LP</a>
+<a class="text-on-surface-variant dark:text-on-surface-variant hover:text-on-surface dark:hover:text-on-surface font-medium text-body-sm px-2 py-1" href="#">Sistem & Mesin</a>
+</nav>
+</div>
+<!-- Right Trailing Actions & Telemetry -->
+<div class="flex items-center gap-space-md">
+<!-- Engine Status & Latency Badges -->
+<div class="hidden sm:flex items-center gap-2 px-2 py-0.5 rounded bg-surface-container border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+<span class="font-mono-sm text-mono-sm text-secondary font-medium">ENGINE: LIVE AUTO-GUARD</span>
+</div>
+<div class="flex items-center gap-1 font-mono-sm text-mono-sm text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-outline-variant">
+<span class="text-on-surface font-medium">20:14:05</span>
+<span class="text-outline">WIB</span>
+<span class="text-outline-variant">|</span>
+<span class="text-secondary">12ms</span>
+</div>
+<button class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-caps text-label-caps transition-all duration-150 active:scale-95 border border-outline-variant">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>Raw Facts Inspector</span>
+</button>
+<div class="flex items-center gap-1 border-l border-outline-variant pl-2">
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors duration-150" title="Schedule">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</button>
+<button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors duration-150 relative" title="Notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1 right-1 w-1.5 h-1.5 bg-tertiary-container rounded-full"></span>
+</button>
+</div>
+</div>
+</header>
+<!-- ================= SUB-NAVIGATION & TELEMETRY STRIP ================= -->
+<section class="bg-surface-container-low border-b border-outline-variant px-margin py-space-xs flex flex-wrap items-center justify-between gap-3 text-body-sm">
+<!-- Left: Pair Selector Pills & Views -->
+<div class="flex items-center gap-space-lg flex-wrap">
+<!-- Pair Switcher -->
+<div class="flex items-center bg-surface-container-lowest p-0.5 rounded border border-outline-variant">
+<button class="px-2.5 py-1 rounded text-primary font-mono-md text-mono-md bg-surface-container flex items-center gap-1.5 border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>BTC/USDT Perp</span>
+<span class="text-secondary text-mono-sm font-mono-sm font-semibold">+2.4%</span>
+</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-mono-md text-mono-md flex items-center gap-1.5 transition-colors">
+<span>ETH/USDT Perp</span>
+<span class="text-secondary font-mono-sm text-mono-sm">+1.1%</span>
+</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-mono-md text-mono-md flex items-center gap-1.5 transition-colors">
+<span>SOL/USDT Perp</span>
+<span class="text-tertiary font-mono-sm text-mono-sm">-0.8%</span>
+</button>
+</div>
+<!-- Cockpit Inner Tabs -->
+<div class="hidden lg:flex items-center gap-1 text-body-sm font-medium">
+<button class="px-3 py-1 rounded bg-surface-container text-on-surface border border-outline-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<span>Cockpit</span>
+</button>
+<button class="px-3 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">Setup Matrix</button>
+<button class="px-3 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">Ukur / Backtest</button>
+<button class="px-3 py-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">Eksekusi & Ledger</button>
+</div>
+</div>
+<!-- Right: Quant Telemetry Strip -->
+<div class="flex items-center gap-3 overflow-x-auto">
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant">
+<span class="text-outline text-label-caps font-label-caps uppercase">Daily SMC PnL:</span>
+<span class="font-mono-md text-mono-md text-secondary font-semibold">+$2,480.00</span>
+<span class="text-secondary text-mono-sm font-mono-sm font-medium">(+2.1%)</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant">
+<span class="text-outline text-label-caps font-label-caps uppercase">Risk In-Play:</span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">1.0R</span>
+<span class="text-outline font-mono-sm text-mono-sm">/ 3.0R Cap</span>
+</div>
+<div class="hidden md:flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant">
+<span class="text-outline text-label-caps font-label-caps uppercase">Win-Rate (20D):</span>
+<span class="font-mono-md text-mono-md text-primary font-semibold">68.4%</span>
+<span class="text-outline font-mono-sm text-mono-sm">(26/38)</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-lowest border border-outline-variant">
+<span class="text-outline text-label-caps font-label-caps uppercase">Gate Latency:</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-medium">14ms</span>
+</div>
+</div>
+</section>
+<!-- ================= MAIN TWO-COLUMN WORKSPACE CANVAS ================= -->
+<main class="flex-1 p-margin grid grid-cols-1 xl:grid-cols-12 gap-gutter overflow-y-auto custom-scroll">
+<!-- ================= LEFT COLUMN: SMC CHART & TRADE SETUP (7 cols ~58%) ================= -->
+<div class="xl:col-span-7 flex flex-col gap-gutter">
+<!-- Chart Container Card -->
+<div class="bg-surface-container-low border border-outline-variant rounded flex flex-col overflow-hidden">
+<!-- Chart Header Controls -->
+<div class="bg-surface-container px-space-md py-1.5 border-b border-outline-variant flex items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">BTC/USDT PERPETUAL</span>
+<span class="text-label-caps font-label-caps px-1.5 py-0.5 bg-surface-container-high rounded text-primary font-semibold border border-outline-variant">15M SMC STRUCTURE</span>
+<span class="font-mono-md text-mono-md font-semibold text-secondary">$64,285.50</span>
+</div>
+<!-- Timeframe & Chart Tools -->
+<div class="flex items-center gap-1">
+<div class="flex bg-surface-container-lowest p-0.5 rounded border border-outline-variant">
+<button class="px-2 py-0.5 text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps">1m</button>
+<button class="px-2 py-0.5 text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps">5m</button>
+<button class="px-2 py-0.5 bg-surface-container-high text-primary font-label-caps text-label-caps font-semibold rounded">15m</button>
+<button class="px-2 py-0.5 text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps">1h</button>
+<button class="px-2 py-0.5 text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps">4h</button>
+</div>
+<span class="text-outline-variant">|</span>
+<button class="p-1 text-on-surface-variant hover:text-on-surface rounded hover:bg-surface-container-high" title="Terminal Overlay Settings">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+</button>
+</div>
+</div>
+<!-- SVG Financial SMC Candlestick Canvas -->
+<div class="relative bg-surface-container-lowest w-full h-[360px] overflow-hidden select-none border-b border-outline-variant">
+<!-- Background Grid Lines -->
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-6 pointer-events-none opacity-20">
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<div class="border-r border-outline-variant"></div>
+<div class="border-r border-outline-variant"></div>
+<div class="border-r border-outline-variant"></div>
+<div class="border-r border-outline-variant"></div>
+<div class="border-r border-outline-variant"></div>
+<div></div>
+</div>
+<!-- Y-Axis Prices (Right edge overlay) -->
+<div class="absolute right-0 top-0 bottom-0 w-16 bg-surface-container-lowest/90 border-l border-outline-variant flex flex-col justify-between py-2 text-right pr-1 font-mono-sm text-mono-sm text-outline z-20">
+<span>$66,200</span>
+<span class="text-tertiary">$65,800</span>
+<span class="text-primary">$65,400</span>
+<span class="text-secondary font-semibold bg-surface-container-high px-1 rounded">$64,285</span>
+<span class="text-secondary">$64,050</span>
+<span class="text-error">$63,800</span>
+<span class="text-outline">$63,600</span>
+</div>
+<!-- SVG Candlestick & SMC Annotations Overlay -->
+<svg class="w-full h-full pr-16" preserveaspectratio="none" viewbox="0 0 760 360">
+<defs>
+<lineargradient id="bullFvgGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#4edea3" stop-opacity="0.18"></stop>
+<stop offset="100%" stop-color="#4edea3" stop-opacity="0.04"></stop>
+</lineargradient>
+<lineargradient id="bearFvgGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ff5451" stop-opacity="0.18"></stop>
+<stop offset="100%" stop-color="#ff5451" stop-opacity="0.04"></stop>
+</lineargradient>
+<lineargradient id="obGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#c0c1ff" stop-opacity="0.22"></stop>
+<stop offset="100%" stop-color="#c0c1ff" stop-opacity="0.05"></stop>
+</lineargradient>
+</defs>
+<!-- SMC FAIR VALUE GAP (Bullish FVG) zone: $63,900 - $64,150 -> y: 220 to 255 -->
+<rect fill="url(#bullFvgGrad)" height="35" stroke="#4edea3" stroke-dasharray="3 3" stroke-width="1" width="340" x="240" y="220"></rect>
+<text fill="#4edea3" font-family="JetBrains Mono" font-size="9" font-weight="600" x="248" y="242">BULLISH FVG [$63,900 - $64,150]</text>
+<!-- SMC BEARISH FVG zone near $65,800 -> y: 55 to 80 -->
+<rect fill="url(#bearFvgGrad)" height="25" stroke="#ff5451" stroke-dasharray="3 3" stroke-width="1" width="220" x="420" y="55"></rect>
+<text fill="#ff5451" font-family="JetBrains Mono" font-size="9" font-weight="600" x="428" y="71">BEARISH FVG [$65,800]</text>
+<!-- SMC ORDER BLOCK (OB) Demand zone at $64,050 -> y: 240 to 270 -->
+<rect fill="url(#obGrad)" height="26" stroke="#8083ff" stroke-width="1" width="280" x="80" y="245"></rect>
+<text fill="#c0c1ff" font-family="JetBrains Mono" font-size="9" font-weight="600" x="88" y="262">H1 BULLISH DEMAND OB [$64,050]</text>
+<!-- BUY-SIDE LIQUIDITY (BSL) SWEEP LINE at $65,400 -> y: 105 -->
+<line stroke="#ffb3ad" stroke-dasharray="4 4" stroke-width="1" x1="20" x2="680" y1="105" y2="105"></line>
+<text fill="#ffb3ad" font-family="Inter" font-size="9" font-weight="600" x="30" y="100">BSL SWEEP $65,400 (Liquidity Pool)</text>
+<!-- SELL-SIDE LIQUIDITY (SSL) LINE at $63,600 -> y: 310 -->
+<line stroke="#908fa0" stroke-dasharray="4 4" stroke-width="1" x1="20" x2="680" y1="310" y2="310"></line>
+<text fill="#908fa0" font-family="Inter" font-size="9" font-weight="600" x="30" y="304">$63,600 SSL PROTECTED (Discount Origin)</text>
+<!-- MARKET STRUCTURE SHIFT (MSS) INDICATOR -->
+<line stroke="#4edea3" stroke-width="1.5" x1="330" x2="430" y1="180" y2="180"></line>
+<polygon fill="#4edea3" points="430,176 438,180 430,184"></polygon>
+<!-- Candlesticks Sequence (Rendered institutional series) -->
+<!-- 1 (Bearish) -->
+<line stroke="#ff5451" stroke-width="1" x1="40" x2="40" y1="130" y2="210"></line>
+<rect fill="#ff5451" height="50" width="8" x="36" y="150"></rect>
+<!-- 2 (Bearish dump to sweep SSL) -->
+<line stroke="#ff5451" stroke-width="1" x1="68" x2="68" y1="190" y2="305"></line>
+<rect fill="#ff5451" height="95" width="8" x="64" y="200"></rect>
+<!-- 3 (Pin-bar wick tap into OB) -->
+<line stroke="#4edea3" stroke-width="1" x1="96" x2="96" y1="230" y2="300"></line>
+<rect fill="#4edea3" height="25" width="8" x="92" y="250"></rect>
+<!-- 4 (Bullish follow through) -->
+<line stroke="#4edea3" stroke-width="1" x1="124" x2="124" y1="220" y2="270"></line>
+<rect fill="#4edea3" height="30" width="8" x="120" y="235"></rect>
+<!-- 5 (Bullish) -->
+<line stroke="#4edea3" stroke-width="1" x1="152" x2="152" y1="200" y2="255"></line>
+<rect fill="#4edea3" height="35" width="8" x="148" y="210"></rect>
+<!-- 6 (Consolidation pullback) -->
+<line stroke="#ff5451" stroke-width="1" x1="180" x2="180" y1="215" y2="260"></line>
+<rect fill="#ff5451" height="20" width="8" x="176" y="220"></rect>
+<!-- 7 (Small bear) -->
+<line stroke="#ff5451" stroke-width="1" x1="208" x2="208" y1="225" y2="255"></line>
+<rect fill="#ff5451" height="15" width="8" x="204" y="230"></rect>
+<!-- 8 (Strong displacement impulse creating FVG) -->
+<line stroke="#4edea3" stroke-width="1" x1="236" x2="236" y1="180" y2="245"></line>
+<rect fill="#4edea3" height="50" width="8" x="232" y="190"></rect>
+<!-- 9 (Big Bullish displacement) -->
+<line stroke="#4edea3" stroke-width="1" x1="264" x2="264" y1="140" y2="205"></line>
+<rect fill="#4edea3" height="50" width="8" x="260" y="150"></rect>
+<!-- 10 (Bullish continuation) -->
+<line stroke="#4edea3" stroke-width="1" x1="292" x2="292" y1="120" y2="170"></line>
+<rect fill="#4edea3" height="35" width="8" x="288" y="130"></rect>
+<!-- 11 (Bear rejection at liquidity) -->
+<line stroke="#ff5451" stroke-width="1" x1="320" x2="320" y1="95" y2="160"></line>
+<rect fill="#ff5451" height="40" width="8" x="316" y="110"></rect>
+<!-- 12 (Retest down into FVG) -->
+<line stroke="#ff5451" stroke-width="1" x1="348" x2="348" y1="135" y2="210"></line>
+<rect fill="#ff5451" height="55" width="8" x="344" y="145"></rect>
+<!-- 13 (FVG mitigation & bounce) -->
+<line stroke="#4edea3" stroke-width="1" x1="376" x2="376" y1="185" y2="230"></line>
+<rect fill="#4edea3" height="32" width="8" x="372" y="190"></rect>
+<!-- 14 (Bullish impulse) -->
+<line stroke="#4edea3" stroke-width="1" x1="404" x2="404" y1="150" y2="200"></line>
+<rect fill="#4edea3" height="40" width="8" x="400" y="155"></rect>
+<!-- 15 (Bullish break of structure) -->
+<line stroke="#4edea3" stroke-width="1" x1="432" x2="432" y1="130" y2="175"></line>
+<rect fill="#4edea3" height="35" width="8" x="428" y="135"></rect>
+<!-- 16 (Small pause) -->
+<line stroke="#ff5451" stroke-width="1" x1="460" x2="460" y1="130" y2="160"></line>
+<rect fill="#ff5451" height="15" width="8" x="456" y="135"></rect>
+<!-- 17 (Push to test BSL) -->
+<line stroke="#4edea3" stroke-width="1" x1="488" x2="488" y1="100" y2="150"></line>
+<rect fill="#4edea3" height="38" width="8" x="484" y="105"></rect>
+<!-- 18 (Current Active candle - live pulse) -->
+<line stroke="#4edea3" stroke-width="1.5" x1="516" x2="516" y1="90" y2="140"></line>
+<rect fill="#4edea3" height="35" width="10" x="511" y="98"></rect>
+<!-- Current Price Marker Line -->
+<line opacity="0.8" stroke="#4edea3" stroke-dasharray="2 2" stroke-width="1" x1="0" x2="680" y1="125" y2="125"></line>
+</svg>
+<!-- Floating Badge: MSS Confirmed -->
+<div class="absolute top-4 left-4 bg-surface-container/90 border border-secondary/40 rounded px-2.5 py-1 flex items-center gap-1.5 backdrop-blur shadow-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="north_east">north_east</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">MSS Confirmed 15m (+vol spike)</span>
+</div>
+<!-- Bottom Time Axis -->
+<div class="absolute bottom-0 left-0 right-16 h-5 bg-surface-container-lowest/80 border-t border-outline-variant flex items-center justify-between px-3 font-mono-sm text-mono-sm text-outline">
+<span>18:00</span>
+<span>18:30</span>
+<span>19:00</span>
+<span>19:30</span>
+<span>20:00</span>
+<span class="text-on-surface font-semibold">20:15 (NOW)</span>
+</div>
+</div>
+<!-- Chart Quick Legend / Telemetry Footer -->
+<div class="p-space-xs bg-surface-container px-space-md flex items-center justify-between text-label-caps font-label-caps text-outline">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-secondary"></span> Bullish FVG [Active Mitigation]</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-primary"></span> H1 Demand OB ($64,050)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-tertiary"></span> BSL Sweep ($65,400)</span>
+</div>
+<div class="font-mono-sm text-mono-sm text-on-surface-variant">
+            Volume Delta: <span class="text-secondary font-semibold">+1,420 BTC Buy Imbalance</span>
+</div>
+</div>
+</div>
+<!-- ================= ORDER SETUP & TRADE PARAMETERS CARD ================= -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-md flex flex-col gap-3">
+<!-- Header row of card -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-2">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Execution Parameters</span>
+<span class="px-2 py-0.5 rounded bg-secondary/10 border border-secondary/30 text-secondary font-label-caps text-label-caps uppercase font-semibold">
+              DIRECTION: LONG 3.5x LEVERAGE (CROSS)
+            </span>
+</div>
+<div class="text-label-caps font-label-caps text-outline uppercase tracking-wider">
+            Risk Profile: <span class="text-on-surface font-mono-sm text-mono-sm font-semibold">Fixed $600 Risk / Trade</span>
+</div>
+</div>
+<!-- Metric Inputs Grid (Surgical density) -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant">
+<span class="text-label-caps font-label-caps text-outline block">TARGET ENTRY</span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold">$64,250.00</span>
+<span class="text-mono-sm font-mono-sm text-outline block">Current: $64,285.50</span>
+</div>
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant">
+<span class="text-label-caps font-label-caps text-outline block">STOP LOSS (INVALIDATION)</span>
+<span class="font-mono-md text-mono-md text-tertiary font-semibold">$63,800.00</span>
+<span class="text-mono-sm font-mono-sm text-tertiary block">-0.70% / -1.0R</span>
+</div>
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant">
+<span class="text-label-caps font-label-caps text-outline block">TAKE PROFIT 1 (BSL SWEEP)</span>
+<span class="font-mono-md text-mono-md text-secondary font-semibold">$65,500.00</span>
+<span class="text-mono-sm font-mono-sm text-secondary block">+1.95% / +2.7R</span>
+</div>
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant">
+<span class="text-label-caps font-label-caps text-outline block">TAKE PROFIT 2 (RUNNER)</span>
+<span class="font-mono-md text-mono-md text-secondary font-semibold">$66,200.00</span>
+<span class="text-mono-sm font-mono-sm text-secondary block">+3.03% / +4.3R</span>
+</div>
+</div>
+<!-- Risk / Reward Synthesis Bar -->
+<div class="bg-surface-container p-2 rounded border border-outline-variant flex flex-wrap items-center justify-between gap-3 text-body-sm">
+<div class="flex items-center gap-4">
+<div>
+<span class="text-label-caps font-label-caps text-outline block">EXPECTED R:R</span>
+<span class="font-mono-md text-mono-md text-primary font-bold">1 : 3.1R</span>
+</div>
+<div class="border-l border-outline-variant pl-4">
+<span class="text-label-caps font-label-caps text-outline block">NET EST. PROFIT</span>
+<span class="font-mono-md text-mono-md text-secondary font-semibold">+$1,860.00</span>
+</div>
+<div class="border-l border-outline-variant pl-4">
+<span class="text-label-caps font-label-caps text-outline block">MAX CAP RISK</span>
+<span class="font-mono-md text-mono-md text-tertiary font-semibold">$600.00</span>
+</div>
+</div>
+<!-- Position Sizing Calc -->
+<div class="flex items-center gap-2">
+<div class="text-right">
+<span class="text-label-caps font-label-caps text-outline block">CALCULATED NOTIONAL</span>
+<span class="font-mono-md text-mono-md text-on-surface font-medium">1.33 BTC ($85,714.28)</span>
+</div>
+</div>
+</div>
+<!-- Execution Action Buttons -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+<button class="bg-primary text-on-primary hover:bg-primary-fixed-dim px-3 py-2 rounded font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 shadow-sm">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+<span>Execute via OKX / Binance</span>
+<span class="font-mono-sm text-mono-sm text-on-primary/70 bg-on-primary/10 px-1 rounded ml-1">CMD+E</span>
+</button>
+<button class="bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant px-3 py-2 rounded font-body-md text-body-md font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span>Modify Invalidation</span>
+</button>
+<button class="bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant px-3 py-2 rounded font-body-md text-body-md font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="science">science</span>
+<span>Paper Trade / Simulate</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ================= RIGHT COLUMN: VERDICT ENGINE & REJECT AUDIT (~42%) ================= -->
+<div class="xl:col-span-5 flex flex-col gap-gutter">
+<!-- Verdict Engine Card -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-md flex flex-col gap-3">
+<!-- Verdict Header with Pulsing Passed Indicator -->
+<div class="flex items-center justify-between border-b border-outline-variant pb-2">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface tracking-tight">VERDICT ENGINE EVALUATION</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<!-- The Live Passing Badge -->
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-secondary/15 border border-secondary/40 text-secondary font-label-caps text-label-caps font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span>LOLOS GATE: 4/4 PASSED</span>
+</div>
+</div>
+<!-- Gate Breakdown Table -->
+<div class="flex flex-col gap-2">
+<!-- Gate Item 1 -->
+<div class="bg-surface-container-lowest p-2.5 rounded border border-outline-variant flex items-center justify-between gap-3">
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-on-surface">1. Multi-Timeframe Trend Alignment</span>
+<span class="px-1.5 py-0.5 bg-secondary/15 text-secondary border border-secondary/30 rounded font-label-caps text-label-caps font-bold">PASS</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">H4 Bullish OB / H1 ChoCH / M15 MSS confirmed with volume displacement</p>
+<div class="flex items-center gap-2 mt-1.5">
+<div class="w-32 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 94%;"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">Score: 9.4 / 10.0</span>
+</div>
+</div>
+</div>
+<!-- Gate Item 2 -->
+<div class="bg-surface-container-lowest p-2.5 rounded border border-outline-variant flex items-center justify-between gap-3">
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-on-surface">2. Risk-Reward Ratio (Min ≥ 1:2.5)</span>
+<span class="px-1.5 py-0.5 bg-secondary/15 text-secondary border border-secondary/30 rounded font-label-caps text-label-caps font-bold">PASS</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Calculated to TP1 is 1:2.7R, blended setup offers 1:3.1R to runner TP2</p>
+<div class="flex items-center gap-2 mt-1.5">
+<div class="w-32 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 88%;"></div>
+</div>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">Actual: 1:3.1R (Cleared)</span>
+</div>
+</div>
+</div>
+<!-- Gate Item 3 -->
+<div class="bg-surface-container-lowest p-2.5 rounded border border-outline-variant flex items-center justify-between gap-3">
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-on-surface">3. Slippage & Fee Breakeven Buffer</span>
+<span class="px-1.5 py-0.5 bg-secondary/15 text-secondary border border-secondary/30 rounded font-label-caps text-label-caps font-bold">PASS</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Maker/Taker delta factored. Depth spread 0.01% on OKX Orderbook</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Buffer: <strong class="text-secondary">0.08%</strong></span>
+<span class="text-outline-variant">•</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Exp Slippage: <strong class="text-secondary">1.2 bps</strong></span>
+</div>
+</div>
+</div>
+<!-- Gate Item 4 -->
+<div class="bg-surface-container-lowest p-2.5 rounded border border-outline-variant flex items-center justify-between gap-3">
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-semibold text-on-surface">4. Portfolio Correlation & Open Risk</span>
+<span class="px-1.5 py-0.5 bg-secondary/15 text-secondary border border-secondary/30 rounded font-label-caps text-label-caps font-bold">PASS</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">1/3 concurrent trade slots occupied. Desk BTC beta exposure under limit</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">Slots: <strong class="text-on-surface">1/3 Active</strong></span>
+<span class="text-outline-variant">•</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant">BTC Delta: <strong class="text-primary">28% / 40% Max</strong></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Circuit Breaker Telemetry Status -->
+<div class="bg-surface-container p-2 rounded border border-outline-variant flex items-center justify-between text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="shield">shield</span>
+<span class="font-label-caps text-label-caps uppercase text-outline">Circuit Breaker:</span>
+<span class="font-mono-sm text-mono-sm text-secondary font-semibold">DESK RISK: NORMAL</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-outline-variant">Buffer: <span class="text-on-surface font-semibold">+2.2%</span> to Hard Stop</span>
+</div>
+</div>
+<!-- ================= REJECT AUDIT BLOTTER (Log Aksi & Ditolak) ================= -->
+<div class="bg-surface-container-low border border-outline-variant rounded p-space-md flex flex-col gap-2 flex-1">
+<div class="flex items-center justify-between border-b border-outline-variant pb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="cancel">cancel</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Log Aksi & Ditolak (Audit Reject)</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-outline">Cycle #8,422 Filtered</span>
+</div>
+<!-- Rejected entries list -->
+<div class="flex flex-col gap-1.5 flex-1 overflow-y-auto custom-scroll pr-1">
+<!-- Reject 1: SOL -->
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant/80 flex flex-col gap-1 hover:border-outline-variant transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-mono-md text-mono-md font-bold text-on-surface">SOL/USDT</span>
+<span class="text-label-caps font-label-caps px-1 rounded bg-error-container/40 text-error border border-error-container">DITOLAK: SPREAD</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-outline">20:12:44</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Spread > 0.05% (Liquidity thin in orderbook depth < $20k within 5 bps range). Gate Rule #3 Breached.
+            </p>
+</div>
+<!-- Reject 2: AVAX -->
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant/80 flex flex-col gap-1 hover:border-outline-variant transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-mono-md text-mono-md font-bold text-on-surface">AVAX/USDT</span>
+<span class="text-label-caps font-label-caps px-1 rounded bg-error-container/40 text-error border border-error-container">DITOLAK: DRAWDOWN</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-outline">20:08:12</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Daily Drawdown buffer breached (-1.8% vs -1.5% ceiling). Circuit guard halted asset allocation.
+            </p>
+</div>
+<!-- Reject 3: LINK -->
+<div class="bg-surface-container-lowest p-2 rounded border border-outline-variant/80 flex flex-col gap-1 hover:border-outline-variant transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-mono-md text-mono-md font-bold text-on-surface">LINK/USDT</span>
+<span class="text-label-caps font-label-caps px-1 rounded bg-error-container/40 text-error border border-error-container">DITOLAK: INVALIDATION</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-outline">19:54:30</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Invalidation distance too wide (> 2.4%, violates 1.5% max risk cap per trade). R:R insufficient.
+            </p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ================= BOTTOM PANEL: EXECUTION LEDGER & POSITIONS TABLE ================= -->
+<section class="bg-surface-container-low border-t border-outline-variant p-margin flex flex-col gap-2">
+<!-- Blotter Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="table_chart">table_chart</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">Active & Surveilled Positions Blotter</span>
+<span class="font-mono-sm text-mono-sm bg-surface-container px-2 py-0.5 rounded text-outline border border-outline-variant">2 Open / 1 Pending</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-variant text-on-surface text-label-caps font-label-caps uppercase transition-colors border border-outline-variant">
+          Emergency Flatten All (ESC)
+        </button>
+<button class="p-1 text-on-surface-variant hover:text-on-surface rounded hover:bg-surface-container">
+<span class="material-symbols-outlined" data-icon="fullscreen">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto border border-outline-variant rounded bg-surface-container-lowest">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-outline text-label-caps font-label-caps uppercase border-b border-outline-variant h-7">
+<th class="px-3 py-1">Pair & Asset</th>
+<th class="px-3 py-1">Direction / Lev</th>
+<th class="px-3 py-1 text-right">Entry Price</th>
+<th class="px-3 py-1 text-right">Mark Price</th>
+<th class="px-3 py-1 text-right">Size</th>
+<th class="px-3 py-1 text-right">Unrealized PnL</th>
+<th class="px-3 py-1 text-right">Trailing Stop</th>
+<th class="px-3 py-1 text-center">Liq Proximity</th>
+<th class="px-3 py-1">Execution Status</th>
+<th class="px-3 py-1 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/60 font-mono-sm text-mono-sm">
+<!-- Row 1: BTC LONG Active -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="px-3 py-2 font-bold text-on-surface flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>BTC/USDT Perp</span>
+</td>
+<td class="px-3 py-2">
+<span class="text-secondary font-semibold bg-secondary/10 px-1.5 py-0.5 rounded border border-secondary/20">LONG 3.5x</span>
+</td>
+<td class="px-3 py-2 text-right text-on-surface">$64,120.00</td>
+<td class="px-3 py-2 text-right text-secondary font-semibold">$64,285.50</td>
+<td class="px-3 py-2 text-right text-on-surface">0.85 BTC</td>
+<td class="px-3 py-2 text-right text-secondary font-semibold">
+              +$140.67 <span class="text-secondary-fixed-dim font-medium">(+0.82R)</span>
+</td>
+<td class="px-3 py-2 text-right text-outline">$63,950.00</td>
+<td class="px-3 py-2 text-center">
+<span class="text-secondary bg-surface-container px-1.5 py-0.5 rounded text-mono-sm">42.5% Safe</span>
+</td>
+<td class="px-3 py-2">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-primary border border-outline-variant">
+<span class="w-1 h-1 rounded-full bg-primary animate-ping"></span>
+<span>Active In-Flight</span>
+</span>
+</td>
+<td class="px-3 py-2 text-right space-x-1">
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-variant text-on-surface border border-outline-variant transition-colors">
+                Close Half
+              </button>
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-variant text-primary border border-outline-variant transition-colors">
+                Tighten SL
+              </button>
+</td>
+</tr>
+<!-- Row 2: ETH SHORT Active -->
+<tr class="hover:bg-surface-container-high/40 transition-colors bg-surface-container-lowest/50">
+<td class="px-3 py-2 font-bold text-on-surface flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>ETH/USDT Perp</span>
+</td>
+<td class="px-3 py-2">
+<span class="text-tertiary font-semibold bg-tertiary/10 px-1.5 py-0.5 rounded border border-tertiary/20">SHORT 2.0x</span>
+</td>
+<td class="px-3 py-2 text-right text-on-surface">$3,450.00</td>
+<td class="px-3 py-2 text-right text-secondary font-semibold">$3,422.10</td>
+<td class="px-3 py-2 text-right text-on-surface">12.0 ETH</td>
+<td class="px-3 py-2 text-right text-secondary font-semibold">
+              +$334.80 <span class="text-secondary-fixed-dim font-medium">(+1.40R)</span>
+</td>
+<td class="px-3 py-2 text-right text-outline">$3,475.00</td>
+<td class="px-3 py-2 text-center">
+<span class="text-secondary bg-surface-container px-1.5 py-0.5 rounded text-mono-sm">58.1% Safe</span>
+</td>
+<td class="px-3 py-2">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/30">
+<span>TP1 Filled</span>
+</span>
+</td>
+<td class="px-3 py-2 text-right space-x-1">
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-surface-variant text-on-surface border border-outline-variant transition-colors">
+                Manage Trail
+              </button>
+</td>
+</tr>
+<!-- Row 3: SOL PENDING -->
+<tr class="hover:bg-surface-container-high/40 transition-colors opacity-80">
+<td class="px-3 py-2 font-bold text-on-surface flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>SOL/USDT Perp</span>
+</td>
+<td class="px-3 py-2">
+<span class="text-outline font-semibold bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant">PENDING LIMIT</span>
+</td>
+<td class="px-3 py-2 text-right text-outline">$138.50</td>
+<td class="px-3 py-2 text-right text-outline">$139.10</td>
+<td class="px-3 py-2 text-right text-outline">50 SOL</td>
+<td class="px-3 py-2 text-right text-outline">--</td>
+<td class="px-3 py-2 text-right text-outline">$136.00</td>
+<td class="px-3 py-2 text-center text-outline">--</td>
+<td class="px-3 py-2">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant border border-outline-variant">
+<span>Gate Lolos (Waiting Fill)</span>
+</span>
+</td>
+<td class="px-3 py-2 text-right">
+<button class="px-2 py-0.5 rounded bg-surface-container hover:bg-error-container text-error hover:text-on-error border border-outline-variant transition-colors">
+                Cancel Order
+              </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</body></html>

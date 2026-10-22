@@ -1,0 +1,29 @@
+Institutional-grade Quantitative Trading Command Center (War Room).
+Design style: Modern dark mode financial terminal (Bloomberg/Linear aesthetic), deep obsidian background #0d0e11, cards #181a1d with 1px subtle borders #24262a, typography Inter & Space Grotesk, JetBrains Mono for financial figures.
+Primary brand accent: Electric Indigo #6366f1. Status accents: emerald #10b981 (pass/win), crimson #ef4444 (rejected/loss), amber #f59e0b (warning/stale).
+
+Header Navigation:
+- Brand "WAR ROOM" with a live blinking green pulse "TELEMETRI AKTIF · 100% SEGAR", Server clock "14:15 WIB".
+- Navigation Pills: [Ringkasan (Active)], [Crypto], [Polymarket], [IDX], [Forex], [GMGN/LP], [Sistem], [Riset].
+- User status: "OWNER (Full Access)" with raw telemetry inspector button.
+
+Top Section - 6-Market Real-Time Radar:
+- 6 compact institutional metric cards:
+  1. Crypto (SMC OKX): Paper Capital $100.00, PnL -1.00R, 36 trades, Status [KANDIDAT, BELUM LAYAK DIPERCAYA], Maturity [DIRECTIONAL].
+  2. Polymarket (5m favorit): Paper Rp 7.987.443, PnL -20.13%, Band 0.70-0.95, Status [KANDIDAT], Maturity [PRELIMINARY].
+  3. IDX (Bandarmologi & BSJP): Saldo Kertas Negatif, Status [BEKU / HISTORIS], Maturity [INSUFFICIENT / MODEL BREACH].
+  4. Forex: Paper EUR/USD & USD/JPY, Status [KANDIDAT · BRUTO], Maturity [INSUFFICIENT].
+  5. GMGN / Solana Meteora LP: 4 Posisi Terbuka, V/L Ratio 1.84, Fee APR 84.2%, Status [CANDIDATE].
+  6. Makro & Kalender: CPI/FOMC timeline, Sentimen Netral, Status [BERSIH].
+
+Main Center Stage - Vetted Signals & Execution Log:
+- Signal Table with filter tabs [Semua Sinyal (12)], [Lolos Gate (3)], [Ditolak (9)].
+- Row item breakdown:
+  - Symbol: BTC/USDT (LONG), Score 9/10, Status Badge [LOLOS], Reason "H4 FVG Sweep + Bullish MSS confirmed", R:R 1:3.2.
+  - Symbol: ETH/USDT (SHORT), Score 6/10, Status Badge [DITOLAK], Reason "Gagal Aturan: Max exposure limit reached (2/2 slots active)", R:R 1:2.0.
+  - Symbol: Polymarket (FED Rate Cut 25bps), Score 8/10, Status Badge [LOLOS], Price 0.84, Expected Value +4.2%.
+- Expandable drawer for each row showing exact statistical confidence intervals and gate check parameters.
+
+Right Rail - Risk Capital & Engine Latency:
+- Daily Risk Room Meter: 2.00R remaining of 3.00R daily hard-stop limit (circular SVG gauge).
+- Exchange latency status: OKX API (24ms), Polymarket CLOB (62ms), IDX Feed (stale 12m), Solana RPC (18ms).

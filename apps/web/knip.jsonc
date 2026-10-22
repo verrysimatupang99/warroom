@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["scripts/*.mjs"],
+  // Primitif design-system yang sengaja belum dipakai halaman mana pun.
+  // DESIGN-USULAN 16 Okt: halaman dibangun dari "kartu keputusan"; adopsi
+  // bertahap per halaman, jadi komponen HARUS ada di repo walau belum dirender.
+  "ignore": ["src/lib/components/DecisionCard.svelte"]
+}

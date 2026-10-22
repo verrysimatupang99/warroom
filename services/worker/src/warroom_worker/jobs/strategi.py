@@ -3,21 +3,22 @@
 from __future__ import annotations
 
 import csv
+import json
 import logging
+import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-import urllib.request
-import json
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Fact, Job
 from warroom_notifier.dispatch import kirim_tertunda
 from warroom_notifier.strategy_alert import alert_kill_switch
+
 from warroom_worker.facts_publish import canonical_hash
 
-from .base import _alert, root_dir
+from .base import _alert
 
 log = logging.getLogger("warroom_worker.strategi")
 
@@ -25,11 +26,26 @@ __all__ = ["handler_strategi_alert", "handler_break_retest_scanner"]
 
 
 CONFIG_TUNED = {
-    "XAUUSD": {"lookback": 35, "sl_atr": 1.6, "rrr": 3.0, "tol": 0.0020, "req_rej": True, "category": "forex"},
-    "BTCUSDT": {"lookback": 20, "sl_atr": 1.2, "rrr": 2.0, "tol": 0.0030, "req_rej": False, "category": "crypto"},
-    "SOLUSDT": {"lookback": 15, "sl_atr": 1.8, "rrr": 3.0, "tol": 0.0040, "req_rej": True, "category": "crypto"},
-    "EURUSD": {"lookback": 30, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True, "category": "forex"},
-    "GBPUSD": {"lookback": 15, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True, "category": "forex"},
+    "XAUUSD": {
+        "lookback": 35, "sl_atr": 1.6, "rrr": 3.0, "tol": 0.0020, "req_rej": True,
+        "category": "forex",
+    },
+    "BTCUSDT": {
+        "lookback": 20, "sl_atr": 1.2, "rrr": 2.0, "tol": 0.0030, "req_rej": False,
+        "category": "crypto",
+    },
+    "SOLUSDT": {
+        "lookback": 15, "sl_atr": 1.8, "rrr": 3.0, "tol": 0.0040, "req_rej": True,
+        "category": "crypto",
+    },
+    "EURUSD": {
+        "lookback": 30, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True,
+        "category": "forex",
+    },
+    "GBPUSD": {
+        "lookback": 15, "sl_atr": 2.0, "rrr": 3.0, "tol": 0.0015, "req_rej": True,
+        "category": "forex",
+    },
 }
 
 
@@ -61,7 +77,7 @@ def _baca_candles(csv_path: Path) -> list[dict[str, float]]:
     candles = []
     if not csv_path.exists():
         return []
-    with open(csv_path, "r", encoding="utf-8") as f:
+    with open(csv_path, encoding="utf-8") as f:
         reader = csv.reader(f)
         try:
             next(reader)
@@ -107,7 +123,11 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
     sl_atr = cfg["sl_atr"]
     rrr = cfg["rrr"]
 
-    if c_prev["close"] > res_level and c_curr["low"] <= res_level * (1 + tol) and c_curr["close"] >= res_level * (1 - tol):
+    if (
+        c_prev["close"] > res_level
+        and c_curr["low"] <= res_level * (1 + tol)
+        and c_curr["close"] >= res_level * (1 - tol)
+    ):
         if not cfg["req_rej"] or c_curr["close"] > c_curr["open"]:
             entry = c_curr["close"]
             sl = entry - (atr_curr * sl_atr)
@@ -141,7 +161,11 @@ def _scan_pair_break_retest(pair: str, cfg: dict[str, Any]) -> dict[str, Any] | 
             }
 
     # Short setup
-    if c_prev["close"] < sup_level and c_curr["high"] >= sup_level * (1 - tol) and c_curr["close"] <= sup_level * (1 + tol):
+    if (
+        c_prev["close"] < sup_level
+        and c_curr["high"] >= sup_level * (1 - tol)
+        and c_curr["close"] <= sup_level * (1 + tol)
+    ):
         if not cfg["req_rej"] or c_curr["close"] < c_curr["open"]:
             entry = c_curr["close"]
             sl = entry + (atr_curr * sl_atr)
@@ -192,7 +216,10 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
 
     # 1. Integrasi Sensor Level Presisi dari Tencent Node (XAUUSD & BTC) via Tailscale
     try:
-        req_tc = urllib.request.Request("http://100.126.10.74:8790/forex/levels?symbol=XAUUSD", headers={"User-Agent": "WarRoomWorker/2.0"})
+        req_tc = urllib.request.Request(
+            "http://100.126.10.74:8790/forex/levels?symbol=XAUUSD",
+            headers={"User-Agent": "WarRoomWorker/2.0"},
+        )
         with urllib.request.urlopen(req_tc, timeout=4) as resp:
             if resp.status == 200:
                 tc_data = json.loads(resp.read().decode("utf-8"))
@@ -206,8 +233,12 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
                         "tp1": round(float(lv["tp1"]), 2),
                         "risk_pct": round(float(lv.get("risk_pct", 0.09)), 3),
                         "r_r": 2.0,
-                        "be_trigger": round(float(lv["entry"]) + abs(float(lv["entry"]) - float(lv["sl"])), 2),
-                        "trail_trigger": round(float(lv["entry"]) + (abs(float(lv["entry"]) - float(lv["sl"])) * 1.5), 2),
+                        "be_trigger": round(
+                            float(lv["entry"]) + abs(float(lv["entry"]) - float(lv["sl"])), 2
+                        ),
+                        "trail_trigger": round(
+                            float(lv["entry"]) + (abs(float(lv["entry"]) - float(lv["sl"])) * 1.5), 2
+                        ),
                         "trail_step": round(float(tc_data.get("atr", 3.8)) * 1.0, 2),
                         "tier": "PREMIUM",
                         "strategy": "tencent_sensor_sr_scalping",

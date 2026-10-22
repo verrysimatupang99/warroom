@@ -85,8 +85,8 @@
 	.app-layout {
 		display: flex;
 		min-height: 100vh;
-		background: #0c0d0e;
-		color: #ededec;
+		background: var(--color-bg);
+		color: var(--color-text);
 	}
 	.mobile-header {
 		position: fixed;
@@ -94,8 +94,8 @@
 		left: 0;
 		right: 0;
 		height: 48px;
-		background: #121314;
-		border-bottom: 1px solid #232629;
+		background: var(--color-surface);
+		border-bottom: 1px solid var(--color-line);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -105,8 +105,8 @@
 	.menu-toggle-btn {
 		width: 34px;
 		height: 34px;
-		background: #1c1f22;
-		border: 1px solid #2f3337;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		display: flex;
 		flex-direction: column;
@@ -118,7 +118,7 @@
 	.menu-toggle-btn .bar {
 		width: 16px;
 		height: 2px;
-		background: #ededec;
+		background: var(--color-text);
 		border-radius: 2px;
 	}
 	.mobile-brand {
@@ -127,7 +127,7 @@
 		letter-spacing: -0.02em;
 	}
 	.mobile-brand span {
-		color: #f5b83d;
+		color: var(--color-accent);
 	}
 	.live-pill {
 		font-size: 10px;
@@ -140,14 +140,14 @@
 		border: 1px solid transparent;
 	}
 	.live-pill.pos {
-		background: rgba(60, 199, 107, 0.12);
-		color: #3cc76b;
-		border-color: rgba(60, 199, 107, 0.25);
+		background: color-mix(in srgb, var(--color-pos) 12%, transparent);
+		color: var(--color-pos);
+		border-color: color-mix(in srgb, var(--color-pos) 25%, transparent);
 	}
 	.live-pill.warn {
-		background: rgba(245, 184, 61, 0.12);
-		color: #f5b83d;
-		border-color: rgba(245, 184, 61, 0.25);
+		background: color-mix(in srgb, var(--color-warn) 12%, transparent);
+		color: var(--color-warn);
+		border-color: color-mix(in srgb, var(--color-warn) 25%, transparent);
 	}
 	.live-pill .dot {
 		width: 6px;
@@ -158,7 +158,7 @@
 	.mobile-backdrop {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.7);
+		background: color-mix(in srgb, var(--color-bg) 70%, transparent);
 		backdrop-filter: blur(2px);
 		z-index: 60;
 	}
@@ -169,7 +169,7 @@
 		left: 0;
 		width: 280px;
 		z-index: 70;
-		box-shadow: 4px 0 24px rgba(0, 0, 0, 0.8);
+		box-shadow: 4px 0 24px color-mix(in srgb, var(--color-bg) 80%, transparent);
 		animation: slide-right 200ms cubic-bezier(0, 0, 0.2, 1);
 	}
 	@keyframes slide-right {

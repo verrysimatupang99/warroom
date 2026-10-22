@@ -8,11 +8,11 @@ Pipeline Scanner Multi-Market Real-Time Sinyal Break & Retest 15m untuk:
 Memformat sinyal Model A dan mengirimkannya langsung ke Telegram War Room / HP Anda.
 """
 
+import json
 import os
 import sys
-import json
 import urllib.request
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 WIB = timezone(timedelta(hours=7))
@@ -85,27 +85,42 @@ MARKETS_CONFIG = {
     }
 }
 
-NOTIFIER_ENV = Path("/etc/warroom/notifier.env")
+# Sumber kredensial notifier, berurutan prioritas. Kredensial TIDAK pernah
+# ditulis di repo — hanya di file 600 milik user/root di luar checkout.
+NOTIFIER_ENV_PATHS = (
+    Path(os.environ.get("WARROOM_NOTIFIER_ENV", "")) if os.environ.get("WARROOM_NOTIFIER_ENV") else None,
+    Path.home() / ".config" / "warroom" / "notifier.env",
+    Path("/etc/warroom/notifier.env"),
+)
 
-def load_notifier_config():
+
+def load_notifier_config() -> dict:
+    """Baca file env notifier dari lokasi yang bisa dibaca user ini."""
     cfg = {}
-    if NOTIFIER_ENV.exists():
+    for path in NOTIFIER_ENV_PATHS:
+        if path is None or not path.exists():
+            continue
         try:
-            with open(NOTIFIER_ENV, "r") as f:
+            with open(path) as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#") and "=" in line:
                         k, v = line.split("=", 1)
-                        cfg[k.strip()] = v.strip()
+                        cfg.setdefault(k.strip(), v.strip())
         except PermissionError:
-            pass
+            continue
     return cfg
+
 
 def send_telegram_alert(text: str) -> bool:
     cfg = load_notifier_config()
-    token = cfg.get("WARROOM_TELEGRAM_BOT_TOKEN", "REDACTED_TELEGRAM_BOT_TOKEN")
-    chat_id = cfg.get("WARROOM_TELEGRAM_CHAT_ID", "-1004383844873")
+    token = cfg.get("WARROOM_TELEGRAM_BOT_TOKEN", "")
+    chat_id = cfg.get("WARROOM_TELEGRAM_CHAT_ID", "")
     thread_id = cfg.get("WARROOM_TELEGRAM_THREAD_ID", 237)
+    if not token or not chat_id:
+        # Tidak ada kredensial → jangan-bohong soal pengiriman.
+        print("WARN: token/chat_id notifier tidak terbaca; alert TIDAK dikirim.", file=sys.stderr)
+        return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
@@ -145,7 +160,8 @@ def format_signal_message(sig: dict) -> str:
         f"• <b>Entri:</b> <code>{sig['entry']:.{dp}f}</code>\n"
         f"• <b>Stop Loss:</b> <code>{sig['sl']:.{dp}f}</code> ({sig['sl_dist']:.1f} pts)\n"
         f"• <b>Take Profit:</b> <code>{sig['tp']:.{dp}f}</code> ({sig['tp_dist']:.1f} pts)\n"
-        f"• <b>Ukuran Order:</b> <b>{cfg.get('lot_size')} { 'Lot' if cfg.get('market') == 'forex' else 'Unit' }</b>\n"
+        f"• <b>Ukuran Order:</b> <b>{cfg.get('lot_size')} "
+        f"{ 'Lot' if cfg.get('market') == 'forex' else 'Unit' }</b>\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"🛡️ <b>Risk Guard & Sizing:</b>\n"
         f"• Est. Toleransi Risiko: ~${cfg.get('est_risk', 50):.2f}\n"

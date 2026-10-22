@@ -132,8 +132,8 @@
 		height: 100vh;
 		position: sticky;
 		top: 0;
-		background: #121314;
-		border-right: 1px solid #232629;
+		background: var(--color-surface);
+		border-right: 1px solid var(--color-line);
 		padding: 1.25rem 0.85rem;
 		display: flex;
 		flex-direction: column;
@@ -160,8 +160,8 @@
 	.logo-box {
 		width: 32px;
 		height: 32px;
-		background: #1c1f22;
-		border: 1px solid #2f3337;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		display: grid;
 		place-items: center;
@@ -170,7 +170,7 @@
 		font-family: var(--font-display);
 		font-weight: 700;
 		font-size: 16px;
-		color: #f5b83d;
+		color: var(--color-accent);
 	}
 	.brand-text {
 		display: flex;
@@ -179,23 +179,23 @@
 	.brand-title {
 		font-size: 15px;
 		font-weight: 700;
-		color: #ededec;
+		color: var(--color-text);
 		line-height: 1.2;
 	}
 	.brand-title small {
 		font-size: 10px;
-		color: #787d84;
+		color: var(--color-text-3);
 		font-weight: 500;
 	}
 	.brand-sub {
 		font-size: 9.5px;
-		color: #787d84;
+		color: var(--color-text-3);
 		letter-spacing: 0.08em;
 	}
 	.close-btn {
 		background: transparent;
-		border: 1px solid #232629;
-		color: #a6aab0;
+		border: 1px solid var(--color-line);
+		color: var(--color-text-3);
 		border-radius: 4px;
 		width: 28px;
 		height: 28px;
@@ -203,8 +203,8 @@
 		place-items: center;
 	}
 	.engine-badge-strip {
-		background: #16181a;
-		border: 1px solid #232629;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
 		border-radius: 6px;
 		padding: 0.45rem 0.65rem;
 		display: flex;
@@ -215,18 +215,18 @@
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
-		background: #787d84;
+		background: var(--color-text-3);
 	}
 	.live-dot.active {
-		background: #3cc76b;
-		box-shadow: 0 0 6px rgba(60, 199, 107, 0.4);
+		background: var(--color-pos);
+		box-shadow: 0 0 6px color-mix(in srgb, var(--color-pos) 40%, transparent);
 	}
 	.tag-status {
 		font-size: 9px;
 		font-weight: 700;
-		color: #f5b83d;
-		background: rgba(245, 184, 61, 0.1);
-		border: 1px solid rgba(245, 184, 61, 0.25);
+		color: var(--color-accent);
+		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
 		border-radius: 4px;
 		padding: 1px 5px;
 	}
@@ -238,7 +238,7 @@
 	.grp-label {
 		font-size: 10px;
 		font-weight: 700;
-		color: #787d84;
+		color: var(--color-text-3);
 		letter-spacing: 0.08em;
 		padding-inline: 0.5rem;
 		margin-bottom: 0.2rem;
@@ -254,7 +254,7 @@
 		gap: 0.6rem;
 		padding: 0.45rem 0.6rem;
 		border-radius: 6px;
-		color: #a6aab0;
+		color: var(--color-text-3);
 		text-decoration: none;
 		font-size: 13px;
 		font-weight: 500;
@@ -263,21 +263,21 @@
 		min-height: 38px;
 	}
 	.nav-item:hover {
-		background: #1c1f22;
-		color: #ededec;
-		border-color: #232629;
+		background: var(--color-surface-2);
+		color: var(--color-text);
+		border-color: var(--color-line-soft);
 	}
 	.nav-item.active {
-		background: #1b1e21;
-		color: #ededec;
-		border-color: #2f3337;
+		background: var(--color-surface-3);
+		color: var(--color-text);
+		border-color: var(--color-line);
 		font-weight: 600;
 	}
 	.nav-item.active .nav-icon {
-		color: #f5b83d;
+		color: var(--color-accent);
 	}
 	.nav-icon {
-		color: #787d84;
+		color: var(--color-text-3);
 		display: grid;
 		place-items: center;
 		flex-shrink: 0;
@@ -288,17 +288,17 @@
 	.prop-tag {
 		font-size: 9px;
 		font-weight: 700;
-		color: #3cc76b;
-		background: rgba(60, 199, 107, 0.12);
-		border: 1px solid rgba(60, 199, 107, 0.3);
+		color: var(--color-pos);
+		background: color-mix(in srgb, var(--color-pos) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-pos) 30%, transparent);
 		border-radius: 3px;
 		padding: 0 4px;
 	}
 	.nav-kbd {
 		font-size: 10.5px;
-		color: #787d84;
-		background: #0c0d0e;
-		border: 1px solid #232629;
+		color: var(--color-text-3);
+		background: var(--color-bg);
+		border: 1px solid var(--color-line);
 		border-radius: 4px;
 		min-width: 20px;
 		height: 20px;
@@ -308,7 +308,7 @@
 	.sidebar-foot {
 		margin-top: auto;
 		padding-top: 0.85rem;
-		border-top: 1px solid #232629;
+		border-top: 1px solid var(--color-line);
 	}
 	.foot-desc {
 		line-height: 1.4;

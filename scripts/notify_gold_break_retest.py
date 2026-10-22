@@ -5,11 +5,10 @@ Pipeline Scanner Real-Time Sinyal Break & Retest 15m untuk Gold (XAUUSD.x / XAUU
 Memformat sinyal Model A dan mengirimkannya langsung ke Telegram War Room / HP Anda.
 """
 
-import os
-import sys
 import json
+import sys
 import urllib.request
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 WIB = timezone(timedelta(hours=7))
@@ -34,7 +33,7 @@ NOTIFIER_ENV = Path("/etc/warroom/notifier.env")
 def load_notifier_config():
     cfg = {}
     if NOTIFIER_ENV.exists():
-        with open(NOTIFIER_ENV, "r") as f:
+        with open(NOTIFIER_ENV) as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#") and "=" in line:
