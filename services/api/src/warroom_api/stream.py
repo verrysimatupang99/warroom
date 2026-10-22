@@ -135,8 +135,13 @@ async def event_stream(
         iterasi += 1
         if max_iterations is not None and iterasi > max_iterations:
             return
-        if disconnect is not None and callable(disconnect) and disconnect():  # type: ignore[operator]
-            return
+        if disconnect is not None and callable(disconnect):
+            res = disconnect()
+            if asyncio.iscoroutine(res):
+                if await res:
+                    return
+            elif bool(res):
+                return
 
         rows, id_terbaca = await asyncio.to_thread(_fetch, after, topics)
         # `after` maju mengikuti apa yang DIBACA (bukan hanya yang dikirim) — kalau tidak,

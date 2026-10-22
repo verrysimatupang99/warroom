@@ -170,6 +170,17 @@ class MT5PositionReport(BaseModel):
     tp: float
     pnl_usd: float
 
+class MT5PendingOrder(BaseModel):
+    ticket: int
+    symbol: str
+    type: str
+    volume: float
+    price: float
+    sl: float
+    tp: float
+    status: str = "PLACED"
+    placed_at: str = ""
+
 class MT5TelemetryPayload(BaseModel):
     account: str
     broker: str
@@ -179,6 +190,7 @@ class MT5TelemetryPayload(BaseModel):
     free_margin: float
     floating_pnl: float
     positions: list[MT5PositionReport] = []
+    pending_orders: list[MT5PendingOrder] = []
     total_trades_today: int | None = 0
     win_rate_pct: float | None = 0.0
 
@@ -193,6 +205,7 @@ latest_mt5_telemetry = {
     "margin": 0.0,
     "free_margin": 0.0,
     "positions": [],
+    "pending_orders": [],
     "total_trades_today": 0,
     "win_rate_pct": 0.0,
 }
@@ -212,8 +225,9 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "margin": payload.margin,
         "free_margin": payload.free_margin,
         "positions": [p.dict() for p in payload.positions],
+        "pending_orders": [o.dict() for o in payload.pending_orders],
         "total_trades_today": payload.total_trades_today,
-        "win_rate_pct": payload.win_rate_pct
+        "win_rate_pct": payload.win_rate_pct,
     }
     return {"status": "OK", "received_at": latest_mt5_telemetry["last_seen_ts"]}
 
@@ -246,38 +260,12 @@ def _statistik_forex(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-# Antrian order pending aktif (Buy Limit / Sell Limit)
-pending_orders_queue: list[dict[str, Any]] = [
-    {
-        "ticket": 138081403,
-        "symbol": "XAUUSDm",
-        "type": "BUY_LIMIT",
-        "volume": 0.10,
-        "price": 4068.69,
-        "sl": 4060.00,
-        "tp": 4090.00,
-        "status": "PLACED",
-        "placed_at": "2026-10-22 11:10:31"
-    },
-    {
-        "ticket": 138084456,
-        "symbol": "XAUUSDm",
-        "type": "BUY_LIMIT",
-        "volume": 0.10,
-        "price": 4068.69,
-        "sl": 4060.00,
-        "tp": 4090.00,
-        "status": "PLACED",
-        "placed_at": "2026-10-22 11:20:15"
-    }
-]
-
-@router.get("/mt5/pending_orders")
+@router.get("/mt5/pending_orders", dependencies=[Depends(verify_mt5_or_admin)])
 async def get_mt5_pending_orders():
-    """Mengembalikan daftar order limit yang terpasang aktif di sistem."""
-    return {"status": "OK", "orders": pending_orders_queue}
+    """Mengembalikan daftar order limit yang dilaporkan aktif oleh EA MT5."""
+    return {"status": "OK", "orders": latest_mt5_telemetry.get("pending_orders", [])}
 
-@router.get("/mt5/status")
+@router.get("/mt5/status", dependencies=[Depends(verify_mt5_or_admin)])
 async def get_mt5_status():
     """Mengembalikan status live MT5 dan posisi terbuka untuk dashboard Beranda."""
     now = int(time.time())
@@ -287,7 +275,6 @@ async def get_mt5_status():
     data = dict(latest_mt5_telemetry)
     data["connected"] = is_live
     data["seconds_ago"] = now - last_seen if last_seen > 0 else 999999
-    data["pending_orders"] = pending_orders_queue
     # W/L/PF dihitung dari riwayat yang sama dengan endpoint /mt5/history —
     # tidak ada angka hardcoded di status.
     data.update(_statistik_forex(_muat_forex_history()))

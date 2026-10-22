@@ -743,7 +743,9 @@ def load_snapshot(settings: Settings, *, force: bool = False) -> dict[str, Any]:
             pass
     snap = build_snapshot(settings)
     settings.state_dir.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(snap, indent=2), encoding="utf-8")
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(snap, indent=2), encoding="utf-8")
+    tmp.replace(p)
     return snap
 
 

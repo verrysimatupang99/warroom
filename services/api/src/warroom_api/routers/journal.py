@@ -10,11 +10,12 @@ apa adanya lewat Tailscale, sama seperti `tencent.py` dan `idx.py`.
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from warroom_api import auth
 from warroom_api.routers.tencent import _fetch_tencent
 
-router = APIRouter(prefix="/api/v1/journal", tags=["journal"])
+router = APIRouter(prefix="/api/v1/journal", tags=["journal"], dependencies=[Depends(auth.current_user)])
 
 
 @router.get("/stats")

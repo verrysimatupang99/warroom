@@ -10,13 +10,14 @@ Aturan yang dikodekan: setiap angka berasal dari tabel `facts` (punya `fact_id`,
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, StreamingResponse
-from warroom_core.db import User
+from warroom_core.db import User, dispose_engine
 
 from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
@@ -60,12 +61,19 @@ def _kunci_klien(request: Request) -> str:
 # --- skema permintaan/balasan ----------------------------------------------------------
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    dispose_engine()
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="War Room API",
         version="0.1.0",
         docs_url=None,
         openapi_url=None,
+        lifespan=lifespan,
     )
     install_error_handlers(app)
 
@@ -122,7 +130,7 @@ def create_app() -> FastAPI:
         daftar = [t.strip() for t in topics.split(",") if t.strip()] if topics else None
         last = request.headers.get("Last-Event-ID") or request.query_params.get("last_event_id")
         return StreamingResponse(
-            event_stream(daftar, last),
+            event_stream(daftar, last, disconnect=request.is_disconnected),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
         )

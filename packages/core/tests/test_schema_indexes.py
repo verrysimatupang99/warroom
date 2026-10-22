@@ -31,4 +31,4 @@ def test_rantai_migrasi_alembic_tunggal_dan_valid() -> None:
 
     heads = scripts.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "f10b7d251d17"
+    assert heads[0] == "a7b8c9d0e1f2"

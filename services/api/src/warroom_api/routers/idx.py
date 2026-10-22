@@ -11,11 +11,12 @@ router `tencent.py`. Tidak ada kredensial yang dibuka di sisi War Room.
 
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from warroom_api import auth
 from warroom_api.routers.tencent import TIMEOUT_S_LARGE, _fetch_tencent
 
-router = APIRouter(prefix="/api/v1/idx", tags=["idx"])
+router = APIRouter(prefix="/api/v1/idx", tags=["idx"], dependencies=[Depends(auth.current_user)])
 
 
 @router.get("/stats")

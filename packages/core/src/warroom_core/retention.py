@@ -21,7 +21,7 @@ from typing import Any
 
 from sqlalchemy import delete, func, select
 
-from warroom_core.db import Alert, Event, Fact, LLMCall
+from warroom_core.db import Alert, Event, Fact, LLMCall, Session
 
 __all__ = ["prune_orphan_refs", "rencana", "jalankan"]
 
@@ -137,11 +137,18 @@ def rencana(
         .where(Alert.created_at < batas_alert, Alert.ack_at.is_not(None))
     ) or 0
 
+    n_sessions = s.scalar(
+        select(func.count())
+        .select_from(Session)
+        .where(Session.expires_at < now)
+    ) or 0
+
     return {
         "facts": int(n_facts),
         "events": int(n_events),
         "llm_calls": int(n_llm),
         "alerts": int(n_alert),
+        "sessions": int(n_sessions),
         "keep_versi": keep_versi,
         "events_hari": events_hari,
         "llm_call_hari": llm_call_hari,
@@ -169,7 +176,7 @@ def jalankan(
         llm_call_hari=llm_call_hari, alerts_hari=alerts_hari,
     )
     dihapus: dict[str, int] = {
-        "facts": 0, "events": 0, "llm_calls": 0, "alerts": 0, "rujukan_yatim_dibersihkan": 0,
+        "facts": 0, "events": 0, "llm_calls": 0, "alerts": 0, "sessions": 0, "rujukan_yatim_dibersihkan": 0,
     }
 
     if r["facts"]:
@@ -223,6 +230,13 @@ def jalankan(
             delete(Alert).where(Alert.created_at < batas, Alert.ack_at.is_not(None))
         )
         dihapus["alerts"] = res.rowcount or 0
+
+    # Sessions: bersihkan sesi kedaluwarsa (T-6 dead code purge_expired remediation)
+    if r.get("sessions"):
+        res = s.execute(
+            delete(Session).where(Session.expires_at < datetime.now(UTC))
+        )
+        dihapus["sessions"] = res.rowcount or 0
 
     s.flush()
     return {"dihapus": dihapus, "rencana": r}

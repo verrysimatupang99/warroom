@@ -420,7 +420,9 @@ def cmd_snapshot(args: argparse.Namespace) -> int:
     snap = build_snapshot(s, use_network=not args.offline)
     s.state_dir.mkdir(parents=True, exist_ok=True)
     p = s.state_dir / "snapshot.json"
-    p.write_text(json.dumps(snap, indent=2), encoding="utf-8")
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps(snap, indent=2), encoding="utf-8")
+    tmp.replace(p)
     print(f"  snapshot ditulis: {p}")
     print(f"  dibuat {snap['dibuat']} | mode {snap['mode']}")
     for name, part in snap.get("bagian", {}).items():

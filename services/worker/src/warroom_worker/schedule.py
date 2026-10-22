@@ -382,14 +382,23 @@ def set_enabled(s: SASession, name: str, enabled: bool) -> bool:
 
 
 def due_jobs(s: SASession, now: datetime | None = None) -> list[Job]:
-    """Job aktif yang sudah waktunya. Urut paling telat lebih dulu."""
+    """Job aktif yang sudah waktunya. Urut paling telat lebih dulu.
+
+    Menggunakan `with_for_update(skip_locked=True)` pada PostgreSQL untuk
+    mencegah race condition ketika worker paralel memeriksa job bersamaan.
+    """
     t = now or datetime.now(UTC)
-    rows = s.scalars(
+    stmt = (
         select(Job)
         .where(Job.enabled.is_(True))
         .where((Job.next_run_at.is_(None)) | (Job.next_run_at <= t))
         .order_by(Job.next_run_at.asc().nulls_first())
-    ).all()
+    )
+    bind = s.get_bind()
+    if bind and getattr(bind.dialect, "name", "") == "postgresql":
+        stmt = stmt.with_for_update(skip_locked=True)
+
+    rows = s.scalars(stmt).all()
     return list(rows)
 
 

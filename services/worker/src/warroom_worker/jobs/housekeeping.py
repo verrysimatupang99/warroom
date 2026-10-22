@@ -28,6 +28,7 @@ def handler_retensi(s: SASession, job: Job) -> str:
     d = hasil["dihapus"]
     return (
         f"facts_dihapus={d['facts']} events_dihapus={d['events']} llm_dihapus={d['llm_calls']} "
+        f"sessions_dihapus={d.get('sessions', 0)} "
         f"(simpan {hasil['rencana']['keep_versi']} versi/kunci)"
     )
 

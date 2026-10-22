@@ -32,11 +32,28 @@ def buat_limiter_bawaan(nama_env: str, bawaan: int) -> Limiter:
 
 
 def kunci_klien(request: object) -> str:
-    """Kunci pembatas per pemanggil: IP klien bila ada, selain itu 'lokal'.
+    """Kunci pembatas per pemanggil: IP klien asli (mendukung Cloudflare / reverse proxy).
 
     Diterima sebagai `object` supaya modul ini tak bergantung pada FastAPI;
-    pemanggil meneruskan `Request` yang punya `.client.host`.
+    pemanggil meneruskan `Request` yang punya `.headers` dan `.client.host`.
     """
+    headers = getattr(request, "headers", None)
+    if headers:
+        # 1. Cloudflare real client IP
+        cf_ip = headers.get("cf-connecting-ip")
+        if cf_ip:
+            return cf_ip.strip()
+        # 2. X-Real-IP dari reverse proxy
+        real_ip = headers.get("x-real-ip")
+        if real_ip:
+            return real_ip.strip()
+        # 3. X-Forwarded-For (ambil IP pertama yang merupakan client asli)
+        xff = headers.get("x-forwarded-for")
+        if xff:
+            first_ip = xff.split(",")[0].strip()
+            if first_ip:
+                return first_ip
+
     client = getattr(request, "client", None)
     host = getattr(client, "host", None)
     return host or "lokal"

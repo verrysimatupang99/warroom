@@ -9,11 +9,12 @@ Semua akses baca-saja. Router meneruskan ke node MiniMax lewat Tailscale.
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from warroom_api import auth
 from warroom_api.routers.tencent import _fetch_tencent
 
-router = APIRouter(prefix="/api/v1/cron", tags=["cron"])
+router = APIRouter(prefix="/api/v1/cron", tags=["cron"], dependencies=[Depends(auth.current_user)])
 
 
 @router.get("/summary")
