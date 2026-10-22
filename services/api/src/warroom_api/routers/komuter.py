@@ -4,11 +4,10 @@ Menyediakan endpoint geocode, plan, stops, routes, dan health langsung
 dari backend lokal berkecepatan tinggi tanpa latency cold-start Vercel.
 """
 
-from typing import Any
 import sys
-import os
+from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 
 # Ensure komuter backend is importable
 KOMUTER_BACKEND = "/home/admin/rute-jkt/backend"

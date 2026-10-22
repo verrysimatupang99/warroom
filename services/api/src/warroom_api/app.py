@@ -26,6 +26,7 @@ from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
 from warroom_api.routers import idx as idx_router
 from warroom_api.routers import journal as journal_router
+from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
 from warroom_api.routers import llm as llm_router
@@ -33,7 +34,6 @@ from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.routers import tencent as tencent_router
-from warroom_api.routers import komuter as komuter_router
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
