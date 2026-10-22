@@ -13,8 +13,10 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+
+from warroom_api.auth_ea import verify_mt5_or_admin
 
 router = APIRouter(prefix="/api/v1/tencent", tags=["tencent"])
 log = logging.getLogger("warroom_api.tencent")
@@ -81,7 +83,7 @@ async def tencent_crypto_levels(
     return await _fetch_tencent("/crypto/levels", params={"symbol": symbol, "play": play})
 
 
-@router.get("/forex/levels")
+@router.get("/forex/levels", dependencies=[Depends(verify_mt5_or_admin)])
 async def tencent_forex_levels(
     symbol: str = Query("XAUUSD", description="Contoh: XAUUSD"),
 ) -> dict[str, Any]:
@@ -144,7 +146,7 @@ async def tencent_crypto_ticker(symbol: str = Query("BTCUSDT")) -> dict[str, Any
 
 @router.get("/klines")
 async def tencent_klines(
-    market: str = Query("crypto", description="crypto atau forex"),
+    market: str = Query("crypto", pattern="^(crypto|forex)$", description="crypto atau forex"),
     symbol: str = Query("BTCUSDT"),
     interval: str = Query("1h"),
     limit: int = Query(20, ge=10, le=200),
@@ -195,7 +197,7 @@ latest_mt5_telemetry = {
     "win_rate_pct": 0.0,
 }
 
-@router.post("/mt5/telemetry")
+@router.post("/mt5/telemetry", dependencies=[Depends(verify_mt5_or_admin)])
 async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     """Endpoint yang dipanggil oleh MT5 EA setiap beberapa detik untuk melaporkan status live."""
     global latest_mt5_telemetry

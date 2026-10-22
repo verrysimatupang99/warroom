@@ -13,7 +13,9 @@ import os
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse, StreamingResponse
 from warroom_core.db import User
 
 from warroom_api import auth, limits
@@ -62,8 +64,8 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="War Room API",
         version="0.1.0",
-        docs_url="/api/docs",
-        openapi_url="/api/openapi.json",
+        docs_url=None,
+        openapi_url=None,
     )
     install_error_handlers(app)
 
@@ -136,6 +138,24 @@ def create_app() -> FastAPI:
 
     # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
     app.include_router(llm_router.router)
+
+    # --- Protected OpenAPI & Swagger UI (Hanya Admin dengan Sesi Sah) ---
+    @app.get("/api/openapi.json", include_in_schema=False)
+    async def get_protected_openapi(user: Annotated[User, Depends(auth.current_user)]):
+        return JSONResponse(
+            get_openapi(
+                title=app.title,
+                version=app.version,
+                routes=app.routes,
+            )
+        )
+
+    @app.get("/api/docs", include_in_schema=False)
+    async def get_protected_docs(user: Annotated[User, Depends(auth.current_user)]):
+        return get_swagger_ui_html(
+            openapi_url="/api/openapi.json",
+            title=f"{app.title} - Swagger UI",
+        )
 
     return app
 
