@@ -19,9 +19,9 @@ from __future__ import annotations
 
 import hashlib
 import os
+from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable
 
 # Berkas non-kode yang tetap memengaruhi perilaku runtime.
 SUFFIX = (".py", ".json", ".toml", ".txt", ".j2")
