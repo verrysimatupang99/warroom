@@ -219,7 +219,7 @@ class LayaForexMiddleware:
             out, err = await asyncio.wait_for(
                 proc.communicate(muatan.encode("utf-8")), timeout=self.timeout_s
             )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             return {
                 "tersedia": False,
                 "verdict": "TAK_DIKETAHUI",
