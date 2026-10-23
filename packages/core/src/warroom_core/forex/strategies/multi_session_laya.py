@@ -13,6 +13,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from ..laya_verdict import ambil as ambil_verdict_laya
 from .base import BaseStrategy
 
 log = logging.getLogger("warroom_core.forex.strategies.multi_session_laya")
@@ -37,43 +38,13 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         self._laya_loaded = False
         # Alasan penolakan terakhir (audit R6). None berarti tidak ada blokir.
         self.last_block_reason: str | None = None
-        self._init_laya()
-
-    def _init_laya(self):
-        try:
-            import laya
-            self._laya = laya
-            # Evaluator dibangun sekali di init (bukan per sinyal): memuat model
-            # butuh ~10-20 detik pada panggilan pertama, jadi tidak boleh masuk
-            # jalur panas. Bila model tidak tersedia, Laya ditandai nonaktif dan
-            # strategi tetap jalan memakai baseline.
-            self._evaluator = laya.LayaEvaluator(
-                questions={
-                    "verdict": {
-                        "type": "choice",
-                        "instructions": (
-                            "Apakah kondisi pasar saat ini aman untuk eksekusi "
-                            "scalping XAUUSD?"
-                        ),
-                        "criteria": {
-                            "EXECUTE": (
-                                "Momentum jelas, spread wajar, bukan zona fakeout "
-                                "/ sideways mati"
-                            ),
-                            "SKIP": (
-                                "Pasar rawan sweep lanjutan, choppy tanpa volume, "
-                                "atau ada spike ekstrim"
-                            ),
-                        },
-                    }
-                }
-            )
-            self._laya_loaded = True
-            log.info("Laya AI Decision Judge aktif di MultiSessionLayaScalperStrategy")
-        except Exception as exc:
-            log.warning("Laya belum dapat diinisialisasi: %s", exc)
-            self._evaluator = None
-            self._laya_loaded = False
+        # Model TIDAK dimuat di proses ini. Inferensi berjalan di job terjadwal
+        # (ops/laya_verdict_job.py) yang menulis verdict ke berkas cache;
+        # strategi hanya membaca cache lewat laya_verdict.ambil().
+        # Alasan: model 421M menambah ~1 GB RSS dan 30 detik cold start,
+        # sementara timeout WebRequest EA hanya 3 detik.
+        self._evaluator = None
+        self._laya_loaded = False
 
     def get_current_session(self) -> str:
         """Tentukan sesi pasar aktif berdasarkan jam UTC saat ini.
@@ -91,60 +62,27 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             return "NEW_YORK"
 
     def evaluate_laya(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
-        """Evaluasi kondisi setup scalping via Laya Model.
+        """Baca keputusan gerbang Laya dari CACHE (bukan jalankan model).
 
-        Mengembalikan (layak_eksekusi, keyakinan, alasan).
+        Inferensi dipindahkan ke job terjadwal `ops/laya_verdict_job.py` karena
+        model 421M menambah ~1 GB RSS dan 30 detik cold start — tidak layak berada
+        di jalur permintaan yang di-poll EA tiap 5 detik dengan timeout 3 detik.
 
-        SEMANTIK FAIL-CLOSED (diubah 23 Okt 2026):
-        Gerbang risiko yang tidak tersedia HARUS memblokir, bukan meloloskan.
-        Sebelumnya fungsi ini mengembalikan `True, 0.85` saat model mati — angka
-        0.85 itu tidak pernah dihitung dari data apa pun, sehingga seluruh nilai
-        "middleware Laya" menjadi ilusi: sinyal tetap dieksekusi dan tidak ada
-        yang tahu gerbangnya sedang tidak berfungsi.
-
-        Sekarang setiap jalur gagal mengembalikan `False` beserta alasan yang
-        menyebut cabang mana yang diambil, sehingga keputusan bisa diaudit.
+        Semantik FAIL-CLOSED: cache tidak ada, basi, atau sesi tidak cocok berarti
+        sinyal DIBLOKIR. Tidak ada jalur yang meloloskan sinyal tanpa verdict segar.
         """
-        if not self.enable_laya or not self._laya_loaded or self._evaluator is None:
-            alasan = (
-                "Laya TIDAK TERSEDIA (model tidak termuat / dinonaktifkan) — "
-                "sinyal DIBLOKIR sesuai kebijakan fail-closed"
-            )
-            log.warning("Gerbang Laya menolak: %s", alasan)
+        if not self.enable_laya:
+            alasan = "Gerbang Laya dinonaktifkan di strategi — sinyal DIBLOKIR"
+            log.warning(alasan)
             return False, 0.0, alasan
 
-        try:
-            hasil = self._evaluator.invoke(market_state)
-            verdict = (hasil or {}).get("verdict") or {}
-            pilihan = str(verdict.get("choice") or "").upper()
-            prob = verdict.get("probabilities") or {}
-            peluang = prob.get("EXECUTE")
-            if peluang is None:
-                peluang = verdict.get("answer_confidence")
-
-            if pilihan not in ("EXECUTE", "SKIP"):
-                return False, 0.0, f"Laya verdict tidak dikenali ({pilihan or 'kosong'}) — sinyal DIBLOKIR"
-
-            # min_confidence sengaja konservatif: Laya nyata bisa mengembalikan
-            # EXECUTE dengan peluang ~0.57 (nyaris tebakan). Di bawah ambang ini
-            # sinyal diperlakukan tidak aman, bukan diloloskan diam-diam.
-            keyakinan = float(peluang) if peluang is not None else 0.0
-            aman = pilihan == "EXECUTE" and keyakinan >= self.laya_min_confidence
-            alasan = (
-                f"Laya {pilihan} p={keyakinan:.3f} "
-                f"(ambang {self.laya_min_confidence:.2f}) side={market_state.get('side')} "
-                f"sesi={market_state.get('session')}"
-            )
-            # Jejak audit (R6): setiap verdict dicatat agar keputusan bisa ditelusuri
-            # setelah kejadian. Tanpa ini, post-mortem hanya jadi spekulasi.
-            log.info("Gerbang Laya: %s -> %s", "LOLOS" if aman else "DIBLOKIR", alasan)
-            return aman, keyakinan, alasan
-        except Exception as exc:
-            log.warning("Laya evaluation error: %s", exc)
-            # FAIL-CLOSED: kegagalan inferensi berarti gerbang tidak berfungsi.
-            # Meloloskan sinyal di sini membuat gerbang dekoratif — persis pola
-            # yang menyebabkan klaim "dilindungi Laya" tidak bisa dibuktikan.
-            return False, 0.0, f"Laya ERROR ({type(exc).__name__}: {exc}) — sinyal DIBLOKIR"
+        layak, keyakinan, alasan = ambil_verdict_laya(
+            side=str(market_state.get("side") or ""),
+            session=str(market_state.get("session") or ""),
+            min_confidence=self.laya_min_confidence,
+        )
+        log.info("Gerbang Laya: %s -> %s", "LOLOS" if layak else "DIBLOKIR", alasan)
+        return layak, keyakinan, alasan
 
     def evaluate(self, market_data: dict[str, Any]) -> dict[str, Any] | None:
         price = market_data.get("price", 0.0)

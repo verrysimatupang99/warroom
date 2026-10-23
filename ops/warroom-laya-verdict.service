@@ -1,0 +1,24 @@
+[Unit]
+Description=War Room - hitung verdict Laya AI (proses terpisah)
+Documentation=file:///home/admin/wr_notes/R3_FAIL_CLOSED_2026-10-23.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom
+Environment=HOME=/home/admin
+Environment=WARROOM_LAYA_VERDICT_PATH=/var/lib/warroom/laya_verdict.json
+Environment=WARROOM_LAYA_VERDICT_TTL_SEC=180
+# Batas sumber daya: model 421M + torch butuh ~1 GB. Cgroup ini memastikan
+# kegagalan model tidak menyeret layanan lain (pernah membuat swap penuh dan
+# API berhenti merespons).
+MemoryMax=2G
+CPUQuota=200%
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+ExecStart=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/laya_verdict_job.py
+TimeoutStartSec=300

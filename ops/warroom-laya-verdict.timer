@@ -1,0 +1,14 @@
+[Unit]
+Description=War Room - jadwal verdict Laya AI tiap 60 detik
+Documentation=file:///home/admin/wr_notes/R3_FAIL_CLOSED_2026-10-23.md
+
+[Timer]
+# Mulai 90 detik setelah boot (beri waktu model/torch termuat), lalu tiap 60 detik.
+# TTL verdict 180 detik -> selalu ada margin 3x sebelum dianggap basi.
+OnBootSec=90
+OnUnitActiveSec=60
+AccuracySec=5
+Unit=warroom-laya-verdict.service
+
+[Install]
+WantedBy=timers.target
