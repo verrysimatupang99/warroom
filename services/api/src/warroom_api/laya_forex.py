@@ -119,7 +119,14 @@ class LayaForexMiddleware:
 
     # -- penilaian ----------------------------------------------------------
     def nilai(self, sinyal: dict[str, Any], telemetri: dict[str, Any]) -> dict[str, Any]:
-        """Kembalikan verdict atas satu sinyal. Tidak pernah mengarang hasil."""
+        """Kembalikan verdict atas satu sinyal. Tidak pernah mengarang hasil.
+
+        CATATAN PENTING (insiden 23 Okt 2026): memanggil model langsung di dalam
+        endpoint async membuat SELURUH API membeku - `/api/v1/build` pun balas 000
+        selama inferensi berjalan (muat model 421M + torch memblokir event loop).
+        Karena itu pemanggil async WAJIB memakai `nilai_async()` yang menjalankannya
+        di thread terpisah. Fungsi ini tetap sinkron untuk dipakai dari thread/CLI.
+        """
         konteks = self.susun_konteks(sinyal, telemetri)
         dasar = {
             "tersedia": False,
@@ -175,6 +182,19 @@ class LayaForexMiddleware:
             }
         self._terakhir = keluaran
         return keluaran
+
+    async def nilai_async(
+        self, sinyal: dict[str, Any], telemetri: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Versi async AMAN: inferensi dijalankan di thread terpisah.
+
+        Wajib dipakai dari endpoint FastAPI. Tanpa ini, satu permintaan Laya
+        membekukan seluruh event loop (terbukti: `/api/v1/build` balas 000 selama
+        inferensi berjalan).
+        """
+        import asyncio
+
+        return await asyncio.to_thread(self.nilai, sinyal, telemetri)
 
     def status(self) -> dict[str, Any]:
         return {

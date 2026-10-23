@@ -443,7 +443,7 @@ async def get_forex_laya_verdict() -> dict[str, Any]:
     else:
         telemetri = {"connected": False}
 
-    hasil = laya_forex.middleware.nilai(sinyal, telemetri)
+    hasil = await laya_forex.middleware.nilai_async(sinyal, telemetri)
     hasil["telemetri_terhubung"] = bool(telemetri.get("connected"))
     return hasil
 
