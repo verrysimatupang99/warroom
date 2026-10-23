@@ -24,11 +24,29 @@ def test_indeks_leaderboard_dan_splits_terdaftar_di_metadata() -> None:
 
 
 def test_rantai_migrasi_alembic_tunggal_dan_valid() -> None:
-    # Memastikan tidak ada percabangan migrasi (branch heads) yang tidak terintegrasi.
+    # Memastikan rantai migrasi linear (satu head) dan setiap revisi bisa ditelusuri
+    # dari head sampai base. Nama head TIDAK di-hardcode: dulu tes ini mengunci
+    # "a7b8c9d0e1f2", sehingga setiap migrasi baru (mis. indeks events(id,type) dan
+    # GIN fact_ids) memutus tes padahal migrasinya benar. Yang penting adalah
+    # bentuk rantainya, bukan nomor revisinya.
     ini_path = Path(__file__).resolve().parents[1] / "alembic.ini"
     cfg = Config(str(ini_path))
     scripts = ScriptDirectory.from_config(cfg)
 
     heads = scripts.get_heads()
-    assert len(heads) == 1
-    assert heads[0] == "a7b8c9d0e1f2"
+    assert len(heads) == 1, f"migrasi bercabang, ada {len(heads)} head: {heads}"
+
+    # Telusuri head -> base. get_revision() melempar bila berkas revisi hilang,
+    # jadi rantai yang bolong tetap gagal di sini.
+    terlihat: list[str] = []
+    revisi = scripts.get_revision(heads[0])
+    while revisi is not None:
+        terlihat.append(revisi.revision)
+        turun = revisi.down_revision
+        if isinstance(turun, tuple):
+            assert len(turun) == 1, f"merge migration tidak diharapkan: {revisi.revision}"
+            turun = turun[0]
+        revisi = scripts.get_revision(turun) if turun else None
+
+    assert terlihat, "rantai migrasi kosong"
+    assert len(terlihat) == len(set(terlihat)), f"revisi berulang di rantai: {terlihat}"
