@@ -416,3 +416,41 @@ async def get_mt5_history():
         **_statistik_forex(records),
         "records": records,
     }
+
+
+@router.get("/forex/laya", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_forex_laya_verdict() -> dict[str, Any]:
+    """Verdict Laya AI atas kondisi akun MT5 + sinyal aktif (middleware nyata).
+
+    Berbeda dari `/forex/bias` yang hanya membaca kalender event: endpoint ini
+    memanggil model `convaiinnovations/laya` dengan ringkasan data mentah MT5
+    (balance/equity/posisi) dan sinyal level yang sedang berlaku.
+
+    Bila model tidak tersedia, balasannya `tersedia:false` + alasan — bukan angka
+    karangan. Read-only: tidak membuka order dan tidak menyentuh gate live.
+    """
+    from warroom_api import laya_forex
+
+    sinyal: dict[str, Any] = {}
+    try:
+        sinyal = await tencent_forex_levels(symbol="XAUUSD", mode="scalping")
+    except Exception as exc:  # noqa: BLE001
+        sinyal = {"status": "gagal-ambil-sinyal", "detail": str(exc)}
+
+    if latest_mt5_telemetry.get("connected"):
+        telemetri = dict(latest_mt5_telemetry)
+        telemetri["seconds_ago"] = int(time.time()) - int(latest_mt5_telemetry["last_seen_ts"])
+    else:
+        telemetri = {"connected": False}
+
+    hasil = laya_forex.middleware.nilai(sinyal, telemetri)
+    hasil["telemetri_terhubung"] = bool(telemetri.get("connected"))
+    return hasil
+
+
+@router.get("/forex/laya/status", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_forex_laya_status() -> dict[str, Any]:
+    """Status middleware Laya (tersedia/tidak, ambang, verdict terakhir)."""
+    from warroom_api import laya_forex
+
+    return laya_forex.middleware.status()

@@ -28,14 +28,18 @@ class LayaSentinelDaemon:
     def __init__(self):
         self.is_running = False
         self.last_check_ts = 0
-        self.last_verdict = "STANDBY"
+        # JANGAN mengarang verdict/confidence. Sebelumnya di sini ada
+        # last_verdict="STANDBY" dan laya_confidence=0.92 yang TIDAK pernah dihitung
+        # dari data apa pun, lalu disajikan lewat /forex/sentinel seolah hasil AI.
+        # Sekarang status analisis dilaporkan apa adanya: belum ada model yang dipanggil.
+        self.last_verdict = "BELUM_DIANALISIS"
         self.security_status = "SECURE"
-        self.laya_confidence = 0.92
-        self.bias_status = "NEUTRAL"
-        self.bias_score = 0.0
+        self.laya_confidence = None  # None = tidak diukur (bukan 0, bukan tebakan)
+        self.bias_status = "TAK_DIKETAHUI"  # bukan NEUTRAL: NEUTRAL berarti sudah dinilai
+        self.bias_score = None
         self.in_blackout = False
         self.blackout_reason = ""
-        self.active_headlines_count = 6
+        self.active_headlines_count = 0
 
     async def start(self):
         self.is_running = True
@@ -89,16 +93,27 @@ class LayaSentinelDaemon:
             log.warning("Gagal membaca blackout.txt: %s", exc)
 
     def get_bias(self) -> dict[str, Any]:
-        """Menyajikan bias pasar XAUUSD terpadu untuk EA MT5."""
+        """Sajikan bias XAUUSD apa adanya.
+
+        PENTING: `bias` hanya `NEUTRAL` bila benar-benar dinilai netral. Selama belum
+        ada model yang dijalankan, nilainya `TAK_DIKETAHUI` dan `score` None — supaya
+        konsumen tidak menyimpulkan "aman" dari angka yang tidak pernah dihitung.
+        Blackout tetap dilaporkan sungguhan karena dibaca dari file kalender event.
+        """
         return {
-            "bias": "NEUTRAL" if self.in_blackout else self.bias_status,
-            "score": 0.0 if self.in_blackout else self.bias_score,
+            "bias": self.bias_status,
+            "score": self.bias_score,
+            "dinilai": self.bias_score is not None,
             "n": self.active_headlines_count,
             "blackout": self.in_blackout,
             "blackout_reason": self.blackout_reason,
             "age_sec": max(0, int(time.time() - self.last_check_ts)),
             "engine": "convaiinnovations/laya-finance",
-            "ts": int(time.time())
+            "ts": int(time.time()),
+            "catatan": (
+                "bias/score BELUM dihitung model; hanya blackout yang berasal dari "
+                "kalender event. Pakai /forex/laya untuk verdict berbasis model."
+            ),
         }
 
     def get_status(self) -> dict[str, Any]:
