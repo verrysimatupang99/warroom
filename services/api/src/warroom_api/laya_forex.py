@@ -60,8 +60,11 @@ class LayaForexMiddleware:
     Thread-safe karena endpoint FastAPI bisa memanggil bersamaan.
     """
 
-    def __init__(self, *, min_confidence: float = MIN_CONFIDENCE_DEFAULT) -> None:
+    def __init__(
+        self, *, min_confidence: float = MIN_CONFIDENCE_DEFAULT, timeout_s: float = 120.0
+    ) -> None:
         self.min_confidence = min_confidence
+        self.timeout_s = timeout_s
         self._evaluator: Any = None
         self._tersedia = False
         self._alasan = "belum diinisialisasi"
@@ -186,15 +189,74 @@ class LayaForexMiddleware:
     async def nilai_async(
         self, sinyal: dict[str, Any], telemetri: dict[str, Any]
     ) -> dict[str, Any]:
-        """Versi async AMAN: inferensi dijalankan di thread terpisah.
+        """Versi async AMAN: inferensi dijalankan di proses TERPISAH (subprocess).
 
-        Wajib dipakai dari endpoint FastAPI. Tanpa ini, satu permintaan Laya
-        membekukan seluruh event loop (terbukti: `/api/v1/build` balas 000 selama
-        inferensi berjalan).
+        Riwayat (23 Okt 2026): menjalankan model di dalam proses API terbukti
+        membekukan seluruh layanan — `/api/v1/build` balas 000, listen backlog penuh,
+        RSS melonjak ke 1,1 GB. `asyncio.to_thread` TIDAK menolong karena bebannya
+        CPU+memori, bukan I/O.
+
+        Karena itu inferensi dipanggil sebagai subprocess dengan batas waktu. Bila
+        model lambat/gagal, API tetap hidup dan endpoint menjawab "tidak tersedia"
+        alih-alih menggantung.
         """
         import asyncio
+        import json
+        import sys
+        from pathlib import Path
 
-        return await asyncio.to_thread(self.nilai, sinyal, telemetri)
+        skrip = Path(__file__).with_name("laya_cli.py")
+        muatan = json.dumps({"sinyal": sinyal, "telemetri": telemetri})
+        py = sys.executable
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                py,
+                str(skrip),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            out, err = await asyncio.wait_for(
+                proc.communicate(muatan.encode("utf-8")), timeout=self.timeout_s
+            )
+        except (TimeoutError, asyncio.TimeoutError):
+            return {
+                "tersedia": False,
+                "verdict": "TAK_DIKETAHUI",
+                "engine": "convaiinnovations/laya",
+                "alasan": f"inferensi melebihi {self.timeout_s}s (dibatalkan agar API tetap hidup)",
+                "konteks": self.susun_konteks(sinyal, telemetri),
+            }
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "tersedia": False,
+                "verdict": "TAK_DIKETAHUI",
+                "engine": "convaiinnovations/laya",
+                "alasan": f"gagal menjalankan inferensi: {type(exc).__name__}: {exc}",
+                "konteks": self.susun_konteks(sinyal, telemetri),
+            }
+
+        if proc.returncode != 0:
+            return {
+                "tersedia": False,
+                "verdict": "TAK_DIKETAHUI",
+                "engine": "convaiinnovations/laya",
+                "alasan": f"proses inferensi gagal (kode {proc.returncode}): "
+                f"{err.decode('utf-8', 'replace')[-300:]}",
+                "konteks": self.susun_konteks(sinyal, telemetri),
+            }
+
+        try:
+            hasil = json.loads(out.decode("utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            return {
+                "tersedia": False,
+                "verdict": "TAK_DIKETAHUI",
+                "alasan": f"keluaran inferensi tidak valid: {exc}",
+                "konteks": self.susun_konteks(sinyal, telemetri),
+            }
+        self._terakhir = hasil
+        return hasil
 
     def status(self) -> dict[str, Any]:
         return {
