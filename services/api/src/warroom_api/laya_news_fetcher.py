@@ -6,9 +6,6 @@ dan menentukan skor sentimen serta deteksi event berisiko tinggi.
 
 import logging
 import re
-import time
-from datetime import datetime, timezone
-from typing import Any
 
 log = logging.getLogger("warroom_api.laya_news_fetcher")
 

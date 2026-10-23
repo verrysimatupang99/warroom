@@ -196,7 +196,13 @@ def jalankan(
         noisy_events_hari=noisy_events_hari,
     )
     dihapus: dict[str, int] = {
-        "facts": 0, "events": 0, "noisy_events": 0, "llm_calls": 0, "alerts": 0, "sessions": 0, "rujukan_yatim_dibersihkan": 0,
+        "facts": 0,
+        "events": 0,
+        "noisy_events": 0,
+        "llm_calls": 0,
+        "alerts": 0,
+        "sessions": 0,
+        "rujukan_yatim_dibersihkan": 0,
     }
 
     if r["facts"]:

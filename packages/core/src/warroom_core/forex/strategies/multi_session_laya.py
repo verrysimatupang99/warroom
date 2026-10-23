@@ -10,7 +10,7 @@ Fitur Utama:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .base import BaseStrategy
@@ -23,15 +23,17 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
 
     def __init__(
         self,
-        lot_size: double = 0.10,
+        lot_size: float = 0.10,
         enable_laya: bool = True,
         min_rrr: float = 1.6,
         max_sl_points: float = 3.0,
+        laya_min_confidence: float = 0.60,
     ):
         super().__init__(name="Multi-Session Laya Precision Scalper", timeframe="5m", rrr_min=min_rrr)
         self.lot_size = lot_size
         self.enable_laya = enable_laya
         self.max_sl_points = max_sl_points
+        self.laya_min_confidence = laya_min_confidence
         self._laya_loaded = False
         self._init_laya()
 
@@ -39,10 +41,36 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         try:
             import laya
             self._laya = laya
+            # Evaluator dibangun sekali di init (bukan per sinyal): memuat model
+            # butuh ~10-20 detik pada panggilan pertama, jadi tidak boleh masuk
+            # jalur panas. Bila model tidak tersedia, Laya ditandai nonaktif dan
+            # strategi tetap jalan memakai baseline.
+            self._evaluator = laya.LayaEvaluator(
+                questions={
+                    "verdict": {
+                        "type": "choice",
+                        "instructions": (
+                            "Apakah kondisi pasar saat ini aman untuk eksekusi "
+                            "scalping XAUUSD?"
+                        ),
+                        "criteria": {
+                            "EXECUTE": (
+                                "Momentum jelas, spread wajar, bukan zona fakeout "
+                                "/ sideways mati"
+                            ),
+                            "SKIP": (
+                                "Pasar rawan sweep lanjutan, choppy tanpa volume, "
+                                "atau ada spike ekstrim"
+                            ),
+                        },
+                    }
+                }
+            )
             self._laya_loaded = True
             log.info("Laya AI Decision Judge aktif di MultiSessionLayaScalperStrategy")
         except Exception as exc:
             log.warning("Laya belum dapat diinisialisasi: %s", exc)
+            self._evaluator = None
             self._laya_loaded = False
 
     def get_current_session(self) -> str:
@@ -51,7 +79,7 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         - London: 07:00 - 12:00 UTC (14:00 - 19:00 WIB)
         - New York: 12:00 - 20:00 UTC (19:00 - 03:00 WIB)
         """
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         hour = now_utc.hour
         if 0 <= hour < 7:
             return "ASIA"
@@ -61,29 +89,45 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             return "NEW_YORK"
 
     def evaluate_laya(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
-        """Evaluasi kondisi setup scalping via Laya Model."""
-        if not self.enable_laya or not self._laya_loaded:
+        """Evaluasi kondisi setup scalping via Laya Model.
+
+        Mengembalikan (layak_eksekusi, keyakinan, alasan). Bila Laya tidak aktif
+        atau inferensi gagal, keputusan jatuh ke baseline dan ditandai di alasan
+        supaya tidak pernah terlihat seperti verdict model.
+        """
+        if not self.enable_laya or not self._laya_loaded or self._evaluator is None:
             # Fallback jika Laya dinonaktifkan: loloskan dengan baseline rule
             return True, 0.85, "Laya AI Passthrough (Offline/Bypass)"
 
         try:
-            # Pertanyaan terstruktur ke model Laya System-1
-            questions = {
-                "verdict": {
-                    "type": "choice",
-                    "instructions": "Apakah kondisi pasar saat ini aman untuk eksekusi scalping XAUUSD?",
-                    "criteria": {
-                        "EXECUTE": "Momentum jelas, spread wajar, bukan zona fakeout / sideways mati",
-                        "SKIP": "Pasar rawan sweep lanjutan, choppy tanpa volume, atau ada spike ekstrim"
-                    }
-                }
-            }
-            # Jika runtime model lokal aktif, lakukan inferensi
-            # Untuk menjaga kecepatan eksekusi sub-30ms:
-            return True, 0.88, "Laya AI Confirmed: Clean Micro-Structure & Momentum Alignment"
+            hasil = self._evaluator.invoke(market_state)
+            verdict = (hasil or {}).get("verdict") or {}
+            pilihan = str(verdict.get("choice") or "").upper()
+            prob = verdict.get("probabilities") or {}
+            peluang = prob.get("EXECUTE")
+            if peluang is None:
+                peluang = verdict.get("answer_confidence")
+
+            if pilihan not in ("EXECUTE", "SKIP"):
+                return True, 0.0, f"Laya tanpa verdict dikenali ({pilihan or 'kosong'})"
+
+            # min_confidence sengaja konservatif: Laya nyata bisa mengembalikan
+            # EXECUTE dengan peluang ~0.57 (nyaris tebakan). Di bawah ambang ini
+            # sinyal diperlakukan tidak aman, bukan diloloskan diam-diam.
+            keyakinan = float(peluang) if peluang is not None else 0.0
+            aman = pilihan == "EXECUTE" and keyakinan >= self.laya_min_confidence
+            alasan = (
+                f"Laya {pilihan} p={keyakinan:.3f} "
+                f"(ambang {self.laya_min_confidence:.2f}) side={market_state.get('side')} "
+                f"sesi={market_state.get('session')}"
+            )
+            return aman, keyakinan, alasan
         except Exception as exc:
             log.warning("Laya evaluation error: %s", exc)
-            return True, 0.80, f"Laya Fallback: {exc}"
+            # Fail-open ke baseline: Laya adalah penyaring tambahan, bukan satu-satunya
+            # gerbang. Kegagalan model tidak boleh membekukan strategi, tetapi alasannya
+            # harus jujur menyebut bahwa Laya tidak dipakai.
+            return True, 0.0, f"Laya error, jatuh ke baseline: {exc}"
 
     def evaluate(self, market_data: dict[str, Any]) -> dict[str, Any] | None:
         price = market_data.get("price", 0.0)

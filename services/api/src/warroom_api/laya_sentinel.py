@@ -12,10 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
-import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -64,9 +62,9 @@ class LayaSentinelDaemon:
             self.blackout_reason = ""
             return
 
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         try:
-            with open(BLACKOUT_FILE, "r", encoding="utf-8") as f:
+            with open(BLACKOUT_FILE, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -76,7 +74,7 @@ class LayaSentinelDaemon:
                     if len(parts) >= 2:
                         ts_str = f"{parts[0]} {parts[1]}"
                         try:
-                            event_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+                            event_dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M").replace(tzinfo=UTC)
                             diff_min = (now_utc - event_dt).total_seconds() / 60.0
                             if -BLACKOUT_BEFORE_MIN <= diff_min <= BLACKOUT_AFTER_MIN:
                                 self.in_blackout = True

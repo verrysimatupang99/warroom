@@ -10,7 +10,6 @@ import logging
 from typing import Any
 
 import httpx
-
 from warroom_core.forex.strategies.registry import pnp_registry
 
 log = logging.getLogger("warroom_core.forex.engine")
@@ -24,12 +23,19 @@ SYMBOL_MAP = {
 }
 
 
-async def fetch_klines_direct(symbol: str = "XAUUSD", interval: str = "5m", range_period: str = "1d") -> list[dict[str, Any]]:
+async def fetch_klines_direct(
+    symbol: str = "XAUUSD", interval: str = "5m", range_period: str = "1d"
+) -> list[dict[str, Any]]:
     """Tarik data candle OHLCV langsung dari feed institusional tanpa perantara Tencent."""
     mapped_sym = SYMBOL_MAP.get(symbol.upper(), symbol)
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{mapped_sym}"
     params = {"interval": interval, "range": range_period}
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
 
     try:
         async with httpx.AsyncClient(timeout=6.0) as client:

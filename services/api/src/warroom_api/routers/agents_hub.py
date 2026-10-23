@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import subprocess
 import time
 from pathlib import Path
@@ -38,7 +37,8 @@ AGENT_REGISTRY = {
         "workspace": str(AGENTS_BASE_DIR / "orchestrator"),
         "branch": "agent-orchestrator",
         "default_model": "deepseek-v4.1-flash",  # Qonek ultra-fast
-        "description": "Menerima mandat makro pengguna, mengoordinasikan dan mendelegasikan tugas ke agen spesialis pasar.",
+        "description": "Menerima mandat makro pengguna, mengoordinasikan dan mendelegasikan "
+        "tugas ke agen spesialis pasar.",
     },
     "forex": {
         "id": "forex",
@@ -49,7 +49,8 @@ AGENT_REGISTRY = {
         "workspace": str(AGENTS_BASE_DIR / "forex"),
         "branch": "agent-forex",
         "default_model": "deepseek-v4.1-flash",  # Qonek ultra-fast
-        "description": "Spesialis pasar Forex/Gold (Exness MT5, Laya Sentinel, News Blackout, M5 Micro-trend, EA source).",
+        "description": "Spesialis pasar Forex/Gold (Exness MT5, Laya Sentinel, News "
+        "Blackout, M5 Micro-trend, EA source).",
     },
     "crypto": {
         "id": "crypto",
@@ -60,7 +61,8 @@ AGENT_REGISTRY = {
         "workspace": str(AGENTS_BASE_DIR / "crypto"),
         "branch": "agent-crypto",
         "default_model": "deepseek-v4.1-flash",  # Qonek
-        "description": "Spesialis pasar Crypto (Tencent levels, Binance live flow, volume momentum, liquidation hunt).",
+        "description": "Spesialis pasar Crypto (Tencent levels, Binance live flow, volume "
+        "momentum, liquidation hunt).",
     },
     "polymarket": {
         "id": "polymarket",
@@ -71,7 +73,8 @@ AGENT_REGISTRY = {
         "workspace": str(AGENTS_BASE_DIR / "polymarket"),
         "branch": "agent-polymarket",
         "default_model": "grok-4.7",  # Qonek reasoning
-        "description": "Spesialis Polymarket CLOB, odds mispricing, arbitrage probabilitas, dan event macro hedging.",
+        "description": "Spesialis Polymarket CLOB, odds mispricing, arbitrage "
+        "probabilitas, dan event macro hedging.",
     },
     "idx": {
         "id": "idx",
@@ -82,7 +85,8 @@ AGENT_REGISTRY = {
         "workspace": str(AGENTS_BASE_DIR / "idx"),
         "branch": "agent-idx",
         "default_model": "mimo-v2.6-flash",  # Qonek
-        "description": "Spesialis saham Indonesia (IDX), akumulasi/distribusi bandarmologi, aliran dana asing, dan fundamental.",
+        "description": "Spesialis saham Indonesia (IDX), akumulasi/distribusi bandarmologi, "
+        "aliran dana asing, dan fundamental.",
     },
 }
 
@@ -91,11 +95,36 @@ SUPPORTED_MODELS = [
     {"id": "inherit", "name": "Inherit (Sesi Aktif Antigravity)", "provider": "Core", "badge": "Sesi Aktif"},
 
     # --- Native Core Models ---
-    {"id": "gemini-3.8-flash-high", "name": "Gemini 3.8 Flash (High)", "provider": "Core", "badge": "Native Core"},
-    {"id": "gemini-3.8-flash-medium", "name": "Gemini 3.8 Flash (Medium)", "provider": "Core", "badge": "Native Core"},
-    {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6 (Thinking)", "provider": "Core", "badge": "Native Core"},
-    {"id": "claude-opus-4-6-thinking", "name": "Claude Opus 4.6 (Thinking)", "provider": "Core", "badge": "Native Core"},
-    {"id": "gpt-oss-120b-medium", "name": "GPT-OSS 120B (Medium)", "provider": "Core", "badge": "Native Core"},
+    {
+        "id": "gemini-3.8-flash-high",
+        "name": "Gemini 3.8 Flash (High)",
+        "provider": "Core",
+        "badge": "Native Core",
+    },
+    {
+        "id": "gemini-3.8-flash-medium",
+        "name": "Gemini 3.8 Flash (Medium)",
+        "provider": "Core",
+        "badge": "Native Core",
+    },
+    {
+        "id": "claude-sonnet-4-6",
+        "name": "Claude Sonnet 4.6 (Thinking)",
+        "provider": "Core",
+        "badge": "Native Core",
+    },
+    {
+        "id": "claude-opus-4-6-thinking",
+        "name": "Claude Opus 4.6 (Thinking)",
+        "provider": "Core",
+        "badge": "Native Core",
+    },
+    {
+        "id": "gpt-oss-120b-medium",
+        "name": "GPT-OSS 120B (Medium)",
+        "provider": "Core",
+        "badge": "Native Core",
+    },
 
     # --- Qonek Models (Primary: 30 RPM / 7 Concurrency) ---
     {"id": "deepseek-v4.1-flash", "name": "DeepSeek V4.1 Flash", "provider": "Qonek", "badge": "Qonek"},
@@ -114,7 +143,12 @@ SUPPORTED_MODELS = [
     # --- Nutaraline Models ---
     {"id": "laguna", "name": "Laguna S 2.1", "provider": "Nutaraline", "badge": "Nutaraline"},
     {"id": "nemotron", "name": "Nemotron 3 Ultra", "provider": "Nutaraline", "badge": "Nutaraline"},
-    {"id": "nemotron-lightning", "name": "Nemotron 3.5 Lightning", "provider": "Nutaraline", "badge": "Nutaraline"},
+    {
+        "id": "nemotron-lightning",
+        "name": "Nemotron 3.5 Lightning",
+        "provider": "Nutaraline",
+        "badge": "Nutaraline",
+    },
     {"id": "north-code", "name": "North Mini Code", "provider": "Nutaraline", "badge": "Nutaraline"},
     {"id": "dots3", "name": "Dots3-Note Preview", "provider": "Nutaraline", "badge": "Nutaraline"},
 ]
@@ -255,15 +289,18 @@ def dispatch_to_agent(req: AgentDispatchRequest) -> dict[str, Any]:
             f"[SYSTEM ROLE: Anda adalah War Room Chief Orchestrator. "
             f"Anda memiliki izin penuh CRUD codebase di workspace {ws}. "
             f"Tugas Anda: mengarahkan, merancang strategi makro, dan membagi perintah ke sub-agen pasar "
-            f"(forex di {AGENTS_BASE_DIR}/forex, crypto di {AGENTS_BASE_DIR}/crypto, polymarket di {AGENTS_BASE_DIR}/polymarket, idx di {AGENTS_BASE_DIR}/idx). "
-            f"Anda dapat memeriksa atau mengubah kode di sub-repo atau repo Anda sendiri secara langsung.]\n\n"
+            f"(forex di {AGENTS_BASE_DIR}/forex, crypto di {AGENTS_BASE_DIR}/crypto, "
+            f"polymarket di {AGENTS_BASE_DIR}/polymarket, idx di {AGENTS_BASE_DIR}/idx). "
+            f"Anda dapat memeriksa atau mengubah kode di sub-repo atau repo "
+            f"Anda sendiri secara langsung.]\n\n"
         )
     else:
         role_directive = (
             f"[SYSTEM ROLE: Anda adalah agen spesialis pasar '{info['badge']}' ({info['name']}). "
-            f"Anda beroperasi secara independen di workspace terisolasi: {ws}. "
-            f"Anda memiliki izin penuh CRUD codebase di direktori ini tanpa khawatir merusak runtime server utama. "
-            f"Fokus Anda hanya pada analisis, strategi, data feeds, dan kode terkait pasar {info['market'].upper()}.]\n\n"
+            f"Anda memiliki izin penuh CRUD codebase di direktori ini tanpa khawatir "
+            f"merusak runtime server utama. "
+            f"Fokus Anda hanya pada analisis, strategi, data feeds, dan kode terkait "
+            f"pasar {info['market'].upper()}.]\n\n"
         )
 
     full_prompt = role_directive + req.prompt

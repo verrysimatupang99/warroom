@@ -13,16 +13,13 @@ import json
 import logging
 import os
 import re
-import subprocess
 import time
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from warroom_core.db import User
-from warroom_api import auth
 from warroom_api.auth_ea import verify_mt5_or_admin
 
 log = logging.getLogger("warroom_api.agy")
@@ -36,7 +33,10 @@ AGY_REAL = "/home/admin/.local/bin/agy.real"
 
 class AgyPromptRequest(BaseModel):
     prompt: str = Field(..., min_length=1, description="Pesan chat dari user ke AI Agent")
-    model: str = Field(default="inherit", description="Model yang dipilih (inherit, deepseek, gpt6, gemini, dll)")
+    model: str = Field(
+        default="inherit",
+        description="Model yang dipilih (inherit, deepseek, gpt6, gemini, dll)",
+    )
     async_mode: bool = Field(default=True, description="Jalankan sebagai background task")
 
 
@@ -127,7 +127,7 @@ def get_chat_messages(
 
     messages = []
     try:
-        with open(t_file, "r", encoding="utf-8", errors="ignore") as f:
+        with open(t_file, encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
             for line in lines[-limit:]:
                 line = line.strip()
@@ -153,7 +153,11 @@ def get_chat_messages(
                         clean_content = _bersihkan_pesan_ai(content)
                         tool_calls = obj.get("tool_calls", [])
                         # Hanya sertakan pesan percakapan asli, bukan dump mentah stdout/system
-                        if clean_content and len(clean_content) > 5 and not clean_content.startswith("Created At:"):
+                        if (
+                            clean_content
+                            and len(clean_content) > 5
+                            and not clean_content.startswith("Created At:")
+                        ):
                             messages.append({
                                 "role": "assistant",
                                 "step": obj.get("step_index"),
@@ -164,7 +168,7 @@ def get_chat_messages(
                 except Exception:
                     continue
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Gagal membaca berkas log: {exc}")
+        raise HTTPException(status_code=500, detail=f"Gagal membaca berkas log: {exc}") from exc
 
     return {
         "conversation_id": conv_id,

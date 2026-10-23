@@ -7,10 +7,11 @@ strategi trading secara dinamis (User-Friendly).
 from __future__ import annotations
 
 from typing import Any
+
 from .base import BaseStrategy
-from .scalping_m5 import ScalpingM5Strategy
 from .laya_judge import LayaForexJudgeStrategy
 from .multi_session_laya import MultiSessionLayaScalperStrategy
+from .scalping_m5 import ScalpingM5Strategy
 
 
 class StrategyRegistry:

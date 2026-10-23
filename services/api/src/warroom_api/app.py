@@ -22,6 +22,9 @@ from warroom_core.db import User, dispose_engine
 
 from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
+from warroom_api.laya_sentinel import laya_sentinel
+from warroom_api.routers import agents_hub as agents_hub_router
+from warroom_api.routers import agy as agy_router
 from warroom_api.routers import alert as alert_router
 from warroom_api.routers import auth as auth_router
 from warroom_api.routers import cron as cron_router
@@ -38,11 +41,7 @@ from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.routers import tencent as tencent_router
-from warroom_api.routers import agy as agy_router
-from warroom_api.routers import agents_hub as agents_hub_router
 from warroom_api.stream import event_stream
-
-from warroom_api.laya_sentinel import laya_sentinel
 
 __all__ = ["app", "create_app"]
 

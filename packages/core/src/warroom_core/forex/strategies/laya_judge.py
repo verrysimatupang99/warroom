@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 from .base import BaseStrategy
 
 log = logging.getLogger("warroom_core.forex.strategies.laya")
@@ -53,9 +54,12 @@ class LayaForexJudgeStrategy(BaseStrategy):
         if not side:
             return None
 
-        # Evaluasi Hakim AI Laya:
-        # Menilai apakah kondisi volatilitas & struktur aman dari false breakout
-        market_state = {
+        # CATATAN KEJUJURAN (audit 2026-10-23): blok ini BELUM memanggil model Laya.
+        # market_state disusun hanya sebagai bahan bila inferensi disambungkan nanti;
+        # keputusan di bawah masih aturan baseline murni (EMA + ATR). Jangan menamai
+        # hasilnya "Laya Confirmed" seolah-olah verdict model. Penyambungan nyata
+        # sudah ada di strategies/multi_session_laya.py (evaluate_laya + ambang).
+        _market_state = {
             "symbol": "XAUUSD",
             "side": side,
             "price": price,
@@ -65,10 +69,9 @@ class LayaForexJudgeStrategy(BaseStrategy):
             "mode": "scalping",
         }
 
-        # Kriteria Laya
-        is_safe = True
+        # Baseline rule (BUKAN verdict Laya).
         confidence = 0.85
-        reason = f"Laya Confirmed {side}: Momentum searah EMA M5, ATR {atr14} valid"
+        reason = f"Baseline EMA/ATR {side}: momentum searah EMA M5, ATR {atr14}"
 
         if side == "LONG":
             return {

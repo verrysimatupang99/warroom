@@ -140,12 +140,14 @@ async def tencent_forex_levels(
             if signal_side == "LONG" and trend == "BEARISH":
                 raw_levels["status"] = "FILTERED"
                 raw_levels["filter_reason"] = (
-                    f"{mode.upper()} ({raw_levels['trend_tf']}) Trend Block: Price ({latest_close}) < EMA ({raw_levels['trend_ema']})"
+                    f"{mode.upper()} ({raw_levels['trend_tf']}) Trend Block: "
+                    f"Price ({latest_close}) < EMA ({raw_levels['trend_ema']})"
                 )
             elif signal_side == "SHORT" and trend == "BULLISH":
                 raw_levels["status"] = "FILTERED"
                 raw_levels["filter_reason"] = (
-                    f"{mode.upper()} ({raw_levels['trend_tf']}) Trend Block: Price ({latest_close}) > EMA ({raw_levels['trend_ema']})"
+                    f"{mode.upper()} ({raw_levels['trend_tf']}) Trend Block: "
+                    f"Price ({latest_close}) > EMA ({raw_levels['trend_ema']})"
                 )
             else:
                 raw_levels["trend"] = trend
@@ -166,7 +168,8 @@ async def tencent_forex_levels(
                 if rrr < 1.5:
                     raw_levels["status"] = "FILTERED"
                     raw_levels["filter_reason"] = (
-                        f"Inverted/Low RRR Gate: Reward ({reward:.2f}) < 1.5x Risk ({risk:.2f}). RRR: {rrr:.2f}:1"
+                        f"Inverted/Low RRR Gate: Reward ({reward:.2f}) < 1.5x "
+                        f"Risk ({risk:.2f}). RRR: {rrr:.2f}:1"
                     )
                 else:
                     raw_levels["rrr"] = round(rrr, 2)
@@ -280,10 +283,12 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         '$u="https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/source.raw"; '
         '$h=@{"X-Warroom-Token"="REDACTED_LEAKED_TOKEN"}; '
         '$c=Invoke-RestMethod -Uri $u -Headers $h -TimeoutSec 10; '
-        '$files=Get-ChildItem -Path "C:\\" -Filter "WarRoom_AutoTrader.mq5" -Recurse -ErrorAction SilentlyContinue; '
+        '$files=Get-ChildItem -Path "C:\\" -Filter "WarRoom_AutoTrader.mq5" '
+        '-Recurse -ErrorAction SilentlyContinue; '
         'foreach($f in $files){ '
         '  Set-Content -Path $f.FullName -Value $c -Encoding UTF8; '
-        '  $ed=Get-ChildItem -Path "C:\\Program Files" -Filter "metaeditor64.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; '
+        '  $ed=Get-ChildItem -Path "C:\\Program Files" -Filter "metaeditor64.exe" '
+        '-Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; '
         '  if($ed){ Start-Process -FilePath $ed.FullName -ArgumentList "/compile:`"$($f.FullName)`"" } '
         '}'
     )
@@ -329,15 +334,22 @@ async def get_mt5_ea_source():
     """Mengembalikan isi kode sumber WarRoom_AutoTrader.mq5 v2.0 untuk sinkronisasi otomatis."""
     p = Path("/srv/private/WarRoom_AutoTrader.mq5")
     if not p.exists():
-        raise HTTPException(status_code=404, detail="File EA v2.0 tidak ditemukan di server")
-    return {"status": "OK", "filename": "WarRoom_AutoTrader.mq5", "content": p.read_text(encoding="utf-8-sig", errors="ignore")}
+        raise HTTPException(
+            status_code=404, detail="File EA v2.0 tidak ditemukan di server"
+        )
+    return {
+        "status": "OK",
+        "filename": "WarRoom_AutoTrader.mq5",
+        "content": p.read_text(encoding="utf-8-sig", errors="ignore"),
+    }
 
 
 @router.get("/forex/sentinel")
 async def get_forex_laya_sentinel():
     """Mengembalikan status live 24/7 pengawasan Laya AI Sentinel & keamanan Zero-Day."""
-    from warroom_api.laya_sentinel import laya_sentinel
     from warroom_core.forex.strategies.registry import pnp_registry
+
+    from warroom_api.laya_sentinel import laya_sentinel
     st = laya_sentinel.get_status()
     st["active_strategy"] = pnp_registry.get_active_strategy().name
     st["all_strategies"] = pnp_registry.list_strategies()
