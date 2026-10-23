@@ -5,13 +5,41 @@
 
 API_BASE="http://127.0.0.1:8800"
 
+# Sidik jari kode yang SEHARUSNYA jalan (dihitung dari isi berkas di disk repo).
+# Dibandingkan dengan yang dilaporkan proses: build_id saja tidak cukup karena nilainya
+# berasal dari env yang ditulis sesi deploy itu sendiri (temuan audit TINGGI-4).
+fingeprint_disk() {
+	"$ROOT/.venv/bin/python" - "$ROOT" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1] + "/packages/core/src")
+try:
+    from warroom_core.fingerprint import kode_fingerprint
+
+    print(kode_fingerprint())
+except Exception:
+    print("")
+PY
+}
+
 # Build_id proses harus sama dengan yang baru diset: tanpa itu "restart" bisa berarti
-# proses lama yang masih jalan (pola insiden 2026-10 api/web).
+# proses lama yang masih jalan (pola insiden 2026-10 api/web). Ditambah bukti kedua:
+# sidik jari kode yang dilaporkan proses harus sama dengan isi berkas di disk.
 gate_identity_api() {
-	local id_proses
-	id_proses="$(curl -sf --max-time 3 "$API_BASE/api/v1/build" 2>/dev/null | \
-		sed -nE 's/.*"build_id"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n1)" || return 1
-	[[ -n "$id_proses" && "$id_proses" == "$BUILD_ID" ]]
+	local id_proses fp_proses fp_disk
+	local body
+	body="$(curl -sf --max-time 5 "$API_BASE/api/v1/build" 2>/dev/null)" || return 1
+	id_proses="$(printf '%s' "$body" | \
+		sed -nE 's/.*"build_id"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n1)"
+	fp_proses="$(printf '%s' "$body" | \
+		sed -nE 's/.*"kode_fingerprint"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n1)"
+	[[ -n "$id_proses" && "$id_proses" == "$BUILD_ID" ]] || return 1
+
+	# Bila proses belum melaporkan fingerprint (versi lama), jangan gagalkan deploy:
+	# gate kedua ini menambah bukti, tidak boleh memblokir rollback ke build lama.
+	[[ -n "$fp_proses" ]] || return 0
+
+	fp_disk="$(fingeprint_disk)"
+	[[ -n "$fp_disk" && "$fp_proses" == "$fp_disk" ]]
 }
 
 # Tanpa crash-loop: restart manual menyetel NRestarts=0; bacaan >0 berarti unit sempat mati.

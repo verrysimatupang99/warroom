@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from warroom_core import build_id as core_build_id
 from warroom_core import domain_version as core_domain_version
 from warroom_core.db import Fact, User, session_scope
+from warroom_core.fingerprint import jumlah_berkas, kode_fingerprint
 
 from warroom_api import auth
 from warroom_api.metrics import collect_readiness
@@ -47,6 +48,8 @@ def build() -> dict[str, Any]:
     """
     return {
         "build_id": core_build_id(),
+        "kode_fingerprint": kode_fingerprint(),
+        "berkas_dihitung": jumlah_berkas(),
         "domain_version": core_domain_version(),
         "time": datetime.now(UTC).isoformat(),
     }
