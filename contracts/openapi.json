@@ -4319,6 +4319,67 @@
         "summary": "Live Arming"
       }
     },
+    "/api/v1/live/biaya": {
+      "post": {
+        "description": "A4: biaya eksekusi terukur dari buku nyata (fee + slippage) untuk ukuran tertentu.\n\nRead-only: tidak membuka order, tidak menyentuh gate live. Angka yang keluar berasal\ndari snapshot buku Binance futures saat dipanggil; bila buku tak terbaca, ``sumber``\nakan berbunyi ``asumsi`` dan itu harus dibaca sebagai bukan-ukuran.",
+        "operationId": "live_biaya_api_v1_live_biaya_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Live Biaya Api V1 Live Biaya Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Live Biaya"
+      }
+    },
     "/api/v1/live/dry-run": {
       "post": {
         "description": "Uji kering read-only: ukur kedalaman buku (tanpa order) — P6-T3.\n\nHanya subperintah yang di-allowlist yang diterima. Subperintah lain → **422**,\nbukan 200-dengan-pesan-gagal: permintaannya memang tidak sah, dan pemanggil\ntidak boleh menganggapnya berhasil. (Temuan audit 5 Okt 2026.)",

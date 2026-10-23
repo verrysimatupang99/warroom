@@ -332,3 +332,40 @@ def run_dry_depth(subperintah: str = "depth", *, timeout_s: int = 120) -> dict[s
     if hasil.returncode != 0:
         return {"status": "gagal", "kode": hasil.returncode, "detail": hasil.stderr.strip()[:300]}
     return {"status": "ok", "keluaran": hasil.stdout.strip()[:2000].splitlines()}
+
+def ukur_biaya_eksekusi(
+    pair: str = "BTCUSDT", size_usd: float = 100.0, *, sisi: str = "ask"
+) -> dict[str, Any]:
+    """Ukur fee + slippage dari buku order NYATA pada ukuran posisi tertentu (A4).
+
+    Berbeda dari ``run_dry_depth`` yang hanya menampilkan tabel kedalaman: fungsi ini
+    memakai ``biaya_dari_depth`` sehingga angkanya langsung berupa biaya eksekusi
+    (fee taker + slippage setengah rentang yang tertelan) untuk ``size_usd`` nyata.
+
+    ``sumber`` di hasil menyatakan asal angka: ``depth:<pair>`` bila terukur dari buku,
+    ``asumsi`` bila buku tidak terbaca. Pemanggil tidak boleh menganggap keduanya sama.
+    """
+    if sisi not in ("ask", "bid"):
+        return {"status": "ditolak", "detail": "sisi harus 'ask' (beli) atau 'bid' (jual)"}
+    if size_usd <= 0:
+        return {"status": "ditolak", "detail": "size_usd harus > 0"}
+    try:
+        from live_trading.collectors.depth import DepthCollector
+        from live_trading.config import Settings
+        from live_trading.execution.costs import biaya_dari_depth, ringkas
+
+        rep = DepthCollector(settings=Settings()).report(pair, limit=100, max_bps=20.0)
+        biaya = biaya_dari_depth(rep, sisi_masuk=sisi, size_usd=size_usd, sisi_keluar=None)
+        return {
+            "status": "ok",
+            "pair": pair,
+            "size_usd": size_usd,
+            "sisi": sisi,
+            "sumber": biaya.get("sumber"),
+            "fee_bps": biaya.get("fee_bps"),
+            "slippage_bps_masuk": biaya.get("slippage_bps_masuk"),
+            "total_bps": biaya.get("total_bps"),
+            "ringkas": ringkas(biaya),
+        }
+    except Exception as exc:  # noqa: BLE001 — laporkan apa adanya, jangan mengarang angka
+        return {"status": "gagal", "detail": f"{type(exc).__name__}: {exc}"}

@@ -109,3 +109,20 @@ def live_dry_run(
             },
         )
     return live.run_dry_depth(sub)
+
+
+@router.post("/api/v1/live/biaya")
+def live_biaya(
+    body: dict[str, Any], user: Annotated[User, Depends(auth.require_role("operator"))]
+) -> dict[str, Any]:
+    """A4: biaya eksekusi terukur dari buku nyata (fee + slippage) untuk ukuran tertentu.
+
+    Read-only: tidak membuka order, tidak menyentuh gate live. Angka yang keluar berasal
+    dari snapshot buku Binance futures saat dipanggil; bila buku tak terbaca, ``sumber``
+    akan berbunyi ``asumsi`` dan itu harus dibaca sebagai bukan-ukuran.
+    """
+    return live.ukur_biaya_eksekusi(
+        pair=str(body.get("pair", "BTCUSDT")).upper(),
+        size_usd=float(body.get("size_usd", 100.0)),
+        sisi=str(body.get("sisi", "ask")),
+    )
