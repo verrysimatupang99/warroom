@@ -21,11 +21,15 @@ Prinsip kejujuran yang dikodekan di sini:
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+# Saklar keselamatan: inferensi hanya jalan bila operator menyalakannya.
+LAYA_AKTIF = os.environ.get("WARROOM_LAYA_ENABLE", "").strip() in ("1", "true", "yes")
 
 # Ambang keyakinan: di bawah ini sinyal diperlakukan tidak aman (SKIP).
 MIN_CONFIDENCE_DEFAULT = 0.60
@@ -206,6 +210,18 @@ class LayaForexMiddleware:
         from pathlib import Path
 
         skrip = Path(__file__).with_name("laya_cli.py")
+        if not LAYA_AKTIF:
+            return {
+                "tersedia": False,
+                "verdict": "TAK_DIKETAHUI",
+                "engine": "convaiinnovations/laya",
+                "alasan": (
+                    "inferensi dimatikan demi kestabilan layanan; nyalakan dengan "
+                    "WARROOM_LAYA_ENABLE=1 (model butuh ~1.1 GB RAM dan pernah "
+                    "membuat swap penuh sehingga API berhenti merespons)"
+                ),
+                "konteks": self.susun_konteks(sinyal, telemetri),
+            }
         muatan = json.dumps({"sinyal": sinyal, "telemetri": telemetri})
         py = sys.executable
         try:
@@ -269,3 +285,16 @@ class LayaForexMiddleware:
 
 
 middleware = LayaForexMiddleware()
+
+# SAKLAR KESELAMATAN (insiden 23 Okt 2026).
+#
+# Model Laya (421M + torch) memakai ~1,1 GB RAM dan mendorong swap 2 GB penuh di
+# server ini, sehingga SELURUH layanan tersendat (API balas 000, EA kehilangan
+# telemetri). Karena itu inferensi di endpoint DINONAKTIFKAN secara default dan
+# hanya menyala bila operator menyalakannya sadar-sadar:
+#
+#     WARROOM_LAYA_ENABLE=1 systemctl restart warroom-api
+#
+# Tanpa itu, endpoint /forex/laya menjawab jujur bahwa verdict tidak tersedia,
+# bukan menjalankan model yang bisa menjatuhkan layanan.
+
