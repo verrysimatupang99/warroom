@@ -37,9 +37,17 @@ __all__ = [
     "verifikasi",
 ]
 
-# Kunci yang menandakan sebuah berkas/baris memuat HASIL (menang/kalah), bukan hanya
-# keputusan. Recorder saat ini tidak menulis ini — itulah blocker yang harus terlihat.
-OUTCOME_MARKERS = ("outcome", "resolved", "resolution", "result", "won", "payout")
+# Penanda bahwa sebuah baris memuat HASIL (menang/kalah), bukan sekadar keputusan.
+#
+# Koreksi 23 Okt 2026: sebelumnya di sini tertulis "recorder tidak menulis outcome".
+# Itu KELIRU. Rekaman memang memuat resolusi, tetapi dengan nama field `closed` milik
+# Gamma API — dan `closed` tidak ada di daftar penanda, sehingga deteksi buta.
+# Terukur pada run auto-20261023t105826z: 168 slug 5-menit, 152 di antaranya
+# `"closed": true` (resolusi final). Karena itu penandanya sekarang mencakup `closed`.
+#
+# PENTING: `"closed": false` berarti market BELUM selesai, jadi tidak boleh dianggap
+# outcome. Karena itu `_scan_outcome` hanya menerima `closed` bernilai true.
+OUTCOME_MARKERS = ("outcome", "resolved", "resolution", "result", "won", "payout", "closed")
 
 
 def _sha256_file(p: Path) -> str:
@@ -51,7 +59,13 @@ def _sha256_file(p: Path) -> str:
 
 
 def _scan_outcome(path: Path) -> tuple[bool, int]:
-    """Cari penanda outcome di berkas jsonl(.gz). Kembalikan (ada, total_baris)."""
+    """Cari penanda outcome di berkas jsonl(.gz). Kembalikan (ada, total_baris).
+
+    Selain mencocokkan nama penanda, `closed` hanya dihitung bila nilainya true:
+    market yang belum selesai (`"closed": false`) TIDAK boleh membuat sebuah run
+    dianggap punya outcome. Tanpa aturan ini, setiap baris market running akan
+    meloloskan split padahal belum ada hasil apa pun.
+    """
     import gzip
 
     pembuka = gzip.open if path.suffix == ".gz" else open
@@ -61,7 +75,16 @@ def _scan_outcome(path: Path) -> tuple[bool, int]:
         with pembuka(path, "rt", encoding="utf-8", errors="replace") as fh:  # type: ignore[operator]
             for baris in fh:
                 dibaca += 1
-                if not ada and any(f'"{m}"' in baris for m in OUTCOME_MARKERS):
+                if ada:
+                    continue
+                if '"closed"' in baris:
+                    # Hanya `closed` bernilai true yang dihitung sebagai resolusi.
+                    if '"closed": true' in baris or '"closed":true' in baris:
+                        ada = True
+                        continue
+                    # Baris berisi closed:false saja tidak membuktikan apa pun;
+                    # tetap periksa penanda lain di baris yang sama.
+                if any(f'"{m}"' in baris for m in OUTCOME_MARKERS if m != "closed"):
                     ada = True
     except (OSError, EOFError):
         return ada, dibaca

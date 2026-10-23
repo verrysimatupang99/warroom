@@ -117,3 +117,30 @@ def test_split_untuk_gate_menolak_dataset_yang_hilang(db, tmp_path: Path) -> Non
     shutil.rmtree(d)
     with session_scope() as s:
         assert splits.split_untuk_gate(s, hasil["id"]) is None
+
+
+def test_scan_outcome_hanya_menerima_closed_true(tmp_path: Path) -> None:
+    """Regresi 23 Okt 2026: deteksi outcome buta terhadap field `closed` dari Gamma API.
+
+    Rekaman Polymarket menandai resolusi dengan `"closed": true`, bukan kata
+    "outcome"/"resolved". Tanpa `closed` di daftar penanda, run yang sebenarnya
+    berisi 152 market resolved tetap dinilai "tanpa outcome" dan split tidak bisa
+    dibekukan.
+
+    Yang WAJIB ditolak: baris `"closed": false` (market masih berjalan) tidak boleh
+    membuat run dianggap punya hasil.
+    """
+    belum = tmp_path / "belum.jsonl"
+    belum.write_text('{"market": {"slug": "btc-updown-5m-1", "closed": false}}\n', encoding="utf-8")
+    assert splits._scan_outcome(belum) == (False, 1)
+
+    sudah = tmp_path / "sudah.jsonl"
+    sudah.write_text('{"market": {"slug": "btc-updown-5m-1", "closed": true}}\n', encoding="utf-8")
+    assert splits._scan_outcome(sudah)[0] is True
+
+
+def test_scan_outcome_format_rapat_tanpa_spasi(tmp_path: Path) -> None:
+    # JSON bisa ditulis tanpa spasi; deteksi tidak boleh bergantung pada format.
+    f = tmp_path / "rapat.jsonl"
+    f.write_text('{"closed":true}\n', encoding="utf-8")
+    assert splits._scan_outcome(f)[0] is True
