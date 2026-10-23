@@ -7,6 +7,7 @@ Mendukung arsitektur Plug-and-Play (PNP) di mana strategi bisa dibongkar-pasang 
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -162,6 +163,10 @@ async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") 
         "atr": ind["atr14"],
         "atr_pct": ind["atr_pct"],
         "status": "OK",
+        # R2: EA menolak sinyal yang lebih tua dari InpMaxSignalAgeSec. Tanpa
+        # stempel waktu, sinyal lama dieksekusi ke pasar yang sudah bergerak
+        # (penyebab drift harga yang memperburuk R:R di sisi EA).
+        "generated_at": int(time.time()),
         "levels": {
             "entry": entry,
             "sl": sl,
