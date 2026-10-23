@@ -1,23 +1,22 @@
 {
-  "directive_id": "DIR-ORCH-IDX-20261023",
+  "directive_id": "DIR-ORCH-POLYMARKET-20261023",
   "timestamp": "2026-10-23T04:53:47.300611+00:00",
   "issuer": "War Room Chief Orchestrator",
-  "agent_role": "IDX & Equity Specialist",
-  "workspace": "/home/admin/warroom-agents/idx",
+  "agent_role": "Polymarket & Prediction Specialist",
+  "workspace": "/home/admin/warroom-agents/polymarket",
   "model_assignment": {
-    "primary_provider": "KIYARA",
-    "primary_model": "qwen/qwen3.8-flash",
-    "validator_provider": "NUTARALINE",
-    "validator_model": "mimo-v2.6-flash",
+    "primary_provider": "NUTARALINE",
+    "primary_model": "nemotron-3.5-lightning",
+    "validator_provider": "KIYARA",
+    "validator_model": "moonshotai/kimi-k3",
     "policy": "NON-INHERIT, NON-NATIVE CORE MODELS VARIATION"
   },
   "mandate": {
     "market_analysis": {
       "priority": "P0",
       "target_instruments": [
-        "IHSG",
-        "Big Cap Banking (BBCA, BBRI, BMRI)",
-        "Bandarmologi Leaders"
+        "Macro/Geopolitics/Crypto Binary Markets",
+        "Spread & Probability Edge"
       ],
       "scope": [
         "Liquidity, Orderbook Depth, and Volatility Regime Assessment",
@@ -34,9 +33,9 @@
     "codebase_analysis": {
       "priority": "P0",
       "scope_files": [
-        "packages/live-trading/src/live_trading/pods/idx.py",
-        "packages/live-trading/src/live_trading/collectors/idx.py",
-        "packages/live-trading/src/live_trading/collectors/bandarmologi.py"
+        "packages/live-trading/src/live_trading/collectors/radar.py",
+        "packages/live-trading/src/live_trading/dompet.py",
+        "packages/live-trading/src/live_trading/execution/paper.py"
       ],
       "action_guard": "READ_ONLY_DEFAULT (CRUD with explicit justification)",
       "health_checks": [
@@ -47,7 +46,7 @@
     }
   },
   "deliverables": [
-    "/home/admin/warroom-agents/idx/MARKET_ANALYSIS_REPORT.md",
-    "/home/admin/warroom-agents/idx/CODEBASE_AUDIT_REPORT.md"
+    "/home/admin/warroom-agents/polymarket/MARKET_ANALYSIS_REPORT.md",
+    "/home/admin/warroom-agents/polymarket/CODEBASE_AUDIT_REPORT.md"
   ]
 }
