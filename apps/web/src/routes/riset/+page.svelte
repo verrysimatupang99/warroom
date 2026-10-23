@@ -22,6 +22,7 @@
 	import KinerjaBukti from '$lib/components/KinerjaBukti.svelte';
 	import StrategyLeaderboard from '$lib/components/StrategyLeaderboard.svelte';
 	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
+	import UnderConstruction from '$lib/components/UnderConstruction.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	// Data untuk sub "Bukti" (audit QA putaran 3): payload pasar/ringkas + umur fakta.
@@ -255,16 +256,19 @@ function pilihSub(s: string) {
 		</section>
 	{:else if sub === 'bukti'}
 		<!-- ============ BUKTI (audit QA putaran 3) ============ -->
-		<!-- Tujuh jawaban berdampingan untuk semua pasar: trade tuntas, WR, total R, PnL,
-		     drawdown, biaya, periode + denominator. -->
-		<KinerjaBukti akurasi={pasarRingkas} risetRuns={risetRuns} />
+		<UnderConstruction 
+			marketTitle="Kinerja & Bukti Ledger Multi-Pasar"
+			category="CROSS-MARKET LEDGER AUDIT"
+			eta="Tahap 2 (Q4 2026)"
+			detail="Audit bukti ledger lintas pasar (Crypto, Polymarket, IDX) sementara dialihkan ke mode standby. PnL dan catatan transaksi terverifikasi saat ini difokuskan pada akun Exness Demo Forex & Gold."
+		/>
 	{:else if sub === 'leaderboard'}
 		<!-- ============ LEADERBOARD ANTAR-STRATEGI ============ -->
-		<StrategyLeaderboard
-			payload={leaderboardPayload}
-			memuat={leaderboardMemuat}
-			galat={leaderboardGalat}
-			onulang={muatLeaderboard}
+		<UnderConstruction 
+			marketTitle="Strategy Leaderboard Multi-Pasar"
+			category="QUANTITATIVE LEADERBOARD"
+			eta="Tahap 2 (Q4 2026)"
+			detail="Papan peringkat komparasi performa strategi multi-pasar sementara ditangguhkan seiring konvergensi sistem ke instrumen Gold & Forex (XAUUSD)."
 		/>
 	{:else if sub === 'kalender'}
 		<!-- ============ KALENDER (padanan /calendar algentis) ============ -->

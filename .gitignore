@@ -51,3 +51,4 @@ ops/docker-mt5/config/
 # Data candle historis — diunduh ulang dari feed, bukan sumber repo.
 data/hist/
 
+*.bak

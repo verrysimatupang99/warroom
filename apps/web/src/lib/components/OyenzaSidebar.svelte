@@ -18,18 +18,19 @@
 
 	const markets = [
 		{ rute: '/', label: 'Overview / Home', num: '1', ikon: 'home' },
-		{ rute: '/forex', label: 'Gold & Forex (XAUUSD)', num: '2', ikon: 'forex', tag: 'PROP' },
-		{ rute: '/crypto', label: 'Crypto (BTC & SOL)', num: '3', ikon: 'crypto' },
-		{ rute: '/polymarket', label: 'Polymarket CLOB', num: '4', ikon: 'polymarket' },
-		{ rute: '/idx', label: 'IDX Saham Indonesia', num: '5', ikon: 'idx' },
-		{ rute: '/gmgn', label: 'GMGN Solana Radar', num: '6', ikon: 'gmgn' }
+		{ rute: '/forex', label: 'Gold & Forex (XAUUSD)', num: '2', ikon: 'forex', tag: 'ACTIVE' },
+		{ rute: '/crypto', label: 'Crypto (BTC & SOL)', num: '3', ikon: 'crypto', tag: 'WIP' },
+		{ rute: '/polymarket', label: 'Polymarket CLOB', num: '4', ikon: 'polymarket', tag: 'WIP' },
+		{ rute: '/idx', label: 'IDX Saham Indonesia', num: '5', ikon: 'idx', tag: 'WIP' },
+		{ rute: '/gmgn', label: 'GMGN Solana Radar', num: '6', ikon: 'gmgn', tag: 'WIP' }
 	];
 
 	const system = [
+		{ rute: '/agy', label: 'AI Market Agent', num: 'A', ikon: 'sistem', tag: 'WIP' },
 		{ rute: '/tencent', label: 'Server Tencent (Tailscale)', num: '7', ikon: 'mesin', tag: 'NODE' },
-		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '8', ikon: 'riset' },
-		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '9', ikon: 'riset' },
-		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '0', ikon: 'sistem' },
+		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '8', ikon: 'riset', tag: 'WIP' },
+		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '9', ikon: 'riset', tag: 'WIP' },
+		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '0', ikon: 'sistem', tag: 'WIP' },
 		{ rute: '/catatan', label: 'Catatan & Alur Engine', num: 'K', ikon: 'info' }
 	];
 

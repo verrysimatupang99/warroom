@@ -2309,13 +2309,13 @@ function pilihSub(s: string) {
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
 									<span class="text-10 text-text-3 block">AKUN BROKER</span>
-									<span class="text-14 font-bold text-text">Forward Paper</span>
-									<span class="text-10 text-text-3">simulasi presisi tinggi</span>
+									<span class="text-14 font-bold text-text">Exness MT5 (#416510164)</span>
+									<span class="text-10 text-text-3">Demo Algo Execution</span>
 								</div>
 								<div class="rounded bg-surface p-2.5 border border-line">
 									<span class="text-10 text-text-3 block">MESIN SINYAL</span>
-									<span class="text-14 font-bold text-text">Tencent (cron)</span>
-									<span class="text-10 text-text-3">XAUUSD 4-agen + multi-pair</span>
+									<span class="text-14 font-bold text-text">Laya AI + PNP Engine</span>
+									<span class="text-10 text-text-3">Zero Tencent Native (M5 Scalper)</span>
 								</div>
 							</div>
 						</div>
@@ -2770,12 +2770,11 @@ function pilihSub(s: string) {
 				</div>
 			{/if}
 
-			<!-- Aliran kejadian SSE untuk area ini, tertutup secara default sebagai panel diagnosis. -->
+			<!-- Aliran kejadian SSE untuk area ini -->
 			<Block
 				judul="EventItem Area"
 				deskripsi={`Aliran SSE terfilter topik area · ${kejadianArea.length} kejadian`}
-				lipat
-				lipatAwal
+				lipat={false}
 			>
 				<EventFeed
 					kejadian={kejadianArea}

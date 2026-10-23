@@ -99,15 +99,15 @@
 					</span>
 				</div>
 				<p class="text-xs text-zinc-400 font-sans">
-					Eksekutor Algo Trading Otomatis (Node Tencent &rarr; Tailscale &rarr; MQL5)
+					Eksekutor Algo Trading Otomatis (Exness Demo #416510164 &bull; Laya AI &bull; Lot 0.10)
 				</p>
 			</div>
 		</div>
 
 		<div class="flex items-center gap-2">
 			<a
-				href="/WarRoom_AutoTrader.mq5"
-				download="WarRoom_AutoTrader.mq5"
+				href="/api/v1/tencent/mt5/source.raw"
+				target="_blank"
 				class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-3 py-1.5 text-xs font-mono font-medium text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 transition shadow-sm"
 			>
 				<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

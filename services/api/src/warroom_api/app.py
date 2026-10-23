@@ -9,6 +9,7 @@ Aturan yang dikodekan: setiap angka berasal dari tabel `facts` (punya `fact_id`,
 
 from __future__ import annotations
 
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -37,7 +38,11 @@ from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.routers import tencent as tencent_router
+from warroom_api.routers import agy as agy_router
+from warroom_api.routers import agents_hub as agents_hub_router
 from warroom_api.stream import event_stream
+
+from warroom_api.laya_sentinel import laya_sentinel
 
 __all__ = ["app", "create_app"]
 
@@ -63,7 +68,11 @@ def _kunci_klien(request: Request) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Mulai 24/7 Laya Sentinel Daemon di background
+    sentinel_task = asyncio.create_task(laya_sentinel.start())
     yield
+    laya_sentinel.is_running = False
+    sentinel_task.cancel()
     dispose_engine()
 
 
@@ -146,6 +155,10 @@ def create_app() -> FastAPI:
 
     # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
     app.include_router(llm_router.router)
+
+    # --- AGY-CLI & Antigravity Web Control Manager ---
+    app.include_router(agy_router.router)
+    app.include_router(agents_hub_router.router)
 
     # --- Protected OpenAPI & Swagger UI (Hanya Admin dengan Sesi Sah) ---
     @app.get("/api/openapi.json", include_in_schema=False)

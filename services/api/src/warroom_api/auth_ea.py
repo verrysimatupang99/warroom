@@ -56,8 +56,8 @@ async def verify_mt5_or_admin(
     session_cookie = request.cookies.get("wr_session")
     if session_cookie:
         from warroom_api import auth
-        user = auth.user_from_session(session_cookie)
-        if user:
+        lookup = auth._lookup(session_cookie)
+        if lookup:
             return
 
     raise HTTPException(

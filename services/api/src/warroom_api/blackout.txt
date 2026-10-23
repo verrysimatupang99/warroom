@@ -1,0 +1,4 @@
+# Salin jadi blackout.txt. Satu event per baris, waktu UTC: YYYY-MM-DD HH:MM
+# Isi manual dari kalender ekonomi (NFP, CPI, FOMC, dll). Service akan memblok
+# entry 15 menit sebelum s/d 30 menit sesudah tiap event (ubah di laya_service.py).
+# 2026-11-06 13:30   # contoh: NFP (CEK ulang tanggal & jam di kalender resmi)
