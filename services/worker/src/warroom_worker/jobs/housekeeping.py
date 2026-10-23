@@ -24,10 +24,11 @@ def handler_retensi(s: SASession, job: Job) -> str:
         llm_call_hari=int(job.payload_json.get("llm_call_hari", retention.LLM_CALL_HARI_DEFAULT)),
         hapus_events=bool(job.payload_json.get("hapus_events", False)),
         hapus_llm_calls=bool(job.payload_json.get("hapus_llm_calls", True)),
+        noisy_events_hari=int(job.payload_json.get("noisy_events_hari", retention.NOISY_EVENTS_HARI_DEFAULT)),
     )
     d = hasil["dihapus"]
     return (
-        f"facts_dihapus={d['facts']} events_dihapus={d['events']} llm_dihapus={d['llm_calls']} "
+        f"facts_dihapus={d['facts']} events_dihapus={d['events']} noisy_dihapus={d.get('noisy_events', 0)} llm_dihapus={d['llm_calls']} "
         f"sessions_dihapus={d.get('sessions', 0)} "
         f"(simpan {hasil['rencana']['keep_versi']} versi/kunci)"
     )

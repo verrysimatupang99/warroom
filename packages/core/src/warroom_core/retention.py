@@ -23,7 +23,7 @@ from sqlalchemy import delete, func, select
 
 from warroom_core.db import Alert, Event, Fact, LLMCall, Session
 
-__all__ = ["prune_orphan_refs", "rencana", "jalankan"]
+__all__ = ["prune_orphan_refs", "rencana", "jalankan", "NOISY_EVENT_TYPES", "NOISY_EVENTS_HARI_DEFAULT"]
 
 # Batas konservatif: simpan versi terbaru per kunci walau berapa pun umurnya.
 KEEP_VERSI_DEFAULT = 3
@@ -37,6 +37,13 @@ LLM_CALL_HARI_DEFAULT = 180
 # Temuan 7 Okt: 100 alert menumpuk (75 belum di-ack sejak 2 Okt) karena retensi tidak
 # pernah menyentuh tabel ini.
 ALERTS_HARI_DEFAULT = 14
+# Event rutin yang tidak bernilai audit jangka panjang: sekitar 87 persen baris events
+# adalah job.ran dari scheduler (source-health/paper-eval tiap 30-70 detik,
+# sekitar 4150 per hari, sekitar 1,5 juta per tahun). Jejak audit nyata
+# (trade.opened, keputusan.masuk, alert.sent) TIDAK termasuk dan tetap
+# mengikuti events_hari.
+NOISY_EVENTS_HARI_DEFAULT = 7
+NOISY_EVENT_TYPES = ("job.ran",)
 
 
 def prune_orphan_refs(s: Any, *, batas: int = 5000) -> int:
@@ -81,6 +88,7 @@ def rencana(
     events_hari: int = EVENTS_HARI_DEFAULT,
     llm_call_hari: int = LLM_CALL_HARI_DEFAULT,
     alerts_hari: int = ALERTS_HARI_DEFAULT,
+    noisy_events_hari: int = NOISY_EVENTS_HARI_DEFAULT,
 ) -> dict[str, int]:
     """Hitung kandidat hapus TANPA menghapus apa pun (aman dijalankan di produksi)."""
     now = datetime.now(UTC)
@@ -125,6 +133,13 @@ def rencana(
         select(func.count()).select_from(Event).where(Event.created_at < batas_events)
     ) or 0
 
+    batas_noisy = now - timedelta(days=noisy_events_hari)
+    n_noisy = s.scalar(
+        select(func.count())
+        .select_from(Event)
+        .where(Event.created_at < batas_noisy, Event.type.in_(NOISY_EVENT_TYPES))
+    ) or 0
+
     batas_llm = now - timedelta(days=llm_call_hari)
     n_llm = s.scalar(
         select(func.count()).select_from(LLMCall).where(LLMCall.created_at < batas_llm)
@@ -151,6 +166,8 @@ def rencana(
         "sessions": int(n_sessions),
         "keep_versi": keep_versi,
         "events_hari": events_hari,
+        "noisy_events": int(n_noisy),
+        "noisy_events_hari": noisy_events_hari,
         "llm_call_hari": llm_call_hari,
         "alerts_hari": alerts_hari,
     }
@@ -165,6 +182,7 @@ def jalankan(
     alerts_hari: int = ALERTS_HARI_DEFAULT,
     hapus_events: bool = True,
     hapus_llm_calls: bool = True,
+    noisy_events_hari: int = NOISY_EVENTS_HARI_DEFAULT,
 ) -> dict[str, Any]:
     """Jalankan retensi. Kembalikan jumlah yang benar-benar dihapus.
 
@@ -174,9 +192,10 @@ def jalankan(
     r = rencana(
         s, keep_versi=keep_versi, events_hari=events_hari,
         llm_call_hari=llm_call_hari, alerts_hari=alerts_hari,
+        noisy_events_hari=noisy_events_hari,
     )
     dihapus: dict[str, int] = {
-        "facts": 0, "events": 0, "llm_calls": 0, "alerts": 0, "sessions": 0, "rujukan_yatim_dibersihkan": 0,
+        "facts": 0, "events": 0, "noisy_events": 0, "llm_calls": 0, "alerts": 0, "sessions": 0, "rujukan_yatim_dibersihkan": 0,
     }
 
     if r["facts"]:
@@ -216,6 +235,17 @@ def jalankan(
         batas = datetime.now(UTC) - timedelta(days=events_hari)
         res = s.execute(delete(Event).where(Event.created_at < batas))
         dihapus["events"] = res.rowcount or 0
+
+    # Event berisik (job.ran) dibersihkan SELALU, terlepas dari hapus_events.
+    # hapus_events mengatur jejak audit; ini hanya log scheduler.
+    if r.get("noisy_events"):
+        batas_noisy = datetime.now(UTC) - timedelta(days=noisy_events_hari)
+        res = s.execute(
+            delete(Event).where(
+                Event.created_at < batas_noisy, Event.type.in_(NOISY_EVENT_TYPES)
+            )
+        )
+        dihapus["noisy_events"] = res.rowcount or 0
 
     if hapus_llm_calls and r["llm_calls"]:
         batas = datetime.now(UTC) - timedelta(days=llm_call_hari)
