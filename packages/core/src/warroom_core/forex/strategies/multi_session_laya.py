@@ -35,6 +35,8 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         self.max_sl_points = max_sl_points
         self.laya_min_confidence = laya_min_confidence
         self._laya_loaded = False
+        # Alasan penolakan terakhir (audit R6). None berarti tidak ada blokir.
+        self.last_block_reason: str | None = None
         self._init_laya()
 
     def _init_laya(self):
@@ -91,13 +93,25 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
     def evaluate_laya(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
         """Evaluasi kondisi setup scalping via Laya Model.
 
-        Mengembalikan (layak_eksekusi, keyakinan, alasan). Bila Laya tidak aktif
-        atau inferensi gagal, keputusan jatuh ke baseline dan ditandai di alasan
-        supaya tidak pernah terlihat seperti verdict model.
+        Mengembalikan (layak_eksekusi, keyakinan, alasan).
+
+        SEMANTIK FAIL-CLOSED (diubah 23 Okt 2026):
+        Gerbang risiko yang tidak tersedia HARUS memblokir, bukan meloloskan.
+        Sebelumnya fungsi ini mengembalikan `True, 0.85` saat model mati — angka
+        0.85 itu tidak pernah dihitung dari data apa pun, sehingga seluruh nilai
+        "middleware Laya" menjadi ilusi: sinyal tetap dieksekusi dan tidak ada
+        yang tahu gerbangnya sedang tidak berfungsi.
+
+        Sekarang setiap jalur gagal mengembalikan `False` beserta alasan yang
+        menyebut cabang mana yang diambil, sehingga keputusan bisa diaudit.
         """
         if not self.enable_laya or not self._laya_loaded or self._evaluator is None:
-            # Fallback jika Laya dinonaktifkan: loloskan dengan baseline rule
-            return True, 0.85, "Laya AI Passthrough (Offline/Bypass)"
+            alasan = (
+                "Laya TIDAK TERSEDIA (model tidak termuat / dinonaktifkan) — "
+                "sinyal DIBLOKIR sesuai kebijakan fail-closed"
+            )
+            log.warning("Gerbang Laya menolak: %s", alasan)
+            return False, 0.0, alasan
 
         try:
             hasil = self._evaluator.invoke(market_state)
@@ -109,7 +123,7 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
                 peluang = verdict.get("answer_confidence")
 
             if pilihan not in ("EXECUTE", "SKIP"):
-                return True, 0.0, f"Laya tanpa verdict dikenali ({pilihan or 'kosong'})"
+                return False, 0.0, f"Laya verdict tidak dikenali ({pilihan or 'kosong'}) — sinyal DIBLOKIR"
 
             # min_confidence sengaja konservatif: Laya nyata bisa mengembalikan
             # EXECUTE dengan peluang ~0.57 (nyaris tebakan). Di bawah ambang ini
@@ -121,13 +135,16 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
                 f"(ambang {self.laya_min_confidence:.2f}) side={market_state.get('side')} "
                 f"sesi={market_state.get('session')}"
             )
+            # Jejak audit (R6): setiap verdict dicatat agar keputusan bisa ditelusuri
+            # setelah kejadian. Tanpa ini, post-mortem hanya jadi spekulasi.
+            log.info("Gerbang Laya: %s -> %s", "LOLOS" if aman else "DIBLOKIR", alasan)
             return aman, keyakinan, alasan
         except Exception as exc:
             log.warning("Laya evaluation error: %s", exc)
-            # Fail-open ke baseline: Laya adalah penyaring tambahan, bukan satu-satunya
-            # gerbang. Kegagalan model tidak boleh membekukan strategi, tetapi alasannya
-            # harus jujur menyebut bahwa Laya tidak dipakai.
-            return True, 0.0, f"Laya error, jatuh ke baseline: {exc}"
+            # FAIL-CLOSED: kegagalan inferensi berarti gerbang tidak berfungsi.
+            # Meloloskan sinyal di sini membuat gerbang dekoratif — persis pola
+            # yang menyebabkan klaim "dilindungi Laya" tidak bisa dibuktikan.
+            return False, 0.0, f"Laya ERROR ({type(exc).__name__}: {exc}) — sinyal DIBLOKIR"
 
     def evaluate(self, market_data: dict[str, Any]) -> dict[str, Any] | None:
         price = market_data.get("price", 0.0)
@@ -203,6 +220,9 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
 
         if not is_safe:
             log.info("Sinyal ditolak oleh Laya: %s", laya_reason)
+            # Simpan alasan agar bisa diteruskan ke API (audit R6). Tanpa ini,
+            # penolakan gerbang terlihat sama dengan "pasar belum ada setup".
+            self.last_block_reason = laya_reason
             return None
 
         if side == "LONG":
@@ -216,6 +236,7 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             tp1 = round(entry - reward, 2)
             tp2 = round(entry - (reward * 1.8), 2)
 
+        self.last_block_reason = None  # sinyal lolos: bersihkan alasan blokir lama
         return {
             "side": side,
             "entry": entry,

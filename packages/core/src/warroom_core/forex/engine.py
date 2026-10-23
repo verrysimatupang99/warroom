@@ -144,6 +144,10 @@ async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") 
             "trend": ind["trend_m5"],
             "strategy": active_strategy.name,
             "reason": "Kondisi pasar saat ini belum memenuhi kriteria strategi PNP aktif",
+            # Audit R6: bila sinyal ditolak oleh gerbang (mis. Laya mati), sebutkan
+            # alasannya. Tanpa ini, penolakan gerbang tidak bisa dibedakan dari
+            # "pasar memang belum ada setup".
+            "blocked_reason": getattr(active_strategy, "last_block_reason", None),
         }
 
     entry = signal["entry"]
