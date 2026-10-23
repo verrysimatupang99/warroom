@@ -1,0 +1,52 @@
+{
+  "directive_id": "DIR-ORCH-POLYMARKET-20261023",
+  "timestamp": "2026-10-23T04:53:47.300611+00:00",
+  "issuer": "War Room Chief Orchestrator",
+  "agent_role": "Polymarket & Prediction Specialist",
+  "workspace": "/home/admin/warroom-agents/polymarket",
+  "model_assignment": {
+    "primary_provider": "NUTARALINE",
+    "primary_model": "nemotron-3.5-lightning",
+    "validator_provider": "KIYARA",
+    "validator_model": "moonshotai/kimi-k3",
+    "policy": "NON-INHERIT, NON-NATIVE CORE MODELS VARIATION"
+  },
+  "mandate": {
+    "market_analysis": {
+      "priority": "P0",
+      "target_instruments": [
+        "Macro/Geopolitics/Crypto Binary Markets",
+        "Spread & Probability Edge"
+      ],
+      "scope": [
+        "Liquidity, Orderbook Depth, and Volatility Regime Assessment",
+        "Key Macro Catalysts and Invalidation Thresholds",
+        "Actionable Tactical Setups with Probability Calibration",
+        "Cross-Validation with secondary validator model before marking ACT"
+      ],
+      "verdict_allowed": [
+        "WATCH",
+        "ACT",
+        "AMBIGUOUS"
+      ]
+    },
+    "codebase_analysis": {
+      "priority": "P0",
+      "scope_files": [
+        "packages/live-trading/src/live_trading/collectors/radar.py",
+        "packages/live-trading/src/live_trading/dompet.py",
+        "packages/live-trading/src/live_trading/execution/paper.py"
+      ],
+      "action_guard": "READ_ONLY_DEFAULT (CRUD with explicit justification)",
+      "health_checks": [
+        "Verify Collector latency, failover fallback, and API throttle limits",
+        "Audit Paper & Live execution safety guards (Zero bypass of risk bounds)",
+        "Verify test suite pass rate and compliance with AGENTS.md boundaries"
+      ]
+    }
+  },
+  "deliverables": [
+    "/home/admin/warroom-agents/polymarket/MARKET_ANALYSIS_REPORT.md",
+    "/home/admin/warroom-agents/polymarket/CODEBASE_AUDIT_REPORT.md"
+  ]
+}
