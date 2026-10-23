@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -95,3 +96,24 @@ def test_split_kosong_ditolak(db, tmp_path: Path) -> None:
     with session_scope() as s:
         with pytest.raises(ValueError, match="tidak ada berkas"):
             splits.bekukan(s, dataset="paired", root=d)
+
+
+def test_split_untuk_gate_menolak_dataset_yang_hilang(db, tmp_path: Path) -> None:
+    """Regresi 23 Okt 2026: split terdaftar tapi berkasnya hilang tetap diloloskan gate.
+
+    Split ``poly-paired-131d1ab4aed5`` melaporkan 411 berkas hilang dari disk, tetapi
+    ``split_untuk_gate`` masih mengembalikan ``frozen:...`` sehingga gate menerima bukti
+    dari dataset yang sudah tidak ada. Sekarang harus ``None``.
+    """
+    d = _buat_run(tmp_path, dengan_outcome=True)
+    with session_scope() as s:
+        hasil = splits.bekukan(s, dataset="paired", root=d)
+
+    # Sebelum dihapus: split sah dan boleh dipakai gate.
+    with session_scope() as s:
+        assert splits.split_untuk_gate(s, hasil["id"]) == hasil["split"]
+
+    # Dataset dihilangkan dari disk: gate TIDAK boleh lagi menerima split ini.
+    shutil.rmtree(d)
+    with session_scope() as s:
+        assert splits.split_untuk_gate(s, hasil["id"]) is None

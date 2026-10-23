@@ -212,12 +212,24 @@ def verifikasi(s: SASession, split_id: str) -> dict[str, Any]:
 
 
 def split_untuk_gate(s: SASession, split_id: str) -> str | None:
-    """Kembalikan ``frozen:<id>`` hanya bila id itu benar-benar terdaftar.
+    """Kembalikan ``frozen:<id>`` HANYA bila id terdaftar dan berkasnya masih cocok.
 
     Dipakai pemanggil yang ingin mengisi ``evidence["split"]`` tanpa mengarang label.
+
+    Sebelumnya fungsi ini hanya memeriksa "terdaftar", sehingga split yang datasetnya
+    sudah hilang/berubah tetap diloloskan ke gate — padahal justru itu yang ingin
+    dicegah ADR-003. Ditemukan 23 Okt 2026: split ``poly-paired-131d1ab4aed5``
+    melaporkan 411 berkas HILANG dari disk, tetapi tetap menghasilkan
+    ``frozen:poly-paired-131d1ab4aed5``. Sekarang verifikasi ikut dijalankan;
+    dataset yang tidak utuh menghasilkan ``None`` (arah aman: gate menolak).
     """
     sid = split_id.removeprefix("frozen:")
-    return f"frozen:{sid}" if s.get(FrozenSplit, sid) is not None else None
+    r = s.get(FrozenSplit, sid)
+    if r is None:
+        return None
+    if not verifikasi(s, sid).get("cocok"):
+        return None
+    return f"frozen:{sid}"
 
 
 def split_terverifikasi_terbaru(s: SASession, dataset: str) -> str | None:

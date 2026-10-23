@@ -1,0 +1,53 @@
+{
+  "directive_id": "DIR-ORCH-IDX-20261023",
+  "timestamp": "2026-10-23T04:53:47.300611+00:00",
+  "issuer": "War Room Chief Orchestrator",
+  "agent_role": "IDX & Equity Specialist",
+  "workspace": "/home/admin/warroom-agents/idx",
+  "model_assignment": {
+    "primary_provider": "KIYARA",
+    "primary_model": "qwen/qwen3.8-flash",
+    "validator_provider": "NUTARALINE",
+    "validator_model": "mimo-v2.6-flash",
+    "policy": "NON-INHERIT, NON-NATIVE CORE MODELS VARIATION"
+  },
+  "mandate": {
+    "market_analysis": {
+      "priority": "P0",
+      "target_instruments": [
+        "IHSG",
+        "Big Cap Banking (BBCA, BBRI, BMRI)",
+        "Bandarmologi Leaders"
+      ],
+      "scope": [
+        "Liquidity, Orderbook Depth, and Volatility Regime Assessment",
+        "Key Macro Catalysts and Invalidation Thresholds",
+        "Actionable Tactical Setups with Probability Calibration",
+        "Cross-Validation with secondary validator model before marking ACT"
+      ],
+      "verdict_allowed": [
+        "WATCH",
+        "ACT",
+        "AMBIGUOUS"
+      ]
+    },
+    "codebase_analysis": {
+      "priority": "P0",
+      "scope_files": [
+        "packages/live-trading/src/live_trading/pods/idx.py",
+        "packages/live-trading/src/live_trading/collectors/idx.py",
+        "packages/live-trading/src/live_trading/collectors/bandarmologi.py"
+      ],
+      "action_guard": "READ_ONLY_DEFAULT (CRUD with explicit justification)",
+      "health_checks": [
+        "Verify Collector latency, failover fallback, and API throttle limits",
+        "Audit Paper & Live execution safety guards (Zero bypass of risk bounds)",
+        "Verify test suite pass rate and compliance with AGENTS.md boundaries"
+      ]
+    }
+  },
+  "deliverables": [
+    "/home/admin/warroom-agents/idx/MARKET_ANALYSIS_REPORT.md",
+    "/home/admin/warroom-agents/idx/CODEBASE_AUDIT_REPORT.md"
+  ]
+}

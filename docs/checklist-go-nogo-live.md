@@ -12,9 +12,9 @@ live tidak dinyalakan — gate live juga tidak pernah dibuat oleh agen.
 |---|---|---|---|---|---|
 | A1 | Gate lolos: `ci_low > BE` | ci_low > 76,66 % | **`ci_low 0.7675` > BE 0.7666** @ **95% + deff 1.342** (n=4.133, win=3.234) — **lolos** | `POST /api/v1/gate/evaluate` | ✅ 3 Okt |
 | A2 | Sampel cukup | n ≥ required_n | **4.133 ≥ 3.713** (95% + deff) — cukup | idem (`required_n`) | ✅ 3 Okt |
-| A3 | Split beku sebelum melihat hasil | `split=frozen:<id>` | belum ada mekanisme split di jalur produksi | ADR-003 | ❌ |
-| A4 | Fee & slippage terukur pada saat order | ≥ 5 share, kedalaman nyata | belum diukur saat order (hanya kutipan) | `POST /api/v1/live/dry-run` | ❌ |
-| A5 | Dana nyata terverifikasi | saldo on-chain == klaim | klaim `0.0`, `terverifikasi=false` | job `reconcile` | ❌ |
+| A3 | Split beku sebelum melihat hasil | `split=frozen:<id>` | Mekanisme ADA (`warroom_core.splits`), split `poly-paired-131d1ab4aed5` terdaftar (411 berkas). Tetapi **dataset sumbernya hilang** (`/var/lib/poly-research/paired/auto-20261005t000115z` tidak ada), jadi split itu TIDAK sah. 23 Okt: `split_untuk_gate` diperketat agar menolak split yang berkasnya hilang/berubah. | `warroom_core.splits.verifikasi` | ❌ |
+| A4 | Fee & slippage terukur pada saat order | ≥ 5 share, kedalaman nyata | Alat ADA dan berjalan: `run_dry_depth()` mengukur kedalaman buku live 8 pair (BTC ≤20bps $1,98 jt; ETH $3,21 jt; SOL $6,99 jt). Belum ada order nyata yang memakai angka ini saat eksekusi. | `POST /api/v1/live/dry-run` | ❌ |
+| A5 | Dana nyata terverifikasi | saldo on-chain == klaim | Job `reconcile` berjalan dan jujur: klaim `0.0` pUSD, `terverifikasi=false`, mode `manual`. Tidak ada dana nyata untuk diverifikasi — tidak bisa "diselesaikan" oleh agen. | job `reconcile` | ❌ |
 | A6 | Batas kerugian harian diset dan diuji | ada + diuji | ada di domain (`daily_loss_limit_r`) | `lt risk` | ⚠️ perlu bukti ulang |
 | A7 | Kill switch teruji < 60 dtk | < 60 s | **10,7 s** | `ops/drill-stop.sh` | ✅ |
 | A8 | Tidak ada kredensial di repo/log | gitleaks bersih | bersih (git mode, 2 repo) | `ops/ci-local.sh` | ✅ |
