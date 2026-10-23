@@ -92,10 +92,16 @@ async def tencent_forex_levels(
     try:
         from warroom_core.forex.engine import generate_forex_levels
         local_levels = await generate_forex_levels(symbol=symbol, mode=mode)
-        if local_levels.get("status") == "OK":
+        # WAITING_SETUP adalah JAWABAN SAH ("belum ada setup"), bukan kegagalan.
+        # Dulu hanya status "OK" yang diterima, sehingga setiap kali pasar tidak
+        # memberi setup, endpoint jatuh ke fallback Tencent yang menggantung dan
+        # ikut membekukan seluruh API (insiden 23 Okt 2026: /api/v1/build balas 000).
+        # Sekarang status apa pun dari engine lokal dikembalikan apa adanya, kecuali
+        # memang tidak ada hasil.
+        if isinstance(local_levels, dict) and local_levels.get("status"):
             return local_levels
     except Exception as exc:
-        log.warning("Local forex engine fallback ke Tencent: %s", exc)
+        log.warning("Local forex engine gagal total, fallback ke Tencent: %s", exc)
 
     # Fallback aman jika feed lokal mengalami kendala sementara
     raw_levels = await _fetch_tencent("/forex/levels", params={"symbol": symbol})
