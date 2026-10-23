@@ -183,6 +183,7 @@ def jalankan(
     hapus_events: bool = True,
     hapus_llm_calls: bool = True,
     noisy_events_hari: int = NOISY_EVENTS_HARI_DEFAULT,
+    prune_refs: bool = False,
 ) -> dict[str, Any]:
     """Jalankan retensi. Kembalikan jumlah yang benar-benar dihapus.
 
@@ -229,7 +230,13 @@ def jalankan(
         dihapus["facts"] = res.rowcount or 0
 
     # Bersihkan rujukan fact_id yang sudah tidak ada (lihat prune_orphan_refs).
-    dihapus["rujukan_yatim_dibersihkan"] = prune_orphan_refs(s)
+    # prune_orphan_refs memindai SEMUA events vs SEMUA facts dan butuh lebih
+    # dari 2 menit, sehingga job harian menyentuh timeout 120s. Fungsinya
+    # membersihkan kerusakan historis (935 event yatim, 5 Okt 2026) yang sudah
+    # tuntas; penjaga di rencana() mencegah kerusakan baru. Default MATI,
+    # nyalakan eksplisit dengan prune_refs=True bila dicurigai ada yatim.
+    if prune_refs:
+        dihapus["rujukan_yatim_dibersihkan"] = prune_orphan_refs(s)
 
     if hapus_events and r["events"]:
         batas = datetime.now(UTC) - timedelta(days=events_hari)
