@@ -36,6 +36,34 @@
 	let historyData = $state<MT5HistoryData | null>(null);
 	let loading = $state(true);
 
+	interface PanelRow {
+		nama: string;
+		risk_pct: number;
+		target_pct: number;
+		stop_pct: number;
+		ekuitas: number;
+		total_pct: number;
+		hari_pct: number;
+		trades_hari: number;
+		max_trades: number;
+		berhenti: boolean;
+		alasan: string;
+	}
+
+	let panels = $state<PanelRow[]>([]);
+
+	async function muatPanel() {
+		try {
+			const res = await fetch('/api/v1/tencent/mt5/panels');
+			if (res.ok) {
+				const d = await res.json();
+				panels = d.panels ?? [];
+			}
+		} catch (err) {
+			console.error('Gagal memuat panel simulator:', err);
+		}
+	}
+
 	async function muatHistory() {
 		try {
 			const res = await fetch('/api/v1/tencent/mt5/history');
@@ -51,7 +79,11 @@
 
 	onMount(() => {
 		muatHistory();
-		const interval = setInterval(muatHistory, 5000);
+		muatPanel();
+		const interval = setInterval(() => {
+			muatHistory();
+			muatPanel();
+		}, 5000);
 		return () => clearInterval(interval);
 	});
 </script>
@@ -63,6 +95,72 @@
 <div class="space-y-6 max-w-7xl mx-auto pb-12 pt-2">
 	<!-- COCKPIT UTAMA EXNESS + LAYA SENTINEL + RADAR PRE-FLIGHT -->
 	<ForexCockpitExness />
+
+	<!-- SIMULATOR 3 PANEL: PERBANDINGAN SKEMA SIZING + DAILY RATCHET -->
+	<div class="rounded-xl border border-line bg-surface/90 p-5 shadow-2xl backdrop-blur">
+		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-4 mb-4">
+			<div>
+				<h2 class="font-mono text-base font-bold text-white flex items-center gap-2">
+					<svg class="h-4 w-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+					</svg>
+					SIMULATOR 3 PANEL (A/B/C) — SIZING &amp; DAILY RATCHET
+				</h2>
+				<p class="text-xs text-zinc-400 font-sans mt-0.5">
+					Perbandingan skema risiko pada sinyal yang sama. Simulasi, bukan order nyata.
+				</p>
+			</div>
+			<span class="rounded bg-white/5 px-2.5 py-1 font-mono text-xs text-zinc-300 border border-white/10">
+				Modal awal: <strong class="text-white">$500</strong> per panel
+			</span>
+		</div>
+
+		{#if panels.length === 0}
+			<p class="py-4 text-center text-xs text-zinc-400 font-mono">
+				Simulator belum berjalan atau belum ada data.
+			</p>
+		{:else}
+			<div class="overflow-x-auto">
+				<table class="w-full text-left font-mono text-xs border-collapse">
+					<thead>
+						<tr class="border-b border-white/10 text-zinc-400 uppercase tracking-wider text-[11px] bg-white/[0.02]">
+							<th class="py-2.5 px-3">Panel</th>
+							<th class="py-2.5 px-3">Risiko / Target / Stop</th>
+							<th class="py-2.5 px-3">Ekuitas</th>
+							<th class="py-2.5 px-3">Total</th>
+							<th class="py-2.5 px-3">Hari Ini</th>
+							<th class="py-2.5 px-3">Trade</th>
+							<th class="py-2.5 px-3">Status</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-white/5">
+						{#each panels as p}
+							<tr class="hover:bg-white/[0.02] transition">
+								<td class="py-3 px-3 font-bold text-white">{p.nama}</td>
+								<td class="py-3 px-3 text-zinc-300">{p.risk_pct}% / {p.target_pct}% / -{p.stop_pct}%</td>
+								<td class="py-3 px-3 text-zinc-200">${p.ekuitas.toFixed(2)}</td>
+								<td class="py-3 px-3 font-bold {p.total_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+									{p.total_pct >= 0 ? '+' : ''}{p.total_pct.toFixed(2)}%
+								</td>
+								<td class="py-3 px-3 font-bold {p.hari_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+									{p.hari_pct >= 0 ? '+' : ''}{p.hari_pct.toFixed(2)}%
+								</td>
+								<td class="py-3 px-3 text-zinc-300">{p.trades_hari}/{p.max_trades}</td>
+								<td class="py-3 px-3">
+									<span class="inline-flex rounded px-2 py-0.5 text-[10px] font-bold {p.berhenti ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+										{p.berhenti ? 'STOP' : 'AKTIF'}
+									</span>
+									{#if p.alasan}
+										<div class="text-[10px] text-zinc-400 mt-1 max-w-[220px] font-sans">{p.alasan}</div>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
 
 	<!-- AUDIT HISTORI DEAL & ORDER RIIL EXNESS -->
 	<div class="rounded-xl border border-line bg-surface/90 p-5 shadow-2xl backdrop-blur">

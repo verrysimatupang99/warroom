@@ -446,6 +446,39 @@ async def report_mt5_fill(payload: MT5FillPayload) -> dict[str, Any]:
     return {"status": "OK", "slippage_pts": round(slip_pts, 2)}
 
 
+PANEL_STATE = Path("/var/lib/warroom/panels.json")
+
+
+@router.get("/mt5/panels", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_panel_sim() -> dict[str, Any]:
+    """Ringkasan 3 panel simulator (A/B/C) untuk ditampilkan di dashboard."""
+    if not PANEL_STATE.exists():
+        return {"panels": [], "catatan": "simulator belum pernah berjalan"}
+    try:
+        data = json.loads(PANEL_STATE.read_text())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail="state panel tidak terbaca") from exc
+
+    hasil = []
+    for nama in sorted(data):
+        p = data[nama]
+        basis = p["ekuitas"] - p.get("pnl_hari", 0.0)
+        hasil.append({
+            "nama": nama,
+            "risk_pct": p["risk_pct"],
+            "target_pct": p["target_pct"],
+            "stop_pct": p["stop_pct"],
+            "ekuitas": round(p["ekuitas"], 2),
+            "total_pct": round(100 * (p["ekuitas"] / p["modal_awal"] - 1), 2),
+            "hari_pct": round(100 * p.get("pnl_hari", 0.0) / basis, 2) if basis else 0.0,
+            "trades_hari": p["trades_hari"],
+            "max_trades": p["max_trades"],
+            "berhenti": bool(p["berhenti"]),
+            "alasan": p.get("alasan_berhenti", ""),
+        })
+    return {"panels": hasil}
+
+
 def _muat_forex_history() -> list[dict[str, Any]]:
     """Baca riwayat transaksi EA MT5 dari file data lokal (kosong bila belum ada)."""
     history_file = Path(__file__).resolve().parent.parent / "data_forex_history.json"
