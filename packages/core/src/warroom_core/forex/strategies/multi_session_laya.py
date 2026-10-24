@@ -91,7 +91,16 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         atr14 = market_data.get("atr14", 3.0)
         candles = market_data.get("candles", [])
 
-        if price <= 0 or ema9 <= 0 or len(candles) < 15:
+        # Sumber indikator bisa dari BROKER (snapshot telemetri EA): dalam hal ini
+        # tidak ada daftar candle, tetapi recent high/low sudah dihitung broker dari
+        # 12 bar M5 terakhir. Karena itu candle hanya wajib bila recent_* tidak ada.
+        recent_high_in = market_data.get("recent_high")
+        recent_low_in = market_data.get("recent_low")
+        ada_recent = recent_high_in is not None and recent_low_in is not None
+
+        if price <= 0 or ema9 <= 0:
+            return None
+        if not ada_recent and len(candles) < 15:
             return None
 
         session = self.get_current_session()
@@ -125,8 +134,14 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         setup_name = ""
 
         # Hitung High & Low dari 12 candle M5 terakhir (1 jam terakhir) untuk deteksi Liquidity Sweep
-        recent_high = max([c.get("high", price) for c in candles[-12:]]) if candles else price + atr14
-        recent_low = min([c.get("low", price) for c in candles[-12:]]) if candles else price - atr14
+        # Utamakan recent high/low dari BROKER bila ada (12 bar M5 terakhir pada
+        # instrumen yang benar-benar dieksekusi); candle Yahoo hanya cadangan.
+        if ada_recent:
+            recent_high = float(recent_high_in)
+            recent_low = float(recent_low_in)
+        else:
+            recent_high = max([c.get("high", price) for c in candles[-12:]]) if candles else price + atr14
+            recent_low = min([c.get("low", price) for c in candles[-12:]]) if candles else price - atr14
 
         # Skenario 1: Sesi Asia (Mean Reversion M5)
         if session == "ASIA":

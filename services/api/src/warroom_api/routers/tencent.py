@@ -91,7 +91,16 @@ async def tencent_forex_levels(
     """Hitungan level entry, stop loss, dan target Gold/Forex mandiri 100% lokal (Zero Tencent)."""
     try:
         from warroom_core.forex.engine import generate_forex_levels
-        local_levels = await generate_forex_levels(symbol=symbol, mode=mode)
+
+        # Snapshot BROKER hanya dipakai bila segar. EA mengirim telemetri tiap ~5 s;
+        # batas 60 s memberi toleransi tanpa memakai harga basi (pasar tutup/EA mati
+        # akan otomatis jatuh ke Yahoo, dan itu ditandai lewat `indicator_source`).
+        snapshot = None
+        seen = int(latest_mt5_telemetry.get("last_seen_ts") or 0)
+        if seen and (int(time.time()) - seen) <= 60 and latest_mt5_telemetry.get("atr_m5"):
+            snapshot = dict(latest_mt5_telemetry)
+
+        local_levels = await generate_forex_levels(symbol=symbol, mode=mode, snapshot=snapshot)
         # WAITING_SETUP adalah JAWABAN SAH ("belum ada setup"), bukan kegagalan.
         # Dulu hanya status "OK" yang diterima, sehingga setiap kali pasar tidak
         # memberi setup, endpoint jatuh ke fallback Tencent yang menggantung dan

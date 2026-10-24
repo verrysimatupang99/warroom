@@ -118,18 +118,64 @@ def calculate_indicators(candles: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") -> dict[str, Any]:
-    """Generate sinyal order menggunakan Strategi PNP yang aktif."""
-    candles_m5 = await fetch_klines_direct(symbol, interval="5m", range_period="1d")
-    if not candles_m5 or len(candles_m5) < 15:
-        return {"status": "REJECTED", "reason": "Data candle tidak cukup"}
+def _indikator_dari_snapshot(snapshot: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Ubah snapshot broker menjadi struktur indikator yang sama dengan Yahoo.
 
-    ind = calculate_indicators(candles_m5)
-    market_data = {
-        "symbol": symbol.upper(),
-        "candles": candles_m5,
-        **ind,
+    Mengembalikan None bila ada field wajib yang hilang/tidak wajar, sehingga
+    pemanggil jatuh ke Yahoo. Sengaja TIDAK mengisi nilai default: nol palsu pada
+    ATR akan menghasilkan jarak SL nol dan sinyal yang salah ukuran.
+    """
+    if not isinstance(snapshot, dict):
+        return None
+
+    wajib = ("bid", "atr_m5", "ema9_m5", "ema21_m5", "high_12", "low_12")
+    nilai: dict[str, float] = {}
+    for k in wajib:
+        v = snapshot.get(k)
+        if not isinstance(v, (int, float)) or v <= 0:
+            return None
+        nilai[k] = float(v)
+
+    price = nilai["bid"]
+    atr = nilai["atr_m5"]
+    return {
+        "price": price,
+        "ema9": nilai["ema9_m5"],
+        "ema21": nilai["ema21_m5"],
+        "atr14": atr,
+        "atr_pct": round(atr / price * 100.0, 4) if price > 0 else 0.0,
+        "trend_m5": "BULLISH" if price >= nilai["ema9_m5"] else "BEARISH",
+        "recent_high": nilai["high_12"],
+        "recent_low": nilai["low_12"],
     }
+
+
+async def generate_forex_levels(
+    symbol: str = "XAUUSD",
+    mode: str = "scalping",
+    snapshot: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Generate sinyal order menggunakan Strategi PNP yang aktif.
+
+    `snapshot` = snapshot BROKER dari telemetri EA (bid/atr_m5/ema9_m5/...).
+    Bila diberikan dan lengkap, indikator TIDAK diambil dari Yahoo `GC=F`
+    (futures), melainkan dari instrumen yang benar-benar dieksekusi. Yahoo hanya
+    dipakai sebagai cadangan bila snapshot tidak ada/tidak lengkap.
+    """
+    ind_source = "yahoo:GC=F"
+    market_data: dict[str, Any] = {"symbol": symbol.upper()}
+
+    snap = _indikator_dari_snapshot(snapshot) if snapshot else None
+    if snap is not None:
+        ind = snap
+        ind_source = "broker:mt5"
+        market_data.update({"candles": [], **ind})
+    else:
+        candles_m5 = await fetch_klines_direct(symbol, interval="5m", range_period="1d")
+        if not candles_m5 or len(candles_m5) < 15:
+            return {"status": "REJECTED", "reason": "Data candle tidak cukup"}
+        ind = calculate_indicators(candles_m5)
+        market_data.update({"candles": candles_m5, **ind})
 
     # Evaluasi via Plug-and-Play Strategy Engine
     active_strategy = pnp_registry.get_active_strategy()
@@ -148,6 +194,9 @@ async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") 
             # alasannya. Tanpa ini, penolakan gerbang tidak bisa dibedakan dari
             # "pasar memang belum ada setup".
             "blocked_reason": getattr(active_strategy, "last_block_reason", None),
+            # Audit: dari mana indikator diambil. "broker:mt5" berarti memakai
+            # snapshot EA (instrumen yang benar-benar dieksekusi).
+            "indicator_source": ind_source,
         }
 
     entry = signal["entry"]
@@ -179,6 +228,7 @@ async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") 
         #
         # `levels` tetap dikirim untuk kompatibilitas/pembacaan manusia, tetapi
         # EA WAJIB mengabaikannya selama `levels_mode == "relative"`.
+        "indicator_source": ind_source,
         "levels_mode": "relative",
         "risk": risk,
         "reward": reward,
