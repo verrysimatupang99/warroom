@@ -601,7 +601,8 @@ double HitungLotRisiko(double entry, double sl)
 // itu. Fungsi ini menolak berdasarkan RASIO, bukan keberadaan harga.
 // ============================================================================
 bool ValidasiRRFill(const string side, const double fill, const double sl, const double tp,
-                    double &riskOut, double &rewardOut, string &alasan)
+                    double &riskOut, double &rewardOut, string &alasan,
+                    const bool cekDrift = true)
 {
    riskOut   = 0.0;
    rewardOut = 0.0;
@@ -639,12 +640,22 @@ bool ValidasiRRFill(const string side, const double fill, const double sl, const
    }
 
    // (b) Harga sudah bergerak terlalu jauh menuju TP sebelum entry.
-   double jarakTotal = riskOut + rewardOut;   // jarak SL->TP
-   if(jarakTotal > 0.0 && (riskOut / jarakTotal) > InpMaxDriftFrac)
+   //
+   // PENTING: pemeriksaan ini HANYA bermakna pada mode ABSOLUT, yaitu ketika SL/TP
+   // berasal dari snapshot harga API dan harga fill bisa sudah bergeser. Pada mode
+   // RELATIF level dibangun DARI harga fill, sehingga `risk/(risk+reward)` selalu
+   // sama dengan 1/(1+RR) - sebuah konstanta, bukan drift. Untuk RR 1.8 nilainya
+   // 35.7%, yang tanpa syarat ini akan menolak SEMUA sinyal relatif (bug terukur
+   // 24 Okt 2026: "harga sudah bergerak 36% menuju TP (batas 30%)").
+   if(cekDrift)
    {
-      alasan = StringFormat("harga sudah bergerak %.0f%% menuju TP sebelum entry (batas %.0f%%)",
-                            (riskOut / jarakTotal) * 100.0, InpMaxDriftFrac * 100.0);
-      return false;
+      double jarakTotal = riskOut + rewardOut;   // jarak SL->TP
+      if(jarakTotal > 0.0 && (riskOut / jarakTotal) > InpMaxDriftFrac)
+      {
+         alasan = StringFormat("harga sudah bergerak %.0f%% menuju TP sebelum entry (batas %.0f%%)",
+                               (riskOut / jarakTotal) * 100.0, InpMaxDriftFrac * 100.0);
+         return false;
+      }
    }
 
    return true;
@@ -799,7 +810,7 @@ void FetchAndExecuteSignal()
             // R1: validasi rasio pada harga fill SEBELUM order dikirim.
             double riskBuy = 0.0, rewardBuy = 0.0;
             string alasanBuy = "";
-            if(!ValidasiRRFill("LONG", ask, sl, tp1, riskBuy, rewardBuy, alasanBuy))
+            if(!ValidasiRRFill("LONG", ask, sl, tp1, riskBuy, rewardBuy, alasanBuy, !modeRelatif))
             {
                Print(" Sinyal LONG DITOLAK (penjaga R:R): ", alasanBuy);
                return;
@@ -840,7 +851,7 @@ void FetchAndExecuteSignal()
             // R1: validasi rasio pada harga fill SEBELUM order dikirim.
             double riskSell = 0.0, rewardSell = 0.0;
             string alasanSell = "";
-            if(!ValidasiRRFill("SHORT", bid, sl, tp1, riskSell, rewardSell, alasanSell))
+            if(!ValidasiRRFill("SHORT", bid, sl, tp1, riskSell, rewardSell, alasanSell, !modeRelatif))
             {
                Print(" Sinyal SHORT DITOLAK (penjaga R:R): ", alasanSell);
                return;
