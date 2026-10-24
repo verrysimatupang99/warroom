@@ -247,9 +247,14 @@ class MT5TelemetryPayload(BaseModel):
     total_trades_today: int | None = 0
     win_rate_pct: float | None = 0.0
     # Statistik nyata dari riwayat broker (menggantikan konstanta hardcode lama)
-    wins: int | None = None
-    losses: int | None = None
-    net_pnl_today: float | None = None
+    # Diberi akhiran _today agar TIDAK bertabrakan dengan statistik jurnal
+    # all-time yang di-inject /mt5/status lewat _statistik_forex(). Dulu
+    # `wins`/`losses` saling menimpa sehingga tampil "wins=4" di samping
+    # "total_trades_today=0".
+    wins_today: int | None = None
+    losses_today: int | None = None
+    win_rate_today_pct: float | None = None
+    net_pnl_today_usd: float | None = None
     # Snapshot broker: sumber kebenaran harga untuk instrumen yang dieksekusi.
     bid: float | None = None
     ask: float | None = None
@@ -295,9 +300,10 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "pending_orders": [o.dict() for o in payload.pending_orders],
         "total_trades_today": payload.total_trades_today,
         "win_rate_pct": payload.win_rate_pct,
-        "wins": payload.wins,
-        "losses": payload.losses,
-        "net_pnl_today": payload.net_pnl_today,
+        "wins_today": payload.wins_today,
+        "losses_today": payload.losses_today,
+        "win_rate_today_pct": payload.win_rate_today_pct,
+        "net_pnl_today_usd": payload.net_pnl_today_usd,
         # Snapshot broker (dipakai untuk jarak risk/reward pada instrumen nyata)
         "bid": payload.bid,
         "ask": payload.ask,
