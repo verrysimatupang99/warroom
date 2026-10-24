@@ -16,6 +16,7 @@ CTrade trade;
 input group "=== KONEKSI WAR ROOM API ==="
 input string   InpApiUrl       = "https://0xgunsl1ng3r.xyz/api/v1/tencent/forex/levels?symbol=XAUUSD"; // Endpoint Sinyal War Room
 input string   InpTelemetryUrl = "https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/telemetry";             // Endpoint Lapor Live Telemetry
+input string   InpFillUrl      = "https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/fill";                  // Endpoint Lapor Kualitas Eksekusi
 input int      InpPollSeconds  = 5;           // Interval Pengecekan (Detik)
 // Timeout HTTP harus LEBIH BESAR dari latensi terburuk /forex/levels.
 // Model Laya butuh ~30 detik saat cold start (memuat model 421M) dan 1.5-2.2
@@ -219,6 +220,53 @@ void SendTelemetryReport()
 
    ResetLastError();
    WebRequest("POST", InpTelemetryUrl, headers, 2000, post, result, headers);
+}
+
+//+------------------------------------------------------------------+
+//| Laporkan kualitas eksekusi: harga diminta vs didapat + latensi.   |
+//| Murni diagnostik: tidak mengubah keputusan trading apa pun.       |
+//| Slippage diukur dalam POINT, positif = fill lebih buruk.          |
+//+------------------------------------------------------------------+
+void LaporFill(string side, double vol, double diminta, double didapat,
+               double sl, double tp, long spreadPts, int latensiMs,
+               ulong retcode, int posisiTerbuka)
+{
+   string payload = StringFormat(
+      "{\"ticket\":%I64u,\"symbol\":\"%s\",\"side\":\"%s\",\"volume\":%.2f,"
+      "\"price_requested\":%s,\"price_filled\":%s,\"sl\":%s,\"tp\":%s,"
+      "\"spread_pts\":%I64d,\"digits\":%d,\"latency_ms\":%d,\"retcode\":%I64u,"
+      "\"execution_mode\":%d,\"open_positions\":%d,\"equity\":%.2f}",
+      trade.ResultOrder(), _Symbol, side, vol,
+      DoubleToString(diminta, _Digits), DoubleToString(didapat, _Digits),
+      DoubleToString(sl, _Digits), DoubleToString(tp, _Digits),
+      spreadPts, (int)_Digits, latensiMs, retcode,
+      (int)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_EXEMODE),
+      posisiTerbuka, AccountInfoDouble(ACCOUNT_EQUITY));
+
+   char post[], result[];
+   string headers = "Content-Type: application/json\r\n";
+   StringToCharArray(payload, post, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(post, ArraySize(post)-1);
+   ResetLastError();
+   int res = WebRequest("POST", InpFillUrl, headers, 2000, post, result, headers);
+   if(res != 200)
+      Print(" PERINGATAN: log eksekusi gagal dikirim (HTTP ", res, "). Trading tetap jalan.");
+}
+
+//+------------------------------------------------------------------+
+//| Hitung posisi terbuka milik EA ini pada simbol chart.             |
+//+------------------------------------------------------------------+
+int HitungPosisiTerbuka()
+{
+   int n = 0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong tk = PositionGetTicket(i);
+      if(tk > 0 && PositionGetString(POSITION_SYMBOL) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+         n++;
+   }
+   return n;
 }
 
 //+------------------------------------------------------------------+
@@ -824,9 +872,15 @@ void FetchAndExecuteSignal()
                Print(" Order BUY DIBATALKAN: sizing tidak menghasilkan lot yang aman.");
                return;
             }
+            uint t0Buy = GetTickCount();
             if(trade.Buy(lotBuy, _Symbol, ask, sl, tp1, "WarRoom Signal"))
             {
-               Print(" Order BUY Berhasil Dibuka! Ticket: ", trade.ResultOrder());
+               int latBuy = (int)(GetTickCount() - t0Buy);
+               Print(" Order BUY Berhasil Dibuka! Ticket: ", trade.ResultOrder(),
+                     " | fill: ", trade.ResultPrice(), " (diminta ", ask, ") | ", latBuy, " ms");
+               LaporFill("BUY", lotBuy, ask, trade.ResultPrice(), sl, tp1,
+                         SymbolInfoInteger(_Symbol, SYMBOL_SPREAD), latBuy,
+                         trade.ResultRetcode(), HitungPosisiTerbuka());
                lastProcessedSignal = signalId;
             }
             else
@@ -865,9 +919,15 @@ void FetchAndExecuteSignal()
                Print(" Order SELL DIBATALKAN: sizing tidak menghasilkan lot yang aman.");
                return;
             }
+            uint t0Sell = GetTickCount();
             if(trade.Sell(lotSell, _Symbol, bid, sl, tp1, "WarRoom Signal"))
             {
-               Print(" Order SELL Berhasil Dibuka! Ticket: ", trade.ResultOrder());
+               int latSell = (int)(GetTickCount() - t0Sell);
+               Print(" Order SELL Berhasil Dibuka! Ticket: ", trade.ResultOrder(),
+                     " | fill: ", trade.ResultPrice(), " (diminta ", bid, ") | ", latSell, " ms");
+               LaporFill("SELL", lotSell, bid, trade.ResultPrice(), sl, tp1,
+                         SymbolInfoInteger(_Symbol, SYMBOL_SPREAD), latSell,
+                         trade.ResultRetcode(), HitungPosisiTerbuka());
                lastProcessedSignal = signalId;
             }
             else
