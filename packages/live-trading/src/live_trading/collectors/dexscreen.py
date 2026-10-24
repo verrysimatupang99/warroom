@@ -7,10 +7,10 @@ Dua fungsi:
 
 Cache berkas TTL 15 menit — snapshot dibangun tiap 15 menit jadi 1x fetch.
 """
-
 from __future__ import annotations
 
 import json
+import logging
 import time
 import urllib.request
 from pathlib import Path
@@ -383,7 +383,7 @@ def metas_overlap(shadow: list[dict[str, Any]], top: int = 5) -> dict[str, Any]:
                 if base:
                     addrs.add(base.lower())
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
         hit = sorted(a for a in addrs if a in shadow_addr)
         rows.append({**m, "overlap": len(hit), "overlap_hit": hit[:5]})
     return {"metas": rows}

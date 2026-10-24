@@ -4,11 +4,11 @@ Ini pengganti peran Agent 1/2/5 untuk bagian yang bisa dihitung. Yang dihasilkan
 "signal", tapi **usulan setup yang sudah dinilai** — lengkap dengan aturan mana yang
 lolos dan mana yang gagal. Narasi dan pemilihan POI terbaik tetap pekerjaan manusia/LLM.
 """
-
 from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -347,7 +347,7 @@ def _record_verdict(
         with path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     except Exception:  # noqa: BLE001
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
 
 def summarize_verdicts(settings: Settings) -> dict[str, Any]:

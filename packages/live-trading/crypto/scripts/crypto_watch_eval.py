@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Silent watchdog: hourly evaluation of crypto watchlist (topic 653).
 
@@ -195,7 +196,7 @@ def main():
                 lo_seen = min([float(r[3]) for r in rows] + [price])
                 hi_seen = max([float(r[2]) for r in rows] + [price])
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
         def hit_tp(level):
             """TP itu limit order yang MENGGANTUNG di exchange — begitu levelnya
@@ -255,7 +256,7 @@ def main():
     try:
         json.dump(data, open(PATH, "w"), indent=2)
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     # sinkron ledger equity (append trade tertutup baru) — idempoten
     try:
@@ -265,7 +266,7 @@ def main():
         if n:
             print(f"📈 equity ledger: +{n} trade tertutup tercatat")
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     if alerts:
         print("⏱ CRYPTO AUTO-EVAL (hourly) — " + now)

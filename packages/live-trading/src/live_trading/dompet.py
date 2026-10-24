@@ -17,11 +17,11 @@ KEPUTUSAN YANG DIKODEKAN DI SINI
 5. **Biaya disebut.** Ledger crypto punya `cost_bps` terukur; market lain belum, dan
    itu dinyatakan sebagai catatan, bukan diisi nol seolah gratis.
 """
-
 from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -480,7 +480,7 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
             }
         con2.close()
     except Exception:  # noqa: BLE001 — pecahan opsional; total tetap tampil
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     # --- INVARIANT RISIKO (temuan QA eksternal, 7 Okt 2026) ---------------------------
     # Keluhan: "satu trade tidak boleh menghasilkan R < -1R kecuali diberi status khusus".
@@ -520,7 +520,7 @@ def _dompet_idx(state_dir: Path, kurs: float | None) -> dict[str, Any]:
         con3.close()
         yatim = {"jumlah": int(jml or 0), "tertua": tertua}
     except Exception:  # noqa: BLE001
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     return {
         "market": "idx",

@@ -12,10 +12,10 @@ yang sudah terbukti di VM (`chain_radar.py`, identik byte-per-byte dengan salina
 Yang dibaca di sini hanya keluaran `gmgn-cli` (publik, tanpa kunci tulis). Tidak ada
 wallet, tidak ada private key, tidak ada order.
 """
-
 from __future__ import annotations
 
 import json
+import logging
 import subprocess
 import sys
 import time
@@ -74,7 +74,7 @@ def _run(args: list[str], *, retries: int = 3) -> dict[str, Any] | None:
             try:
                 wait = max(5, min(300, int(json.loads(out).get("reset_at", 0) - time.time())))
             except Exception:  # noqa: BLE001 — pesan galat bebas; jangan gagalkan karena format
-                pass
+                logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
             if a < retries - 1:
                 print(f"  [rate-limit] {wait}s", file=sys.stderr)
                 time.sleep(min(wait, 60))

@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Crypto trading dashboard — pipeline status, watchlist, OKX live, Agent 6.
 
@@ -191,7 +192,7 @@ def agent_status():
     try:
         out["file_age_min"] = round((time.time() - os.path.getmtime(f)) / 60)
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     flow = _section(text, "=== AGENT 1 — MARKET SCAN: ORDER FLOW ===",
                     ["=== AGENT 1 — MARKET SCAN: SMC", "=== AGENT 4"])
@@ -351,7 +352,7 @@ def live_positioning(symbols):
                     row["crowd"] = crowding(row)
                     out[sym] = row
             except Exception:
-                pass
+                logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
             POS_CACHE["data"] = out
             POS_CACHE["ts"] = now
         return {s: out[s] for s in symbols if s in out}
@@ -366,7 +367,7 @@ def _must_show():
             if s:
                 need[s] = "posisi open"
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     try:
         for it in (watchlist().get("items") or []):
             if (it.get("status") or "") in ("still_open", "tp1_hit_runner"):
@@ -374,7 +375,7 @@ def _must_show():
                 if s:
                     need.setdefault(s, "signal aktif")
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     return need
 
 
@@ -449,7 +450,7 @@ def agent6(limit=40):
                 row["crowd"] = crowding(row)
                 row.setdefault("tag", "kandidat")
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
         # Koin yang wajib tampil: posisi open + signal aktif. Snapshot A6 hanya
         # berisi kandidat (atau fallback BTC/ETH/SOL saat tidak ada kandidat),

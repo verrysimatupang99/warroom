@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Crypto equity tracker — ledger R per trade + kurva ekuitas.
 
@@ -78,7 +79,7 @@ def _closed_at(item, notes):
                                        "%d/%b %H:%M")
                 return dt.replace(year=datetime.now(WIB).year, tzinfo=WIB).isoformat()
             except Exception:
-                pass
+                logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     return item.get("date_added")
 
 
