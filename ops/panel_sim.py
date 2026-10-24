@@ -13,9 +13,8 @@ from __future__ import annotations
 import csv
 import json
 import os
-import time
 import urllib.request
-from datetime import datetime, date
+from datetime import date, datetime
 from pathlib import Path
 
 API = os.environ.get("WARROOM_API", "http://127.0.0.1:8800")
@@ -144,7 +143,8 @@ def main() -> None:
             kena = (bid <= pos["sl"] if pos["side"] == "BUY" else ask >= pos["sl"]) or \
                    (bid >= pos["tp"] if pos["side"] == "BUY" else ask <= pos["tp"])
             if kena:
-                harga = pos["sl"] if (bid <= pos["sl"] if pos["side"] == "BUY" else ask >= pos["sl"]) else pos["tp"]
+                kena_sl = bid <= pos["sl"] if pos["side"] == "BUY" else ask >= pos["sl"]
+                harga = pos["sl"] if kena_sl else pos["tp"]
                 tutup(p, harga, waktu)
         # 2. ratchet harian
         perbarui_ratchet(p)

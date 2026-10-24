@@ -252,6 +252,88 @@
         "title": "LoginBody",
         "type": "object"
       },
+      "MT5FillPayload": {
+        "description": "Satu kejadian eksekusi (entry) yang dilaporkan EA.",
+        "properties": {
+          "digits": {
+            "default": 0,
+            "title": "Digits",
+            "type": "integer"
+          },
+          "equity": {
+            "default": 0.0,
+            "title": "Equity",
+            "type": "number"
+          },
+          "execution_mode": {
+            "default": -1,
+            "title": "Execution Mode",
+            "type": "integer"
+          },
+          "latency_ms": {
+            "default": 0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "open_positions": {
+            "default": 0,
+            "title": "Open Positions",
+            "type": "integer"
+          },
+          "price_filled": {
+            "default": 0.0,
+            "title": "Price Filled",
+            "type": "number"
+          },
+          "price_requested": {
+            "default": 0.0,
+            "title": "Price Requested",
+            "type": "number"
+          },
+          "retcode": {
+            "default": 0,
+            "title": "Retcode",
+            "type": "integer"
+          },
+          "side": {
+            "default": "",
+            "title": "Side",
+            "type": "string"
+          },
+          "sl": {
+            "default": 0.0,
+            "title": "Sl",
+            "type": "number"
+          },
+          "spread_pts": {
+            "default": 0,
+            "title": "Spread Pts",
+            "type": "integer"
+          },
+          "symbol": {
+            "default": "",
+            "title": "Symbol",
+            "type": "string"
+          },
+          "ticket": {
+            "default": 0,
+            "title": "Ticket",
+            "type": "integer"
+          },
+          "tp": {
+            "default": 0.0,
+            "title": "Tp",
+            "type": "number"
+          },
+          "volume": {
+            "default": 0.0,
+            "title": "Volume",
+            "type": "number"
+          }
+        },
+        "title": "MT5FillPayload",
+        "type": "object"
+      },
       "MT5PendingOrder": {
         "properties": {
           "placed_at": {
@@ -364,13 +446,79 @@
             "title": "Account",
             "type": "string"
           },
+          "ask": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ask"
+          },
+          "atr_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atr M5"
+          },
           "balance": {
             "title": "Balance",
             "type": "number"
           },
+          "bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid"
+          },
           "broker": {
             "title": "Broker",
             "type": "string"
+          },
+          "digits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digits"
+          },
+          "ema21_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ema21 M5"
+          },
+          "ema9_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ema9 M5"
           },
           "equity": {
             "title": "Equity",
@@ -384,9 +532,53 @@
             "title": "Free Margin",
             "type": "number"
           },
+          "high_12": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High 12"
+          },
+          "losses_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Losses Today"
+          },
+          "low_12": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low 12"
+          },
           "margin": {
             "title": "Margin",
             "type": "number"
+          },
+          "net_pnl_today_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pnl Today Usd"
           },
           "pending_orders": {
             "default": [],
@@ -403,6 +595,17 @@
             },
             "title": "Positions",
             "type": "array"
+          },
+          "spread_pts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spread Pts"
           },
           "total_trades_today": {
             "anyOf": [
@@ -427,6 +630,28 @@
             ],
             "default": 0.0,
             "title": "Win Rate Pct"
+          },
+          "win_rate_today_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate Today Pct"
+          },
+          "wins_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wins Today"
           }
         },
         "required": [
@@ -5575,6 +5800,110 @@
         ]
       }
     },
+    "/api/v1/tencent/forex/laya": {
+      "get": {
+        "description": "Verdict Laya AI atas kondisi akun MT5 + sinyal aktif (middleware nyata).\n\nBerbeda dari `/forex/bias` yang hanya membaca kalender event: endpoint ini\nmemanggil model `convaiinnovations/laya` dengan ringkasan data mentah MT5\n(balance/equity/posisi) dan sinyal level yang sedang berlaku.\n\nBila model tidak tersedia, balasannya `tersedia:false` + alasan — bukan angka\nkarangan. Read-only: tidak membuka order dan tidak menyentuh gate live.",
+        "operationId": "get_forex_laya_verdict_api_v1_tencent_forex_laya_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Forex Laya Verdict Api V1 Tencent Forex Laya Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Forex Laya Verdict",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/forex/laya/status": {
+      "get": {
+        "description": "Status middleware Laya (tersedia/tidak, ambang, verdict terakhir).",
+        "operationId": "get_forex_laya_status_api_v1_tencent_forex_laya_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Forex Laya Status Api V1 Tencent Forex Laya Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Forex Laya Status",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/forex/levels": {
       "get": {
         "description": "Hitungan level entry, stop loss, dan target Gold/Forex mandiri 100% lokal (Zero Tencent).",
@@ -5776,6 +6105,68 @@
         ]
       }
     },
+    "/api/v1/tencent/mt5/fill": {
+      "post": {
+        "description": "Catat kualitas eksekusi: harga diminta vs harga didapat + latensi.\n\nDipakai untuk mengukur slippage nyata per jam dan per kondisi pasar.\nTidak mengubah perilaku EA.",
+        "operationId": "report_mt5_fill_api_v1_tencent_mt5_fill_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MT5FillPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Report Mt5 Fill Api V1 Tencent Mt5 Fill Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Mt5 Fill",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/mt5/history": {
       "get": {
         "description": "Mengembalikan daftar lengkap history transaksi EA MT5 untuk halaman Forex.",
@@ -5791,6 +6182,58 @@
           }
         },
         "summary": "Get Mt5 History",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/mt5/panels": {
+      "get": {
+        "description": "Ringkasan 3 panel simulator (A/B/C) untuk ditampilkan di dashboard.",
+        "operationId": "get_panel_sim_api_v1_tencent_mt5_panels_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Panel Sim Api V1 Tencent Mt5 Panels Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Panel Sim",
         "tags": [
           "tencent"
         ]
