@@ -130,3 +130,21 @@ def test_laya_dinonaktifkan_memblokir(cache: Path) -> None:
     layak, _, alasan = s.evaluate_laya({"side": "LONG", "session": "LONDON"})
     assert layak is False
     assert "dinonaktifkan" in alasan
+
+
+def test_override_ambang_lewat_env(cache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ambang bisa diturunkan sementara untuk pengujian, lalu dikembalikan."""
+    monkeypatch.setenv("WARROOM_LAYA_MIN_CONF", "0.10")
+    s = MultiSessionLayaScalperStrategy(enable_laya=True)
+    assert s.laya_min_confidence == pytest.approx(0.10)
+
+    _tulis(cache, verdicts={"LONG": {"choice": "EXECUTE", "confidence": 0.15}})
+    layak, keyakinan, _ = s.evaluate_laya({"side": "LONG", "session": "LONDON"})
+    assert layak is True
+    assert keyakinan == pytest.approx(0.15)
+
+
+def test_override_tidak_valid_diabaikan(cache: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("WARROOM_LAYA_MIN_CONF", "bukan-angka")
+    s = MultiSessionLayaScalperStrategy(enable_laya=True)
+    assert s.laya_min_confidence == pytest.approx(0.60)

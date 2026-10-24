@@ -10,6 +10,7 @@ Fitur Utama:
 from __future__ import annotations
 
 import logging
+import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -35,6 +36,20 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         self.enable_laya = enable_laya
         self.max_sl_points = max_sl_points
         self.laya_min_confidence = laya_min_confidence
+        # Override ambang lewat env, tanpa ubah kode/deploy ulang logika.
+        # Dipakai untuk pengujian terkontrol (mis. memverifikasi jalur eksekusi EA
+        # saat pasar tutup) dan untuk tuning setelah data sebaran verdict cukup.
+        _override = os.environ.get("WARROOM_LAYA_MIN_CONF", "").strip()
+        if _override:
+            try:
+                self.laya_min_confidence = float(_override)
+                log.warning(
+                    "Ambang Laya DI-OVERRIDE lewat env: %.3f (default %.2f)",
+                    self.laya_min_confidence,
+                    laya_min_confidence,
+                )
+            except ValueError:
+                log.error("WARROOM_LAYA_MIN_CONF tidak valid: %r (diabaikan)", _override)
         self._laya_loaded = False
         # Alasan penolakan terakhir (audit R6). None berarti tidak ada blokir.
         self.last_block_reason: str | None = None
