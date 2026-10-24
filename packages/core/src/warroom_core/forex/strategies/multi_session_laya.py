@@ -109,7 +109,12 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             log.warning("Sinyal ditolak (R7): %s", self.last_block_reason)
             return None
         rasio = reward / risk
-        if rasio + 1e-9 < self.rrr_min:
+        # Toleransi pembulatan: risk & reward dibulatkan ke 2 desimal, sehingga
+        # rasio bisa jatuh SEDIKIT di bawah rrr_min secara semu. Contoh nyata:
+        # risk=2.53, reward=round(2.53*1.8,2)=4.55 -> rasio 1.7984. Tanpa
+        # toleransi, sinyal sah ikut ditolak (~1 dari 3 nilai risk).
+        toleransi = 0.01 / max(risk, 1.0)
+        if rasio + toleransi < self.rrr_min:
             self.last_block_reason = (
                 f"R:R {rasio:.2f} di bawah minimum {self.rrr_min:.2f} — sinyal dibatalkan"
             )

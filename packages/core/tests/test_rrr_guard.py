@@ -98,3 +98,22 @@ def test_alasan_blokir_dibersihkan_saat_lolos(cache: Path) -> None:
 
     assert sinyal is not None
     assert s.last_block_reason is None
+
+
+def test_pembulatan_tidak_menolak_sinyal_sah(cache: Path) -> None:
+    """risk=2.53 -> reward=4.55 -> rasio 1.7984 (di bawah 1.8 secara semu).
+
+    Tanpa toleransi pembulatan, sinyal yang sah ikut ditolak. Kasus ini nyata:
+    ATR 2.3 menghasilkan tepat risk 2.53.
+    """
+    s = _strategi()
+    market = _market(price=4000.0, ema9=3990.0)
+    market["atr14"] = 2.3
+
+    sinyal = s.evaluate(market)
+
+    assert sinyal is not None, s.last_block_reason
+    assert sinyal["risk"] == pytest.approx(2.53)
+    assert sinyal["reward"] == pytest.approx(4.55)
+    # rasio mentah memang di bawah 1.8, tetapi masih dalam toleransi pembulatan
+    assert sinyal["reward"] / sinyal["risk"] < 1.8
