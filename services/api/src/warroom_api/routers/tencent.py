@@ -246,6 +246,20 @@ class MT5TelemetryPayload(BaseModel):
     pending_orders: list[MT5PendingOrder] = []
     total_trades_today: int | None = 0
     win_rate_pct: float | None = 0.0
+    # Statistik nyata dari riwayat broker (menggantikan konstanta hardcode lama)
+    wins: int | None = None
+    losses: int | None = None
+    net_pnl_today: float | None = None
+    # Snapshot broker: sumber kebenaran harga untuk instrumen yang dieksekusi.
+    bid: float | None = None
+    ask: float | None = None
+    spread_pts: int | None = None
+    digits: int | None = None
+    atr_m5: float | None = None
+    ema9_m5: float | None = None
+    ema21_m5: float | None = None
+    high_12: float | None = None
+    low_12: float | None = None
 
 latest_mt5_telemetry = {
     "connected": False,
@@ -281,6 +295,19 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "pending_orders": [o.dict() for o in payload.pending_orders],
         "total_trades_today": payload.total_trades_today,
         "win_rate_pct": payload.win_rate_pct,
+        "wins": payload.wins,
+        "losses": payload.losses,
+        "net_pnl_today": payload.net_pnl_today,
+        # Snapshot broker (dipakai untuk jarak risk/reward pada instrumen nyata)
+        "bid": payload.bid,
+        "ask": payload.ask,
+        "spread_pts": payload.spread_pts,
+        "digits": payload.digits,
+        "atr_m5": payload.atr_m5,
+        "ema9_m5": payload.ema9_m5,
+        "ema21_m5": payload.ema21_m5,
+        "high_12": payload.high_12,
+        "low_12": payload.low_12,
     }
 
     # Instruksi otomatis untuk loop telemetry di Azure VM:
