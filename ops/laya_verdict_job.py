@@ -23,6 +23,7 @@ import asyncio
 import logging
 import os
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -146,6 +147,61 @@ def susun_konteks_akun(akun: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def catat_riwayat(
+    sesi: str,
+    harga: float,
+    atr: float,
+    verdicts: dict[str, Any],
+    jalur_log: str | None = None,
+) -> None:
+    """Tambahkan satu baris CSV per siklus, agar sebaran verdict bisa dianalisis.
+
+    Tujuannya keputusan berbasis data: ambang `laya_min_confidence` (kini 0,60)
+    hanya bisa dinilai kalau kita punya sebaran confidence yang nyata, bukan satu
+    cuplikan. Berkas dijaga tetap kecil (rotasi sederhana).
+    """
+    import csv
+
+    path = Path(jalur_log or os.environ.get(
+        "WARROOM_LAYA_VERDICT_LOG", "/var/lib/warroom/laya_verdict_log.csv"
+    ))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    baru = not path.exists()
+    try:
+        with path.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if baru:
+                w.writerow(
+                    ["ts", "session", "price", "atr", "side", "choice", "confidence"]
+                )
+            for side in ("LONG", "SHORT"):
+                v = verdicts.get(side) or {}
+                w.writerow(
+                    [
+                        int(time.time()),
+                        sesi,
+                        round(harga, 3),
+                        round(atr, 3),
+                        side,
+                        v.get("choice", ""),
+                        v.get("confidence", 0.0),
+                    ]
+                )
+    except OSError as exc:  # jangan gagalkan job hanya karena log
+        log.warning("gagal menulis riwayat verdict: %s", exc)
+        return
+
+    # Rotasi: sisakan 2000 baris terakhir bila sudah lebih dari 5000.
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            baris = fh.readlines()
+        if len(baris) > 5000:
+            with path.open("w", encoding="utf-8") as fh:
+                fh.writelines([baris[0], *baris[-2000:]])
+    except OSError:
+        pass
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="XAUUSD")
@@ -209,6 +265,7 @@ async def main() -> int:
         }
     )
     log.info("verdict ditulis ke %s", jalur)
+    catat_riwayat(sesi, harga, ind["atr14"], verdicts)
     return 0
 
 

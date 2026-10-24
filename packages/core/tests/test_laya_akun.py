@@ -79,3 +79,34 @@ def test_balance_nol_tidak_membagi_nol(job: Any) -> None:
 def test_posisi_bukan_list_tidak_pecah(job: Any) -> None:
     k = job.susun_konteks_akun({"connected": True, "positions": "kosong"})
     assert k["posisi_terbuka"] is None
+
+
+def test_riwayat_verdict_ditulis_sekali_header(job: Any, tmp_path: Path) -> None:
+    """CSV dipakai untuk memilih ambang Laya, jadi harus rapi & append-only."""
+    log = tmp_path / "riwayat.csv"
+    verdicts = {
+        "LONG": {"choice": "SKIP", "confidence": 0.1493},
+        "SHORT": {"choice": "EXECUTE", "confidence": 0.612},
+    }
+
+    job.catat_riwayat("NEW_YORK", 3996.057, 2.452, verdicts, jalur_log=str(log))
+    job.catat_riwayat("LONDON", 4000.0, 2.5, verdicts, jalur_log=str(log))
+
+    baris = log.read_text(encoding="utf-8").splitlines()
+    assert baris[0] == "ts,session,price,atr,side,choice,confidence"
+    assert len(baris) == 5, baris  # header + 2 siklus x 2 arah
+    assert baris[1].count(",") == 6
+    # header tidak boleh muncul lagi
+    assert sum(1 for b in baris if b.startswith("ts,")) == 1
+
+
+def test_riwayat_gagal_tulis_tidak_melempar(job: Any, tmp_path: Path) -> None:
+    """Job tidak boleh mati hanya karena log tidak bisa ditulis."""
+    sasaran = tmp_path / "tidak-ada" / "x.csv"
+    sasaran.parent.mkdir()
+    sasaran.parent.chmod(0o500)
+    try:
+        job.catat_riwayat("ASIA", 4000.0, 2.0, {"LONG": {"choice": "SKIP", "confidence": 0.1}},
+                          jalur_log=str(sasaran))
+    finally:
+        sasaran.parent.chmod(0o700)
