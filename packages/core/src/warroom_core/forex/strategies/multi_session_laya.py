@@ -100,6 +100,22 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         risk = round(min(max(atr14 * 1.1, 1.8), self.max_sl_points), 2)
         reward = round(risk * self.rrr_min, 2)  # RRR Asimetris tebal (min 1.8R)
 
+        # R7: penjaga keras. `rrr_min` sebelumnya hanya dipakai untuk MENGHITUNG
+        # reward, bukan untuk MENOLAK. Akibatnya bila pembulatan atau clamp
+        # menghasilkan rasio di bawah minimum, sinyal tetap dikirim. Di sini rasio
+        # diverifikasi ulang dan sinyal dibatalkan bila tidak memenuhi.
+        if risk <= 0.0 or reward <= 0.0:
+            self.last_block_reason = f"Jarak risk/reward tidak valid (risk={risk} reward={reward})"
+            log.warning("Sinyal ditolak (R7): %s", self.last_block_reason)
+            return None
+        rasio = reward / risk
+        if rasio + 1e-9 < self.rrr_min:
+            self.last_block_reason = (
+                f"R:R {rasio:.2f} di bawah minimum {self.rrr_min:.2f} — sinyal dibatalkan"
+            )
+            log.warning("Sinyal ditolak (R7): %s", self.last_block_reason)
+            return None
+
         side = None
         setup_name = ""
 
@@ -173,6 +189,21 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             sl = round(entry + risk, 2)
             tp1 = round(entry - reward, 2)
             tp2 = round(entry - (reward * 1.8), 2)
+
+        # R7: invarian arah level. LONG wajib sl < entry < tp1 < tp2;
+        # SHORT wajib sl > entry > tp1 > tp2. Ini menangkap kesalahan tanda yang
+        # bisa membuat EA membuka posisi dengan SL/TP terbalik.
+        if side == "LONG":
+            urutan_valid = sl < entry < tp1 < tp2
+        else:
+            urutan_valid = sl > entry > tp1 > tp2
+        if not urutan_valid:
+            self.last_block_reason = (
+                f"Urutan level tidak valid untuk {side}: sl={sl} entry={entry} "
+                f"tp1={tp1} tp2={tp2}"
+            )
+            log.warning("Sinyal ditolak (R7): %s", self.last_block_reason)
+            return None
 
         self.last_block_reason = None  # sinyal lolos: bersihkan alasan blokir lama
         return {
