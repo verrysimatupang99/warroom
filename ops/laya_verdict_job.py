@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,17 +41,22 @@ PERTANYAAN = {
     "verdict": {
         "type": "choice",
         "instructions": (
-            "Apakah kondisi pasar saat ini aman untuk eksekusi scalping XAUUSD "
-            "dengan arah {side} pada sesi {session}?"
+            "Apakah kondisi pasar DAN kondisi akun saat ini aman untuk eksekusi "
+            "scalping XAUUSD dengan arah {side} pada sesi {session}? "
+            "Pertimbangkan juga balance, equity, floating PnL, dan jumlah posisi "
+            "yang sudah terbuka."
         ),
         "criteria": {
             "EXECUTE": (
                 "Momentum jelas searah, spread wajar, bukan zona fakeout atau "
-                "sideways mati"
+                "sideways mati, DAN risiko terhadap ukuran balance masih wajar "
+                "dengan tidak ada posisi terbuka yang menahan risiko"
             ),
             "SKIP": (
                 "Pasar rawan sweep lanjutan, choppy tanpa volume, mengarah melawan "
-                "posisi, atau ada spike ekstrem"
+                "posisi, ada spike ekstrem, ATAU kondisi akun menunjukkan tekanan "
+                "(floating loss besar dibanding balance, margin tipis, sudah ada "
+                "posisi terbuka)"
             ),
         },
     }
@@ -88,6 +94,58 @@ def nilai_satu_arah(evaluator: Any, state: dict[str, Any]) -> dict[str, Any]:
     return {"choice": pilihan, "confidence": round(keyakinan, 4)}
 
 
+async def ambil_akun(timeout_s: float = 5.0) -> dict[str, Any]:
+    """Ambil telemetri akun dari API War Room. Kegagalan tidak fatal."""
+    url = os.environ.get(
+        "WARROOM_MT5_STATUS_URL", "http://127.0.0.1:8800/api/v1/tencent/mt5/status"
+    )
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=timeout_s) as client:
+            resp = await client.get(url)
+        if resp.status_code != 200:
+            log.warning("telemetri akun HTTP %s", resp.status_code)
+            return {}
+        data = resp.json()
+        return data if isinstance(data, dict) else {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("gagal ambil telemetri akun: %s", exc)
+        return {}
+
+
+def susun_konteks_akun(akun: dict[str, Any]) -> dict[str, Any]:
+    """Ringkas telemetri menjadi konteks risiko yang bisa dibaca model.
+
+    Sengaja hanya meneruskan angka yang benar-benar ada. Field yang tidak diketahui
+    dibiarkan None agar model tidak membaca nol palsu sebagai "akun kosong".
+    """
+    terhubung = bool(akun.get("connected"))
+    balance = akun.get("balance")
+    equity = akun.get("equity")
+    floating = akun.get("floating_pnl")
+    posisi = akun.get("positions")
+    n_posisi = len(posisi) if isinstance(posisi, list) else None
+
+    # Risiko mengambang relatif terhadap balance: bila floating loss besar
+    # dibanding balance, menambah posisi baru memperburuk tekanan margin.
+    floating_pct: float | None = None
+    if isinstance(floating, (int, float)) and isinstance(balance, (int, float)) and balance:
+        floating_pct = round(floating / balance * 100.0, 2)
+
+    return {
+        "akun_tersedia": terhubung,
+        "balance_usd": balance,
+        "equity_usd": equity,
+        "floating_pnl_usd": floating,
+        "floating_pct_balance": floating_pct,
+        "posisi_terbuka": n_posisi,
+        "free_margin_usd": akun.get("free_margin"),
+        "win_rate_pct": akun.get("win_rate_pct"),
+        "net_pnl_usd": akun.get("net_pnl_usd"),
+    }
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="XAUUSD")
@@ -103,6 +161,18 @@ async def main() -> int:
     ind = calculate_indicators(candles)
     sesi = sesi_sekarang()
     harga = ind["price"]
+
+    # R5: konteks akun. Tanpa ini Laya hanya menilai "pasar aman", bukan
+    # "trade ini pantas untuk ukuran akun". Risiko relatif terhadap balance adalah
+    # bagian dari keputusan, dan EA tidak mengirimkannya ke model mana pun.
+    akun = await ambil_akun()
+    konteks_akun = susun_konteks_akun(akun)
+    if konteks_akun["akun_tersedia"]:
+        log.info("konteks akun: %s", konteks_akun)
+    else:
+        log.warning(
+            "telemetri akun tidak tersedia — Laya menilai pasar saja (tanpa konteks akun)"
+        )
 
     try:
         import laya
@@ -120,6 +190,7 @@ async def main() -> int:
             "price": harga,
             "atr": ind["atr14"],
             "setup": f"{sesi} regime check",
+            **konteks_akun,
         }
         verdicts[side] = nilai_satu_arah(evaluator, state)
         log.info("%s -> %s", side, verdicts[side])
@@ -133,6 +204,7 @@ async def main() -> int:
             "trend": ind["trend_m5"],
             "ttl_sec": args.ttl,
             "engine": "convaiinnovations/laya",
+            "akun": konteks_akun,
             "verdicts": verdicts,
         }
     )
