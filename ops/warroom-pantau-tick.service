@@ -1,0 +1,14 @@
+[Unit]
+Description=War Room - pantau tick broker untuk deteksi buka/tutup pasar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/warroom
+Environment=HOME=/home/admin
+Environment=WARROOM_API=http://127.0.0.1:8800
+ExecStart=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/pantau-tick.py
+TimeoutStartSec=60

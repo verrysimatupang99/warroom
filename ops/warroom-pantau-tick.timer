@@ -1,0 +1,11 @@
+[Unit]
+Description=War Room - jadwal pantau tick broker tiap 5 menit
+
+[Timer]
+OnBootSec=120
+OnUnitActiveSec=5min
+AccuracySec=10
+Unit=warroom-pantau-tick.service
+
+[Install]
+WantedBy=timers.target
