@@ -291,6 +291,42 @@ latest_mt5_telemetry = {
     "win_rate_pct": 0.0,
 }
 
+# --- Logger telemetri (spread per jam) -------------------------------------
+# Telemetri EA datang tiap 1-5 detik dan sebelumnya hanya disimpan di memori,
+# sehingga histori spread hilang setiap poll. Baris di bawah menambahkan
+# pencatatan ke CSV dengan throttle 10 detik supaya berkas tidak membengkak.
+TELEMETRY_LOG = Path("/var/lib/warroom/telemetry_log.csv")
+_telemetry_log_last = 0.0
+TELEMETRY_LOG_INTERVAL_S = 10.0
+
+
+def _catat_telemetri(t: dict[str, Any]) -> None:
+    global _telemetry_log_last
+    sekarang = time.time()
+    if sekarang - _telemetry_log_last < TELEMETRY_LOG_INTERVAL_S:
+        return
+    _telemetry_log_last = sekarang
+    try:
+        TELEMETRY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        baru = not TELEMETRY_LOG.exists()
+        with TELEMETRY_LOG.open("a", newline="") as f:
+            import csv as _csv
+
+            w = _csv.writer(f)
+            if baru:
+                w.writerow(["ts", "iso", "bid", "ask", "spread_pts", "digits",
+                            "atr_m5", "positions", "net_pnl_today_usd", "equity"])
+            w.writerow([
+                int(sekarang),
+                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(sekarang)),
+                t.get("bid"), t.get("ask"), t.get("spread_pts"), t.get("digits"),
+                t.get("atr_m5"), len(t.get("positions") or []),
+                t.get("net_pnl_today_usd"), t.get("equity"),
+            ])
+    except OSError as exc:  # pragma: no cover - jangan ganggu jalur telemetri
+        log.warning("Gagal menulis log telemetri: %s", exc)
+
+
 @router.post("/mt5/telemetry", dependencies=[Depends(verify_mt5_or_admin)])
 async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     """Endpoint yang dipanggil oleh MT5 EA setiap beberapa detik untuk melaporkan status live."""
@@ -341,12 +377,74 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         '}'
     )
 
+    _catat_telemetri(latest_mt5_telemetry)
+
     return {
         "status": "OK",
         "received_at": latest_mt5_telemetry["last_seen_ts"],
         "action": "SYNC_EA_V2",
         "exec_powershell": update_cmd,
     }
+
+class MT5FillPayload(BaseModel):
+    """Satu kejadian eksekusi (entry) yang dilaporkan EA."""
+
+    ticket: int = 0
+    symbol: str = ""
+    side: str = ""
+    volume: float = 0.0
+    price_requested: float = 0.0
+    price_filled: float = 0.0
+    sl: float = 0.0
+    tp: float = 0.0
+    spread_pts: int = 0
+    digits: int = 0
+    latency_ms: int = 0
+    retcode: int = 0
+    execution_mode: int = -1
+    open_positions: int = 0
+    equity: float = 0.0
+
+
+FILL_LOG = Path("/var/lib/warroom/fills.csv")
+
+
+@router.post("/mt5/fill", dependencies=[Depends(verify_mt5_or_admin)])
+async def report_mt5_fill(payload: MT5FillPayload) -> dict[str, Any]:
+    """Catat kualitas eksekusi: harga diminta vs harga didapat + latensi.
+
+    Dipakai untuk mengukur slippage nyata per jam dan per kondisi pasar.
+    Tidak mengubah perilaku EA.
+    """
+    arah = 1.0 if payload.side.upper() in ("BUY", "LONG") else -1.0
+    point = 10.0 ** (-payload.digits) if payload.digits >= 0 else 0.0
+    slip_pts = ((payload.price_filled - payload.price_requested) * arah / point) if point else 0.0
+    try:
+        FILL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        baru = not FILL_LOG.exists()
+        with FILL_LOG.open("a", newline="") as f:
+            import csv as _csv
+
+            w = _csv.writer(f)
+            if baru:
+                w.writerow(["ts", "iso", "ticket", "symbol", "side", "volume",
+                            "price_requested", "price_filled", "slippage_pts",
+                            "spread_pts", "latency_ms", "retcode", "execution_mode",
+                            "open_positions", "equity", "sl", "tp"])
+            w.writerow([
+                int(time.time()), time.strftime("%Y-%m-%d %H:%M:%S"),
+                payload.ticket, payload.symbol, payload.side, payload.volume,
+                payload.price_requested, payload.price_filled, round(slip_pts, 2),
+                payload.spread_pts, payload.latency_ms, payload.retcode,
+                payload.execution_mode, payload.open_positions, payload.equity,
+                payload.sl, payload.tp,
+            ])
+    except OSError as exc:
+        log.warning("Gagal menulis log fill: %s", exc)
+        raise HTTPException(status_code=500, detail="gagal menulis log fill") from exc
+
+    return {"status": "OK", "slippage_pts": round(slip_pts, 2)}
+
 
 def _muat_forex_history() -> list[dict[str, Any]]:
     """Baca riwayat transaksi EA MT5 dari file data lokal (kosong bila belum ada)."""
