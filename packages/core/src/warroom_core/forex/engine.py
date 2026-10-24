@@ -167,9 +167,23 @@ async def generate_forex_levels(symbol: str = "XAUUSD", mode: str = "scalping") 
         "atr": ind["atr14"],
         "atr_pct": ind["atr_pct"],
         "status": "OK",
+        # R4 (23-24 Okt 2026): HARGA ABSOLUT TIDAK LAGI DIKIRIM SEBAGAI SUMBER
+        # KEBENARAN. Engine mengambil data dari Yahoo `GC=F` (kontrak berjangka
+        # emas), sedangkan EA mengeksekusi `XAUUSDm` (spot broker). Selisih
+        # terukur $12,04 sementara jarak SL strategi hanya $2,53 — SL/TP dari
+        # snapshot futures tidak ada artinya untuk simbol spot.
+        #
+        # Kontrak baru: engine mengirim NIAT (side) + JARAK (risk/reward) + stempel
+        # waktu. EA menghitung sendiri level dari ask/bid broker, sehingga rasio
+        # selalu utuh pada harga yang benar-benar dieksekusi.
+        #
+        # `levels` tetap dikirim untuk kompatibilitas/pembacaan manusia, tetapi
+        # EA WAJIB mengabaikannya selama `levels_mode == "relative"`.
+        "levels_mode": "relative",
+        "risk": risk,
+        "reward": reward,
         # R2: EA menolak sinyal yang lebih tua dari InpMaxSignalAgeSec. Tanpa
-        # stempel waktu, sinyal lama dieksekusi ke pasar yang sudah bergerak
-        # (penyebab drift harga yang memperburuk R:R di sisi EA).
+        # stempel waktu, sinyal lama dieksekusi ke pasar yang sudah bergerak.
         "generated_at": int(time.time()),
         "levels": {
             "entry": entry,

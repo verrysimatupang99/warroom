@@ -74,6 +74,13 @@ async def test_signal_ok_membawa_generated_at(monkeypatch: pytest.MonkeyPatch) -
     assert isinstance(hasil["generated_at"], int)
     assert sebelum <= hasil["generated_at"] <= sesudah
 
+    # R4: engine mengirim NIAT + JARAK, bukan harga absolut sebagai kebenaran.
+    # EA menyusun level dari ask/bid broker karena sumber engine (Yahoo GC=F /
+    # futures) berbeda simbol dari yang dieksekusi (XAUUSDm / spot).
+    assert hasil["levels_mode"] == "relative", hasil.get("levels_mode")
+    assert hasil["risk"] == pytest.approx(3.0, abs=0.01)
+    assert hasil["reward"] == pytest.approx(5.4, abs=0.01)
+
 
 @pytest.mark.asyncio
 async def test_generated_at_tidak_ada_saat_waiting(monkeypatch: pytest.MonkeyPatch) -> None:
