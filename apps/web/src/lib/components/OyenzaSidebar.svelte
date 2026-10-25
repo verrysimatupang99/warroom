@@ -6,6 +6,7 @@
 	 */
 	import { page } from '$app/state';
 	import { live } from '$lib/api/live.svelte';
+	import { AREAS } from '$lib/nav';
 	import Ikon from './Ikon.svelte';
 
 	interface Props {
@@ -16,23 +17,46 @@
 	const jalur = $derived(page.url.pathname);
 	const sub = $derived(page.url.searchParams.get('sub') ?? '');
 
-	const markets = [
-		{ rute: '/', label: 'Overview / Home', num: '1', ikon: 'home' },
-		{ rute: '/forex', label: 'Gold & Forex (XAUUSD)', num: '2', ikon: 'forex', tag: 'ACTIVE' },
-		{ rute: '/crypto', label: 'Crypto (BTC & SOL)', num: '3', ikon: 'crypto', tag: 'WIP' },
-		{ rute: '/polymarket', label: 'Polymarket CLOB', num: '4', ikon: 'polymarket', tag: 'WIP' },
-		{ rute: '/idx', label: 'IDX Saham Indonesia', num: '5', ikon: 'idx', tag: 'WIP' },
-		{ rute: '/gmgn', label: 'GMGN Solana Radar', num: '6', ikon: 'gmgn', tag: 'WIP' }
-	];
+	/**
+	 * Sumber tunggal: `$lib/nav.ts` (AREAS). Sidebar TIDAK lagi menyimpan daftar
+	 * rute sendiri — dulu daftarnya berbeda dari nav.ts sehingga `/riset` (550 baris
+	 * isi nyata) tidak pernah muncul di menu dan tak punya satu pun tautan masuk.
+	 * Yang disimpan lokal hanya dua hal kosmetik: tag status dan nomor pintasan.
+	 */
+	const TAG: Record<string, string> = {
+		'/forex': 'ACTIVE',
+		'/tencent': 'NODE',
+		'/crypto': 'WIP',
+		'/polymarket': 'WIP',
+		'/idx': 'WIP',
+		'/gmgn': 'WIP',
+		'/sistem': 'WIP',
+		'/riset': 'WIP'
+	};
 
-	const system = [
-		{ rute: '/agy', label: 'AI Market Agent', num: 'A', ikon: 'sistem', tag: 'WIP' },
-		{ rute: '/tencent', label: 'Server Tencent (Tailscale)', num: '7', ikon: 'mesin', tag: 'NODE' },
-		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '8', ikon: 'riset', tag: 'WIP' },
-		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '9', ikon: 'riset', tag: 'WIP' },
-		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '0', ikon: 'sistem', tag: 'WIP' },
-		{ rute: '/catatan', label: 'Catatan & Alur Engine', num: 'K', ikon: 'info' }
-	];
+	const NUM: Record<string, string> = {
+		'/': '1',
+		'/forex': '2',
+		'/crypto': '3',
+		'/polymarket': '4',
+		'/idx': '5',
+		'/gmgn': '6',
+		'/tencent': '7',
+		'/riset': '8',
+		'/sistem': '0',
+		'/catatan': 'K'
+	};
+
+	const keItem = (a: (typeof AREAS)[number]) => ({
+		rute: a.rute,
+		label: a.label,
+		num: NUM[a.rute] ?? '·',
+		ikon: a.ikon,
+		tag: TAG[a.rute]
+	});
+
+	const markets = AREAS.filter((a) => a.kategori === 'pasar').map(keItem);
+	const system = AREAS.filter((a) => a.kategori !== 'pasar').map(keItem);
 
 	function isAktif(rute: string): boolean {
 		if (rute === '/') return jalur === '/';
