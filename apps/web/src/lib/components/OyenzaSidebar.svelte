@@ -30,7 +30,7 @@
 		'/polymarket': 'WIP',
 		'/idx': 'WIP',
 		'/gmgn': 'WIP',
-		'/sistem': 'WIP',
+		'/sistem': 'OPS',
 		'/riset': 'WIP'
 	};
 
