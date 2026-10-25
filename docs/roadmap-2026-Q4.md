@@ -97,7 +97,14 @@ muncul di forex, itu kebocoran 12% per loss yang tidak terlihat di P&L harian.
 | **Durasi** | 1 minggu (bisa dikerjakan sekarang) |
 | **Cara ukur** | `ops/uji_snr.py` dengan `range_period` diperbesar |
 
-**Status saat ini:** p = 0,081 pada 5 hari data. Belum lolos.
+**Status saat ini:** ❌ **GAGAL** — diuji ulang dengan 60 hari data (13.435 candle,
+26.306 trade): selisih win rate **−0,3 poin persentase**, p = **0,741**. Efek +4,4 pp
+pada uji 5 hari ternyata artefak sampel kecil. **Ide SNR dibuang** sesuai kill criteria.
+
+| Uji | n | Terlindungi | Rentan | Selisih | p |
+|---|---|---|---|---|---|
+| 5 hari | 2.210 | 43,1% | 38,6% | +4,4 pp | 0,081 |
+| **60 hari** | **26.306** | 42,6% | 42,8% | **−0,3 pp** | **0,741** |
 
 ---
 
@@ -184,6 +191,7 @@ cd ~/warroom
 | 24 Okt 2026 | SNR belum dijadikan filter | p = 0,081, belum signifikan |
 | 24 Okt 2026 | Filter jam 12–18 belum dipasang ke EA asli | sampel 8 hari, belum out-of-sample |
 | 24 Okt 2026 | Panel A/B/C dijalankan sebagai simulasi, bukan order nyata | membandingkan skema tanpa risiko modal |
+| 24 Okt 2026 | **SNR DITOLAK** — hipotesis tidak terbukti | 60 hari data (26.306 trade): selisih win rate **−0,3 pp**, p=0,741. Efek +4,4 pp pada 5 hari ternyata noise. |
 
 ---
 
