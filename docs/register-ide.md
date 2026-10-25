@@ -42,7 +42,7 @@ Sumber: analisa journal crypto (145 trade), PlanetX (200 trade), riset EA, uji w
 | B7 | **SNR sebagai filter** | lihat A1 | ❌ GAGAL |
 | B8 | **Daily ratchet persen** (arm 8%, lock 60%, target 15%) | sudah jalan di simulator 3 panel | 🟡 MENUNGGU |
 | B9 | **Panel A/B/C** (risk 2,5/5/7,5%) | simulator aktif, timer 30 s | 🟡 MENUNGGU |
-| B10 | **Momentum Donchian 55 + trailing 3ATR + risiko 2%** | OOS 2,2 thn: **+9%, semua 6 koin positif, DD 10%**; sampel hanya 4–8 trade/koin | 🟡 MENUNGGU (sampel kecil) |
+| B10 | **Momentum Donchian + trailing ATR + risiko 2%** | OOS 2,2 thn: portofolio 38 koin **+9,8%, DD 2,3%, 71% positif**; **18/18 kombinasi parameter positif** (gradien monoton); belum lolos survivorship bias | 🟡 MENUNGGU (bukti kuat, 2 celah) |
 
 ---
 

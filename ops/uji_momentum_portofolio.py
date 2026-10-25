@@ -22,9 +22,9 @@ import urllib.request
 
 NODE = "http://100.126.10.74:8790"
 FEE = 0.001
-N_MASUK = 55
+N_MASUK = int(sys.argv[3]) if len(sys.argv) > 3 else 55
 RISIKO = 0.02
-ATR_MULT = 3.0
+ATR_MULT = float(sys.argv[4]) if len(sys.argv) > 4 else 3.0
 BAGI = 0.60
 
 
