@@ -66,6 +66,20 @@ positif yang terbukti secara statistik. Yang ada hanya kandidat.
 
 **Catatan:** sampel awal hanya 59 trade dalam 8 hari. Belum out-of-sample.
 
+**Uji awal pada XAUUSD (60 hari, 26.497 trade sintetis):** ❌ tidak ada jam yang menonjol.
+
+| Jam UTC | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|---|---|---|---|---|---|---|---|
+| Win% | 42,9 | 43,1 | 43,1 | 43,0 | 41,3 | 41,8 | 43,0 |
+
+Jam 05–11 UTC (= 12–18 WIB, jendela yang menang di crypto) menghasilkan **42,6%** —
+sama persis dengan rata-rata seluruh jam. Semua 24 jam berada dalam rentang
+expectancy −0,041R s/d +0,031R. Jam "terbaik" hanya punya n=8.
+
+**Implikasi:** efek jam pada crypto **tidak terbawa ke XAUUSD**. Prior Tahap 1
+melemah — simulator tetap dikumpulkan, tapi jangan berharap filter jam bekerja
+di gold.
+
 ---
 
 ### Tahap 2 — Bereskan slippage (paralel dengan Tahap 1)
