@@ -1,0 +1,13 @@
+[Unit]
+Description=War Room - paper trader momentum (tanpa order nyata)
+Documentation=file:///home/admin/wr_notes/UJI_MOMENTUM_CRYPTO_2026-10-24.md
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+WorkingDirectory=/home/admin/warroom
+Environment=WARROOM_NODE=http://100.126.10.74:8790
+ExecStart=/home/admin/warroom/.venv/bin/python /home/admin/warroom/ops/momentum_paper.py
+TimeoutStartSec=900
+Nice=10

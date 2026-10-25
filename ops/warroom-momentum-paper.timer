@@ -1,0 +1,10 @@
+[Unit]
+Description=War Room - jalankan paper trader momentum tiap jam
+
+[Timer]
+OnCalendar=hourly
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
