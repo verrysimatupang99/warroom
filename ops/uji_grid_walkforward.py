@@ -124,7 +124,8 @@ def main():
             f"{uji_tanpa:>+9.0f}%{uji_ada - uji_tanpa:>+8.0f}%"
         )
     if n:
-        print(f"\n{'RATA-RATA':>10}{'':>8}{'':>8}{total_ada / n:>+7.0f}%{total_tanpa / n:>+9.0f}%{(total_ada - total_tanpa) / n:>+8.0f}%")
+        r_ada, r_tanpa = total_ada / n, total_tanpa / n
+        print(f"\n{'RATA-RATA':>10}{'':>8}{'':>8}{r_ada:>+7.0f}%{r_tanpa:>+9.0f}%{r_ada - r_tanpa:>+8.0f}%")
 
 
 if __name__ == "__main__":
