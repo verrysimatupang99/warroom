@@ -58,7 +58,7 @@ def jalankan(c: list[dict], atr: list[float], maks_loss_pct: float | None) -> di
         if a <= 0:
             continue
         step = a * STEP_ATR
-        hi, lo, close = c[i]["h"], c[i]["l"], c[i]["c"]
+        hi, close = c[i]["h"], c[i]["c"]
 
         # 1. TP per posisi
         masih = []
