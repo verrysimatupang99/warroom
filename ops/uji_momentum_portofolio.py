@@ -50,7 +50,7 @@ def atr_seri(c, p=14):
 
 def kurva(c, a, mulai, akhir):
     """Kembalikan daftar ekuitas (mulai 1.0) sepanjang periode."""
-    ek, qty, puncak_h, masuk = 1.0, 0.0, 0.0, 0.0
+    ek, qty, puncak_h = 1.0, 0.0, 0.0
     out = []
     for i in range(max(mulai, N_MASUK + 1), akhir):
         close, atr_i = c[i]["c"], a[i]
@@ -65,7 +65,7 @@ def kurva(c, a, mulai, akhir):
                     qty = biaya * (1 - FEE) / close
                 else:
                     qty = qty_ideal * (1 - FEE)
-                masuk, puncak_h = close, close
+                puncak_h = close
                 ek -= biaya
             elif qty > 0:
                 puncak_h = max(puncak_h, close)
@@ -110,7 +110,8 @@ def main():
 
     hasil.sort(key=lambda x: -x[1])
     positif = sum(1 for _, r in hasil if r > 0)
-    print(f"koin diuji: {len(hasil)} | gagal: {gagal} | positif: {positif} ({100 * positif / len(hasil):.0f}%)")
+    print(f"koin diuji: {len(hasil)} | gagal: {gagal} | positif: {positif} "
+          f"({100 * positif / len(hasil):.0f}%)")
     print(f"return rata-rata: {sum(r for _, r in hasil) / len(hasil):+.0f}%")
     print(f"terbaik: {hasil[0][0]} {hasil[0][1]:+.0f}% | terburuk: {hasil[-1][0]} {hasil[-1][1]:+.0f}%")
 
