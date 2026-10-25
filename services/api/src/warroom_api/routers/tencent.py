@@ -447,6 +447,8 @@ async def report_mt5_fill(payload: MT5FillPayload) -> dict[str, Any]:
 
 
 PANEL_STATE = Path("/var/lib/warroom/panels.json")
+MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
+MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
 
 
 @router.get("/mt5/panels", dependencies=[Depends(verify_mt5_or_admin)])
@@ -633,3 +635,58 @@ async def get_forex_laya_status() -> dict[str, Any]:
     from warroom_api import laya_forex
 
     return laya_forex.middleware.status()
+
+
+@router.get("/crypto/momentum", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_momentum_paper() -> dict[str, Any]:
+    """Ringkasan paper trader momentum (40 koin) untuk dashboard Crypto.
+
+    Sumber: state yang ditulis ops/momentum_paper.py tiap jam.
+    Tidak ada order nyata — ini pencatatan.
+    """
+    if not MOMENTUM_STATE.exists():
+        return {"aktif": False, "catatan": "paper trader belum pernah berjalan"}
+
+    try:
+        st = json.loads(MOMENTUM_STATE.read_text())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail="state momentum tidak terbaca") from exc
+
+    # ekuitas butuh harga terakhir; pakai entry sebagai perkiraan konservatif
+    ekuitas = 0.0
+    posisi: list[dict[str, Any]] = []
+    for sym, p in st.items():
+        harga = p.get("harga") or p["entry"] or 0.0
+        nilai = p["kas"] + p["qty"] * harga
+        ekuitas += nilai
+        if p["qty"] > 0:
+            posisi.append({
+                "koin": sym,
+                "entry": round(p["entry"], 8),
+                "harga": round(harga, 8),
+                "qty": round(p["qty"], 8),
+                "puncak": round(p["puncak"], 8),
+                "pl_pct": round((harga / p["entry"] - 1) * 100, 2) if p["entry"] else 0.0,
+            })
+
+    modal = 500.0 * len(st) if st else 0.0
+    dagang: list[dict[str, str]] = []
+    if MOMENTUM_TRADES.exists():
+        baris = MOMENTUM_TRADES.read_text().strip().splitlines()
+        kepala = baris[0].split(",") if baris else []
+        for r in baris[1:][-20:]:
+            nilai_baris = r.split(",")
+            dagang.append(dict(zip(kepala, nilai_baris, strict=False)))
+
+    posisi.sort(key=lambda x: x["koin"])
+    return {
+        "aktif": True,
+        "jumlah_koin": len(st),
+        "modal": round(modal, 2),
+        "ekuitas_perkiraan": round(ekuitas, 2),
+        "return_pct": round((ekuitas / modal - 1) * 100, 2) if modal else 0.0,
+        "posisi_terbuka": len(posisi),
+        "posisi": posisi[:20],
+        "trade_terakhir": dagang,
+        "catatan": "paper trading 40 koin, tanpa order nyata; harga dari candle harian terakhir",
+    }

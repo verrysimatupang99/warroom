@@ -76,7 +76,6 @@ def main() -> None:
     st = muat()
     sekarang = datetime.now(UTC).isoformat(timespec="seconds")
     ringkas = {"dibuka": 0, "ditutup": 0, "dilewati": 0, "galat": 0}
-    harga_akhir: dict[str, float] = {}
 
     for sym in uni:
         try:
@@ -90,9 +89,10 @@ def main() -> None:
 
         a = atr(c)
         close = c[-1]["c"]
-        harga_akhir[sym] = close
         hi_lalu = max(x["h"] for x in c[-N_MASUK - 1 : -1])
         pos = st.setdefault(sym, {"kas": MODAL_KOIN, "qty": 0.0, "entry": 0.0, "puncak": 0.0})
+        pos["harga"] = close
+        pos["diperbarui"] = sekarang
 
         if pos["qty"] > 0:
             pos["puncak"] = max(pos["puncak"], close)
@@ -134,8 +134,8 @@ def main() -> None:
 
     total = 0.0
     terbuka = 0
-    for sym, p in st.items():
-        harga = harga_akhir.get(sym, p["entry"] or 0.0)
+    for p in st.values():
+        harga = p.get("harga") or p["entry"] or 0.0
         total += p["kas"] + p["qty"] * harga
         if p["qty"] > 0:
             terbuka += 1

@@ -25,8 +25,8 @@
 	 */
 	const TAG: Record<string, string> = {
 		'/forex': 'ACTIVE',
+		'/crypto': 'PAPER',
 		'/tencent': 'NODE',
-		'/crypto': 'WIP',
 		'/polymarket': 'WIP',
 		'/idx': 'WIP',
 		'/gmgn': 'WIP',
