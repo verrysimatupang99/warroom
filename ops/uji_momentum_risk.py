@@ -99,8 +99,13 @@ def jalankan(c, a, mulai=0, akhir=None):
 def main():
     interval = sys.argv[1] if len(sys.argv) > 1 else "1d"
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 2000
-    print(f"momentum risk-based | risiko {RISIKO:.0%}/trade | stop {ATR_MULT}xATR | N={N_MASUK}")
-    print(f"\n{'koin':>10}{'penuh':>9}{'DD':>6}{'trade':>7}{'win':>6}{'  | uji OOS':>12}{'DD':>6}{'trade':>7}")
+    print(
+        f"momentum risk-based | risiko {RISIKO:.0%}/trade | stop {ATR_MULT}xATR | N={N_MASUK}"
+    )
+    print(
+        f"\n{'koin':>10}{'penuh':>9}{'DD':>6}{'trade':>7}{'win':>6}"
+        f"{'  | uji OOS':>12}{'DD':>6}{'trade':>7}"
+    )
     tm, td, n = 0.0, 0.0, 0
     for sym in KOIN:
         try:
