@@ -25,6 +25,24 @@
 	let kejadian = $state<Record<string, unknown>[]>([]);
 	let galatEvent = $state<string | null>(null);
 	let params = $state<Record<string, unknown> | null>(null);
+
+	// Endpoint params membalas {params: [{nama, nilai, batas, scope, catatan, terkunci}]}.
+	// Bentuk ini dulu dicetak mentah sebagai JSON; sekarang dibaca sebagai tabel.
+	interface Param {
+		nama: string;
+		nilai: number | string;
+		batas?: [number, number];
+		scope?: string;
+		terkunci?: boolean;
+		catatan?: string;
+	}
+
+	const daftarParam = $derived<Param[]>(
+		Array.isArray((params as { params?: Param[] } | null)?.params)
+			? ((params as { params: Param[] }).params ?? [])
+			: []
+	);
+	const jumlahTerkunci = $derived(daftarParam.filter((p) => p.terkunci).length);
 	let latensi = $state<{ jalur: string; ms: number; status: number }[]>([]);
 
 	// Waktu respons diukur dari browser ke API, apa adanya. Angka ini yang dirasakan
@@ -225,15 +243,36 @@
 			</section>
 			<section class="rounded-card border border-line bg-surface p-4">
 				<h2 class="text-13 font-bold text-text">Parameter aktif</h2>
-				{#if params && Object.keys(params).length > 0}
-					<dl class="mt-2 grid gap-1.5 text-12 sm:grid-cols-2">
-						{#each Object.entries(params).slice(0, 12) as [k, v]}
-							<div class="flex justify-between gap-2 border-b border-line-soft py-1">
-								<dt class="text-text-3">{k}</dt>
-								<dd class="font-mono text-text">{typeof v === 'object' ? JSON.stringify(v).slice(0, 30) : String(v)}</dd>
-							</div>
-						{/each}
-					</dl>
+				{#if daftarParam.length > 0}
+					<div class="mt-2 overflow-x-auto">
+						<table class="w-full text-11 text-left">
+							<thead class="border-b border-line text-10 text-text-3">
+								<tr>
+									<th class="px-2 py-1.5">Nama</th>
+									<th class="px-2 py-1.5 text-right">Nilai</th>
+									<th class="px-2 py-1.5 text-right">Batas</th>
+									<th class="px-2 py-1.5">Scope</th>
+									<th class="px-2 py-1.5">Catatan</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-line-soft">
+								{#each daftarParam as p (p.nama)}
+									<tr class="hover:bg-surface-2/60">
+										<td class="px-2 py-1.5 font-mono text-text">{p.nama}</td>
+										<td class="px-2 py-1.5 text-right font-mono text-text">{p.nilai}</td>
+										<td class="px-2 py-1.5 text-right font-mono text-text-3">
+											{p.batas ? `${p.batas[0]}–${p.batas[1]}` : '—'}
+										</td>
+										<td class="px-2 py-1.5 font-mono text-text-3">{p.scope ?? '—'}</td>
+										<td class="px-2 py-1.5 text-text-3">{p.catatan ?? ''}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+					<p class="mt-2 text-11 text-text-3">
+						{jumlahTerkunci > 0 ? `${jumlahTerkunci} parameter terkunci.` : 'Tidak ada parameter yang terkunci.'}
+					</p>
 				{:else}
 					<EmptyState judul="Parameter tidak terbaca" pesan="Endpoint params tidak mengembalikan data." ringkas={true} />
 				{/if}

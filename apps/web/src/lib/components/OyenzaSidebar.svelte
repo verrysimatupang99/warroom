@@ -84,7 +84,7 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}"></span>
 			<span class="text-11 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">AUTO-TRADE READY</span>
+		<span class="tag-status">DEMO · TANPA UANG NYATA</span>
 	</div>
 
 	<!-- Navigation Group: MARKETS -->
