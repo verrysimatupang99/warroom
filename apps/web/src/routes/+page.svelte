@@ -810,6 +810,10 @@ async function muat() {
 		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--garis);
 		/* FLAT: gradient latar dihapus (design 16 Okt). */
+		/* 29 Okt: tanpa overflow-hidden, jalur marquee (1768px) melebarkan
+		   dokumen sampai 1784px dan halaman bisa digeser ke samping di ponsel. */
+		overflow: hidden;
+		max-width: 100%;
 	}
 	.ticker-jalur {
 		display: flex;
