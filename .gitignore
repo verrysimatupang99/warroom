@@ -52,3 +52,6 @@ ops/docker-mt5/config/
 data/hist/
 
 *.bak
+
+# cadangan lokal dari operasi agent (jangan di-commit)
+*.bak-*
