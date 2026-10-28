@@ -164,8 +164,10 @@
 				</div>
 			</dl>
 			{#if mt5?.spread_pts && mt5.atr_m5}
+				{@const hargaSpread = mt5.spread_pts / Math.pow(10, mt5.digits ?? 3)}
 				<p class="mt-2 text-11 text-text-3">
-					Spread menyerap {(((mt5.spread_pts / 10) / mt5.atr_m5) * 100).toFixed(1)}% dari ATR M5.
+					Spread {hargaSpread.toFixed(mt5.digits ?? 3)} harga, menyerap
+					{((hargaSpread / mt5.atr_m5) * 100).toFixed(1)}% dari ATR M5.
 					{#if uraiBias?.sesi}Sesi aktif: {uraiBias.sesi}.{/if}
 				</p>
 			{/if}

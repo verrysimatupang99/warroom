@@ -15,7 +15,7 @@
 
 	const BARIS: Baris[] = [
 		{ nama: 'Galaxius (vendor, trial)', jenis: 'Scalper SL mikro', pf: '2,73', trade: '3.685', dd: '1,61 %', nada: 'hati-hati',
-			catatan: 'Stop 2-3 dolar, sementara spread terukur 0,28. Margin tipis: biaya eksekusi bisa menghapus PF.' },
+			catatan: 'Stop 1,89 dolar, sementara spread terukur 0,24 (12,7% dari stop). Margin tipis: biaya eksekusi bisa menghapus PF.' },
 		{ nama: 'GoldenBall (vendor, trial)', jenis: 'Swing harian', pf: '2,46', trade: '684', dd: '3,05 %', nada: 'sedang',
 			catatan: 'Profil risiko normal (rata-rata loss -16,12 vs profit 11,89). Kandidat pilot paper.' },
 		{ nama: 'GOLD Reaper tp30', jenis: 'Milik sendiri', pf: '1,09', trade: '957', dd: '13,90 %', nada: 'sedang',
