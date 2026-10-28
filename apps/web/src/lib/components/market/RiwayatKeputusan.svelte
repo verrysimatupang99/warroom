@@ -44,6 +44,20 @@
 			.filter((v) => (saring === 'semua' ? true : saring === 'lolos' ? v.allowed === true : v.allowed === false))
 			.slice(0, 12)
 	);
+
+	// Ringkasan: aturan mana yang paling sering menahan. Dihitung dari 100 terakhir,
+	// bukan dari seluruh riwayat, dan itu disebutkan supaya tidak terbaca sebagai total.
+	const tersering = $derived.by(() => {
+		const hitung = new Map<string, number>();
+		for (const v of daftar) {
+			const gagal = (v.rules ?? []).filter((r) => r.ok === false);
+			if (!gagal.length) continue;
+			const keras = gagal.find((r) => r.hard) ?? gagal[0];
+			const kunci = (keras.rule ?? 'lain').replace(/_/g, ' ');
+			hitung.set(kunci, (hitung.get(kunci) ?? 0) + 1);
+		}
+		return [...hitung.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+	});
 	const lolos = $derived(daftar.filter((v) => v.allowed).length);
 
 	// Harga mengikuti presisi pair: koin receh butuh 6 desimal, koin besar 2.
@@ -88,6 +102,15 @@
 		<p class="mt-1 font-mono text-10 text-text-3">
 			{total} keputusan tersimpan · dari 100 terakhir, {lolos} lolos
 		</p>
+
+		{#if tersering.length > 0}
+			<p class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-10 text-text-3">
+				<span class="text-text-3">Paling sering menahan (dari 100 terakhir):</span>
+				{#each tersering as [nama, n] (nama)}
+					<span class="font-mono">{nama} <span class="text-text-2">{n}×</span></span>
+				{/each}
+			</p>
+		{/if}
 
 		{#if tampil.length === 0}
 			<p class="mt-2 text-11 text-text-3">Tidak ada keputusan pada saringan ini.</p>
