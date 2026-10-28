@@ -3,7 +3,8 @@
 	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import MarketShell from '$lib/components/MarketShell.svelte';
 	import QuantStrategyCard from '$lib/components/QuantStrategyCard.svelte';
-	import EmptyState from '$lib/components/EmptyState.svelte';
+	import MakroKalender from '$lib/components/market/MakroKalender.svelte';
+	import PapanPeringkat from '$lib/components/market/PapanPeringkat.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'riset')!;
 	const sub = $derived.by(() => {
@@ -32,17 +33,9 @@
 			</p>
 		</div>
 	{:else if sub === 'leaderboard'}
-		<EmptyState
-			judul="Papan peringkat belum aktif"
-			pesan="Peringkat butuh minimal dua strategi yang lulus Gate B dengan biaya nyata. Sekarang belum ada yang lulus, jadi papan peringkat akan menampilkan satu baris saja."
-			langkah="Selesaikan Gate B untuk satu strategi lebih dulu."
-		/>
+		<PapanPeringkat />
 	{:else if sub === 'kalender'}
-		<EmptyState
-			judul="Kalender makro belum punya sumber"
-			pesan="Server tidak punya feed kalender ekonomi otomatis. Menampilkan tanggal dari ingatan akan berisiko salah, jadi blok ini dibiarkan kosong."
-			langkah="Tambahkan feed kalender bila ingin blok ini hidup."
-		/>
+		<MakroKalender />
 	{:else}
 		<QuantStrategyCard filter="all" />
 	{/if}

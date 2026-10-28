@@ -33,6 +33,7 @@ from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
 from warroom_api.routers import idx as idx_router
 from warroom_api.routers import journal as journal_router
+from warroom_api.routers import kalender as kalender_router
 from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     app.include_router(komuter_router.router)
     app.include_router(idx_router.router)
     app.include_router(journal_router.router)
+    app.include_router(kalender_router.router)
     app.include_router(cron_router.router)
 
     # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---
