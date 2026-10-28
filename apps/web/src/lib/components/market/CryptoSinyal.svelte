@@ -51,6 +51,26 @@
 	function waktu(t: number) {
 		return new Date(t).toISOString().slice(5, 16).replace('T', ' ');
 	}
+
+	// Level struktur dihitung dari candle yang sedang tampil. Ini BUKAN analisis SMC:
+	// engine SMC aslinya ada di node lama. Yang dihitung sini hanya swing high/low,
+	// ATR kasar, dan posisi harga dalam rentang, semuanya bisa diperiksa ulang.
+	const struktur = $derived.by(() => {
+		if (candles.length < 3) return null;
+		const tinggi = Math.max(...candles.map((c) => c.h));
+		const rendah = Math.min(...candles.map((c) => c.l));
+		const atr = candles.reduce((a, c) => a + (c.h - c.l), 0) / candles.length;
+		const akhir = candles[candles.length - 1].c;
+		const lebar = tinggi - rendah;
+		return {
+			tinggi,
+			rendah,
+			atr,
+			akhir,
+			posisi: lebar > 0 ? ((akhir - rendah) / lebar) * 100 : 0,
+			lebar
+		};
+	});
 </script>
 
 {#if memuat}
@@ -98,6 +118,35 @@
 				<div class="mt-1 font-mono text-17 font-bold text-text">{ticker.low_ ?? '—'}</div>
 			</div>
 		</section>
+
+		{#if struktur}
+			<section class="rounded-card border border-line bg-surface p-4">
+				<h2 class="text-13 font-bold text-text">Level struktur (dihitung lokal)</h2>
+				<dl class="mt-2 grid gap-2 text-12 sm:grid-cols-2 lg:grid-cols-4">
+					<div>
+						<dt class="text-text-3">Swing tinggi</dt>
+						<dd class="font-mono text-15 font-bold text-text">{struktur.tinggi}</dd>
+					</div>
+					<div>
+						<dt class="text-text-3">Swing rendah</dt>
+						<dd class="font-mono text-15 font-bold text-text">{struktur.rendah}</dd>
+					</div>
+					<div>
+						<dt class="text-text-3">ATR kasar (rata-rata range)</dt>
+						<dd class="font-mono text-15 font-bold text-text">{struktur.atr.toFixed(6)}</dd>
+					</div>
+					<div>
+						<dt class="text-text-3">Posisi dalam rentang</dt>
+						<dd class="font-mono text-15 font-bold text-text">{struktur.posisi.toFixed(1)} %</dd>
+					</div>
+				</dl>
+				<p class="mt-2 text-11 text-text-3">
+					Ini bukan analisis SMC. Engine SMC yang lama berjalan di node luar yang sudah
+					tidak aktif, jadi halaman ini hanya menampilkan angka yang bisa dihitung ulang
+					dari candle di atas.
+				</p>
+			</section>
+		{/if}
 
 		<section class="rounded-card border border-line bg-surface p-4">
 			<h2 class="text-13 font-bold text-text">Candle 1 jam</h2>

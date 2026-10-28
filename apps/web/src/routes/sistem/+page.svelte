@@ -41,9 +41,10 @@
 		const s = await ambil<Status>('/api/v1/sistem/status');
 		if (s) status = s;
 		else galatStatus = 'Endpoint status layanan tidak menjawab.';
-		const ev = await ambil<unknown>('/api/v1/events?limit=10');
-		const arr = Array.isArray(ev) ? ev : ((ev as { items?: unknown[] })?.items ?? []);
-		kejadian = (arr as Record<string, unknown>[]).slice(0, 10);
+		const ev = await ambil<{ events?: unknown[]; items?: unknown[] }>('/api/v1/events?limit=12');
+		// Endpoint mengembalikan { events: [...] }; jaga juga bentuk list langsung.
+		const arr = Array.isArray(ev) ? (ev as unknown[]) : (ev?.events ?? ev?.items ?? []);
+		kejadian = (arr as Record<string, unknown>[]).slice(0, 12);
 		if (!kejadian.length) galatEvent = 'Belum ada kejadian terekam.';
 		params = await ambil<Record<string, unknown>>('/api/v1/params');
 		memuat = false;
@@ -111,19 +112,47 @@
 		<ServerTencentView />
 	{:else if sub === 'event'}
 		<section class="rounded-card border border-line bg-surface p-4">
-			<h2 class="text-13 font-bold text-text">Kejadian terakhir</h2>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h2 class="text-13 font-bold text-text">Kejadian terakhir</h2>
+				<span class="font-mono text-11 text-text-3">{kejadian.length} baris</span>
+			</div>
 			{#if kejadian.length === 0}
 				<EmptyState judul="Belum ada kejadian" pesan={galatEvent ?? 'Umpan kejadian kosong.'} ringkas={true} />
 			{:else}
-				<ul class="mt-2 divide-y divide-line-soft">
-					{#each kejadian as k, i (i)}
-						<li class="py-1.5 text-11">
-							<span class="font-mono text-text-3">{String(k.severity ?? k.type ?? 'info')}</span>
-							<span class="ml-2 text-text">{String(k.actor ?? 'sistem')}</span>
-							<span class="ml-2 text-text-3">{String(k.created_at ?? '')}</span>
-						</li>
-					{/each}
-				</ul>
+				<div class="mt-2 overflow-x-auto">
+					<table class="w-full text-11 text-left">
+						<thead class="border-b border-line text-10 text-text-3">
+							<tr>
+								<th class="px-2 py-1.5">Waktu</th>
+								<th class="px-2 py-1.5">Jenis</th>
+								<th class="px-2 py-1.5">Aktor</th>
+								<th class="px-2 py-1.5">Tingkat</th>
+								<th class="px-2 py-1.5">Rincian</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-line-soft">
+							{#each kejadian as k, i (i)}
+								<tr class="hover:bg-surface-2/60">
+									<td class="px-2 py-1.5 font-mono text-text-3">
+										{String(k.created_at ?? '').slice(0, 19)}
+									</td>
+									<td class="px-2 py-1.5 font-mono text-text">{String(k.type ?? '—')}</td>
+									<td class="px-2 py-1.5 text-text-2">{String(k.actor ?? '—')}</td>
+									<td
+										class="px-2 py-1.5 font-mono"
+										class:text-neg={String(k.severity) === 'error' || String(k.severity) === 'warn'}
+										class:text-text-3={String(k.severity) !== 'error' && String(k.severity) !== 'warn'}
+									>
+										{String(k.severity ?? 'info')}
+									</td>
+									<td class="px-2 py-1.5 text-text-2">
+										{String((k.payload as Record<string, unknown>)?.detail ?? (k.payload as Record<string, unknown>)?.job ?? '—').slice(0, 90)}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			{/if}
 		</section>
 	{:else if sub === 'kebijakan'}
