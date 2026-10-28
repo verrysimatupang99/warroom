@@ -252,15 +252,21 @@ def _propose_golden_smc_gated(st: Structure, direction: str) -> dict[str, Any] |
     if anchor_low is None or anchor_high is None:
         return None
     d = "long" if direction.lower() == "long" else "short"
-    setup = golden_pullback.build_pullback_setup(
-        direction=d,
-        swing_low=min(float(anchor_low), float(anchor_high)),
-        swing_high=max(float(anchor_low), float(anchor_high)),
-        current_price=st.price,
-        structure_bias=st.bias.get("1h", "netral"),
-        liquidity_swept=True,
-        confirmation=confirmation,
-    )
+    # Degenerate swing (level atas dan bawah bertemu) bukan kesalahan data,
+    # hanya tidak ada setup yang bisa dibentuk. Tanpa guard ini satu simbol
+    # yang harganya datar melempar ValueError dan membatalkan seluruh scan.
+    try:
+        setup = golden_pullback.build_pullback_setup(
+            direction=d,
+            swing_low=min(float(anchor_low), float(anchor_high)),
+            swing_high=max(float(anchor_low), float(anchor_high)),
+            current_price=st.price,
+            structure_bias=st.bias.get("1h", "netral"),
+            liquidity_swept=True,
+            confirmation=confirmation,
+        )
+    except ValueError:
+        return None
     if setup is None:
         return None
     return {
