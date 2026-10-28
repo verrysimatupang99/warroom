@@ -15,6 +15,7 @@
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
+	import BerandaJelajah from '$lib/components/BerandaJelajah.svelte';
 	// Komponen fondasi tema baru (DESIGN-USULAN 16 Okt): honesty-tag pada setiap
 	// status verifikasi, track bar untuk skor ber-maksimum.
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
@@ -352,6 +353,8 @@ async function muat() {
 			sumber="pasar/ringkas + sinyal/per-pasar"
 			terverifikasi={true}
 		/>
+
+	<BerandaJelajah />
 
 		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
 		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:
