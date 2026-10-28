@@ -23,16 +23,13 @@
 	 * isi nyata) tidak pernah muncul di menu dan tak punya satu pun tautan masuk.
 	 * Yang disimpan lokal hanya dua hal kosmetik: tag status dan nomor pintasan.
 	 */
-	const TAG: Record<string, string> = {
-		'/forex': 'ACTIVE',
-		'/crypto': 'PAPER',
-		'/tencent': 'NODE',
-		'/polymarket': 'WIP',
-		'/idx': 'WIP',
-		'/gmgn': 'WIP',
-		'/sistem': 'OPS',
-		'/riset': 'WIP'
-	};
+	// Tag status kini dibaca dari nav.ts supaya rail dan isi halaman tidak pernah
+	// berbeda. Sebelumnya daftar ini disimpan lokal dan sempat menulis "WIP" untuk
+	// market yang sebenarnya cuma standby, serta "WIP" untuk Riset yang isinya ada.
+	const TAG: Record<string, string> = Object.fromEntries(
+		AREAS.filter((a) => a.status).map((a) => [a.rute, a.status as string])
+	);
+	TAG['/sistem'] = 'OPS';
 
 	const NUM: Record<string, string> = {
 		'/': '1',

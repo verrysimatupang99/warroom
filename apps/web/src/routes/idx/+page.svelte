@@ -1,14 +1,18 @@
 <script lang="ts">
-	import UnderConstruction from '$lib/components/UnderConstruction.svelte';
+	import StandbyPasar from '$lib/components/StandbyPasar.svelte';
 </script>
 
-<svelte:head>
-	<title>IDX Saham Indonesia — Under Construction | War Room</title>
-</svelte:head>
+<svelte:head><title>IDX | War Room</title></svelte:head>
 
-<UnderConstruction 
-	marketTitle="IDX Saham Indonesia" 
-	category="EQUITY &amp; BANDARMOLOGI FLOW"
-	eta="Tahap 2 (Q4 2026)"
-	detail="Modul Pasar Saham Indonesia (Screening net foreign flow Big Caps dan deteksi akumulasi bandar lapis dua) sementara dialihkan ke mode standby untuk mendukung fokus penuh pada Forex & XAUUSD."
+<StandbyPasar
+	nama="IDX"
+	ringkas="Saham Indonesia, foreign flow, dan bandarmologi. Dalam mode standby."
+	alasan="Scanner IDX, ledger sinyal, dan akses database read-only sebelumnya berjalan di node luar yang sudah tidak aktif. War Room tidak menghitung ulang angka IDX sendiri, jadi tanpa sumber itu halaman ini tidak punya data yang bisa dipercaya."
+	syarat={[
+		'Feed harga saham IDX yang bisa diakses langsung dari server',
+		'Sumber foreign flow dan broker summary',
+		'Scanner bandarmologi dijalankan ulang di server ini atau diganti sumber resmi',
+		'Satu aturan lulus Gate B sebelum dipakai untuk paper'
+	]}
+	terakhir={null}
 />
