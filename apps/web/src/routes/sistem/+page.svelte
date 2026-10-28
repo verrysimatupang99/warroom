@@ -25,6 +25,32 @@
 	let kejadian = $state<Record<string, unknown>[]>([]);
 	let galatEvent = $state<string | null>(null);
 	let params = $state<Record<string, unknown> | null>(null);
+	let latensi = $state<{ jalur: string; ms: number; status: number }[]>([]);
+
+	// Waktu respons diukur dari browser ke API, apa adanya. Angka ini yang dirasakan
+	// pengguna, bukan angka internal server.
+	const UKUR = [
+		'/api/v1/health',
+		'/api/v1/pasar/ringkas',
+		'/api/v1/journal/stats?market=all',
+		'/api/v1/sistem/status',
+		'/api/v1/kalender/makro?dampak=tinggi&batas=5'
+	];
+
+	async function ukurLatensi() {
+		const hasil: { jalur: string; ms: number; status: number }[] = [];
+		for (const jalur of UKUR) {
+			const t0 = performance.now();
+			try {
+				const r = await fetch(urlApi(jalur), { credentials: 'include' });
+				await r.json().catch(() => null);
+				hasil.push({ jalur, ms: Math.round(performance.now() - t0), status: r.status });
+			} catch {
+				hasil.push({ jalur, ms: Math.round(performance.now() - t0), status: 0 });
+			}
+		}
+		latensi = hasil;
+	}
 
 	async function ambil<T>(jalur: string): Promise<T | null> {
 		try {
@@ -47,6 +73,7 @@
 		kejadian = (arr as Record<string, unknown>[]).slice(0, 12);
 		if (!kejadian.length) galatEvent = 'Belum ada kejadian terekam.';
 		params = await ambil<Record<string, unknown>>('/api/v1/params');
+		void ukurLatensi();
 		memuat = false;
 	});
 </script>
@@ -85,6 +112,37 @@
 						<div class="label-mikro font-mono text-text-3">DIPERBARUI</div>
 						<div class="mt-1 font-mono text-12 text-text">{status.waktu ?? '—'}</div>
 					</div>
+				</section>
+
+				<section class="rounded-card border border-line bg-surface p-4">
+					<div class="flex flex-wrap items-center justify-between gap-2">
+						<h2 class="text-13 font-bold text-text">Waktu respons</h2>
+						<button
+							type="button"
+							class="min-h-[44px] rounded-control border border-line px-2.5 font-mono text-11 text-text-3 hover:border-accent hover:text-accent"
+							onclick={() => void ukurLatensi()}
+						>
+							Ukur ulang
+						</button>
+					</div>
+					{#if latensi.length === 0}
+						<p class="mt-2 text-11 text-text-3">Mengukur…</p>
+					{:else}
+						<ul class="mt-2 divide-y divide-line-soft">
+							{#each latensi as l (l.jalur)}
+								<li class="flex items-center justify-between gap-3 py-1.5 text-11">
+									<span class="truncate font-mono text-text-3">{l.jalur}</span>
+									<span class="shrink-0 font-mono" class:text-pos={l.status === 200 && l.ms < 400}
+										class:text-neg={l.status !== 200 || l.ms >= 400}>
+										{l.ms} ms · {l.status}
+									</span>
+								</li>
+							{/each}
+						</ul>
+						<p class="mt-2 text-11 text-text-3">
+							Diukur dari browser ke API. Hijau berarti di bawah 400 ms dan status 200.
+						</p>
+					{/if}
 				</section>
 
 				<section class="rounded-card border border-line bg-surface p-4">
