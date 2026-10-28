@@ -1,84 +1,103 @@
-"""Router proxy read-only ke Forex Journal di node MiniMax (Tencent).
+"""Router jurnal eksekusi lintas market.
 
-Journal XAUUSD/NAS100 di node MiniMax sudah lengkap: statistik, trade
-open/closed, watchlist, edge per sesi, scan log alasan sinyal ditolak,
-performa, sesi market, multi-pair, dan daftar chart.
+Sumber: data lokal di server ini.
+  - Forex  : telemetri MT5 (facts `mt5_snapshot`) + catatan fill `/var/lib/warroom/fills.csv`
+  - Crypto : paper trader momentum (`momentum_paper.json`, `momentum_trades.csv`)
 
-War Room tidak menghitung ulang angka jurnal (ADR-005). Router ini meneruskan
-apa adanya lewat Tailscale, sama seperti `tencent.py` dan `idx.py`.
+Lima endpoint menerima `market=all|forex|crypto`; sisanya khusus forex karena
+hanya forex yang punya antrean order nyata (slippage, latensi, sesi).
 """
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from warroom_api import auth
 from warroom_api.routers.tencent import _fetch_tencent
 
-router = APIRouter(prefix="/api/v1/journal", tags=["journal"], dependencies=[Depends(auth.current_user)])
+router = APIRouter(
+    prefix="/api/v1/journal", tags=["journal"], dependencies=[Depends(auth.current_user)]
+)
+
+MarketQ = Query("all", pattern="^(all|forex|crypto)$", description="Filter market")
+
+# Endpoint yang mengerti filter market.
+_FILTER = (
+    "/forex/journal/stats",
+    "/forex/journal/trades",
+    "/forex/journal/edge",
+    "/forex/journal/performance",
+    "/forex/journal/multipair",
+)
+
+
+async def _ambil(path: str, market: str | None = None) -> Any:
+    if market is not None and path in _FILTER:
+        return await _fetch_tencent(path, params={"market": market})
+    return await _fetch_tencent(path)
 
 
 @router.get("/stats")
-async def journal_stats() -> dict[str, Any]:
-    """Statistik jurnal: jumlah sinyal, closed/open, win rate."""
-    return await _fetch_tencent("/forex/journal/stats")
+async def journal_stats(market: str = MarketQ) -> dict[str, Any]:
+    """Statistik jurnal per market: ekuitas, PnL, trade, win rate."""
+    return await _ambil("/forex/journal/stats", market)
 
 
 @router.get("/trades")
-async def journal_trades() -> dict[str, Any]:
-    """Trade open dan closed dari jurnal."""
-    return await _fetch_tencent("/forex/journal/trades")
+async def journal_trades(market: str = MarketQ) -> dict[str, Any]:
+    """Trade tercatat dari kedua market, terbaru lebih dulu."""
+    return await _ambil("/forex/journal/trades", market)
 
 
 @router.get("/watchlist")
 async def journal_watchlist() -> dict[str, Any]:
-    """Watchlist zone aktif beserta usia dan status basi."""
-    return await _fetch_tencent("/forex/journal/watchlist")
+    """Posisi dan pending order yang sedang terbuka di terminal MT5."""
+    return await _ambil("/forex/journal/watchlist")
 
 
 @router.get("/edge")
-async def journal_edge() -> dict[str, Any]:
-    """Edge per sesi, excursion, dan hasil backtest jurnal."""
-    return await _fetch_tencent("/forex/journal/edge")
+async def journal_edge(market: str = MarketQ) -> dict[str, Any]:
+    """Slippage dan latensi per jam, dari fill nyata."""
+    return await _ambil("/forex/journal/edge", market)
 
 
 @router.get("/scanlog")
 async def journal_scanlog() -> dict[str, Any]:
-    """Alasan sinyal ditolak (gate reject, blackout, ATR tipis, dsb)."""
-    return await _fetch_tencent("/forex/journal/scanlog")
+    """Alasan sinyal ditolak (gate reject, blackout, ATR tipis)."""
+    return await _ambil("/forex/journal/scanlog")
 
 
 @router.get("/performance")
-async def journal_performance() -> dict[str, Any]:
-    """Performa per pair beserta konversi R."""
-    return await _fetch_tencent("/forex/journal/performance")
+async def journal_performance(market: str = MarketQ) -> dict[str, Any]:
+    """Kurva ekuitas forex dari snapshot per menit."""
+    return await _ambil("/forex/journal/performance", market)
 
 
 @router.get("/session")
 async def journal_session() -> dict[str, Any]:
-    """Sesi market aktif, killzone, dan jadwal run berikutnya."""
-    return await _fetch_tencent("/forex/journal/session")
+    """Kondisi sesi terakhir: spread, bid/ask, posisi."""
+    return await _ambil("/forex/journal/session")
 
 
 @router.get("/multipair")
-async def journal_multipair() -> dict[str, Any]:
-    """Snapshot multi-pair (XAUUSD, NAS100) beserta entry aktif."""
-    return await _fetch_tencent("/forex/journal/multipair")
+async def journal_multipair(market: str = MarketQ) -> dict[str, Any]:
+    """Rekap per simbol dari kedua market."""
+    return await _ambil("/forex/journal/multipair", market)
 
 
 @router.get("/charts")
 async def journal_charts() -> list[dict[str, Any]]:
-    """Daftar chart jurnal yang tersedia di node MiniMax."""
-    raw = await _fetch_tencent("/forex/journal/charts")
+    """Deret ekuitas untuk grafik."""
+    raw = await _ambil("/forex/journal/charts")
     return raw if isinstance(raw, list) else []
 
 
 @router.get("/symbol/{symbol}")
 async def journal_symbol(symbol: str) -> dict[str, Any]:
-    """Ringkasan jurnal untuk satu pair."""
-    raw = await _fetch_tencent("/forex/journal/performance")
-    pairs = raw.get("pairs", []) if isinstance(raw, dict) else []
-    for row in pairs:
-        if isinstance(row, dict) and row.get("pair", "").upper() == symbol.upper():
-            return row
+    """Ringkasan jurnal untuk satu simbol."""
+    raw = await _ambil("/forex/journal/multipair")
+    pairs = raw.get("per_simbol", {}) if isinstance(raw, dict) else {}
+    for nama, row in pairs.items():
+        if str(nama).upper() == symbol.upper():
+            return {"pair": symbol.upper(), "found": True, **row}
     return {"pair": symbol.upper(), "found": False}

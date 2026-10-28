@@ -207,6 +207,88 @@ async def idx_stats() -> dict[str, Any]:
 
 FILLS = Path("/var/lib/warroom/fills.csv")
 VERDICTS = Path("/home/admin/live-trading/state/verdicts.jsonl")
+MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
+MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
+
+MARKET_SAH = ("all", "forex", "crypto")
+
+
+def _cek_market(market: str) -> str:
+    m = (market or "all").lower()
+    return m if m in MARKET_SAH else "all"
+
+
+def _baca_momentum() -> dict[str, Any] | None:
+    if not MOMENTUM_STATE.exists():
+        return None
+    try:
+        st = json.loads(MOMENTUM_STATE.read_text())
+    except (OSError, ValueError):
+        return None
+    return st if isinstance(st, dict) else None
+
+
+def _ringkas_momentum() -> dict[str, Any]:
+    """Ringkas dompet paper crypto. State disimpan per koin, bukan sebagai total."""
+    st = _baca_momentum()
+    if not st:
+        return {"aktif": False}
+    ekuitas = 0.0
+    posisi = 0
+    for p in st.values():
+        harga = p.get("harga") or p.get("entry") or 0.0
+        ekuitas += float(p.get("kas") or 0.0) + float(p.get("qty") or 0.0) * float(harga)
+        if float(p.get("qty") or 0.0) > 0:
+            posisi += 1
+    modal = 500.0 * len(st)
+    return {
+        "aktif": True,
+        "koin": len(st),
+        "modal": round(modal, 2),
+        "ekuitas": round(ekuitas, 2),
+        "return_pct": round((ekuitas / modal - 1) * 100, 2) if modal else 0.0,
+        "posisi": posisi,
+    }
+
+
+def _baca_csv(p: Path) -> list[dict[str, Any]]:
+    if not p.exists():
+        return []
+    try:
+        with p.open(newline="") as f:
+            return list(csv.DictReader(f))
+    except OSError:
+        return []
+
+
+def _trade_crypto() -> list[dict[str, Any]]:
+    """Trade paper crypto, dibentuk sama seperti baris fill forex."""
+    hasil = []
+    for r in _baca_csv(MOMENTUM_TRADES):
+        aksi = str(r.get("aksi", "")).upper()
+        hasil.append(
+            {
+                "iso": str(r.get("waktu", ""))[:19].replace("T", " "),
+                "symbol": r.get("koin", ""),
+                "side": "BUY" if aksi.startswith("BELI") else "SELL",
+                "volume": r.get("qty", ""),
+                "price_filled": r.get("harga", ""),
+                "slippage_pts": "",
+                "latency_ms": "",
+                "pnl_pct": r.get("pnl_pct", ""),
+                "market": "crypto",
+            }
+        )
+    return hasil
+
+
+def _trade_forex() -> list[dict[str, Any]]:
+    hasil = []
+    for r in _baca_fills():
+        d = dict(r)
+        d["market"] = "forex"
+        hasil.append(d)
+    return hasil
 
 
 def _baca(kueri: str, param: dict[str, Any] | None = None) -> list[dict[str, Any]]:
@@ -265,17 +347,24 @@ async def _deret_ekuitas(batas: int = 2000) -> list[dict[str, Any]]:
     return hasil
 
 
-async def journal_stats() -> dict[str, Any]:
-    snap = await _snapshot_terakhir()
-    fills = await asyncio.to_thread(_baca_fills)
-    if not snap and not fills:
+async def journal_stats(market: str = "all") -> dict[str, Any]:
+    m = _cek_market(market)
+    pakai_forex = m in ("all", "forex")
+    pakai_crypto = m in ("all", "crypto")
+    snap = await _snapshot_terakhir() if pakai_forex else None
+    forex = await asyncio.to_thread(_trade_forex) if pakai_forex else []
+    crypto = await asyncio.to_thread(_trade_crypto) if pakai_crypto else []
+    mom = await asyncio.to_thread(_ringkas_momentum) if pakai_crypto else None
+    if not snap and not forex and not crypto and not (mom or {}).get("aktif"):
         raise SumberKosong(
-            "Jurnal belum punya data. Telemetri MT5 mulai direkam otomatis, "
-            "dan fill tercatat saat EA mengirim laporan eksekusi."
+            "Jurnal belum punya data untuk market ini. Telemetri MT5 direkam tiap menit, "
+            "dan trade paper crypto dicatat saat strategi membuka posisi."
         )
     snap = snap or {}
+    mom = mom or {}
     return {
-        "sumber": "lokal:mt5",
+        "sumber": "lokal:mt5+momentum",
+        "market": m,
         "akun": snap.get("account"),
         "saldo": snap.get("balance"),
         "ekuitas": snap.get("equity"),
@@ -286,28 +375,49 @@ async def journal_stats() -> dict[str, Any]:
         "win_rate_hari_ini_pct": snap.get("win_rate_today_pct"),
         "posisi_terbuka": snap.get("posisi"),
         "pending": snap.get("pending"),
-        "n_fill_tercatat": len(fills),
+        "crypto": {
+            "aktif": bool(mom.get("aktif")),
+            "koin": mom.get("koin"),
+            "modal": mom.get("modal"),
+            "ekuitas": mom.get("ekuitas"),
+            "return_pct": mom.get("return_pct"),
+            "posisi": mom.get("posisi"),
+            "trade": len(crypto),
+        },
+        "n_fill_tercatat": len(forex) + len(crypto),
+        "n_fill_forex": len(forex),
+        "n_fill_crypto": len(crypto),
         "terakhir_terlihat": snap.get("_observed_at"),
     }
 
 
-async def journal_trades() -> dict[str, Any]:
-    fills = await asyncio.to_thread(_baca_fills)
+async def journal_trades(market: str = "all") -> dict[str, Any]:
+    m = _cek_market(market)
+    forex = await asyncio.to_thread(_trade_forex) if m in ("all", "forex") else []
+    crypto = await asyncio.to_thread(_trade_crypto) if m in ("all", "crypto") else []
+    semua = sorted(forex + crypto, key=lambda r: str(r.get("iso", "")), reverse=True)
     return {
-        "sumber": "lokal:fills.csv",
-        "closed": fills[::-1][:200],
+        "sumber": "lokal:fills.csv + momentum_trades.csv",
+        "market": m,
+        "closed": semua[:200],
         "open": [],
-        "n": len(fills),
-        "catatan": "Isi fills.csv adalah laporan eksekusi dari EA. "
-                   "Riwayat deal penuh ada di terminal MT5.",
+        "n": len(semua),
+        "catatan": "Forex dari laporan eksekusi EA. Crypto dari catatan paper trader. "
+                   "Riwayat deal penuh forex ada di terminal MT5.",
     }
 
 
-async def journal_edge() -> dict[str, Any]:
-    """Slippage dan latensi per jam, dari fill nyata."""
+async def journal_edge(market: str = "all") -> dict[str, Any]:
+    """Slippage dan latensi per jam, dari fill nyata forex."""
+    m = _cek_market(market)
+    if m == "crypto":
+        raise SumberKosong(
+            "Paper crypto tidak punya slippage nyata: entry dicatat di harga candle, "
+            "tanpa antrean order. Edge eksekusi hanya bermakna untuk forex."
+        )
     fills = await asyncio.to_thread(_baca_fills)
     if not fills:
-        raise SumberKosong("Belum ada fill. Edge eksekusi belum bisa dihitung.")
+        raise SumberKosong("Belum ada fill forex. Edge eksekusi belum bisa dihitung.")
     per_jam: dict[str, list[float]] = {}
     per_simbol: dict[str, list[float]] = {}
     latensi: list[float] = []
@@ -344,7 +454,13 @@ async def journal_edge() -> dict[str, Any]:
     }
 
 
-async def journal_performance() -> dict[str, Any]:
+async def journal_performance(market: str = "all") -> dict[str, Any]:
+    if _cek_market(market) == "crypto":
+        raise SumberKosong(
+            "Riwayat ekuitas crypto belum direkam: paper trader menyimpan kondisi "
+            "terakhir saja, bukan deret waktu. Riwayat mulai terkumpul setelah "
+            "pencatatan per siklus ditambahkan."
+        )
     deret = await _deret_ekuitas()
     if not deret:
         raise SumberKosong("Belum ada riwayat ekuitas. Rekaman dimulai saat EA mengirim telemetri.")
@@ -427,23 +543,34 @@ async def journal_charts() -> dict[str, Any]:
     }
 
 
-async def journal_multipair() -> dict[str, Any]:
-    fills = await asyncio.to_thread(_baca_fills)
+async def journal_multipair(market: str = "all") -> dict[str, Any]:
+    m = _cek_market(market)
+    fills = []
+    if m in ("all", "forex"):
+        fills += await asyncio.to_thread(_trade_forex)
+    if m in ("all", "crypto"):
+        fills += await asyncio.to_thread(_trade_crypto)
     per: dict[str, dict[str, Any]] = {}
     for f in fills:
         s = str(f.get("symbol") or "?")
-        d = per.setdefault(s, {"n": 0, "volume": 0.0, "slip": []})
+        d = per.setdefault(s, {"n": 0, "volume": 0.0, "slip": [], "market": f.get("market")})
         d["n"] += 1
         try:
             d["volume"] += float(f.get("volume") or 0)
-            d["slip"].append(float(f.get("slippage_pts") or 0))
+            if f.get("slippage_pts"):
+                d["slip"].append(float(f["slippage_pts"]))
         except ValueError:
             pass
     return {
-        "sumber": "lokal:fills.csv",
+        "sumber": "lokal:fills.csv + momentum_trades.csv",
+        "market": m,
         "per_simbol": {
-            k: {"n": v["n"], "volume": round(v["volume"], 2),
-                "slip_rata_pts": round(sum(v["slip"]) / len(v["slip"]), 2) if v["slip"] else None}
+            k: {
+                "n": v["n"],
+                "market": v["market"],
+                "volume": round(v["volume"], 2),
+                "slip_rata_pts": round(sum(v["slip"]) / len(v["slip"]), 2) if v["slip"] else None,
+            }
             for k, v in per.items()
         },
     }
@@ -464,6 +591,15 @@ async def sebar(path: str, params: dict[str, Any] | None = None) -> Any:
         "/forex/journal/multipair": journal_multipair,
     }
     if path in jurnal:
+        # Lima endpoint menerima filter market: all | forex | crypto.
+        if path in {
+            "/forex/journal/stats",
+            "/forex/journal/trades",
+            "/forex/journal/edge",
+            "/forex/journal/performance",
+            "/forex/journal/multipair",
+        }:
+            return await jurnal[path](str(p.get("market", "all")))
         return await jurnal[path]()
     if path in ("/health", "/health/"):
         return {"ok": True, "mode": "lokal", "sumber": "mexc+yahoo"}
