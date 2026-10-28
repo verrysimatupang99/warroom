@@ -7,6 +7,7 @@
 	import ForexAlat from '$lib/components/market/ForexAlat.svelte';
 	import PasarUji from '$lib/components/market/PasarUji.svelte';
 	import JournalPanel from '$lib/components/JournalPanel.svelte';
+	import BatasPasar from '$lib/components/BatasPasar.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'forex')!;
 	const sub = $derived.by(() => {
@@ -27,7 +28,10 @@
 	terverifikasi={true}
 >
 	{#if sub === 'ringkas'}
-		<ForexCockpitExness />
+		<div class="space-y-4">
+			<ForexCockpitExness />
+			<BatasPasar market="forex" />
+		</div>
 	{:else if sub === 'sinyal'}
 		<ForexSinyal />
 	{:else if sub === 'uji'}
