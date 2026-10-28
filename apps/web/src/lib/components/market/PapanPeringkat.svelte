@@ -65,6 +65,7 @@
 						<th class="px-2 py-1.5 text-right">Expectancy</th>
 						<th class="px-2 py-1.5 text-right">Total R</th>
 						<th class="px-2 py-1.5 text-right">DD (R)</th>
+						<th class="px-2 py-1.5">Gate B</th>
 						<th class="px-2 py-1.5">Status</th>
 					</tr>
 				</thead>
@@ -80,18 +81,27 @@
 							<td class="px-2 py-1.5 text-right font-mono text-text">{angka(s.expectancy_r, ' R')}</td>
 							<td class="px-2 py-1.5 text-right font-mono text-text">{angka(s.total_r, ' R')}</td>
 							<td class="px-2 py-1.5 text-right font-mono text-neg">{angka(s.max_drawdown_r, ' R')}</td>
+							<td class="px-2 py-1.5">
+								<div class="flex flex-wrap items-center gap-1.5">
+									<span class="font-mono text-11" class:text-pos={(s.n ?? 0) >= 100} class:text-text-3={(s.n ?? 0) < 100}>
+										{s.n ?? 0}/100 trade
+									</span>
+									{#if !s.biaya?.tercatat}
+										<span class="rounded border border-line px-1 font-mono text-10 text-neg">biaya belum</span>
+									{/if}
+								</div>
+							</td>
 							<td class="px-2 py-1.5 font-mono text-text-3">{s.status ?? '—'}</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
-		{#if daftar[0]?.biaya}
-			<p class="mt-2 text-11 text-text-3">
-				Biaya: {daftar[0].biaya.tercatat ? 'tercatat per trade' : 'belum tercatat'}.
-				{daftar[0].biaya.keterangan ?? ''}
-			</p>
-		{/if}
+		<p class="mt-2 text-11 leading-relaxed text-text-3">
+			Gate B minta 100 trade, PF di atas 1,25 setelah biaya, dan DD di bawah 12%.
+			Kolom Gate B menunjukkan jarak ke syarat trade, bukan klaim lulus: PF dan DD belum
+			bisa dihitung dari data peringkat ini, jadi tidak ditampilkan sebagai angka.
+		</p>
 		<p class="mt-1 text-11 text-text-3">
 			Peringkat dihitung dari total R, bukan dari PnL dolar, supaya strategi dengan ukuran
 			posisi berbeda bisa dibandingkan.
