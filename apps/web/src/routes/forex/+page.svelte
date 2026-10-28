@@ -9,6 +9,7 @@
 	import JournalPanel from '$lib/components/JournalPanel.svelte';
 	import BatasPasar from '$lib/components/BatasPasar.svelte';
 	import PerbandinganEA from '$lib/components/market/PerbandinganEA.svelte';
+	import KalkulatorPosisi from '$lib/components/market/KalkulatorPosisi.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'forex')!;
 	const sub = $derived.by(() => {
@@ -43,7 +44,10 @@
 	{:else if sub === 'eksekusi'}
 		<JournalPanel market="forex" />
 	{:else if sub === 'alat'}
-		<ForexAlat />
+		<div class="space-y-4">
+			<KalkulatorPosisi />
+			<ForexAlat />
+		</div>
 	{:else}
 		<ForexCockpitExness />
 	{/if}
