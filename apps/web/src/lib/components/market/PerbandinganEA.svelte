@@ -75,20 +75,22 @@
 						<th class="px-2 py-1">Skenario</th>
 						<th class="px-2 py-1 text-right">Galaxius</th>
 						<th class="px-2 py-1 text-right">GoldenBall</th>
+						<th class="px-2 py-1 text-right">Reaper H08</th>
 					</tr>
 				</thead>
 				<tbody class="text-text-2">
-					<tr><td class="px-2 py-1">apa adanya</td><td class="px-2 py-1 text-right font-mono">2,74</td><td class="px-2 py-1 text-right font-mono">2,50</td></tr>
-					<tr><td class="px-2 py-1">slippage 0,05/fill</td><td class="px-2 py-1 text-right font-mono">2,65</td><td class="px-2 py-1 text-right font-mono">2,49</td></tr>
-					<tr><td class="px-2 py-1">komisi 7 dolar/lot</td><td class="px-2 py-1 text-right font-mono">2,67</td><td class="px-2 py-1 text-right font-mono">2,49</td></tr>
-					<tr><td class="px-2 py-1">keduanya</td><td class="px-2 py-1 text-right font-mono">2,59</td><td class="px-2 py-1 text-right font-mono">2,47</td></tr>
+					<tr><td class="px-2 py-1">apa adanya</td><td class="px-2 py-1 text-right font-mono">2,74</td><td class="px-2 py-1 text-right font-mono">2,50</td><td class="px-2 py-1 text-right font-mono">1,07</td></tr>
+					<tr><td class="px-2 py-1">slippage 0,05/fill</td><td class="px-2 py-1 text-right font-mono">2,65</td><td class="px-2 py-1 text-right font-mono">2,49</td><td class="px-2 py-1 text-right font-mono">1,04</td></tr>
+					<tr><td class="px-2 py-1">komisi 7 dolar/lot</td><td class="px-2 py-1 text-right font-mono">2,67</td><td class="px-2 py-1 text-right font-mono">2,49</td><td class="px-2 py-1 text-right font-mono">1,05</td></tr>
+					<tr><td class="px-2 py-1">keduanya</td><td class="px-2 py-1 text-right font-mono">2,59</td><td class="px-2 py-1 text-right font-mono">2,47</td><td class="px-2 py-1 text-right font-mono">1,01</td></tr>
 				</tbody>
 			</table>
 		</div>
 		<p class="mt-2 text-11 leading-relaxed text-text-3">
-			Titik putus: Galaxius baru rugi pada slippage 2,02 harga per fill, GoldenBall 5,56.
-			Spread Exness terukur 0,24. Artinya biaya bukan kelemahan utama keduanya — dugaan awal
-			saya bahwa spread akan menghapus edge Galaxius ternyata salah.
+			Titik putus: Galaxius baru rugi pada slippage 2,02 harga per fill, GoldenBall 5,56,
+			<strong class="text-text-2">GOLD Reaper hanya 0,11</strong>. Spread terukur 0,24 — dua kali
+			titik putus Reaper. Jadi yang paling rentan terhadap biaya adalah EA sendiri, bukan EA vendor.
+			Pengukuran 3.685/684/1.017 deal dari laporan apa adanya.
 		</p>
 	</div>
 
