@@ -7,7 +7,7 @@
 	interface Aturan { rule?: string; ok?: boolean; hard?: boolean; reason?: string }
 	interface Verdict {
 		ts?: string; pair?: string; direction?: string; strategy?: string; mode?: string;
-		allowed?: boolean; tier?: string; entry?: number; sl?: number; rules?: Aturan[];
+		allowed?: boolean; tier?: string; entry?: number; sl?: number; tp1?: number; rules?: Aturan[];
 	}
 
 	let daftar = $state<Verdict[]>([]);
@@ -45,6 +45,13 @@
 			.slice(0, 12)
 	);
 	const lolos = $derived(daftar.filter((v) => v.allowed).length);
+
+	// Harga mengikuti presisi pair: koin receh butuh 6 desimal, koin besar 2.
+	function harga(v?: number) {
+		if (v == null) return '—';
+		const digit = v >= 100 ? 2 : v >= 1 ? 4 : 6;
+		return v.toFixed(digit);
+	}
 
 	function jam(ts?: string) {
 		if (!ts) return '—';
@@ -94,6 +101,9 @@
 							<th class="px-2 py-1.5">Arah</th>
 							<th class="px-2 py-1.5">Putusan</th>
 							<th class="px-2 py-1.5">Alasan</th>
+							<th class="px-2 py-1.5 text-right">Entry</th>
+							<th class="px-2 py-1.5 text-right">SL</th>
+							<th class="px-2 py-1.5 text-right">TP1</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-line-soft">
@@ -116,6 +126,9 @@
 									</span>
 								</td>
 								<td class="px-2 py-1.5 text-text-2">{alasan(v)}</td>
+								<td class="px-2 py-1.5 text-right font-mono text-text-2">{harga(v.entry)}</td>
+								<td class="px-2 py-1.5 text-right font-mono text-neg">{harga(v.sl)}</td>
+								<td class="px-2 py-1.5 text-right font-mono text-pos">{harga(v.tp1)}</td>
 							</tr>
 						{/each}
 					</tbody>
