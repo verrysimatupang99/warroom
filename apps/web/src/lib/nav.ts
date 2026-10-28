@@ -29,7 +29,7 @@ export interface Area {
 	ikon: string;
 	kategori: 'pasar' | 'riset' | 'sistem';
 	/** Label kecil di rail: apa yang bisa diharapkan sebelum diklik. */
-	status?: 'AKTIF' | 'PAPER' | 'STANDBY';
+	status?: 'AKTIF' | 'PAPER' | 'STANDBY' | 'SEBAGIAN';
 	anak: Anak[];
 }
 
@@ -111,7 +111,8 @@ export const AREAS: Area[] = [
 		rute: '/idx',
 		ikon: 'idx',
 		kategori: 'pasar',
-		status: 'STANDBY',
+		// 29 Okt: IHSG kini punya sumber lokal, jadi bukan lagi standby penuh.
+		status: 'SEBAGIAN',
 		anak: []
 	},
 	{
