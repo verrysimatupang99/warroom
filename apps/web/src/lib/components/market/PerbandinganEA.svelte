@@ -14,10 +14,10 @@
 	}
 
 	const BARIS: Baris[] = [
-		{ nama: 'Galaxius (vendor, trial)', jenis: 'Scalper SL mikro', pf: '2,73', trade: '3.685', dd: '1,61 %', nada: 'hati-hati',
-			catatan: 'Stop 1,89 dolar, sementara spread terukur 0,24 (12,7% dari stop). Margin tipis: biaya eksekusi bisa menghapus PF.' },
-		{ nama: 'GoldenBall (vendor, trial)', jenis: 'Swing harian', pf: '2,46', trade: '684', dd: '3,05 %', nada: 'sedang',
-			catatan: 'Profil risiko normal (rata-rata loss -16,12 vs profit 11,89). Kandidat pilot paper.' },
+		{ nama: 'Galaxius (vendor, trial)', jenis: 'Scalper TP lebar, menang 38%', pf: '2,73', trade: '3.685', dd: '1,61 %', nada: 'hati-hati',
+			catatan: 'Tahan biaya: slippage 2,02/fill baru membuatnya rugi. Rapuh karena bergantung pada 4,4R yang jarang.' },
+		{ nama: 'GoldenBall (vendor, trial)', jenis: 'Swing harian, menang 79%', pf: '2,46', trade: '684', dd: '3,05 %', nada: 'sedang',
+			catatan: 'Rasio 0,66 (menang 11,70, kalah 17,66). Lebih tahan sideways, lebih sakit saat salah arah. Kandidat pilot paper.' },
 		{ nama: 'GOLD Reaper tp30', jenis: 'Milik sendiri', pf: '1,09', trade: '957', dd: '13,90 %', nada: 'sedang',
 			catatan: 'Edge tipis, drawdown besar. Jujur tapi belum layak uang nyata.' },
 		{ nama: 'GOLD Reaper H08', jenis: 'Milik sendiri', pf: '1,07', trade: '1.017', dd: '9,71 %', nada: 'sedang',
@@ -67,12 +67,39 @@
 	</div>
 
 	<div class="mt-3 rounded border border-line bg-surface-2 p-3">
+		<p class="text-12 font-bold text-text">Uji biaya: 3.685 deal dibaca ulang dari laporan</p>
+		<div class="mt-2 overflow-x-auto">
+			<table class="w-full text-11 text-left">
+				<thead class="text-10 text-text-3">
+					<tr>
+						<th class="px-2 py-1">Skenario</th>
+						<th class="px-2 py-1 text-right">Galaxius</th>
+						<th class="px-2 py-1 text-right">GoldenBall</th>
+					</tr>
+				</thead>
+				<tbody class="text-text-2">
+					<tr><td class="px-2 py-1">apa adanya</td><td class="px-2 py-1 text-right font-mono">2,74</td><td class="px-2 py-1 text-right font-mono">2,50</td></tr>
+					<tr><td class="px-2 py-1">slippage 0,05/fill</td><td class="px-2 py-1 text-right font-mono">2,65</td><td class="px-2 py-1 text-right font-mono">2,49</td></tr>
+					<tr><td class="px-2 py-1">komisi 7 dolar/lot</td><td class="px-2 py-1 text-right font-mono">2,67</td><td class="px-2 py-1 text-right font-mono">2,49</td></tr>
+					<tr><td class="px-2 py-1">keduanya</td><td class="px-2 py-1 text-right font-mono">2,59</td><td class="px-2 py-1 text-right font-mono">2,47</td></tr>
+				</tbody>
+			</table>
+		</div>
+		<p class="mt-2 text-11 leading-relaxed text-text-3">
+			Titik putus: Galaxius baru rugi pada slippage 2,02 harga per fill, GoldenBall 5,56.
+			Spread Exness terukur 0,24. Artinya biaya bukan kelemahan utama keduanya — dugaan awal
+			saya bahwa spread akan menghapus edge Galaxius ternyata salah.
+		</p>
+	</div>
+
+	<div class="mt-3 rounded border border-line bg-surface-2 p-3">
 		<p class="text-12 font-bold text-text">Keputusan</p>
 		<p class="mt-1 text-11 leading-relaxed text-text-2">
 			Yang dipakai sebagai lapisan eksekusi tetap <strong class="text-text">WarRoom AutoTrader</strong>,
 			karena hanya itu yang tersambung ke API, telemetri, dan jurnal. Kandidat pilot paper adalah
 			<strong class="text-text">GoldenBall</strong>. <strong class="text-text">Galaxius</strong> tidak
-			diajukan untuk uang nyata: PF-nya bergantung pada stop mikro yang akan dimakan spread dan slippage.
+			diajukan untuk uang nyata, bukan karena biaya, tetapi karena lisensi trial, menang hanya 38%
+			sehingga butuh ratusan trade untuk terlihat, dan pengujiannya hanya satu rezim pasar.
 		</p>
 		<p class="mt-2 text-11 leading-relaxed text-text-3">
 			Batas pengujian: Model 2 (M1 OHLC), bukan real tick. Kedua EA vendor masih trial dan tidak punya
