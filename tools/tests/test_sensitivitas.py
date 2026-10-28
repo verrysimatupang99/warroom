@@ -83,6 +83,19 @@ def test_laporan_utf8_juga_terbaca(tmp_path):
     assert len(sb.baca(p)) == 2
 
 
+def test_swap_terbaca_dan_rekonsiliasi(tmp_path):
+    """Kolom Swap harus terbaca: net MT5 = profit + komisi + swap."""
+    laporan = LAPORAN.replace(
+        "<td>0.00</td><td>0.00</td>\n  <td>5.00</td>",
+        "<td>0.00</td><td>-1.50</td>\n  <td>5.00</td>",
+    )
+    assert laporan != LAPORAN, "fixture tidak berubah, penanda swap tidak ketemu"
+    deals = sb.baca(tulis(tmp_path, laporan))
+    assert deals[0]["swap"] == -1.5
+    net = sum(d["profit"] for d in deals) + sum(d["komisi"] for d in deals) + sum(d["swap"] for d in deals)
+    assert net == 1.5  # 5.00 - 2.00 - 1.50
+
+
 def test_ke_angka_format_ribuan():
     assert sb.ke_angka("1 234.56") == 1234.56
     assert sb.ke_angka("-16.12") == -16.12

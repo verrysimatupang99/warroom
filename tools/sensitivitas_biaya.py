@@ -124,6 +124,15 @@ def main(paths):
         lot_rata = [d["volume"] for d in deals if d["volume"]]
         rata_lot = sum(lot_rata) / len(lot_rata) if lot_rata else 0
         print(f"\n{p.name} — {len(deals)} deal, lot rata-rata {rata_lot:.2f}")
+        # Rekonsiliasi: net MT5 = profit + komisi + swap. Kalau tidak cocok, parser salah
+        # memilih baris (biasanya ikut menghitung deal 'in' yang selalu 0,00).
+        profit = sum(d["profit"] for d in deals)
+        komisi = sum(d["komisi"] for d in deals)
+        swap = sum(d["swap"] for d in deals)
+        print(
+            f"  rekonsiliasi: profit {profit:,.2f} + komisi {komisi:,.2f} "
+            f"+ swap {swap:,.2f} = {profit + komisi + swap:,.2f} (net yang dilaporkan MT5)"
+        )
         skenario = [
             ("apa adanya", 0.0, 0.0),
             ("slippage 0,05/fill", 0.05, 0.0),
