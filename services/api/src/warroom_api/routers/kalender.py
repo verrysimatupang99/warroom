@@ -42,27 +42,8 @@ async def _ambil() -> list[dict[str, Any]]:
     return data
 
 
-@router.get("/makro")
-async def kalender_makro(
-    dampak: str = Query("semua", pattern="^(semua|tinggi|utama)$"),
-    batas: int = Query(40, ge=1, le=200),
-) -> dict[str, Any]:
-    """Agenda ekonomi pekan ini.
-
-    dampak=tinggi  : hanya High
-    dampak=utama   : High atau Medium untuk mata uang utama
-    dampak=semua   : semua kecuali Holiday
-    """
-    try:
-        data = await _ambil()
-    except Exception as exc:  # noqa: BLE001
-        return {
-            "tersedia": False,
-            "sumber": SUMBER,
-            "pesan": f"Feed kalender tidak bisa diambil: {type(exc).__name__}",
-            "agenda": [],
-        }
-
+def _saring(data: list[dict[str, Any]], dampak: str) -> list[dict[str, Any]]:
+    """Filter agenda menurut dampak. Fungsi murni supaya bisa diuji tanpa jaringan."""
     hasil = []
     for item in data:
         impak = str(item.get("impact") or "")
@@ -84,6 +65,31 @@ async def kalender_makro(
                 "sebelumnya": item.get("previous") or None,
             }
         )
+    return hasil
+
+
+@router.get("/makro")
+async def kalender_makro(
+    dampak: str = Query("semua", pattern="^(semua|tinggi|utama)$"),
+    batas: int = Query(40, ge=1, le=200),
+) -> dict[str, Any]:
+    """Agenda ekonomi pekan ini.
+
+    dampak=tinggi  : hanya High
+    dampak=utama   : High atau Medium untuk mata uang utama
+    dampak=semua   : semua kecuali Holiday
+    """
+    try:
+        data = await _ambil()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "tersedia": False,
+            "sumber": SUMBER,
+            "pesan": f"Feed kalender tidak bisa diambil: {type(exc).__name__}",
+            "agenda": [],
+        }
+
+    hasil = _saring(data, dampak)
 
     return {
         "tersedia": True,
