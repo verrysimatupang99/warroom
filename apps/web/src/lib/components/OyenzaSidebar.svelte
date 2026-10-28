@@ -31,18 +31,12 @@
 	);
 	TAG['/sistem'] = 'OPS';
 
-	const NUM: Record<string, string> = {
-		'/': '1',
-		'/forex': '2',
-		'/crypto': '3',
-		'/polymarket': '4',
-		'/idx': '5',
-		'/gmgn': '6',
-		'/tencent': '7',
-		'/riset': '8',
-		'/sistem': '0',
-		'/catatan': 'K'
-	};
+	const NUM: Record<string, string> = Object.fromEntries(
+		// Nomor pintasan mengikuti urutan nav, bukan daftar manual. Daftar manual
+		// menyimpan rute yang sudah dialihkan (mis. /tencent) dan bisa meleset
+		// setiap kali area ditambah atau dihapus.
+		AREAS.map((a, i) => [a.rute, String(i + 1)])
+	);
 
 	const keItem = (a: (typeof AREAS)[number]) => ({
 		rute: a.rute,
