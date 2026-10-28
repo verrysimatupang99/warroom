@@ -20,8 +20,8 @@
 			catatan: 'Rasio 0,66 (menang 11,70, kalah 17,66). Lebih tahan sideways, lebih sakit saat salah arah. Kandidat pilot paper.' },
 		{ nama: 'GOLD Reaper tp30', jenis: 'Milik sendiri', pf: '1,09', trade: '957', dd: '13,90 %', nada: 'sedang',
 			catatan: 'Edge tipis, drawdown besar. Jujur tapi belum layak uang nyata.' },
-		{ nama: 'GOLD Reaper H08', jenis: 'Milik sendiri', pf: '1,07', trade: '1.017', dd: '9,71 %', nada: 'sedang',
-			catatan: 'Paling masuk akal secara statistika, paling tidak menjanjikan.' },
+		{ nama: 'GOLD Reaper H08', jenis: 'Milik sendiri, lot 0,15', pf: '1,07', trade: '1.017', dd: '9,71 %', nada: 'hati-hati',
+			catatan: 'Setelah slippage dan komisi PF tinggal 1,01 (net $345). Varian 3 tahun lain negatif, PF 0,91.' },
 		{ nama: 'WarRoom AutoTrader', jenis: 'Konektor eksekusi', pf: '—', trade: '6 live', dd: '−8,6 %', nada: 'baik',
 			catatan: 'Bukan strategi. Ekuitas demo 456,98 dari 500. Satu-satunya yang tersambung ke API dan jurnal.' }
 	];
