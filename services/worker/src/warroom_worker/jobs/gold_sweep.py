@@ -5,6 +5,7 @@ untuk scalping institusional XAUUSD di MetaTrader 5 War Room.
 """
 
 from __future__ import annotations
+import os
 
 import logging
 from typing import Any
@@ -12,7 +13,7 @@ from typing import Any
 import httpx
 
 logger = logging.getLogger("warroom_worker.gold_sweep")
-TENCENT_URL = "http://100.126.10.74:8790"
+TENCENT_URL = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 
 
 async def hitung_asia_range(symbol: str = "XAUUSD") -> dict[str, Any] | None:

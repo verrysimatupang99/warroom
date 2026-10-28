@@ -1,10 +1,11 @@
 """Router proxy terenkripsi ke node Tencent via Tailscale WireGuard.
 
-Menghubungkan War Room ke API internal Tencent (`http://100.126.10.74:8790`)
+Menghubungkan War Room ke API internal node data (env `WARROOM_TENCENT_BASE`)
 secara aman tanpa membuka port ke internet publik.
 """
 
 from __future__ import annotations
+import os
 
 import json
 import logging
@@ -16,16 +17,65 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from warroom_api import lokal
 from warroom_api.auth_ea import verify_mt5_or_admin
 
 router = APIRouter(prefix="/api/v1/tencent", tags=["tencent"])
 log = logging.getLogger("warroom_api.tencent")
 
-TENCENT_BASE = "http://100.126.10.74:8790"
+TENCENT_BASE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 TIMEOUT_S = 6.0
 # Endpoint yang menyentuh sumber eksternal (mis. aliran dana IDX) butuh waktu
 # lebih lama daripada lookup in-memory MiniMax.
 TIMEOUT_S_LARGE = 20.0
+
+# Telemetri EA sebelumnya hanya hidup di memori: begitu API restart, seluruh
+# riwayat ekuitas dan PnL hilang. Sekarang diringkas ke tabel facts, dibatasi
+# sekali per menit supaya tidak membanjiri DB (EA mengirim tiap ~5 detik).
+_MT5_SIMPAN_TERAKHIR = 0.0
+_MT5_JEDA_SIMPAN = 60.0
+
+
+def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
+    global _MT5_SIMPAN_TERAKHIR
+    sekarang = time.time()
+    if sekarang - _MT5_SIMPAN_TERAKHIR < _MT5_JEDA_SIMPAN:
+        return
+    _MT5_SIMPAN_TERAKHIR = sekarang
+    try:
+        import hashlib
+        from datetime import UTC, datetime
+
+        from warroom_core.db import session_scope
+        from warroom_core.db.models import Fact
+
+        ringkas = {
+            k: data.get(k)
+            for k in (
+                "account", "broker", "balance", "equity", "floating_pnl",
+                "margin", "free_margin", "net_pnl_today_usd", "total_trades_today",
+                "wins_today", "losses_today", "win_rate_today_pct",
+                "spread_pts", "bid", "ask", "digits",
+            )
+        }
+        ringkas["posisi"] = len(data.get("positions") or [])
+        ringkas["pending"] = len(data.get("pending_orders") or [])
+        isi = json.dumps(ringkas, sort_keys=True, default=str)
+        with session_scope() as s:
+            s.add(
+                Fact(
+                    kind="mt5_snapshot",
+                    key="ringkas",
+                    value_json=ringkas,
+                    source="EA telemetry",
+                    observed_at=datetime.now(UTC),
+                    ttl_s=300,
+                    hash=hashlib.sha256(f"{isi}|{int(sekarang)}".encode()).hexdigest(),
+                )
+            )
+    except Exception as exc:  # noqa: BLE001
+        # Kegagalan mencatat tidak boleh menggagalkan telemetri EA.
+        log.warning("gagal simpan snapshot mt5: %s", exc)
 
 
 async def _fetch_tencent(
@@ -33,6 +83,18 @@ async def _fetch_tencent(
     params: dict[str, Any] | None = None,
     timeout_s: float = TIMEOUT_S,
 ) -> Any:
+    if not TENCENT_BASE:
+        # Tidak ada node upstream. Ambil dari sumber publik langsung
+        # (MEXC untuk crypto, Yahoo untuk forex dan IHSG). Kalau sebuah data
+        # memang tidak punya padanan lokal, jawab 503 dengan alasannya,
+        # bukan angka karangan.
+        try:
+            return await lokal.sebar(path, params)
+        except lokal.SumberKosong as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "not_available", "message": str(exc)},
+            ) from exc
     url = f"{TENCENT_BASE}{path}"
     try:
         async with httpx.AsyncClient(timeout=timeout_s) as client:
@@ -58,7 +120,10 @@ async def _fetch_tencent(
         log.warning("Gagal koneksi ke Tencent Tailscale (%s): %s", url, exc)
         raise HTTPException(
             status_code=503,
-            detail=f"Tencent node via Tailscale unreachable (100.126.10.74:8790): {type(exc).__name__}",
+            detail=(
+                f"Node data upstream tidak terjangkau ({TENCENT_BASE}): "
+                f"{type(exc).__name__}"
+            ),
         ) from exc
 
 
@@ -360,6 +425,7 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "high_12": payload.high_12,
         "low_12": payload.low_12,
     }
+    _simpan_snapshot_mt5(latest_mt5_telemetry)
 
     # Instruksi otomatis untuk loop telemetry di Azure VM:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.

@@ -12,12 +12,13 @@ Pemakaian: .venv/bin/python ops/uji_momentum.py [interval] [limit]
 """
 
 from __future__ import annotations
+import os
 
 import json
 import sys
 import urllib.request
 
-NODE = "http://100.126.10.74:8790"
+NODE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 KOIN = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT", "LINKUSDT"]
 FEE = 0.001
 PARAM = [(20, 10), (55, 20), (100, 50), (20, 20)]

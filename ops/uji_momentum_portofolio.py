@@ -15,12 +15,13 @@ Pemakaian: .venv/bin/python ops/uji_momentum_portofolio.py [interval] [limit]
 """
 
 from __future__ import annotations
+import os
 
 import json
 import sys
 import urllib.request
 
-NODE = "http://100.126.10.74:8790"
+NODE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 FEE = 0.001
 N_MASUK = int(sys.argv[3]) if len(sys.argv) > 3 else 55
 RISIKO = 0.02

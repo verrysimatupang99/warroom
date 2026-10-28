@@ -21,8 +21,13 @@ import os
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
-NODE = os.environ.get("WARROOM_NODE", "http://100.126.10.74:8790")
+# Sumber data: Binance USD-M futures, dipanggil langsung dari host ini.
+# Sebelumnya kode ini menembak node internal lewat alamat Tailscale
+# Tailscale lama yang sudah tidak ada, sehingga unit selalu gagal
+# dengan Connection refused. Node itu tidak lagi dipakai di infrastruktur.
+FAPI = os.environ.get("WARROOM_FAPI", "https://fapi.binance.com").rstrip("/")
 STATE = Path("/var/lib/warroom/momentum_paper.json")
 TRADES = Path("/var/lib/warroom/momentum_trades.csv")
 N_MASUK = 55
@@ -31,11 +36,43 @@ RISIKO = 0.02
 FEE = 0.001
 MODAL_KOIN = 500.0
 LIMIT = 200
+N_KOIN = 40
 
 
-def ambil(url: str) -> dict:
+def ambil(url: str) -> Any:
     with urllib.request.urlopen(url, timeout=40) as r:
         return json.loads(r.read().decode())
+
+
+def universe(jumlah: int = N_KOIN) -> list[str]:
+    """Koin USDT perpetual yang aktif, diurutkan menurut volume 24 jam."""
+    info = ambil(f"{FAPI}/fapi/v1/exchangeInfo")
+    sah = {
+        s["symbol"]
+        for s in info["symbols"]
+        if s.get("quoteAsset") == "USDT"
+        and s.get("status") == "TRADING"
+        and s.get("contractType") == "PERPETUAL"
+    }
+    ticker = [t for t in ambil(f"{FAPI}/fapi/v1/ticker/24hr") if t.get("symbol") in sah]
+    ticker.sort(key=lambda t: float(t.get("quoteVolume") or 0), reverse=True)
+    return [t["symbol"] for t in ticker[:jumlah]]
+
+
+def klines(simbol: str) -> list[dict[str, Any]]:
+    """Klines harian Binance, dibentuk ulang ke dict yang dipakai strategi."""
+    mentah = ambil(f"{FAPI}/fapi/v1/klines?symbol={simbol}&interval=1d&limit={LIMIT}")
+    return [
+        {
+            "t": r[0],
+            "o": float(r[1]),
+            "h": float(r[2]),
+            "l": float(r[3]),
+            "c": float(r[4]),
+            "v": float(r[5]),
+        }
+        for r in mentah
+    ]
 
 
 def atr(c: list[dict], p: int = 14) -> float:
@@ -72,14 +109,14 @@ def catat(baris: dict) -> None:
 
 
 def main() -> None:
-    uni = ambil(f"{NODE}/crypto/universe")["symbols"]
+    uni = universe()
     st = muat()
     sekarang = datetime.now(UTC).isoformat(timespec="seconds")
     ringkas = {"dibuka": 0, "ditutup": 0, "dilewati": 0, "galat": 0}
 
     for sym in uni:
         try:
-            c = ambil(f"{NODE}/crypto/klines?symbol={sym}&interval=1d&limit={LIMIT}")["candles"]
+            c = klines(sym)
             if len(c) < N_MASUK + 2:
                 ringkas["dilewati"] += 1
                 continue

@@ -49,7 +49,7 @@ async def verify_mt5_or_admin(
         or (request.client.host if request.client else "")
     )
 
-    if client_ip in (AZURE_MT5_IP, "127.0.0.1", "::1", "100.126.10.74"):
+    if client_ip in (AZURE_MT5_IP, "127.0.0.1", "::1"):
         return
 
     # 3. Periksa Cookie Sesi Admin

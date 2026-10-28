@@ -1,6 +1,7 @@
 """Alert transisi status strategi & Multi-Asset Break-Retest Scanner Engine."""
 
 from __future__ import annotations
+import os
 
 import csv
 import json
@@ -217,7 +218,7 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
     # 1. Integrasi Sensor Level Presisi dari Tencent Node (XAUUSD & BTC) via Tailscale
     try:
         req_tc = urllib.request.Request(
-            "http://100.126.10.74:8790/forex/levels?symbol=XAUUSD",
+            f"{TENCENT_BASE}/forex/levels?symbol=XAUUSD",
             headers={"User-Agent": "WarRoomWorker/2.0"},
         )
         with urllib.request.urlopen(req_tc, timeout=4) as resp:
