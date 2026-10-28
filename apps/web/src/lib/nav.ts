@@ -102,6 +102,17 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'jurnal',
+		label: 'Jurnal',
+		rute: '/jurnal',
+		ikon: 'forex',
+		kategori: 'pasar',
+		// Rekaman eksekusi & ekuitas EA MT5 dari data lokal (telemetri per menit +
+		// fills.csv). Tidak ber-tab: satu halaman utuh, karena isinya ringkas dan
+		// memecahnya jadi tab hanya menambah jalan menuju angka yang sama.
+		anak: []
+	},
+	{
 		kunci: 'gmgn',
 		label: 'GMGN',
 		rute: '/gmgn',
