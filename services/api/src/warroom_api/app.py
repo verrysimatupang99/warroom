@@ -32,6 +32,7 @@ from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
 from warroom_api.routers import idx as idx_router
+from warroom_api.routers import idx_edge as idx_edge_router
 from warroom_api.routers import journal as journal_router
 from warroom_api.routers import kalender as kalender_router
 from warroom_api.routers import komuter as komuter_router
@@ -115,6 +116,7 @@ def create_app() -> FastAPI:
     app.include_router(tencent_router.router)
     app.include_router(komuter_router.router)
     app.include_router(idx_router.router)
+    app.include_router(idx_edge_router.router)
     app.include_router(journal_router.router)
     app.include_router(kalender_router.router)
     app.include_router(cron_router.router)

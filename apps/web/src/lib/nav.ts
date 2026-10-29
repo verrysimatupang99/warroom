@@ -112,7 +112,8 @@ export const AREAS: Area[] = [
 		ikon: 'idx',
 		kategori: 'pasar',
 		// 29 Okt: IHSG kini punya sumber lokal, jadi bukan lagi standby penuh.
-		status: 'SEBAGIAN',
+		// 29 Okt: idx-edge terpasang (harga emiten, penggerak, broker). Bukan standby lagi.
+		status: 'AKTIF',
 		anak: []
 	},
 	{
