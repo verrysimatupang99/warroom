@@ -47,6 +47,49 @@ class IdxTidakSiap(RuntimeError):
     """Key belum dipasang atau kuota habis — bukan kesalahan pengguna."""
 
 
+# Kuota akun (dari dashboard, 29 Okt 2026): 1.000 gratis + 5.003 dari plan = 6.003/hari,
+# dan plan berakhir dalam 7 hari sehingga kembali ke 1.000/hari. Karena sisa kuota TIDAK
+# bisa ditanyakan lewat API (endpoint /api/usage balas 403), modul ini menghitung sendiri
+# jumlah panggilan keluar per hari. Angkanya milik kita, bukan angka resmi mereka.
+ANGGARAN_HARIAN = 1000  # angka setelah plan berakhir; pakai yang paling ketat
+
+
+def _hari_ini() -> str:
+    return time.strftime("%Y%m%d")
+
+
+def _catat_panggilan() -> None:
+    """Satu baris per panggilan keluar. Append-only supaya aman dari proses bersamaan."""
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with (CACHE_DIR / f".panggilan-{_hari_ini()}.log").open("a") as f:
+            f.write("1\n")
+    except OSError:
+        pass  # penghitung gagal bukan alasan menggagalkan request
+
+
+def pemakaian() -> dict[str, Any]:
+    """Panggilan keluar hari ini menurut hitungan sendiri."""
+    p = CACHE_DIR / f".panggilan-{_hari_ini()}.log"
+    n = 0
+    if p.exists():
+        try:
+            with p.open() as f:
+                n = sum(1 for _ in f)
+        except OSError:
+            n = 0
+    return {
+        "tanggal": _hari_ini(),
+        "panggilan_hari_ini": n,
+        "anggaran_harian": ANGGARAN_HARIAN,
+        "sisa_perkiraan": max(0, ANGGARAN_HARIAN - n),
+        "catatan": (
+            "Dihitung sendiri dari panggilan keluar; sisa kuota resmi hanya terlihat di "
+            "dashboard arjum karena endpoint usage ditolak untuk API key."
+        ),
+    }
+
+
 def _kunci() -> str:
     kunci = os.environ.get(KEY_ENV, "").strip()
     if kunci:
@@ -100,8 +143,20 @@ async def _get(jalur: str, params: dict[str, Any] | None = None, timeout: float 
     except ImportError as exc:  # pragma: no cover
         raise IdxTidakSiap("httpx tidak tersedia di lingkungan ini") from exc
 
+    # Pagar anggaran: setelah plan berakhir kuotanya 1.000/hari, dan /api/usage tidak
+    # bisa dipanggil. Kalau anggaran habis, lebih baik menolak dengan jelas daripada
+    # menghabiskan kuota lalu mendapat 429 di tengah hari.
+    pakai = pemakaian()
+    if pakai["panggilan_hari_ini"] >= ANGGARAN_HARIAN:
+        raise IdxTidakSiap(
+            f"Anggaran harian {ANGGARAN_HARIAN} panggilan sudah terpakai "
+            f"({pakai['panggilan_hari_ini']}). Data dari cache masih bisa dibaca; "
+            "panggilan baru menunggu reset 00:00 WIB."
+        )
+
     kunci = _kunci()
     url = BASE + jalur
+    _catat_panggilan()
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as klien:
         r = await klien.get(url, params=params, headers={"X-API-Key": kunci, "Accept": "application/json"})
     if r.status_code == 401:
@@ -206,19 +261,19 @@ async def screener() -> dict[str, Any]:
 
 
 async def indeks_ringkas() -> dict[str, Any]:
-    """Ringkasan pasar: penggerak + beberapa saham besar, satu panggilan per bagian."""
-    naik, turun, blue = await asyncio.gather(
+    """Ringkasan pasar. Dua panggilan saja (bukan tiga) supaya hemat kuota."""
+    naik, blue = await asyncio.gather(
         penggerak("chg"),
-        penggerak("pct"),
         harga_banyak(["BBCA", "BBRI", "BMRI", "TLKM", "ASII"]),
         return_exceptions=True,
     )
     hasil: dict[str, Any] = {}
-    for nama, isi in (("penggerak_nilai", naik), ("penggerak_persen", turun), ("blue_chip", blue)):
+    for nama, isi in (("penggerak", naik), ("blue_chip", blue)):
         if isinstance(isi, Exception):
             hasil[nama] = {"galat": str(isi)}
         else:
             hasil[nama] = isi
     hasil["sumber"] = "idx-edge:stock.arjum.com"
     hasil["diambil"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
+    hasil["pemakaian"] = pemakaian()
     return hasil

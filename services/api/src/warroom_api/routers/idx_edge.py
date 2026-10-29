@@ -25,6 +25,12 @@ def _galat(exc: Exception) -> HTTPException:
     return HTTPException(status_code=502, detail={"code": "sumber_gagal", "message": str(exc)})
 
 
+@router.get("/pemakaian")
+async def pemakaian() -> dict[str, Any]:
+    """Hitungan panggilan keluar hari ini. Sisa kuota RESMI tidak bisa ditanya lewat API."""
+    return {"sumber": "hitung-sendiri", "hasil": idx_edge.pemakaian()}
+
+
 @router.get("/kesehatan")
 async def kesehatan() -> dict[str, Any]:
     try:

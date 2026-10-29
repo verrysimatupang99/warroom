@@ -19,7 +19,8 @@
 		data_ts?: string; market_label?: string; quote_age_ms?: number;
 	}
 	interface Ringkas {
-		penggerak_nilai?: { gainers?: Emiten[]; losers?: Emiten[] };
+		penggerak?: { gainers?: Emiten[]; losers?: Emiten[] };
+		pemakaian?: { panggilan_hari_ini?: number; anggaran_harian?: number; sisa_perkiraan?: number };
 		blue_chip?: { stocks?: Record<string, Emiten>; count?: number };
 		sumber?: string; diambil?: string;
 	}
@@ -198,7 +199,7 @@
 		</section>
 
 		<!-- Penggerak -->
-		{#if ringkas?.penggerak_nilai?.gainers?.length}
+		{#if ringkas?.penggerak?.gainers?.length}
 			<section class="rounded-card border border-line bg-surface p-4">
 				<div class="flex flex-wrap items-center justify-between gap-2">
 					<h2 class="text-13 font-bold text-text">Penggerak hari ini</h2>
@@ -208,7 +209,7 @@
 					<div>
 						<div class="label-mikro font-mono text-pos">NAIK</div>
 						<ul class="mt-1 divide-y divide-line-soft">
-							{#each (ringkas.penggerak_nilai.gainers ?? []).slice(0, 5) as g (g.code)}
+							{#each (ringkas.penggerak.gainers ?? []).slice(0, 5) as g (g.code)}
 								<li class="flex items-center justify-between py-1 text-11">
 									<button type="button" class="font-mono text-text hover:text-accent" onclick={() => buka(g.code)}>{g.code}</button>
 									<span class="font-mono text-pos">{angka(g.last_price)} · +{angka(g.change_pct)}%</span>
@@ -219,7 +220,7 @@
 					<div>
 						<div class="label-mikro font-mono text-neg">TURUN</div>
 						<ul class="mt-1 divide-y divide-line-soft">
-							{#each (ringkas.penggerak_nilai.losers ?? []).slice(0, 5) as g (g.code)}
+							{#each (ringkas.penggerak.losers ?? []).slice(0, 5) as g (g.code)}
 								<li class="flex items-center justify-between py-1 text-11">
 									<button type="button" class="font-mono text-text hover:text-accent" onclick={() => buka(g.code)}>{g.code}</button>
 									<span class="font-mono text-neg">{angka(g.last_price)} · {angka(g.change_pct)}%</span>
@@ -303,9 +304,24 @@
 		<!-- Batas jujur -->
 		<section class="rounded-card border border-line bg-surface p-4">
 			<h2 class="text-13 font-bold text-text">Batas jujur</h2>
+			{#if ringkas?.pemakaian}
+				<div class="mt-2 rounded border border-line bg-surface-2 p-2">
+					<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-11">
+						<span class="text-text-3">Panggilan keluar hari ini</span>
+						<span class="text-text font-bold">{ringkas.pemakaian.panggilan_hari_ini ?? 0}</span>
+						<span class="text-text-3">/ anggaran {ringkas.pemakaian.anggaran_harian ?? 0}</span>
+						<span class="text-text-3">· sisa ± {ringkas.pemakaian.sisa_perkiraan ?? 0}</span>
+					</div>
+					<p class="mt-1 text-10 leading-relaxed text-text-3">
+						Dihitung sendiri dari panggilan keluar. Sisa kuota resmi hanya terlihat di dashboard
+						arjum karena endpoint usage menolak API key. Kuota berbayar per panggilan, jadi halaman
+						ini memakai cache: quote 60 detik, riwayat 15 menit, laporan keuangan 24 jam.
+					</p>
+				</div>
+			{/if}
 			<ul class="mt-2 space-y-1.5 text-11 leading-relaxed text-text-2">
 				<li>· Harga saham dari idx-edge bisa tertunda; kolom waktu sumber ditampilkan, jangan dipakai sebagai harga eksekusi.</li>
-				<li>· Sebagian endpoint idx-edge memakan kuota per panggilan. Halaman ini memakai cache, bukan memanggil ulang tiap muat.</li>
+				<li>· Sebagian endpoint idx-edge memakan kuota per panggilan (1 kode = 1 kuota untuk daftar harga).</li>
 				<li>· Tidak ada sinyal IDX yang dikirim ke mana pun. Halaman ini hanya menampilkan data.</li>
 				<li>· Scanner otomatis dan bandarmologi harian belum dijadwalkan; data broker masih dibuka manual per emiten.</li>
 			</ul>
