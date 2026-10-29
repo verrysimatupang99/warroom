@@ -7,6 +7,7 @@
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
+	import RunningTrade from '$lib/components/market/RunningTrade.svelte';
 
 	interface Candle { t: number; o: number; h: number; l: number; c: number; v: number }
 	interface Pasar {
@@ -197,6 +198,8 @@
 				</div>
 			{/if}
 		</section>
+
+		<RunningTrade />
 
 		<!-- Penggerak -->
 		{#if ringkas?.penggerak?.gainers?.length}

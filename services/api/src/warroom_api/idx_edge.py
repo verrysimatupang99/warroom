@@ -51,7 +51,17 @@ class IdxTidakSiap(RuntimeError):
 # dan plan berakhir dalam 7 hari sehingga kembali ke 1.000/hari. Karena sisa kuota TIDAK
 # bisa ditanyakan lewat API (endpoint /api/usage balas 403), modul ini menghitung sendiri
 # jumlah panggilan keluar per hari. Angkanya milik kita, bukan angka resmi mereka.
-ANGGARAN_HARIAN = 1000  # angka setelah plan berakhir; pakai yang paling ketat
+def _anggaran() -> int:
+    """Batas panggilan per hari. Dibaca dari env supaya bisa dinaikkan tanpa ubah kode.
+
+    Default 1000 = kuota gratis (kondisi setelah plan berakhir). Kalau plan dinaikkan,
+    set WARROOM_IDX_ANGGARAN di /etc/warroom/idx.env dan restart warroom-api.
+    """
+    try:
+        nilai = int(os.environ.get("WARROOM_IDX_ANGGARAN", "1000"))
+    except ValueError:
+        return 1000
+    return nilai if nilai > 0 else 1000
 
 
 def _hari_ini() -> str:
@@ -78,11 +88,12 @@ def pemakaian() -> dict[str, Any]:
                 n = sum(1 for _ in f)
         except OSError:
             n = 0
+    anggaran = _anggaran()
     return {
         "tanggal": _hari_ini(),
         "panggilan_hari_ini": n,
-        "anggaran_harian": ANGGARAN_HARIAN,
-        "sisa_perkiraan": max(0, ANGGARAN_HARIAN - n),
+        "anggaran_harian": anggaran,
+        "sisa_perkiraan": max(0, anggaran - n),
         "catatan": (
             "Dihitung sendiri dari panggilan keluar; sisa kuota resmi hanya terlihat di "
             "dashboard arjum karena endpoint usage ditolak untuk API key."
@@ -147,9 +158,9 @@ async def _get(jalur: str, params: dict[str, Any] | None = None, timeout: float 
     # bisa dipanggil. Kalau anggaran habis, lebih baik menolak dengan jelas daripada
     # menghabiskan kuota lalu mendapat 429 di tengah hari.
     pakai = pemakaian()
-    if pakai["panggilan_hari_ini"] >= ANGGARAN_HARIAN:
+    if pakai["panggilan_hari_ini"] >= pakai["anggaran_harian"]:
         raise IdxTidakSiap(
-            f"Anggaran harian {ANGGARAN_HARIAN} panggilan sudah terpakai "
+            f"Anggaran harian {pakai['anggaran_harian']} panggilan sudah terpakai "
             f"({pakai['panggilan_hari_ini']}). Data dari cache masih bisa dibaca; "
             "panggilan baru menunggu reset 00:00 WIB."
         )
