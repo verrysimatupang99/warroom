@@ -9,9 +9,10 @@ Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
    config. Menjalankan alat read-only miliknya (mis. `qa/favorite-live-verdict.py --json`)
    hanya lewat allowlist sudo yang ada.
 2. **Tencent = baca-saja.** Sama seperti domain `live-trading`.
-   **Azure sudah tidak dipakai lagi (sejak 6 Okt 2026):** radar rantai dipindah **lokal**
-   ke host ini (`lt radar-update` → `state/radar_state.json`), jadi tidak ada lagi SSH
-   ke VM `20.212.52.5`. Bila VM itu dimatikan, tidak ada yang hilang.
+   **Azure: radar rantai tetap lokal** di host ini (`lt radar-update` → `state/radar_state.json`);
+   VM `20.212.52.5` tidak dipakai untuk itu dan boleh mati. **Pengecualian:** VM
+   `mt5-trader-vm` (`FOREX-MT5-RG`, 138.91.35.65) **dipakai aktif** untuk eksekusi demo
+   XAUUSD lewat `WarRoom_AutoTrader_v3`. Jangan matikan; lihat `HANDOVER-OMP.md` §5.
 3. **Gate live tidak pernah disentuh** (`/etc/poly-pilot/activation-approved`): jangan
    dibuat, jangan diubah. Aksi live butuh izin eksplisit owner (grant), dan API menolak
    dengan 409 tanpa itu.
@@ -30,16 +31,18 @@ systemctl status warroom-api warroom-worker warroom-web nginx
 journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # suite penuh: 824 tes (audit ulang 14 Okt 2026)
+.venv/bin/python -m pytest services/*/tests packages/live-trading -q   # angka terkini: lihat catatan di bawah
 cd apps/web && npm run test                            # 9 berkas, 36 vitest
 npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
 # domain (anggota workspace: packages/live-trading/)
-uv run pytest packages/live-trading -q                 # tes domain, dijalankan dari root repo
+.venv/bin/python -m pytest packages/live-trading -q    # tes domain, dari root repo
 ```
 
-Angka di atas = kondisi per 14 Okt 2026 (diverifikasi ulang lewat `ruff`/`pytest`/`npm run test`).
+**`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`. Angka tes terakhir
+tercatat 824 (audit 14 Okt 2026) — **belum diverifikasi ulang** per 30 Okt 2026, jadi jalankan
+sendiri dan perbarui angka ini beserta buktinya.
 Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
 Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
 
