@@ -192,13 +192,24 @@ def test_poi_valid_harus_memuat_entry() -> None:
 
 
 def test_exposure_batas_posisi_dan_korelasi() -> None:
-    penuh = gates.exposure("long", [{"direction": "long"}, {"direction": "short"}], 0.0)
+    penuh = gates.exposure(
+        "long", [{"direction": "long"}, {"direction": "short"}, {"direction": "long"}], 0.0
+    )
+    searah = gates.exposure("long", [{"direction": "long"}, {"direction": "long"}], 0.0)
     korelasi = gates.exposure("long", [{"direction": "long"}], -4.0)
     aman = gates.exposure("long", [{"direction": "long"}], -1.0)
 
     assert penuh.ok is False and "penuh" in penuh.reason
+    assert searah.ok is False and "searah" in searah.reason
     assert korelasi.ok is False and "korelasi" in korelasi.reason
     assert aman.ok is True
+
+def test_exposure_menghormati_batas_dari_settings() -> None:
+    dua = [{"direction": "long"}, {"direction": "short"}]
+    assert gates.exposure("long", dua, 0.0, max_total=2).ok is False
+    assert gates.exposure(
+        "long", [{"direction": "long"}, {"direction": "long"}], 0.0, max_same_dir=3
+    ).ok is True
 
 
 def test_assess_menggabungkan_semua_gate() -> None:

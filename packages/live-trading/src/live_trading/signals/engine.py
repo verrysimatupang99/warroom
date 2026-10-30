@@ -532,6 +532,21 @@ def purge_duplicates(
     return {"total": len(baris), "dibuang": len(dibuang), "disimpan": len(disimpan), "diterapkan": apply}
 
 
+def posisi_paper_crypto(settings: Settings) -> list[dict[str, Any]]:
+    """Posisi paper crypto dari sumber yang sama dengan executor.
+
+    Gagal baca bukan alasan menghentikan scan; dicatat sebagai warning dan
+    dianggap tidak ada posisi. Gate tetap berjalan dengan batas total/searah.
+    """
+    try:
+        from ..execution.paper import PaperBroker
+
+        return [p.to_dict() for p in PaperBroker(settings, venue="crypto").positions()]
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("posisi paper tidak terbaca: %s", exc)
+        return []
+
+
 def scan(
     settings: Settings,
     pairs: list[str],
@@ -542,6 +557,10 @@ def scan(
     """Pindai daftar pair: nilai HANYA arah yang didukung struktur."""
     own = client is None
     c = client or make_client(timeout=20.0)
+    # Sumber yang sama dengan executor. Tanpa ini gate exposure melihat [] dan
+    # bisa meloloskan kandidat ke-3 saat executor sudah memblokirnya (insiden
+    # OPUSDT 30 Okt: verdict 0/2 padahal 2 SHORT terbuka).
+    posisi_paper = posisi_paper_crypto(settings)
     out: list[dict[str, Any]] = []
     try:
         for pair in pairs:
@@ -583,7 +602,9 @@ def scan(
                 )
                 continue
 
-            _st, prop, hasil = evaluate(settings, pair, direction, client=c, record=record)
+            _st, prop, hasil = evaluate(
+                settings, pair, direction, client=c, record=record, open_positions=posisi_paper
+            )
             if hasil.duplicate_of:
                 out.append(
                     {
@@ -622,6 +643,8 @@ def assess_setup(
     poi: dict[str, Any] | None,
     open_positions: list[dict[str, Any]] | None = None,
     btc_change_24h: float | None = None,
+    max_total: int = gates.MAX_OPEN_POSITIONS,
+    max_same_dir: int = gates.MAX_SAME_DIRECTION,
 ) -> gates.Assessment:
     """Jalur gate tunggal — dipakai perdagangan nyata DAN backtest.
 
@@ -643,6 +666,8 @@ def assess_setup(
         poi=poi,
         open_positions=open_positions,
         btc_change_24h=btc_change_24h,
+        max_total=max_total,
+        max_same_dir=max_same_dir,
     )
 
 
@@ -729,6 +754,8 @@ def evaluate(
         poi=poi,
         open_positions=open_positions,
         btc_change_24h=btc_change_24h,
+        max_total=settings.max_concurrent_positions,
+        max_same_dir=settings.maks_posisi_searah,
     )
     strategi = str(base.get("strategy") or heat.STRATEGI_LEGACY)
     heat_hasil, filter_hasil = konteks_untuk_strategi(
