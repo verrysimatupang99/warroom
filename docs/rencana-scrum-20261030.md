@@ -208,12 +208,18 @@ dan tracker DoD.
 
 US2.1 rekonsiliasi (3) · US2.2 edge chart (3) · US2.3 ADR trades DB (5) · US3.2 scanlog forex (3) · US2.4 marker ekuitas (2) = 16 SP.
 
-**Status 30 Okt (ditarik maju):** US2.1 dan US2.2 selesai.
-- US2.2 sudah ada di `journal_edge`; dikunci 3 tes (jam/simbol, kosong → 503, crypto ditolak).
-- US2.1 modul `warroom_core.rekonsiliasi_deal` + CLI `tools/rekonsiliasi_forwardtest.py`;
-  11 tes; bukti sintetis menemukan selisih $0,10 pada ticket 102. Statement nyata
-  menunggu trade pertama.
-- Sisa: US2.3 ADR, US3.2 scanlog, US2.4 marker ekuitas.
+**Status 30 Okt (ditarik maju): seluruh 16 SP selesai.**
+- US2.1 modul `warroom_core.rekonsiliasi_deal` + CLI; 11 tes; bukti sintetis
+  menemukan selisih $0,10 pada ticket 102. Statement nyata menunggu trade pertama.
+- US2.2 `journal_edge` dikunci 3 tes (jam/simbol, kosong → 503, crypto ditolak).
+- US2.3 ADR-009: `deals.csv` sumber kebenaran forex; tabel `trades` deprecated
+  untuk forex (0 baris, tanpa pembaca/penulis).
+- US3.2 `/journal/scanlog?market=…`: forex dari `mt5_snapshot` (50 evaluasi),
+  crypto dari `verdicts.jsonl` (777), tidak dicampur; panel riwayat EA + e2e.
+- US2.4 marker deal + drawdown di `/journal/performance`; bug deret 2000 titik
+  tertua diperbaiki; komponen `KurvaEkuitas` + e2e.
+- Regresi: **900** tes perintah AGENTS, **1099** root `pytest`, 70 vitest,
+  49 spec e2e; ruff bersih; build/deploy web lolos health gate.
 
 ### Sprint 3 — 13–19 Nov 2026
 **Goal:** *Cockpit Obsidian Telemetry.*

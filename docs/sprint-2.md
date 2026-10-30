@@ -37,15 +37,50 @@ pada jendela resminya.
   - Batas jujur: **belum ada statement nyata** untuk periode demo; angka nyata baru
     bisa direkonsiliasi setelah trade pertama.
 
+- **US2.3 — ADR sumber kebenaran jurnal (5 SP).**
+  - `docs/adr/0009-sumber-kebenaran-jurnal.md`: **`deals.csv` sumber kebenaran forex**;
+    tabel `trades` (0 baris, tanpa pembaca/penulis) tidak dipakai untuk forex dan
+    ditandai deprecated di docstring model. Arah impor kelak wajib CSV → DB.
+  - Penjaga yang sudah ada: tes jurnal forex dari `deals.csv`, tes rekonsiliasi, dan
+    tracker DoD membaca berkas yang sama.
+
+- **US3.2 — Scanlog forex vs crypto terpisah (3 SP).**
+  - API `/api/v1/journal/scanlog?market=all|forex|crypto`:
+    forex = riwayat evaluasi EA dari fakta `mt5_snapshot` (dedupe evaluasi identik);
+    crypto = `verdicts.jsonl`. `all` mengembalikan dua bagian terpisah.
+  - UI: panel **Riwayat evaluasi EA** di `/forex?sub=sinyal` (XAUUSD, sesi, alasan,
+    ATR/spread/RSI/tren). `RiwayatKeputusan` kini menerima prop `market` dan halaman
+    crypto memakai `market="crypto"`.
+  - Bukti live: `market=forex` → 50 evaluasi berbeda; `market=crypto` → 777 verdict.
+  - E2E `cek_panel_reaper.spec.ts` (2 tes) → **2 passed**, termasuk tidak ada `USDT`
+    di panel forex.
+
+- **US2.4 — Marker trade + drawdown di kurva ekuitas (2 SP).**
+  - `/journal/performance?market=forex` kini mengembalikan `markers` (deal tertutup:
+    waktu, ticket, simbol, net) dan `drawdown_max_pct` dari puncak berjalan.
+  - **Bug diperbaiki:** `_deret_ekuitas` dulu mengambil 2000 titik **tertua**
+    (`order by asc limit`), sehingga kurva membeku setelah ~33 jam. Sekarang
+    mengambil yang **terbaru** lalu dibalik ke urutan waktu naik.
+  - UI: komponen `KurvaEkuitas` (SVG) di panel **Kinerja ekuitas** `/jurnal`,
+    penanda hijau/merah per deal, garis drawdown, dan daftar 5 penanda terakhir.
+  - Bukti live: 1217 titik, ekuitas 1000→1000, drawdown 0,00%, 0 marker (belum ada deal).
+  - E2E `cek_jurnal_ekuitas.spec.ts` → **1 passed** (kurva + drawdown + legenda).
+
+### Regresi 30 Okt (setelah US2.3–US2.4)
+
+- `ruff check .` bersih.
+- Root `pytest`: **1099** terkumpul, exit 0. Perintah AGENTS: **900**.
+- Web: `svelte-check` 0 error; vitest **70** (15 berkas); knip 0 unused.
+- Build + deploy web lolos health gate; API restart; e2e panel/riwayat/kurva lulus.
+
 ### Berikutnya
 
-- **US2.3 — ADR sumber kebenaran jurnal** (`trades` DB vs `deals.csv`).
-- **US3.2 — scanlog forex vs crypto terpisah** di tab Sinyal.
-- **US2.4 — marker trade di kurva ekuitas** (butuh deal nyata).
+- Bukti trade pertama (sesi 08–09 UTC) → rekonsiliasi statement nyata, marker pertama.
+- Sprint 3 (13–19 Nov): UI *Obsidian Telemetry* — audit token/kontras, layout cockpit,
+  komponen inti.
 
 ### Blocker
 
-- Trade/statement nyata belum ada; US2.1 baru terbukti pada data sintetis.
-- PR #61 (Sprint 1) menunggu review/merge. Branch Sprint 2
-  (`feat/rekonsiliasi-jurnal`) di atas branch itu; PR-nya di-retarget ke `main`
-  setelah #61 merge.
+- Trade/statement nyata belum ada; US2.1 dan US2.4 baru terbukti pada data sintetis/telemetri.
+- PR #61 (Sprint 1) menunggu review/merge; PR #62 (Sprint 2) stacked di atasnya dan
+  menunggu retarget ke `main` setelah #61 merge.
