@@ -41,10 +41,10 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 ```
 
 **`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **30 Okt 2026**: **889** (`--collect-only`, perintah
+Jumlah tes per **30 Okt 2026**: **892** (`--collect-only`, perintah
 `pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
 tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
-`packages/core/tests`) mengoleksi **1077**. Angka lama 882 (14 Okt 2026) sudah tidak
+`packages/core/tests`) mengoleksi **1091**. Angka lama 882/889 sudah tidak
 berlaku. Kalau menyentuh tes, perbarui angka ini beserta bukti perintahnya — sumber
 kebenaran tetap output, bukan dokumen.
 

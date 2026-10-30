@@ -198,7 +198,7 @@ menunggu pasar.
 - US1.3 panel Reaper diverifikasi e2e (`cek_panel_reaper.spec.ts`, 1 passed).
 - US1.4 `forwardtest-watchdog` aktif tiap 60 s (`ok`, `umur=20s`, `selisih=0`).
 - US1.5 `tools/forwardtest_status.py` mencetak `0/20`, hari 1/30.
-- Regresi: **889** tes perintah AGENTS, **1077** root `pytest`, rc=0; ruff bersih.
+- Regresi: **892** tes perintah AGENTS, **1091** root `pytest`, rc=0; ruff bersih.
 
 **Sprint Review 5 Nov:** demo scan yang menolak SHORT ke-3, panel cockpit, alert watchdog,
 dan tracker DoD.
@@ -207,6 +207,13 @@ dan tracker DoD.
 **Goal:** *Jurnal bisa diaudit.*
 
 US2.1 rekonsiliasi (3) · US2.2 edge chart (3) · US2.3 ADR trades DB (5) · US3.2 scanlog forex (3) · US2.4 marker ekuitas (2) = 16 SP.
+
+**Status 30 Okt (ditarik maju):** US2.1 dan US2.2 selesai.
+- US2.2 sudah ada di `journal_edge`; dikunci 3 tes (jam/simbol, kosong → 503, crypto ditolak).
+- US2.1 modul `warroom_core.rekonsiliasi_deal` + CLI `tools/rekonsiliasi_forwardtest.py`;
+  11 tes; bukti sintetis menemukan selisih $0,10 pada ticket 102. Statement nyata
+  menunggu trade pertama.
+- Sisa: US2.3 ADR, US3.2 scanlog, US2.4 marker ekuitas.
 
 ### Sprint 3 — 13–19 Nov 2026
 **Goal:** *Cockpit Obsidian Telemetry.*
