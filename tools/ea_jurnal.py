@@ -20,13 +20,13 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import re
 import subprocess
+import sys
 from pathlib import Path
 
-BARIS = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S | re.I)
-SEL = re.compile(r"<t[dh][^>]*>(.*?)</t[dh]>", re.S | re.I)
-TAG = re.compile(r"<[^>]+>")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core" / "src"))
+
+from warroom_core.rekonsiliasi_deal import baca_statement as _baca_statement  # noqa: E402
 
 KOLOM = [
     "iso", "akun", "strategi", "ticket", "symbol", "side", "volume",
@@ -36,68 +36,33 @@ DEFAULT_CSV = Path.home() / "paper_fills.csv"
 SERVER_CSV = "/var/lib/warroom/ea_deals.csv"
 
 
-def bersih(sel: str) -> str:
-    teks = TAG.sub(" ", sel).replace("&nbsp;", " ").replace("&minus;", "-").replace("&#8722;", "-")
-    return " ".join(teks.split())
-
-
-def ke_angka(teks: str):
-    if not teks:
-        return None
-    t = teks.replace(" ", "").replace("\u00a0", "")
-    if "," in t and "." in t:
-        t = t.replace(",", "")
-    elif "," in t:
-        t = t.replace(",", ".")
-    try:
-        return float(t)
-    except ValueError:
-        return None
-
 
 def baca_statement(path: Path, strategi: str, akun: str) -> list[dict]:
-    """Baca deal penutup dari statement/report MT5. Laporan MT5 selalu UTF-16."""
-    mentah = path.read_bytes()
-    html = (
-        mentah.decode("utf-16", errors="ignore")
-        if mentah[:2] in (b"\xff\xfe", b"\xfe\xff")
-        else mentah.decode("utf-8", errors="ignore")
-    )
+    """Baca deal penutup dari statement MT5, lalu beri label akun/strategi.
 
-    kolom: dict[str, int] | None = None
-    deals: list[dict] = []
-    for r in BARIS.findall(html):
-        sel = [bersih(s) for s in SEL.findall(r)]
-        if kolom is None:
-            if "Profit" in sel and "Volume" in sel and "Time" in sel:
-                kolom = {nama: i for i, nama in enumerate(sel)}
-            continue
-        if len(sel) < len(kolom):
-            continue
-        try:
-            if sel[kolom["Direction"]].lower() != "out":
-                continue
-            profit = ke_angka(sel[kolom["Profit"]]) or 0.0
-            deals.append(
-                {
-                    "iso": sel[kolom["Time"]].replace(".", "-", 2),
-                    "akun": akun,
-                    "strategi": strategi,
-                    "ticket": sel[kolom["Deal"]],
-                    "symbol": sel[kolom["Symbol"]],
-                    "side": sel[kolom["Type"]].upper(),
-                    "volume": ke_angka(sel[kolom["Volume"]]) or 0.0,
-                    "open_price": "",
-                    "close_price": ke_angka(sel[kolom["Price"]]) or "",
-                    "profit": round(profit, 2),
-                    "swap": round(ke_angka(sel[kolom["Swap"]]) or 0.0, 2),
-                    "commission": round(ke_angka(sel[kolom["Commission"]]) or 0.0, 2),
-                    "sumber": "ea_statement",
-                }
-            )
-        except (KeyError, IndexError):
-            continue
-    return deals
+    Parser-nya tinggal di `warroom_core.rekonsiliasi_deal` supaya alat impor dan alat
+    rekonsiliasi memakai aturan yang sama (UTF-16, hanya `Direction=out`, net lengkap).
+    """
+    hasil = []
+    for d in _baca_statement(path):
+        hasil.append(
+            {
+                "iso": d["iso"],
+                "akun": akun,
+                "strategi": strategi,
+                "ticket": d["ticket"],
+                "symbol": d["symbol"],
+                "side": d["side"],
+                "volume": d["volume"],
+                "open_price": d.get("open_price", ""),
+                "close_price": d["close_price"],
+                "profit": d["profit"],
+                "swap": d["swap"],
+                "commission": d["commission"],
+                "sumber": "ea_statement",
+            }
+        )
+    return hasil
 
 
 def sidik(d: dict) -> str:
