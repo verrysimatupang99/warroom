@@ -9,6 +9,8 @@ import os
 
 import json
 import logging
+import csv
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -56,6 +58,9 @@ def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
                 "margin", "free_margin", "net_pnl_today_usd", "total_trades_today",
                 "wins_today", "losses_today", "win_rate_today_pct",
                 "spread_pts", "bid", "ask", "digits",
+                "eval_at", "eval_alasan", "eval_sesi", "eval_atr", "eval_spread",
+                "eval_rsi", "eval_ema_fast", "eval_ema_slow", "eval_tren",
+                "server_time",
             )
         }
         ringkas["posisi"] = len(data.get("positions") or [])
@@ -339,6 +344,18 @@ class MT5TelemetryPayload(BaseModel):
     ema21_m5: float | None = None
     high_12: float | None = None
     low_12: float | None = None
+    # Evaluasi sinyal Reaper terakhir (dikirim EA v3.1). Semua opsional supaya
+    # EA lama tetap diterima tanpa error.
+    server_time: int | None = None
+    eval_at: int | None = None
+    eval_alasan: str | None = None
+    eval_sesi: bool | None = None
+    eval_atr: float | None = None
+    eval_spread: float | None = None
+    eval_rsi: float | None = None
+    eval_ema_fast: float | None = None
+    eval_ema_slow: float | None = None
+    eval_tren: str | None = None
 
 latest_mt5_telemetry = {
     "connected": False,
@@ -424,6 +441,16 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "ema21_m5": payload.ema21_m5,
         "high_12": payload.high_12,
         "low_12": payload.low_12,
+        "server_time": payload.server_time,
+        "eval_at": payload.eval_at,
+        "eval_alasan": payload.eval_alasan,
+        "eval_sesi": payload.eval_sesi,
+        "eval_atr": payload.eval_atr,
+        "eval_spread": payload.eval_spread,
+        "eval_rsi": payload.eval_rsi,
+        "eval_ema_fast": payload.eval_ema_fast,
+        "eval_ema_slow": payload.eval_ema_slow,
+        "eval_tren": payload.eval_tren,
     }
     _simpan_snapshot_mt5(latest_mt5_telemetry)
 
@@ -510,6 +537,91 @@ async def report_mt5_fill(payload: MT5FillPayload) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail="gagal menulis log fill") from exc
 
     return {"status": "OK", "slippage_pts": round(slip_pts, 2)}
+
+
+class MT5DealPayload(BaseModel):
+    """Deal tertutup yang dilaporkan EA (posisi sudah final)."""
+
+    ticket: int
+    position: int = 0
+    symbol: str = ""
+    side: str = ""
+    volume: float = 0.0
+    open_time: str = ""
+    open_price: float = 0.0
+    close_time: str = ""
+    close_price: float = 0.0
+    profit: float = 0.0
+    swap: float = 0.0
+    commission: float = 0.0
+    magic: int = 0
+    comment: str = ""
+
+
+DEAL_LOG = Path("/var/lib/warroom/deals.csv")
+_DEAL_HEADER = [
+    "ts", "iso", "ticket", "position", "symbol", "side", "volume",
+    "open_time", "open_price", "close_time", "close_price",
+    "profit", "swap", "commission", "net", "magic", "comment",
+]
+_DEAL_LOCK = threading.Lock()
+
+
+@router.post("/mt5/deal", dependencies=[Depends(verify_mt5_or_admin)])
+async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
+    """Catat deal tertutup (satu baris per posisi) untuk jurnal forex.
+
+    Idempoten per `ticket`: EA boleh mengirim ulang setelah restart tanpa
+    menggandakan baris di `deals.csv`.
+    """
+    if payload.ticket <= 0:
+        raise HTTPException(status_code=400, detail="ticket deal tidak valid")
+    net = payload.profit + payload.swap + payload.commission
+    with _DEAL_LOCK:
+        sudah: set[int] = set()
+        baru = not DEAL_LOG.exists()
+        if not baru:
+            try:
+                with DEAL_LOG.open(newline="") as f:
+                    for row in csv.DictReader(f):
+                        try:
+                            sudah.add(int(row.get("ticket") or 0))
+                        except (TypeError, ValueError):
+                            continue
+            except OSError as exc:
+                log.warning("gagal baca deals.csv: %s", exc)
+                raise HTTPException(status_code=500, detail="gagal baca log deal") from exc
+        if payload.ticket in sudah:
+            return {"status": "duplikat", "ticket": payload.ticket, "net": round(net, 2)}
+        try:
+            DEAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with DEAL_LOG.open("a", newline="") as f:
+                w = csv.writer(f)
+                if baru:
+                    w.writerow(_DEAL_HEADER)
+                w.writerow([
+                    int(time.time()),
+                    payload.close_time or time.strftime("%Y-%m-%d %H:%M:%S"),
+                    payload.ticket,
+                    payload.position,
+                    payload.symbol,
+                    payload.side,
+                    payload.volume,
+                    payload.open_time,
+                    payload.open_price,
+                    payload.close_time,
+                    payload.close_price,
+                    payload.profit,
+                    payload.swap,
+                    payload.commission,
+                    round(net, 2),
+                    payload.magic,
+                    payload.comment,
+                ])
+        except OSError as exc:
+            log.warning("gagal tulis deals.csv: %s", exc)
+            raise HTTPException(status_code=500, detail="gagal menulis log deal") from exc
+    return {"status": "OK", "ticket": payload.ticket, "net": round(net, 2)}
 
 
 PANEL_STATE = Path("/var/lib/warroom/panels.json")

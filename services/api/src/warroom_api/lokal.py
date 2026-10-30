@@ -206,6 +206,7 @@ async def idx_stats() -> dict[str, Any]:
 # ------------------------------------------------------------- jurnal ---
 
 FILLS = Path("/var/lib/warroom/fills.csv")
+DEALS = Path("/var/lib/warroom/deals.csv")
 VERDICTS = Path("/home/admin/live-trading/state/verdicts.jsonl")
 MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
 MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
@@ -283,11 +284,25 @@ def _trade_crypto() -> list[dict[str, Any]]:
 
 
 def _trade_forex() -> list[dict[str, Any]]:
+    """Trade forex tertutup dari deals.csv (bukan lagi dari fills entry)."""
     hasil = []
-    for r in _baca_fills():
-        d = dict(r)
-        d["market"] = "forex"
-        hasil.append(d)
+    for r in _baca_deals():
+        hasil.append(
+            {
+                "iso": r.get("iso", ""),
+                "symbol": r.get("symbol", ""),
+                "side": r.get("side", ""),
+                "volume": r.get("volume", ""),
+                "price_filled": r.get("close_price", ""),
+                "open_price": r.get("open_price", ""),
+                "slippage_pts": "",
+                "latency_ms": "",
+                "pnl_usd": r.get("net", ""),
+                "pnl_pct": "",
+                "ticket": r.get("ticket", ""),
+                "market": "forex",
+            }
+        )
     return hasil
 
 
@@ -311,6 +326,16 @@ def _baca_fills() -> list[dict[str, Any]]:
         return []
     try:
         with FILLS.open(newline="") as f:
+            return list(csv.DictReader(f))
+    except OSError:
+        return []
+
+def _baca_deals() -> list[dict[str, Any]]:
+    """Deal tertutup (satu baris per posisi) yang dilaporkan EA."""
+    if not DEALS.exists():
+        return []
+    try:
+        with DEALS.open(newline="") as f:
             return list(csv.DictReader(f))
     except OSError:
         return []
@@ -353,6 +378,7 @@ async def journal_stats(market: str = "all") -> dict[str, Any]:
     pakai_crypto = m in ("all", "crypto")
     snap = await _snapshot_terakhir() if pakai_forex else None
     forex = await asyncio.to_thread(_trade_forex) if pakai_forex else []
+    fills = await asyncio.to_thread(_baca_fills) if pakai_forex else []
     crypto = await asyncio.to_thread(_trade_crypto) if pakai_crypto else []
     mom = await asyncio.to_thread(_ringkas_momentum) if pakai_crypto else None
     if not snap and not forex and not crypto and not (mom or {}).get("aktif"):
@@ -384,9 +410,10 @@ async def journal_stats(market: str = "all") -> dict[str, Any]:
             "posisi": mom.get("posisi"),
             "trade": len(crypto),
         },
-        "n_fill_tercatat": len(forex) + len(crypto),
-        "n_fill_forex": len(forex),
+        "n_fill_tercatat": len(fills) + len(crypto),
+        "n_fill_forex": len(fills),
         "n_fill_crypto": len(crypto),
+        "n_deal_forex": len(forex),
         "terakhir_terlihat": snap.get("_observed_at"),
     }
 
@@ -395,15 +422,24 @@ async def journal_trades(market: str = "all") -> dict[str, Any]:
     m = _cek_market(market)
     forex = await asyncio.to_thread(_trade_forex) if m in ("all", "forex") else []
     crypto = await asyncio.to_thread(_trade_crypto) if m in ("all", "crypto") else []
+    entries: list[dict[str, Any]] = []
+    if m in ("all", "forex"):
+        for r in await asyncio.to_thread(_baca_fills):
+            d = dict(r)
+            d["status"] = "entry"
+            d["market"] = "forex"
+            entries.append(d)
     semua = sorted(forex + crypto, key=lambda r: str(r.get("iso", "")), reverse=True)
     return {
-        "sumber": "lokal:fills.csv + momentum_trades.csv",
+        "sumber": "lokal:deals.csv + fills.csv + momentum_trades.csv",
         "market": m,
         "closed": semua[:200],
         "open": [],
+        "entries": entries[:200],
         "n": len(semua),
-        "catatan": "Forex dari laporan eksekusi EA. Crypto dari catatan paper trader. "
-                   "Riwayat deal penuh forex ada di terminal MT5.",
+        "n_entry": len(entries),
+        "catatan": "Forex tertutup dari deals.csv (laporan deal EA). Entri order dan "
+                   "kualitas eksekusi dari fills.csv. Crypto dari catatan paper trader.",
     }
 
 

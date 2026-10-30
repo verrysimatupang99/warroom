@@ -9,8 +9,8 @@ dari sini. Semua angka di bawah adalah hasil eksekusi nyata, bukan perkiraan.
 
 | Hal | Keadaan |
 |---|---|
-Repo | `/home/admin/warroom`, branch `main`, commit `2eef8a8`, tree **bersih** |
-Situs | `https://0xgunsl1ng3r.xyz`, build `672b9fb-20261030T060826Z` |
+Repo | `/home/admin/warroom`, branch `main`, commit `8e00176`, tree **bersih** |
+Situs | `https://0xgunsl1ng3r.xyz`, build `8e00176-20261030T114631Z` |
 Layanan | `warroom-api` `warroom-web` `warroom-worker` **running**, 0 unit gagal |
 Database | PostgreSQL 16, db `warroom` |
 EA produksi | `WarRoom_AutoTrader_v3` (logika Reaper) di VM Azure, akun demo `416510164` |
@@ -22,7 +22,7 @@ Trade forex tercatat | **0** — belum pernah ada satu pun |
 ## 2. Arsitektur
 
 ```
-Pengguna ──HTTPS──> Caddy ──> warroom-web (SvelteKit, :3000)
+Pengguna ──HTTPS──> nginx ──> warroom-web (SvelteKit, :3100)
                         └──> warroom-api (FastAPI) ──> PostgreSQL `warroom`
                                      ^
                                      │ HTTPS: telemetry / fill / sinyal
@@ -118,6 +118,22 @@ sudah di tepi curve-fitting.
   Diukur: desktop konten mulai y=24 tanpa bar; mobile bar 48px, konten y=60.
 - Deskripsi halaman forex masih menyebut "Sinyal dari Laya Sentinel" padahal v3
   menghitung sinyal lokal. Sudah diganti.
+
+---
+
+### 3.4 EA v3.1 + jurnal deal (30 Okt 2026)
+
+- Telemetri EA membawa `server_time`, `eval_at`, `eval_alasan`, `eval_sesi`, `eval_atr`,
+  `eval_spread`, `eval_rsi`, `eval_ema_fast`, `eval_ema_slow`, `eval_tren`. Panel
+  **Status mesin Reaper** tampil di tab Sinyal halaman forex.
+- Deal tertutup dilaporkan ke `POST /api/v1/tencent/mt5/deal` →
+  `/var/lib/warroom/deals.csv` (idempoten per ticket). `/journal/trades` membaca
+  `deals.csv` untuk `closed` dan `fills.csv` untuk `entries`; fills tetap sumber
+  slippage/latensi.
+- Uji end-to-end: deal sintetis ticket `999999` muncul di jurnal dengan net $8,50,
+  lalu berkas uji dihapus. Suite: **875 passed, 3 skipped, 1 xfailed (879 collected)**.
+- Rollback EA: `WarRoom_AutoTrader_v3.ex5.v30bak` / `.mq5.v30bak` di data folder Azure;
+  source v3.1 juga ada di `MQL5/Experts/WarRoom_AutoTrader_v31.mq5`.
 
 ---
 

@@ -32,7 +32,7 @@ journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
 .venv/bin/python -m pytest services/*/tests packages/live-trading -q   # angka terkini: lihat catatan di bawah
-cd apps/web && npm run test                            # 9 berkas, 36 vitest
+cd apps/web && npm run test                            # 13 berkas, 65 vitest
 npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
@@ -41,7 +41,7 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 ```
 
 **`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **30 Okt 2026: 876** (`--collect-only`), dan run penuh sampai 100%
+Jumlah tes per **30 Okt 2026: 879** (`--collect-only`), dan run penuh sampai 100%
 tanpa kegagalan. Angka lama 824 (14 Okt 2026) sudah tidak berlaku. Kalau menyentuh tes,
 perbarui angka ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
@@ -155,8 +155,12 @@ Rincian lengkap: `HANDOVER-OMP.md`. Yang berubah sejak catatan di atas:
   spread terukur 0,24.
 - `.mobile-header` disembunyikan di `@media (min-width: 768px)`; sebelumnya bar 48px
   menimpa 24px awal konten di desktop.
-- `fills.csv` masih header saja → tabel `trades` 0 baris → `/journal/edge` 503.
-  Itu keadaan sebenarnya, bukan bug kode.
+- `fills.csv` masih header saja → `/journal/edge` 503. Sejak v3.1, deal tertutup
+  dilaporkan ke `/mt5/deal` → `deals.csv` dan tampil di `/journal/trades`; fills
+  tetap dipakai untuk kualitas eksekusi (slippage/latensi).
+- EA v3.1 (30 Okt): telemetri menyertakan `eval_alasan`/`eval_sesi`/`eval_atr`/
+  `eval_rsi`/`eval_ema_*`/`server_time`; panel "Status mesin Reaper" di tab Sinyal.
+  Rollback: `WarRoom_AutoTrader_v3.ex5.v30bak` + `WarRoom_AutoTrader_v3.mq5.v30bak`.
 - Password MT5 demo pindah ke `~/.hermes/secrets/mt5_434434290.env` (600); `.ini` di
   instabox sudah dikosongkan. Rotasi kunci lama (MEXC, IDX, Stitch, MT5) masih terbuka.
 - Jebakan yang memakan waktu ada di `HANDOVER-OMP.md` §9 — terutama: Strategy Tester

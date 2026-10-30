@@ -13,6 +13,9 @@
 	interface Mt5 {
 		connected?: boolean; account?: string; balance?: number; equity?: number;
 		bid?: number; ask?: number; spread_pts?: number; digits?: number; atr_m5?: number;
+		server_time?: number; eval_at?: number; eval_alasan?: string; eval_sesi?: boolean;
+		eval_atr?: number; eval_spread?: number; eval_rsi?: number;
+		eval_ema_fast?: number; eval_ema_slow?: number; eval_tren?: string;
 	}
 	interface Bias {
 		bias?: string; score?: number | null; dinilai?: boolean; n?: number;
@@ -60,6 +63,18 @@
 
 	const uraiBias = $derived(urai(level?.blocked_reason));
 	const arah = $derived((level?.trend ?? '').toUpperCase().includes('BULL'));
+	const evalMenit = $derived(
+		mt5?.server_time && mt5?.eval_at
+			? Math.max(0, Math.round((mt5.server_time - mt5.eval_at) / 60))
+			: null
+	);
+
+	function jamServer(epoch?: number | null) {
+		// MQL5 TimeCurrent() mengirim jam dinding server sebagai epoch. toISOString
+		// (UTC) menghasilkan HH:MM yang sama — tidak dikonversi ke zona browser.
+		if (!epoch) return '—';
+		return new Date(epoch * 1000).toISOString().slice(11, 16);
+	}
 
 	onMount(async () => {
 		[level, mt5, bias] = await Promise.all([
@@ -171,6 +186,52 @@
 					{#if uraiBias?.sesi}Sesi aktif: {uraiBias.sesi}.{/if}
 				</p>
 			{/if}
+		</section>
+
+		<section class="rounded-card border border-line bg-surface p-4">
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h2 class="text-13 font-bold text-text">Status mesin Reaper</h2>
+				<span class="font-mono text-11" class:text-pos={mt5?.eval_sesi} class:text-text-3={!mt5?.eval_sesi}>
+					{mt5?.eval_sesi ? 'sesi 08–09 aktif' : 'di luar sesi 08–09'}
+				</span>
+			</div>
+			<div class="mt-2 rounded border border-line bg-surface-2 p-3">
+				<div class="label-mikro font-mono text-text-3">EVALUASI TERAKHIR</div>
+				<p class="mt-1 text-12 text-text">{mt5?.eval_alasan ?? 'EA belum mengirim evaluasi (butuh v3.1)'}</p>
+				<p class="mt-1 font-mono text-10 text-text-3">
+					{mt5?.eval_at ? `jam server ${jamServer(mt5.eval_at)}` : '—'}{evalMenit != null ? ` · ${evalMenit} menit lalu` : ''}
+				</p>
+			</div>
+			<dl class="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+				<div>
+					<dt class="label-mikro font-mono text-text-3">ATR M5</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{angka(mt5?.eval_atr, 2)}</dd>
+				</div>
+				<div>
+					<dt class="label-mikro font-mono text-text-3">SPREAD</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{angka(mt5?.eval_spread, 3)}</dd>
+				</div>
+				<div>
+					<dt class="label-mikro font-mono text-text-3">RSI 14</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{angka(mt5?.eval_rsi, 1)}</dd>
+				</div>
+				<div>
+					<dt class="label-mikro font-mono text-text-3">EMA 21</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{angka(mt5?.eval_ema_fast)}</dd>
+				</div>
+				<div>
+					<dt class="label-mikro font-mono text-text-3">EMA 55</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{angka(mt5?.eval_ema_slow)}</dd>
+				</div>
+				<div>
+					<dt class="label-mikro font-mono text-text-3">TREN M15</dt>
+					<dd class="mt-0.5 font-mono text-12 text-text">{mt5?.eval_tren ?? '—'}</dd>
+				</div>
+			</dl>
+			<p class="mt-2 text-11 text-text-3">
+				EA hanya mengevaluasi entry di sesi 08–09 jam server. "Di luar sesi" berarti mesin
+				sengaja menunggu, bukan mati.
+			</p>
 		</section>
 
 		<section class="rounded-card border border-line bg-surface p-4">

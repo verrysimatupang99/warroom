@@ -57,3 +57,22 @@ def test_ringkas_momentum_kosong(monkeypatch):
     monkeypatch.setattr(lokal, "_baca_momentum", lambda: None)
     r = lokal._ringkas_momentum()
     assert r == {"aktif": False}
+
+
+def test_trade_forex_dibentuk_dari_deals(monkeypatch):
+    """Trade tertutup = deals.csv; bukan lagi baris fills (entry)."""
+    monkeypatch.setattr(
+        lokal,
+        "_baca_deals",
+        lambda: [
+            {"iso": "2026-10-30 09:00:00", "symbol": "XAUUSDm", "side": "BUY",
+             "volume": "0.02", "open_price": "3900.000", "close_price": "3910.000",
+             "net": "20.00", "ticket": "9001"},
+        ],
+    )
+    hasil = lokal._trade_forex()
+    assert len(hasil) == 1
+    assert hasil[0]["market"] == "forex"
+    assert hasil[0]["pnl_usd"] == "20.00"
+    assert hasil[0]["price_filled"] == "3910.000"
+    assert hasil[0]["open_price"] == "3900.000"

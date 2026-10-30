@@ -392,3 +392,54 @@ def test_design_tokens_membaca_css_dan_bukan_mengarang(client, make_user) -> Non
     else:
         # Tidak boleh ada token separuh — harus jujur menyebut alasan.
         assert body.get("alasan")
+
+
+def test_deal_endpoint_idempoten_dan_net(client, make_user, tmp_path, monkeypatch) -> None:
+    """Deal tertutup dicatat sekali; kiriman ulang tidak menggandakan baris."""
+    import csv
+
+    from warroom_api.routers import tencent
+
+    path = tmp_path / "deals.csv"
+    monkeypatch.setattr(tencent, "DEAL_LOG", path)
+    _, sid = make_user("deal-writer", role="operator")
+    body = {
+        "ticket": 9001, "position": 8001, "symbol": "XAUUSDm", "side": "BUY",
+        "volume": 0.02, "open_time": "2026-10-30 08:00:00", "open_price": 3900.0,
+        "close_time": "2026-10-30 09:00:00", "close_price": 3910.0,
+        "profit": 10.0, "swap": -1.0, "commission": -0.5, "magic": 992026,
+    }
+    r = client.post("/api/v1/tencent/mt5/deal", json=body, headers=_cookie(sid))
+    assert r.status_code == 200, r.text
+    assert r.json() == {"status": "OK", "ticket": 9001, "net": 8.5}
+
+    r2 = client.post("/api/v1/tencent/mt5/deal", json=body, headers=_cookie(sid))
+    assert r2.status_code == 200
+    assert r2.json()["status"] == "duplikat"
+
+    rows = list(csv.DictReader(path.open()))
+    assert len(rows) == 1, rows
+    assert rows[0]["ticket"] == "9001"
+    assert float(rows[0]["net"]) == 8.5
+    assert rows[0]["close_price"] == "3910.0"
+
+
+def test_telemetry_menyimpan_alasan_skip(client, make_user, monkeypatch) -> None:
+    """Field evaluasi Reaper ikut tersimpan di state live, bukan dibuang model."""
+    from warroom_api.routers import tencent
+
+    monkeypatch.setattr(tencent, "_catat_telemetri", lambda t: None)
+    monkeypatch.setattr(tencent, "_simpan_snapshot_mt5", lambda t: None)
+    _, sid = make_user("ea-telemetry", role="operator")
+    payload = {
+        "account": "416510164", "broker": "Exness", "balance": 1000.0,
+        "equity": 1000.0, "margin": 0.0, "free_margin": 1000.0,
+        "floating_pnl": 0.0,
+        "eval_alasan": "di luar sesi Reaper", "eval_sesi": False,
+        "eval_atr": 3.9, "server_time": 1790000000, "eval_tren": "naik",
+    }
+    r = client.post("/api/v1/tencent/mt5/telemetry", json=payload, headers=_cookie(sid))
+    assert r.status_code == 200, r.text
+    assert tencent.latest_mt5_telemetry["eval_alasan"] == "di luar sesi Reaper"
+    assert tencent.latest_mt5_telemetry["eval_sesi"] is False
+    assert tencent.latest_mt5_telemetry["eval_tren"] == "naik"
