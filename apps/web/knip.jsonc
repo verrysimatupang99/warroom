@@ -4,5 +4,47 @@
   // Primitif design-system yang sengaja belum dipakai halaman mana pun.
   // DESIGN-USULAN 16 Okt: halaman dibangun dari "kartu keputusan"; adopsi
   // bertahap per halaman, jadi komponen HARUS ada di repo walau belum dirender.
-  "ignore": ["src/lib/components/DecisionCard.svelte"]
+  //
+  // 30 Okt: 36 berkas di bawah adalah kandidat cockpit Sprint 3–4 (Obsidian
+  // Telemetry) yang belum dirender. Daftar ini harus ditinjau di akhir Sprint 4:
+  // komponen yang tidak jadi dipakai dihapus, yang dipakai dikeluarkan dari sini.
+  "ignore": [
+    "src/lib/components/AkurasiPasar.svelte",
+    "src/lib/components/AreaLoader.svelte",
+    "src/lib/components/BentoMetrics4Box.svelte",
+    "src/lib/components/Block.svelte",
+    "src/lib/components/CockpitCrypto.svelte",
+    "src/lib/components/DataProvenanceCard.svelte",
+    "src/lib/components/DecisionCard.svelte",
+    "src/lib/components/DecisionFeed.svelte",
+    "src/lib/components/DompetLintasMarket.svelte",
+    "src/lib/components/Drawer.svelte",
+    "src/lib/components/EquityCurve.svelte",
+    "src/lib/components/EventFeed.svelte",
+    "src/lib/components/ExportLedgerCsv.svelte",
+    "src/lib/components/ForexPair.svelte",
+    "src/lib/components/GateBlok.svelte",
+    "src/lib/components/JudulBagian.svelte",
+    "src/lib/components/KalenderDampak.svelte",
+    "src/lib/components/KartuGateSetup.svelte",
+    "src/lib/components/KartuNarasi.svelte",
+    "src/lib/components/KepalaVerdict.svelte",
+    "src/lib/components/KinerjaBukti.svelte",
+    "src/lib/components/MacroFundamentalLab.svelte",
+    "src/lib/components/MarketSignal.svelte",
+    "src/lib/components/MarketToolsTabs.svelte",
+    "src/lib/components/NilaiFakta.svelte",
+    "src/lib/components/PasarCrypto.svelte",
+    "src/lib/components/PasarForex.svelte",
+    "src/lib/components/PasarGmgn.svelte",
+    "src/lib/components/PasarIdx.svelte",
+    "src/lib/components/PasarPolymarket.svelte",
+    "src/lib/components/Penjelasan.svelte",
+    "src/lib/components/PolyAltBtc5m.svelte",
+    "src/lib/components/RiskMeter.svelte",
+    "src/lib/components/StatisticalEdgeCard.svelte",
+    "src/lib/components/UnderConstruction.svelte",
+    "src/lib/components/ZonaAktif.svelte",
+    "src/lib/nilai.ts"
+  ]
 }
