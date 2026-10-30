@@ -84,10 +84,24 @@ Selisih kecil wajar karena history quality 98% dan data M1 diunduh ulang.
   partial dan backtest ulang, atau (c) terima varian tanpa partial sebagai baseline
   live.
 
+## Bonus: deposit $100 — nol trade
+
+Satu run tambahan dengan `Deposit=100`, input identik:
+
+- **0 trade**, net 0,00, DD 0,00 sepanjang 3 tahun.
+- Sebabnya bukan pasar: jalur Reaper menghitung
+  `lot = ekuitas × 0,5% / (SL × 100)`, dibulatkan ke bawah 2 desimal, lalu
+  **menolak order bila lot < 0,01** (baris 160). Di $100 risiko hanya $0,50;
+  dengan SL minimum 1,28 (ATR min 0,80 × 1,6) lot = 0,0039 → semua sinyal ditolak.
+- Ambang kasar agar bisa trading: `ekuitas ≥ 200 × SL`. Dengan SL $1,3–3,2
+  berarti butuh **$260–640**; $1.000 baru memberi ruang lot 0,02–0,03.
+- Pesan penolakan tidak muncul di log console run ini, jadi "0 trade" bukan bukti
+  tidak ada sinyal — sinyalnya ada, sizing-nya yang tidak sah.
+
 ## Artefak
 
-- Laporan: `C:\mt5test\reaper_A_1k.htm`, `C:\mt5test\reaper_A_10k.htm`
+- Laporan: `C:\mt5test\reaper_A_100.htm`, `reaper_A_1k.htm`, `reaper_A_10k.htm`
   (+ PNG) di VM `mt5-trader-vm`. Tidak disalin ke repo.
-- Config: `C:\mt5test\Tester\reaper_A_1k.ini`, `reaper_A_10k.ini`.
+- Config: `C:\mt5test\Tester\reaper_A_100.ini`, `reaper_A_1k.ini`, `reaper_A_10k.ini`.
 - Klon portable `C:\mt5test` disimpan untuk rerun; scheduled task uji sudah dihapus.
 - EA live tidak disentuh; telemetri tetap masuk selama pengujian.
