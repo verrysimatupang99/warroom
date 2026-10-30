@@ -33,6 +33,7 @@ from .housekeeping import handler_retensi  # noqa: F401
 from .infra import (
     handler_backup,  # noqa: F401
     handler_collect,  # noqa: F401
+    handler_forwardtest_watchdog,  # noqa: F401
     handler_freshness,  # noqa: F401
     handler_lp_mark,  # noqa: F401
     handler_notify,  # noqa: F401
@@ -67,6 +68,7 @@ __all__ = [
     "_upsert_service",
     "handler_publish_facts",
     "handler_freshness",
+    "handler_forwardtest_watchdog",
     "handler_notify",
     "handler_collect",
     "handler_refresh_snapshot",

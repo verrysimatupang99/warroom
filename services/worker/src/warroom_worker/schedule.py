@@ -48,6 +48,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="hitung umur fakta vs ttl; basi → alert (dedupe per subjek).",
     ),
     JobSpec(
+        name="forwardtest-watchdog",
+        interval_s=60,
+        enabled=True,
+        payload={"max_umur_s": 120, "deal_grace_s": 300, "sesi_mulai": 8, "sesi_selesai": 9},
+        note=(
+            "bukti forward test: alert bila telemetri MT5 mati >120 s saat sesi Reaper, "
+            "atau deal tertutup tidak masuk deals.csv dalam 5 menit. Baca-saja."
+        ),
+    ),
+    JobSpec(
         name="notify",
         interval_s=300,
         enabled=True,
