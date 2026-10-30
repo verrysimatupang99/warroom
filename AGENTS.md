@@ -44,7 +44,7 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 Jumlah tes per **30 Okt 2026**: **908** (`--collect-only`, perintah
 `pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
 tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
-`packages/core/tests`) mengoleksi **1111**. Web: **72** vitest, **50** berkas spec e2e.
+`packages/core/tests`) mengoleksi **1113**. Web: **72** vitest, **50** berkas spec e2e.
 Angka lama 882/889/892/900/906 sudah tidak berlaku. Kalau menyentuh tes, perbarui angka
 ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 

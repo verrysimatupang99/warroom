@@ -18,7 +18,7 @@ Jurnal tergabung permanen sudah ada: job `jurnal-sinyal` (tiap 6 jam) menjalanka
 `lt measure` lalu menghitung ulang setiap alert dari candle Binance sejak jam setelah
 kirim. Hasilnya ditulis ke `/var/lib/warroom/jurnal_sinyal.json`, dibaca
 `/api/v1/journal/signals`, dan tampil di `/crypto?sub=sinyal` panel **Jurnal sinyal
-terkirim**. Angka di bawah berasal dari jurnal itu (`dihitung_at` 30 Okt 20:52 UTC).
+terkirim**. Angka di bawah berasal dari jurnal itu (`dihitung_at` 30 Okt 21:06 UTC).
 
 ## Hasil sinyal yang terkirim — divalidasi ulang dengan data asli saat kirim
 
@@ -37,8 +37,8 @@ TP1=1R, SL swing, isi maks 8 jam, tahan 24 jam, SL didahulukan bila kena di cand
 
 **Dihitung dari yang terisi (n=334):**
 - Win rate TP1: **54,5%**
-- Total: **+54,89R**
-- Expectancy: **+0,164R/trade**
+- Total: **+54,51R**
+- Expectancy: **+0,163R/trade**
 - Median: **+1,00R**
 
 **Kalau yang tidak terisi dihitung 0R (n=450):** expectancy **+0,122R**.
@@ -48,11 +48,29 @@ TP1=1R, SL swing, isi maks 8 jam, tahan 24 jam, SL didahulukan bila kena di cand
 
 | Tier | n terkirim | n terisi | TP1 | SL | Win rate | Expectancy |
 |---|---:|---:|---:|---:|---:|---:|
-| PREMIUM | 213 | 157 | 92 | 48 | **58,6%** | **+0,289R** |
+| PREMIUM | 213 | 157 | 92 | 48 | **58,6%** | **+0,286R** |
 | STANDAR | 237 | 177 | 90 | 81 | 50,8% | +0,054R |
 
-PREMIUM adalah satu-satunya tier dengan edge yang cukup jelas. STANDAR praktis
-break-even sebelum biaya; setelah fee/slippage kemungkinan negatif.
+PREMIUM adalah satu-satunya tier dengan edge yang cukup jelas. STANDAR **negatif setelah
+biaya** (lihat di bawah).
+
+### Setelah biaya (fee taker Binance 0,05%/sisi)
+
+Biaya per trade dalam R = `(2 × fee × entry) / jarak SL`. Rata-rata biaya di jurnal ini
+**0,061R/trade** (SL sekitar 1–2% dari harga).
+
+| Kelompok | Gross | Net | Expectancy net |
+|---|---:|---:|---:|
+| Semua (n=334) | +54,51R | **+34,01R** | **+0,102R** |
+| PREMIUM (n=157) | +44,93R | +36,08R | **+0,230R** |
+| STANDAR (n=177) | +9,59R | **−2,07R** | **−0,012R** |
+
+Kalau yang tidak terisi dihitung 0R: expectancy net **+0,076R**.
+Uji stres 0,10%/sisi: semua **+0,042R**, PREMIUM **+0,177R**, STANDAR **−0,078R**.
+
+Artinya: **PREMIUM tetap positif setelah biaya; STANDAR tidak.** Rekomendasi keras:
+hentikan pengiriman tier STANDAR atau naikkan syaratnya sampai gross expectancy-nya
+lebih dari biaya.
 
 ### Cache vs data asli saat kirim
 
@@ -68,7 +86,7 @@ Hasilnya **97,8% sama** (440/450), tetapi 10 kasus berbeda dan arahnya masuk aka
 | TIAUSDT 24 Okt, SKHYNIXUSDT 28 Okt, SUIUSDT 30 Okt | tidak terisi | **TP1** | idem |
 
 Kesimpulan validasi: angka cache **tidak bohong secara agregat** (selisih expectancy
-+0,173R → +0,165R), tetapi untuk menilai satu sinyal tertentu, waktu kirim harus dipakai.
++0,173R → +0,163R), tetapi untuk menilai satu sinyal tertentu, waktu kirim harus dipakai.
 Sinyal yang telat dikirim bisa kehilangan TP1 yang sudah terjadi lebih dulu.
 
 ## Pembanding: seluruh kandidat (bukan hanya yang dikirim)
@@ -103,8 +121,9 @@ kebetulan. Jangan memilih pair hanya dari tabel ini.
 1. **Ini hasil bayangan, bukan trade nyata.** Entry di POI, TP1 = 1R, SL = swing,
    expired 8 jam, tahan maksimum 24 jam; jika TP dan SL kena di candle yang sama,
    dihitung SL (konservatif).
-2. **Belum dikurangi biaya.** R di atas gross. Fee + slippage 0,1%/sisi dapat memakan
-   sebagian besar edge STANDAR.
+2. **Biaya sudah dihitung** dengan fee taker 0,05%/sisi; kolom net ada di jurnal.
+   Uji stres 0,10%/sisi juga dicatat. Slippage nyata dari `fills.csv` belum ada karena
+   belum ada trade.
 3. **Sampel 15 hari / 334 hasil terisi.** Cukup untuk sinyal awal, belum untuk mengunci
    strategi.
 4. **Sinyal tetap kandidat**, bukan rekomendasi. Label ini sudah ikut di setiap pesan.
@@ -136,9 +155,8 @@ jq -c 'select(.allowed) | {ts,pair,direction,tier,hasil,r}' \
 
 1. ~~Jadwalkan `lt measure`~~ **sudah**: job `jurnal-sinyal` menjalankannya tiap 6 jam.
 2. ~~Buat jurnal sinyal permanen~~ **sudah**: JSON + API + panel UI + e2e.
-3. **Pertimbangkan tier STANDAR** — kalau setelah biaya tetap ≤0, kurangi/hentikan
-   pengirimannya, atau naikkan syaratnya.
+3. **Hentikan/naikkan syarat tier STANDAR** — net expectancy −0,012R pada fee 5 bps/sisi,
+   dan −0,078R pada 0,10%/sisi. Ini keputusan strategi; perlu persetujuan owner.
 4. **Kurangi sinyal yang tidak terisi** — 25,8% tidak pernah masuk; filter jarak entry
    atau kirim hanya saat harga dekat POI.
-5. **Uji biaya nyata** — jalankan ulang perhitungan dengan fee/slippage aktual dari
-   `fills.csv` setelah trade pertama.
+5. **Ganti fee asumsi dengan slippage nyata** dari `fills.csv` setelah trade pertama.

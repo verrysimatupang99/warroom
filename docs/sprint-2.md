@@ -91,8 +91,8 @@ pada jendela resminya.
 
 - **Jurnal sinyal terkirim (di luar 16 SP).** Validasi ulang 450 sinyal terkirim memakai
   candle Binance sejak jam setelah kirim (bukan cache waktu verdict): 97,8% sama, 10 beda.
-  Hasil as-sent: WR 54,5%, expectancy +0,164R gross (PREMIUM +0,289R; STANDAR +0,054R).
-  Job `jurnal-sinyal` tiap 6 jam menjalankan `lt measure`, menulis
+  Hasil as-sent: WR 54,5%, gross +0,163R; setelah fee taker 5 bps/sisi net
+  **+0,102R** (PREMIUM +0,230R; **STANDAR −0,012R**). Job `jurnal-sinyal` tiap 6 jam menjalankan `lt measure`, menulis
   `/var/lib/warroom/jurnal_sinyal.json`, menerbitkan fakta, dan menyajikan
   `/api/v1/journal/signals` + panel `/crypto?sub=sinyal`. Laporan:
   `docs/laporan-sinyal-20261030.md`.
