@@ -73,6 +73,13 @@ pada jendela resminya.
 - Web: `svelte-check` 0 error; vitest **70** (15 berkas); knip 0 unused.
 - Build + deploy web lolos health gate; API restart; e2e panel/riwayat/kurva lulus.
 
+### Temuan di luar Sprint 2
+
+- **10 alert `strategi/benched:legacy-smc` menumpuk** sejak 18 Okt karena subjek harian
+  tidak pernah ditutup saat hari berganti. Job `notify` kini menutup alert benched
+  bertanggal lampau (dan format lama tanpa tanggal); `strategi/kill-switch` tidak
+  disentuh. Tes: `test_alert_benched_housekeeping.py` (2 kasus).
+
 ### Berikutnya
 
 - Bukti trade pertama (sesi 08–09 UTC) → rekonsiliasi statement nyata, marker pertama.

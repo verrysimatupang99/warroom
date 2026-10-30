@@ -139,7 +139,7 @@ sudah di tepi curve-fitting.
   `tools/forwardtest_status.py` mencetak DoD 20 trade/30 hari; runbook trade pertama
   ada di `docs/runbook-trade-pertama.md`; panel Reaper dijaga e2e
   `apps/web/e2e/cek_panel_reaper.spec.ts`.
-- Suite terkini: **900** tes (perintah AGENTS), **1099** root `pytest`; 70 vitest, 49 spec e2e.
+- Suite terkini: **902** tes (perintah AGENTS), **1101** root `pytest`; 70 vitest, 49 spec e2e.
 - Rollback EA: `WarRoom_AutoTrader_v3.ex5.v30bak` / `.mq5.v30bak` di data folder Azure;
   source v3.1 juga ada di `MQL5/Experts/WarRoom_AutoTrader_v31.mq5`.
 
