@@ -1,0 +1,19 @@
+sumber_ts,jenis,market,instrumen,side,entry,sl,tp1,outcome,r,n,menang,kalah,be,catatan,kepastian
+2026-09-01T15:02:49,agregat,XAU,XAUUSD,,,,,1W/1L/2BE,+0.32,8,1,1,2,8 signal; 4 selesai (1W/1L/2BE); koreksi dari BE ke SL,dikutip dari chat
+2026-09-21T10:59:10,agregat,XAU,XAUUSD,,,,,1W/1L/3BE,+0.32,9,1,1,3,9 signal sejak 24 Agu; WR 20%; BUY 4 trade 0 menang -1.00R,dikutip dari chat
+2026-10-09T14:41:17,agregat,XAU+NAS+EUR,XAUUSD/NAS100/EURUSD,,,,,closed,,19,,,,19 riwayat selesai di dashboard (XAU+NAS100+EURUSD),dikutip dari chat
+2026-10-13T16:32:24,agregat,CRYPTO,crypto watchlist,,,,,10 SL / 2 TP2 / 1 TP1 / 2 expired / 2 manual / 1 cancelled,,18,,,,18 item closed; R tidak dirinci per trade,dikutip dari chat
+2026-10-17T21:54:01,agregat,CRYPTO,crypto-watchlist.json,,,,,riwayat,,73,,,,73 riwayat trade; bukan universe scan,dikutip dari chat
+2026-10-20T22:56:31,simulasi,CRYPTO,21 trade scalping,,,,,SL lama -3.87R; SL ATR +0.25R,+0.25,21,,,,"Simulasi ulang 21 trade, bukan hasil live; selisih +4.12R",simulasi
+2026-09-01T15:24:32,trade,XAU,XAUUSD,BUY,4444.80,4422.35,4467.25,SL,-1.00,1,0,1,0,TP1 tidak pernah kena; high 4446.02 < TP1 4467.25; koreksi dari BE,eksplisit
+2026-10-10T08:29:35,trade,CRYPTO,SUIUSDT,,,,,SL,,1,0,1,0,SUI kena SL; R tidak disebut eksplisit,"outcome eksplisit, R tidak"
+2026-10-10T09:44:05,trade,CRYPTO,NEARUSDT,LONG,4.90-4.95,4.78,5.07,cancelled,0,1,0,0,0,Limit tidak pernah retest; tidak masuk = 0R,eksplisit
+2026-10-11T11:06:22,trade,CRYPTO,OPUSDT,,,,,SL,-0.49,1,0,1,0,Realisasi -0.49R; dashboard sempat salah catat -1R,eksplisit
+2026-10-14T16:00:03,trade,CRYPTO,JSTUSDT,LONG,0.13858,,0.14058,open/manual,,1,,,,Sempat open; closed_manual; R final tidak disebut,"outcome eksplisit, R tidak"
+2026-10-20T20:01:08,trade,CRYPTO,HYPEUSDT,,,,,TP1/BE,+1.00,1,1,0,0,TP1 hit lalu runner BE; +1.0R,eksplisit
+2026-10-20T20:01:08,trade,CRYPTO,FETUSDT,,,,,TP1/BE,+0.50,1,1,0,0,TP1 hit lalu BE; +0.5R,eksplisit
+2026-10-20T20:01:08,trade,CRYPTO,LTCUSDT,,,,,TP1/partial/BE,+0.32,1,1,0,0,"TP1 hit, partial 50%, sisa BE; +0.32R",eksplisit
+2026-10-20T21:36:35,trade,CRYPTO,SOLUSDT,SHORT,,,,SL,-1.00,1,0,1,0,Loss beruntun 4 SHORT intraday,eksplisit
+2026-10-20T21:36:35,trade,CRYPTO,HBARUSDT,SHORT,,,,SL,-1.00,1,0,1,0,Loss beruntun 4 SHORT intraday,eksplisit
+2026-10-20T21:36:35,trade,CRYPTO,XLMUSDT,SHORT,,,,SL,-1.00,1,0,1,0,Loss beruntun 4 SHORT intraday,eksplisit
+2026-10-20T21:36:35,trade,CRYPTO,LTCUSDT,SHORT,,,,SL,-1.00,1,0,1,0,Loss beruntun 4 SHORT intraday (trade berbeda dari LTC +0.32R),eksplisit
