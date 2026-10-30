@@ -20,20 +20,32 @@ from warroom_notifier.transport import (
 
 
 class _Penerima(BaseHTTPRequestHandler):
-    """Server uji: mencatat body yang diterima; bisa dipaksa menjawab 500."""
+    """Server uji: mencatat body yang diterima; bisa dipaksa menjawab 500/JSON tertentu."""
 
     bodies: list[dict] = []
     seen_headers: list[dict] = []
     status = 200
+    reply: dict | None = None
 
     def do_POST(self) -> None:  # noqa: N802 — nama wajib dari BaseHTTPRequestHandler
         panjang = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(panjang).decode("utf-8")
         type(self).bodies.append(json.loads(body))
         type(self).seen_headers.append(dict(self.headers))
+        if type(self).reply is not None:
+            isi = type(self).reply
+        else:
+            data = json.loads(body)
+            hasil = {"message_id": 1, "chat": {"id": int(data.get("chat_id", 0))}}
+            if data.get("message_thread_id"):
+                hasil["message_thread_id"] = int(data["message_thread_id"])
+            isi = {"ok": True, "result": hasil}
+        mentah = json.dumps(isi).encode()
         self.send_response(type(self).status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(mentah)))
         self.end_headers()
-        self.wfile.write(b"ok")
+        self.wfile.write(mentah)
 
     def log_message(self, *args: object) -> None:  # senyapkan log server uji
         return
@@ -45,6 +57,7 @@ def server_uji():
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
     _Penerima.bodies, _Penerima.seen_headers, _Penerima.status = [], [], 200
+    _Penerima.reply = None
     yield f"http://127.0.0.1:{srv.server_port}/hook"
     srv.shutdown()
     srv.server_close()
@@ -286,3 +299,37 @@ def test_alert_macet_tidak_menghalangi_alert_baru(db) -> None:
     subjek = [e.payload_json.get("subject") for e in ev]
     assert "baru/penting" in subjek, "alert baru wajib tercatat percobaannya"
     assert subjek.count("lama/macet") == MAX_PERCOBAAN, "alert macet tidak boleh diulang melebihi batas"
+
+def test_telegram_transport_mencatat_message_id(server_uji: str, monkeypatch) -> None:
+    """Bukti kirim harus menyebut message_id/chat/thread, bukan hanya HTTP 200."""
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    tr = TelegramTransport("123:RAHASIA", "-1001234567890", thread_id="12")
+    res = tr.send("snapshot/mode", "data basi 30 mnt", "warning", {})
+    assert res.ok is True
+    assert "msg=1" in res.detail
+    assert "chat=-1001234567890" in res.detail
+    assert "thread=12" in res.detail
+
+def test_telegram_transport_menolak_ok_false(server_uji: str, monkeypatch) -> None:
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    _Penerima.reply = {"ok": False, "description": "Bad Request: message thread not found"}
+    res = TelegramTransport("1:x", "-1001", thread_id="237").send("s", "m", "warning", {})
+    assert res.ok is False
+    assert "ok=false" in res.detail and "thread not found" in res.detail
+
+def test_telegram_transport_menolak_thread_berbeda(server_uji: str, monkeypatch) -> None:
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    _Penerima.reply = {
+        "ok": True,
+        "result": {"message_id": 2, "chat": {"id": -1001}, "message_thread_id": 999},
+    }
+    res = TelegramTransport("1:x", "-1001", thread_id="237").send("s", "m", "warning", {})
+    assert res.ok is False
+    assert "thread 999 != 237" in res.detail
+
+def test_telegram_transport_menolak_chat_berbeda(server_uji: str, monkeypatch) -> None:
+    monkeypatch.setenv("WARROOM_TELEGRAM_API_BASE", server_uji.rsplit("/hook", 1)[0])
+    _Penerima.reply = {"ok": True, "result": {"message_id": 3, "chat": {"id": -100999}}}
+    res = TelegramTransport("1:x", "-1001", thread_id="237").send("s", "m", "warning", {})
+    assert res.ok is False
+    assert "chat -100999 != -1001" in res.detail
