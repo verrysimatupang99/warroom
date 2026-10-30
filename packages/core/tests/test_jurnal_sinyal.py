@@ -90,3 +90,27 @@ def test_ringkas_menghitung_expectancy_dan_tier() -> None:
     assert r["per_tier"]["PREMIUM"]["n_terisi"] == 3
     assert r["per_tier"]["STANDAR"]["winrate"] == 100.0
     assert r["sama_cache"] == 4 and r["beda_cache"] == 1
+
+def test_biaya_r_dari_jarak_sl() -> None:
+    from warroom_core.jurnal_sinyal import biaya_r
+
+    # SL 1% dari harga, fee 0,05%/sisi → round-trip 0,10% = 0,10R.
+    assert round(biaya_r(100, 99, 5), 4) == 0.1
+    assert round(biaya_r(100, 99, 10), 4) == 0.2
+    assert biaya_r(100, 100, 5) == 0.0
+    assert biaya_r(None, 99, 5) == 0.0
+
+
+def test_ringkas_net_setelah_biaya() -> None:
+    rows = [
+        {"hasil": "tp1", "r": 1.0, "r_net": 0.8, "biaya_r": 0.2, "tier": "PREMIUM"},
+        {"hasil": "sl", "r": -1.0, "r_net": -1.2, "biaya_r": 0.2, "tier": "STANDAR"},
+        {"hasil": "tidak_terisi", "r": 0.0, "r_net": 0.0, "biaya_r": 0.0, "tier": "STANDAR"},
+    ]
+    r = ringkas(rows)
+    assert r["total_r"] == 0.0
+    assert r["total_r_net"] == -0.4
+    assert r["expectancy_net_r"] == -0.2
+    assert r["expectancy_net_0r"] == round(-0.4 / 3, 4)
+    assert r["biaya_r_rata"] == 0.2
+    assert r["per_tier"]["STANDAR"]["expectancy_net_r"] == -1.2

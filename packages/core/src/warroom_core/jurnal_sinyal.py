@@ -100,6 +100,22 @@ def cocokkan(
     return sorted(hasil.values(), key=lambda x: x["dikirim"])
 
 
+def biaya_r(entry: Any, sl: Any, fee_bps_per_sisi: float) -> float:
+    """Biaya round-trip dalam satuan R: (2 × fee × harga) / jarak SL.
+
+    Contoh: SL 1% dari harga, fee 0,05%/sisi → biaya 0,10R per trade. Itu cukup
+    menghabiskan edge tier STANDAR yang gross-nya hanya +0,05R.
+    """
+    try:
+        e, s = float(entry), float(sl)
+    except (TypeError, ValueError):
+        return 0.0
+    risk = abs(e - s)
+    if risk <= 0:
+        return 0.0
+    return (2 * (fee_bps_per_sisi / 10000.0) * e) / risk
+
+
 def _final(row: dict[str, Any]) -> bool:
     return row.get("r") is not None and row.get("hasil") in (
         "tp1",
@@ -111,11 +127,18 @@ def _final(row: dict[str, Any]) -> bool:
 
 
 def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Statistik dari baris hasil (field: hasil, r, tier)."""
+    """Statistik dari baris hasil (field: hasil, r, r_net, tier)."""
     final = [r for r in rows if _final(r)]
     tp1 = sum(1 for r in final if r["hasil"] == "tp1")
     sl = sum(1 for r in final if r["hasil"] == "sl")
     total = round(sum(float(r["r"]) for r in final), 3)
+
+    def _net(r: dict[str, Any]) -> float:
+        nilai = r.get("r_net")
+        return float(nilai) if nilai is not None else float(r["r"])
+
+    total_net = round(sum(_net(r) for r in final), 3)
+    biaya = [float(r["biaya_r"]) for r in final if r.get("biaya_r") is not None]
     kategori: dict[str, int] = {}
     for r in rows:
         kategori[str(r.get("hasil") or "?")] = kategori.get(str(r.get("hasil") or "?"), 0) + 1
@@ -128,6 +151,7 @@ def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
         t_tp1 = sum(1 for r in f if r["hasil"] == "tp1")
         t_sl = sum(1 for r in f if r["hasil"] == "sl")
         t_total = round(sum(float(r["r"]) for r in f), 3)
+        t_net = round(sum(_net(r) for r in f), 3)
         per_tier[tier] = {
             "n_terkirim": sum(1 for r in rows if str(r.get("tier")) == tier),
             "n_terisi": len(f),
@@ -136,6 +160,8 @@ def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "winrate": round(t_tp1 / len(f) * 100, 1),
             "total_r": t_total,
             "expectancy_r": round(t_total / len(f), 4),
+            "total_r_net": t_net,
+            "expectancy_net_r": round(t_net / len(f), 4),
         }
 
     sama = sum(1 for r in rows if r.get("hasil") == r.get("hasil_cache"))
@@ -148,6 +174,10 @@ def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "total_r": total,
         "expectancy_r": round(total / len(final), 4) if final else None,
         "expectancy_0r": round(total / len(rows), 4) if rows else None,
+        "total_r_net": total_net,
+        "expectancy_net_r": round(total_net / len(final), 4) if final else None,
+        "expectancy_net_0r": round(total_net / len(rows), 4) if rows else None,
+        "biaya_r_rata": round(sum(biaya) / len(biaya), 4) if biaya else None,
         "kategori": dict(sorted(kategori.items())),
         "per_tier": per_tier,
         "sama_cache": sama,

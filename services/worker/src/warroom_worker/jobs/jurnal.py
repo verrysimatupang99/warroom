@@ -18,7 +18,7 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Job
-from warroom_core.jurnal_sinyal import cocokkan, muat_outcomes, ringkas
+from warroom_core.jurnal_sinyal import biaya_r, cocokkan, muat_outcomes, ringkas
 
 from .base import _tulis_fakta, root_dir
 
@@ -45,6 +45,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
     max_alerts = int(p.get("max_alerts", 2000))
     keluaran = Path(p.get("output", str(JURNAL_PATH)))
     ttl_s = int(p.get("ttl_s", 86400))
+    fee_bps = float(p.get("fee_bps_per_sisi", 5))
     catatan = ""
 
     if bool(p.get("refresh_outcomes", True)):
@@ -133,20 +134,29 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
             jendela,
             now=now,
         )
+        r_sim = simulasi.get("r")
+        biaya = (
+            biaya_r(v.get("entry"), v.get("sl"), fee_bps)
+            if r_sim is not None
+            and simulasi["hasil"] in ("tp1", "tp2", "sl", "kedaluwarsa", "terbuka")
+            else 0.0
+        )
         hasil.append(
             {
                 **dasar,
                 "hasil": simulasi["hasil"],
-                "r": simulasi.get("r"),
+                "r": r_sim,
+                "biaya_r": round(biaya, 4),
+                "r_net": round(r_sim - biaya, 4) if r_sim is not None else None,
                 "jam_ke_isi": simulasi.get("jam_ke_isi"),
                 "jam_ke_hasil": simulasi.get("jam_ke_hasil"),
             }
         )
-
     ringkasan = ringkas(hasil)
     data = {
         "dihitung_at": now.isoformat(),
         "sumber": "alerts + outcomes.jsonl + Binance 1H sejak jam setelah kirim",
+        "fee_bps_per_sisi": fee_bps,
         "n_rows": len(hasil),
         "gagal_pair": gagal,
         "catatan": catatan,
@@ -167,6 +177,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
             "dihitung_at": now.isoformat(),
             "n_rows": len(hasil),
             "gagal_pair": gagal,
+            "fee_bps_per_sisi": fee_bps,
         },
         source="lokal:alerts+outcomes+binance",
         ttl_s=ttl_s,
@@ -174,6 +185,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
     return (
         f"alert={len(alerts)} cocok={len(matched)} final={ringkasan['n_terisi']} "
         f"wr={ringkasan['winrate']}% exp={ringkasan['expectancy_r']}R "
+        f"net={ringkasan['expectancy_net_r']}R fee={fee_bps}bps "
         f"beda_cache={ringkasan['beda_cache']} gagal_pair={len(gagal)}"
         + (f" catatan={catatan}" if catatan else "")
     )
