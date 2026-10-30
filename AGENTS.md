@@ -1,138 +1,65 @@
-# AGENTS.md — War Room platform (Webdock)
+# AGENTS.md — War Room
 
-Panduan kerja untuk agen/sesi berikutnya. Baca ini dulu sebelum mengubah apa pun.
-Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
+Panduan kerja untuk agent yang memegang repo ini. **Baca `HANDOVER-OMP.md` lebih dulu** —
+di situ ada status sistem, angka terverifikasi, dan daftar hal yang masih rusak.
 
-## Garis yang tidak boleh dilewati
+## Apa ini
 
-1. **`/opt/polymarket` = baca-saja.** Tidak menulis, tidak me-restart unit, tidak mengubah
-   config. Menjalankan alat read-only miliknya (mis. `qa/favorite-live-verdict.py --json`)
-   hanya lewat allowlist sudo yang ada.
-2. **Tencent = baca-saja.** Sama seperti domain `live-trading`.
-   **Azure sudah tidak dipakai lagi (sejak 6 Okt 2026):** radar rantai dipindah **lokal**
-   ke host ini (`lt radar-update` → `state/radar_state.json`), jadi tidak ada lagi SSH
-   ke VM `20.212.52.5`. Bila VM itu dimatikan, tidak ada yang hilang.
-3. **Gate live tidak pernah disentuh** (`/etc/poly-pilot/activation-approved`): jangan
-   dibuat, jangan diubah. Aksi live butuh izin eksplisit owner (grant), dan API menolak
-   dengan 409 tanpa itu.
-4. **Kredensial tidak pernah masuk repo/log/percakapan.** Berkas rahasia: `/etc/warroom/*.env`
-   (mode 600 root) di-inject systemd; `~/.config/warroom/e2e.env` untuk kredensial e2e.
-   Jalankan `gitleaks` sebelum commit bila menyentuh berkas contoh.
-5. **Jangan mengarang angka.** Sumber tak terbaca → `tidak-izin`/`n/a` + alasan, bukan nol.
-6. **Ambang gate & rumus BE hanya boleh diubah manusia (owner).** `gate.min_n`, `gate.ci`,
-   dan `mode` terkunci; `deff` < 1 ditolak (itu arah melonggarkan).
+Platform trading multi-market (forex, crypto, IDX, polymarket) dengan backend mandiri
+di satu VPS Webdock. Situs publik: `https://0xgunsl1ng3r.xyz`.
 
-## Perintah harian
+Satu-satunya komponen di luar VPS: **MetaTrader 5 di VM Azure** (`mt5-trader-vm`),
+yang mengeksekusi demo XAUUSD dan mengirim telemetri ke API di sini.
+
+## Struktur
+
+```
+apps/web            SvelteKit (adapter-node), UI + tema token
+services/api        FastAPI, REST /api/v1/* + SSE
+services/worker     jadwal deklaratif (publish-facts, freshness)
+services/notifier   push alert (Telegram)
+services/llm        jalur model bahasa
+packages/live-trading
+ops/                Caddyfile, systemd unit, skrip operasional
+docs/               ADR, audit, catatan keputusan
+```
+
+## Perintah
 
 ```bash
+# uji
+cd /home/admin/warroom && .venv/bin/python -m pytest services/api/tests services/worker/tests \
+  services/notifier/tests services/llm/tests -q
+
+# web: build + deploy (wajib keduanya; build saja tidak mengubah yang disajikan)
+cd apps/web && sudo -u admin npm run build
+sudo systemctl restart warroom-web
+cat apps/web/build/build-id.txt          # bukti build yang benar-benar terpasang
+
 # layanan
-systemctl status warroom-api warroom-worker warroom-web nginx
-journalctl -u warroom-worker -n 30 --no-pager
-
-# kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # suite penuh: 824 tes (audit ulang 14 Okt 2026)
-cd apps/web && npm run test                            # 9 berkas, 36 vitest
-npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
-bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
-
-# domain (anggota workspace: packages/live-trading/)
-uv run pytest packages/live-trading -q                 # tes domain, dijalankan dari root repo
+sudo systemctl restart warroom-api warroom-web warroom-worker
+systemctl --failed --no-legend           # harus kosong
 ```
 
-Angka di atas = kondisi per 14 Okt 2026 (diverifikasi ulang lewat `ruff`/`pytest`/`npm run test`).
-Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
-Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
+Python: `.venv` di root repo. Node: v24 di VPS.
 
-## Arsitektur satu layar
+## Aturan keras
 
-```
-apps/web/         SvelteKit (adapter-node, port 3100) — konsumsi API, tanpa logika domain
-services/api/     FastAPI :8800 — REST /api/v1/*, SSE /api/v1/stream, auth cookie+RBAC
-services/worker/  job runner (jadwal deklaratif di tabel `jobs`, --every 30)
-services/llm/     gateway LLM (nutaraline → qonek, breaker, cache, audit `llm_calls`)
-services/notifier/ transport Telegram/webhook/null + retry ≤3 (tidak pernah klaim terkirim)
-packages/core/    façade domain: gate, autonomy, db models, prompts, db/session
-ops/              systemd units, Caddyfile(.lokal), runbook, skrip bukti
-contracts/        openapi.json (generate dari API hidup)
-```
+1. **Jangan ubah token tema** (warna, font, radius) saat merombak UI. Tema dikunci user.
+2. **Label harus jujur.** Tidak boleh ada badge yang menjanjikan lebih dari kenyataan
+   (`AUTO-TRADE READY` sudah diganti `DEMO · TANPA UANG NYATA`).
+3. **Jangan isi data kosong dengan nol palsu.** Kalau belum ada data, kembalikan `503`
+   dengan pesan jelas — jangan `0` yang terlihat seperti hasil.
+4. **Tab harus ada isinya.** Navigasi hanya menampilkan tab yang punya data nyata.
+5. **Jangan pernah mencetak kredensial** ke chat, log, atau commit. Nilai ada di
+   `/etc/warroom/*.env` dan `~/.hermes/secrets/`.
+6. **Verifikasi dengan angka nyata**, bukan klaim. Kalau hasil membantah dugaan sendiri,
+   tulis koreksinya di tempat yang sama.
+7. Akun MT5 adalah **demo**. Tidak ada uang nyata. Jangan mengaktifkan jalur live.
 
-Aliran: **domain (`live-trading`) → worker publish fakta → API baca fakta → web render +
-label kebijakan**. Angka hanya dari tabel `facts`; tidak ada perhitungan di UI.
+## Jangan melakukan ini
 
-## Alur kerja branch–PR (dilarang push langsung ke `main`)
-
-**`main` = cabang terproteksi. Jangan pernah `git push` langsung ke `main`.**
-Semua perubahan lewat pull request, bukan push ke cabang utama.
-
-1. **Branch** dari `main` yang mutakhir. Nama: `<tipe>/<ringkas-dengan-dash>`,
-   mis. `docs/pisah-readme-pengembangan`, `fix/gate-deff-basi`. Tipe = daftar di bawah.
-2. **Commit** kecil dan bermakna (lihat format di bawah). Satu perubahan = satu alasan.
-3. **Push** branch itu, lalu buka **Pull Request** ke `main` dan isi
-   `.github/pull_request_template.md` (Apa yang berubah / Kenapa / Sudah dicek / Selanjutnya).
-4. **CI harus hijau** (`.github/workflows/ci.yml`: domain, platform, secrets/gitleaks, web).
-   Bukti perintah lokal (`bash ops/ci-local.sh`) lebih dihargai daripada klaim.
-5. **Review** minimal satu mata lain (atau owner) sebelum **merge**. Jangan merge CI merah,
-   jangan merge tanpa mengisi bagian *Sudah dicek*.
-
-Dilarang juga: `git push --force` ke `main`, menulis riwayat ulang (`rebase`/`amend`) pada
-cabang bersama, dan mem-bypass CI. Untuk perubahan darurat, tetap buka PR — kerjakan cepat,
-biarkan jejaknya ada.
-
-### Format commit (Conventional Commits, Bahasa Indonesia)
-
-```
-<tife>(<lingkup>): <ringkas imperatif, maks 72 karakter>
-
-<body opsional: alasan + bukti perintah>
-```
-
-- **Tipe:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`.
-- **Lingkup:** area yang disentuh, mis. `crypto`, `idx`, `api`, `web`, `docs`.
-- **Ringkas** maks **72 karakter**, imperatif, Bahasa Indonesia, tanpa titik di akhir.
-- **Tanpa atribusi AI** (jangan tulis "Generated by …", "Co-Authored-By: AI", dsb.).
-- Badan commit menampung alasan dan bukti; ringkas jangan dipakai untuk cerita panjang.
-
-Contoh yang sah (dari riwayat repo ini):
-
-```
-feat(crypto): header dompet + log aksi/skip di sub eksekusi
-docs(rapi): segarkan README/PRODUCT + peta struktur-repo
-refactor(idx): satukan duplikasi arjum + hapus skrip mati
-```
-
-## Konvensi kerja
-
-- Satu perubahan = satu commit dengan alasan; sertakan bukti perintah di deskripsi.
-- Uji yang gagal **tidak** dihapus; kalau perilaku memang berubah, tulis alasannya.
-- Temuan yang membantah dokumen/rencana: tulis apa adanya di `docs/*progress*.md`.
-- Jangan memakai `pip install` manual; semua lewat `uv sync` / `npm ci`.
-- Batas izin sudo platform ada di `/etc/sudoers.d/warroom-poly-readonly` (read-only).
-  **Catatan penting:** baris `%sudo … NOPASSWD` di `/etc/sudoers` terlihat berlaku di
-  `sudo -l` tetapi **tidak** berlaku di konteks systemd (terbukti via auth.log +
-  systemd-run). Jangan mengandalkannya; tambahkan perintah ke allowlist eksplisit.
-
-## Deploy (3 Okt 2026)
-
-- **URL**: `https://0xgunsl1ng3r.xyz` (apex; DNS Spaceship `A @ → 217.78.237.133`).
-- **Proxy**: **nginx** (bukan Caddy) karena nginx sudah memegang 80/443 untuk situs lain.
-  Vhost: `/etc/nginx/sites-available/warroom` (salinan repo: `ops/nginx-warroom.conf`).
-  SSE wajib `proxy_buffering off` di lokasi `/api/`.
-- **TLS**: certbot (plugin nginx), perpanjangan otomatis via timer; `certbot renew --dry-run` untuk uji.
-- **Caddy**: terpasang tetapi **disabled** (dulu untuk uji lokal :8081); `ops/Caddyfile*`
-  disimpan sebagai alternatif untuk host bersih.
-- **Kredensial**: `~/.config/warroom/{e2e.env,spaceship.env}` (600). Jangan pernah masuk repo.
-- **Notifier Telegram**: topik War Room `t.me/c/4383844873/237` (thread 237) — `ops/notifier.env.example` + `/etc/warroom/notifier.env` (600). Terbukti kirim: `telegram 200`.
-- **Deploy web**: pakai `ops/deploy-web.sh` (build **lalu restart**). Membangun tanpa restart → proses lama pegang manifest lama → 500 (`Cannot find module …/nodes/0.js-*.js`). Insiden nyata 3 Okt.
-
-## Sedang menunggu (owner)
-
-1. ~~URL webhook/Telegram~~ **selesai 3 Okt** — transport Telegram aktif (bot Hermes, topic War Room); alert macet tetap terlihat di UI dengan label & kesalahan terakhir.
-2. Domain + DNS → `ops/Caddyfile` (TLS) menggantikan `Caddyfile.lokal`.
-3. Keputusan kebijakan gate (90% vs 95%+deff) + `split=frozen:<id>` untuk data uji.
-4. Kunci/urutan provider nutaraline (401 + lambat; qonek menyelamatkan).
-5. Perbaikan baris `%sudo` di `/etc/sudoers`.
-
-## Gaya yang diminta user
-
-Rapi, terstruktur, terdokumentasi. Bukti dijalankan lebih berharga daripada klaim.
-Kalau ada temuan yang tidak nyaman, tulis — termasuk yang membantah pekerjaan sendiri.
+- Menjalankan Strategy Tester MT5 lewat `az vm run-command` — jalan sebagai SYSTEM dan
+  membaca data folder yang salah. Lihat `HANDOVER-OMP.md` §9.
+- Menyalakan Tailscale. Sudah dihapus; akses klien lewat SSH tunnel.
+- Menambah snapshot Azure (diminta tidak).
