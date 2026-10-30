@@ -208,6 +208,7 @@ async def idx_stats() -> dict[str, Any]:
 FILLS = Path("/var/lib/warroom/fills.csv")
 DEALS = Path("/var/lib/warroom/deals.csv")
 VERDICTS = Path("/home/admin/live-trading/state/verdicts.jsonl")
+JURNAL_SINYAL = Path("/var/lib/warroom/jurnal_sinyal.json")
 MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
 MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
 
@@ -706,6 +707,22 @@ async def journal_scanlog(market: str = "all") -> dict[str, Any]:
         except SumberKosong as exc:
             hasil[nama] = {"market": nama, "n": 0, "terakhir": [], "catatan": str(exc)}
     return hasil
+
+
+async def journal_signals() -> dict[str, Any]:
+    """Jurnal sinyal terkirim + hasil dari candle sejak jam setelah kirim (dihitung worker)."""
+    if not JURNAL_SINYAL.exists():
+        raise SumberKosong(
+            "Jurnal sinyal belum dihitung. Job `jurnal-sinyal` menulis berkas ini "
+            "setiap 6 jam setelah ada alert sinyal."
+        )
+    try:
+        data = json.loads(JURNAL_SINYAL.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SumberKosong(f"Jurnal sinyal tidak terbaca: {exc}") from exc
+    if not isinstance(data, dict):
+        raise SumberKosong("Jurnal sinyal tidak berisi objek yang sah.")
+    return data
 
 
 async def journal_charts() -> dict[str, Any]:

@@ -10,9 +10,9 @@ hanya forex yang punya antrean order nyata (slippage, latensi, sesi).
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from warroom_api import auth
+from warroom_api import auth, lokal
 from warroom_api.routers.tencent import _fetch_tencent
 
 router = APIRouter(
@@ -60,6 +60,18 @@ async def journal_watchlist() -> dict[str, Any]:
 async def journal_edge(market: str = MarketQ) -> dict[str, Any]:
     """Slippage dan latensi per jam, dari fill nyata."""
     return await _ambil("/forex/journal/edge", market)
+
+
+@router.get("/signals")
+async def journal_signals() -> dict[str, Any]:
+    """Jurnal sinyal terkirim: hasil dihitung dari candle sejak jam setelah kirim."""
+    try:
+        return await lokal.journal_signals()
+    except lokal.SumberKosong as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "not_available", "message": str(exc)},
+        ) from exc
 
 
 @router.get("/scanlog")

@@ -253,3 +253,21 @@ def test_performance_crypto_tetap_menolak():
     with pytest.raises(lokal.SumberKosong) as exc:
         asyncio.run(lokal.journal_performance("crypto"))
     assert "belum direkam" in str(exc.value)
+
+# --- jurnal sinyal terkirim ---------------------------------------------------------------
+
+def test_journal_signals_membaca_berkas(monkeypatch, tmp_path):
+    import json
+
+    p = tmp_path / "jurnal_sinyal.json"
+    p.write_text(json.dumps({"ringkas": {"n_terkirim": 2, "winrate": 50.0}}), encoding="utf-8")
+    monkeypatch.setattr(lokal, "JURNAL_SINYAL", p)
+    hasil = asyncio.run(lokal.journal_signals())
+    assert hasil["ringkas"]["n_terkirim"] == 2
+
+
+def test_journal_signals_belum_ada_503(monkeypatch, tmp_path):
+    monkeypatch.setattr(lokal, "JURNAL_SINYAL", tmp_path / "tidak-ada.json")
+    with pytest.raises(lokal.SumberKosong) as exc:
+        asyncio.run(lokal.journal_signals())
+    assert "belum dihitung" in str(exc.value)

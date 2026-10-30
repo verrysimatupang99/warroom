@@ -5245,6 +5245,58 @@
         ]
       }
     },
+    "/api/v1/journal/signals": {
+      "get": {
+        "description": "Jurnal sinyal terkirim: hasil dihitung dari candle sejak jam setelah kirim.",
+        "operationId": "journal_signals_api_v1_journal_signals_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Journal Signals Api V1 Journal Signals Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Journal Signals",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
     "/api/v1/journal/stats": {
       "get": {
         "description": "Statistik jurnal per market: ekuitas, PnL, trade, win rate.",
