@@ -58,6 +58,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="jurnal-sinyal",
+        interval_s=21600,
+        enabled=True,
+        payload={"max_alerts": 2000, "ttl_s": 86400},
+        note=(
+            "jurnal sinyal: alert terkirim → hasil dari candle Binance sejak jam setelah "
+            "kirim (bukan sejak verdict). Tulis /var/lib/warroom/jurnal_sinyal.json + fakta."
+        ),
+    ),
+    JobSpec(
         name="notify",
         interval_s=300,
         enabled=True,

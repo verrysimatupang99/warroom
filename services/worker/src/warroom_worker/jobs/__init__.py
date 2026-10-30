@@ -42,6 +42,7 @@ from .infra import (
     handler_refresh_snapshot,  # noqa: F401
     handler_source_health,  # noqa: F401
 )
+from .jurnal import handler_jurnal_sinyal  # noqa: F401
 from .llm import (
     _kandidat_terbaru_dari_ledger,  # noqa: F401
     _pair_sudah_dipakai,  # noqa: F401
@@ -69,6 +70,7 @@ __all__ = [
     "handler_publish_facts",
     "handler_freshness",
     "handler_forwardtest_watchdog",
+    "handler_jurnal_sinyal",
     "handler_notify",
     "handler_collect",
     "handler_refresh_snapshot",

@@ -54,6 +54,7 @@ _JOB_BERAT = (
     "paper-scan",
     "strategi-alert",  # MEMBUAT alert kill-switch dari fakta (bisa memicu kirim Telegram)
     "break-retest-scan",  # memindai data historis & menerbitkan sinyal (bisa memicu Telegram)
+    "jurnal-sinyal",  # mengambil candle Binance untuk ratusan alert
     "retention",  # menghapus baris `facts` di DB nyata — bukan untuk tes
     "polybtc-sync",  # membaca keluaran skill PolyBTC (berkas milik proses lain)
 )
@@ -78,7 +79,8 @@ def test_daftar_job_idempoten(db) -> None:
         kedua = schedule.ensure_jobs(s)
         total = len(s.scalars(select(Job)).all())
     assert set(pertama) == {
-        "publish-facts", "freshness", "forwardtest-watchdog", "notify", "refresh-snapshot",
+        "publish-facts", "freshness", "forwardtest-watchdog", "jurnal-sinyal", "notify",
+        "refresh-snapshot",
         "radar-update", "lp-mark",
         "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
         "signal-sync", "reconcile", "learner", "prompts-sync", "paper-eval",
@@ -87,7 +89,7 @@ def test_daftar_job_idempoten(db) -> None:
         "reconcile-crypto", "lpagent-sync", "polybtc-sync", "break-retest-scan",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 31
+    assert total == 32
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
