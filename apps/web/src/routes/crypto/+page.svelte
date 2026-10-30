@@ -8,6 +8,7 @@
 	import JournalPanel from '$lib/components/JournalPanel.svelte';
 	import BatasPasar from '$lib/components/BatasPasar.svelte';
 	import RiwayatKeputusan from '$lib/components/market/RiwayatKeputusan.svelte';
+	import JurnalSinyal from '$lib/components/market/JurnalSinyal.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'crypto')!;
 	const sub = $derived.by(() => {
@@ -36,6 +37,7 @@
 		<div class="space-y-4">
 			<CryptoSinyal />
 			<RiwayatKeputusan market="crypto" />
+			<JurnalSinyal />
 		</div>
 	{:else if sub === 'uji'}
 		<PasarUji filter="crypto" />
