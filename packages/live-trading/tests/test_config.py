@@ -53,3 +53,12 @@ def test_executor_lock_path_is_stable(tmp_path: Path) -> None:
 
     assert a == b
     assert a.name == "executor.lock"
+
+def test_config_fingerprint_stabil_dan_berubah_dengan_parameter(tmp_path: Path):
+    a = Settings(home=tmp_path)
+    b = Settings(home=tmp_path)
+    assert a.config_fingerprint() == b.config_fingerprint()
+    c = Settings(home=tmp_path, risk_per_trade_pct=2.0)
+    assert c.config_fingerprint() != a.config_fingerprint()
+    d = Settings(home=tmp_path, daily_loss_limit_r=1.5)
+    assert d.config_fingerprint() != a.config_fingerprint()

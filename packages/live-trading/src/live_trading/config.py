@@ -97,6 +97,37 @@ class Settings(BaseSettings):
     legacy_hermes: bool = False
     legacy_hermes_root: Path = Field(default=Path.home() / ".hermes")
 
+    def config_fingerprint(self) -> str:
+        """Versi konfigurasi strategi/risiko: berubah bila parameter yang relevan berubah.
+
+        Bukan versi kode (itu dari build/commit); ini sidik parameter yang membuat
+        satu rangkaian sinyal berbeda dari yang lain. Jurnal memakainya untuk
+        memisahkan performa antar versi, bukan mencampur semuanya.
+        """
+        import hashlib
+        import json
+
+        kunci = (
+            "daily_loss_limit_r",
+            "max_concurrent_positions",
+            "risk_per_trade_pct",
+            "max_leverage",
+            "maks_posisi_searah",
+            "btc_regime_filter",
+            "bench_max_trade_harian",
+            "bench_max_fee_harian_usd",
+            "harian_sma_n",
+            "harian_confirm_closes",
+            "harian_maks_bucket",
+            "harian_mingguan_loss_pct",
+            "harian_kill_dd_pct",
+            "harian_capat_stop_pct",
+        )
+        data = {k: getattr(self, k) for k in kunci}
+        return hashlib.sha256(
+            json.dumps(data, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()[:12]
+
     # --- Turunan path ----------------------------------------------------
     @computed_field
     @property

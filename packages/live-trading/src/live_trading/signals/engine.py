@@ -318,6 +318,7 @@ def _record_verdict(
         row = {
             "ts": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
             "pair": pair,
+            "strategy_version": settings.config_fingerprint(),
             "direction": direction.upper(),
             "strategy": golden_pullback.GoldenPullbackStrategy.name
             if prop and prop.get("strategy")

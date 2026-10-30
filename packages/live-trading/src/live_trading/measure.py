@@ -143,6 +143,7 @@ def resolve_one(
         "direction": row["direction"],
         "allowed": bool(row.get("allowed")),
         "tier": row.get("tier"),
+        "strategy_version": row.get("strategy_version"),
         "entry": entry,
         "sl": sl,
         "tp1": tp1,
