@@ -5130,9 +5130,22 @@
     },
     "/api/v1/journal/scanlog": {
       "get": {
-        "description": "Alasan sinyal ditolak (gate reject, blackout, ATR tipis).",
+        "description": "Riwayat keputusan: forex = evaluasi EA, crypto = verdicts. Tidak dicampur.",
         "operationId": "journal_scanlog_api_v1_journal_scanlog_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
