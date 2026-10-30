@@ -101,6 +101,18 @@ pada jendela resminya.
   `kabar_tier` bisa mengembalikan/mengubah tanpa ubah kode. Live detail:
   `tier_kabar=PREMIUM`.
 
+### Adopsi DeepSeek (30 Okt, di luar 16 SP)
+
+- **Versioning strategi:** setiap verdict membawa `strategy_version` (sidik konfigurasi);
+  jurnal mengelompokkan `per_versi`; sinyal lama berlabel `legacy`. Tidak ada reset.
+- **Correction log:** `deal_corrections.csv` append-only + `tools/koreksi_deal.py`;
+  tracker/rekonsiliasi/jurnal menerapkan koreksi tanpa mengubah baris asli.
+- **Job-health:** job 5 menit; alert `job/<nama>` saat gagal/stale, auto-ack saat pulih.
+  Live: `diperiksa=32 alert=0`.
+- **Monte Carlo:** bootstrap 10.000× di jurnal sinyal; live `P(profit)=96,8%`,
+  P5/P50/P95 `+3,97/+33,17/+61,92R`, DD95 `21,17R`.
+- Laporan: `docs/adopsi-deepseek-20261030.md`. Tes: 912 (AGENTS), 1126 root.
+
 ### Berikutnya
 
 - Bukti trade pertama (sesi 08–09 UTC) → rekonsiliasi statement nyata, marker pertama.

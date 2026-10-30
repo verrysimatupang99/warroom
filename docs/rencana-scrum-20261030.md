@@ -218,7 +218,7 @@ US2.1 rekonsiliasi (3) · US2.2 edge chart (3) · US2.3 ADR trades DB (5) · US3
   crypto dari `verdicts.jsonl` (777), tidak dicampur; panel riwayat EA + e2e.
 - US2.4 marker deal + drawdown di `/journal/performance`; bug deret 2000 titik
   tertua diperbaiki; komponen `KurvaEkuitas` + e2e.
-- Regresi: **909** tes perintah AGENTS, **1114** root `pytest`, 72 vitest,
+- Regresi: **912** tes perintah AGENTS, **1126** root `pytest`, 72 vitest,
   50 spec e2e; ruff bersih; build/deploy web lolos health gate.
 
 ### Sprint 3 — 13–19 Nov 2026
