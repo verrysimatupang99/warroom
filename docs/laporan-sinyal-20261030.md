@@ -155,8 +155,10 @@ jq -c 'select(.allowed) | {ts,pair,direction,tier,hasil,r}' \
 
 1. ~~Jadwalkan `lt measure`~~ **sudah**: job `jurnal-sinyal` menjalankannya tiap 6 jam.
 2. ~~Buat jurnal sinyal permanen~~ **sudah**: JSON + API + panel UI + e2e.
-3. **Hentikan/naikkan syarat tier STANDAR** — net expectancy −0,012R pada fee 5 bps/sisi,
-   dan −0,078R pada 0,10%/sisi. Ini keputusan strategi; perlu persetujuan owner.
+3. ~~Hentikan/naikkan syarat tier STANDAR~~ **diterapkan 30 Okt**: `signal-sync`
+   hanya mengabarkan tier PREMIUM ke Telegram; STANDAR tetap diterbitkan sebagai fakta
+   untuk pengukuran. Bisa dibalik lewat payload `kabar_tier` tanpa ubah kode. Dasarnya:
+   net expectancy STANDAR −0,012R (fee 5 bps), −0,078R (0,10%/sisi).
 4. **Kurangi sinyal yang tidak terisi** — 25,8% tidak pernah masuk; filter jarak entry
    atau kirim hanya saat harga dekat POI.
 5. **Ganti fee asumsi dengan slippage nyata** dari `fills.csv` setelah trade pertama.

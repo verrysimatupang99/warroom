@@ -96,6 +96,10 @@ pada jendela resminya.
   `/var/lib/warroom/jurnal_sinyal.json`, menerbitkan fakta, dan menyajikan
   `/api/v1/journal/signals` + panel `/crypto?sub=sinyal`. Laporan:
   `docs/laporan-sinyal-20261030.md`.
+- **Kebijakan tier (30 Okt):** `signal-sync` hanya mengabarkan **PREMIUM** ke Telegram;
+  STANDAR tetap jadi fakta untuk pengukuran (net expectancy −0,012R). Payload
+  `kabar_tier` bisa mengembalikan/mengubah tanpa ubah kode. Live detail:
+  `tier_kabar=PREMIUM`.
 
 ### Berikutnya
 
