@@ -40,9 +40,10 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 .venv/bin/python -m pytest packages/live-trading -q    # tes domain, dari root repo
 ```
 
-**`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`. Angka tes terakhir
-tercatat 824 (audit 14 Okt 2026) — **belum diverifikasi ulang** per 30 Okt 2026, jadi jalankan
-sendiri dan perbarui angka ini beserta buktinya.
+**`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
+Jumlah tes per **30 Okt 2026: 876** (`--collect-only`), dan run penuh sampai 100%
+tanpa kegagalan. Angka lama 824 (14 Okt 2026) sudah tidak berlaku. Kalau menyentuh tes,
+perbarui angka ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
 Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
 
