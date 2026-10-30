@@ -59,7 +59,7 @@ Kredensial ada di `~/.config/warroom/e2e.env` (600). Jangan menempel isinya ke c
 set -a; . ~/.config/warroom/e2e.env; set +a
 curl -sS -c /tmp/wr.cookie -X POST https://0xgunsl1ng3r.xyz/api/v1/auth/login \
   -H 'content-type: application/json' \
-  -d "{\"email\":\"$WARROOM_E2E_EMAIL\",\"password\":\"$WARROOM_E2E_PASSWORD\"}" | jq
+  -d "{\"username\":\"$WARROOM_E2E_USER\",\"password\":\"$WARROOM_E2E_PASS\"}" | jq
 ```
 
 ---
@@ -113,7 +113,7 @@ curl -sS -b /tmp/wr.cookie 'https://0xgunsl1ng3r.xyz/api/v1/journal/stats?market
 Yang harus benar:
 
 - `closed[-1].ticket` = ticket deal yang baru;
-- `net` di jurnal = net di `deals.csv` (selisih > $0,01 = **gagal**, bukan pembulatan);
+- `pnl_usd` di jurnal = `net` di `deals.csv` (selisih > $0,01 = **gagal**, bukan pembulatan);
 - `entries` memuat fill order masuk (kalau EA mengirim `/mt5/fill`);
 - `/journal/edge` boleh 503 **hanya** bila `fills.csv` benar-benar kosong.
 
