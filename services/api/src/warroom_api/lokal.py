@@ -130,7 +130,7 @@ async def yahoo_candles(simbol_yahoo: str, interval: str, limit: int) -> dict[st
     r0 = hasil[0]
     ts = r0.get("timestamp") or []
     q = ((r0.get("indicators") or {}).get("quote") or [{}])[0]
-    o, h, l, c, v = (q.get(k) or [] for k in ("open", "high", "low", "close", "volume"))
+    o, h, lo, c, v = (q.get(k) or [] for k in ("open", "high", "low", "close", "volume"))
     candles = []
     for i, t in enumerate(ts):
         try:
@@ -140,7 +140,7 @@ async def yahoo_candles(simbol_yahoo: str, interval: str, limit: int) -> dict[st
                 "t": t * 1000,
                 "o": round(float(o[i]), 5),
                 "h": round(float(h[i]), 5),
-                "l": round(float(l[i]), 5),
+                "l": round(float(lo[i]), 5),
                 "c": round(float(c[i]), 5),
                 "v": float(v[i] or 0) if i < len(v) else 0.0,
             })
@@ -309,7 +309,6 @@ def _trade_forex() -> list[dict[str, Any]]:
 def _baca(kueri: str, param: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Baca DB secara sinkron. Dipanggil lewat thread supaya loop tetap jalan."""
     from sqlalchemy import text
-
     from warroom_core.db import session_scope
 
     with session_scope() as s:

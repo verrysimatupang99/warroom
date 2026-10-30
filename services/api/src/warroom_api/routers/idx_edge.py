@@ -57,7 +57,9 @@ async def harga(kode: str) -> dict[str, Any]:
 
 
 @router.get("/harga")
-async def harga_banyak(codes: str = Query(..., description="Daftar kode dipisah koma, maks 20")) -> dict[str, Any]:
+async def harga_banyak(
+    codes: str = Query(..., description="Daftar kode dipisah koma, maks 20"),
+) -> dict[str, Any]:
     try:
         daftar = [k for k in codes.split(",") if k.strip()]
         return {"sumber": "idx-edge", "hasil": await idx_edge.harga_banyak(daftar)}

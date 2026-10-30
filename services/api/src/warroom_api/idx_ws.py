@@ -107,7 +107,7 @@ def sambung(detik_maks: float = 600.0, saat_pesan=None) -> int:
             while time.time() - mulai < detik_maks:
                 try:
                     potong = ss.recv(65536)
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 if not potong:
                     break
@@ -154,7 +154,11 @@ def snapshot() -> dict[str, Any]:
     umur = time.time() - isi.get("ts", 0)
     data = isi.get("data", {})
     if data.get("type") == "galat":
-        return {"tersedia": False, "alasan": data.get("pesan", "galat tidak diketahui"), "umur_detik": round(umur, 1)}
+        return {
+            "tersedia": False,
+            "alasan": data.get("pesan", "galat tidak diketahui"),
+            "umur_detik": round(umur, 1),
+        }
     return {"tersedia": True, "umur_detik": round(umur, 1), **data}
 
 
