@@ -164,6 +164,26 @@ def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "expectancy_net_r": round(t_net / len(f), 4),
         }
 
+    per_versi: dict[str, dict[str, Any]] = {}
+    for versi in sorted({str(r.get("strategy_version") or "legacy") for r in rows}):
+        f = [r for r in final if str(r.get("strategy_version") or "legacy") == versi]
+        if not f:
+            continue
+        v_tp1 = sum(1 for r in f if r["hasil"] == "tp1")
+        v_total = round(sum(float(r["r"]) for r in f), 3)
+        v_net = round(sum(_net(r) for r in f), 3)
+        per_versi[versi] = {
+            "n_terkirim": sum(
+                1 for r in rows if str(r.get("strategy_version") or "legacy") == versi
+            ),
+            "n_terisi": len(f),
+            "tp1": v_tp1,
+            "sl": sum(1 for r in f if r["hasil"] == "sl"),
+            "winrate": round(v_tp1 / len(f) * 100, 1),
+            "expectancy_r": round(v_total / len(f), 4),
+            "expectancy_net_r": round(v_net / len(f), 4),
+        }
+
     sama = sum(1 for r in rows if r.get("hasil") == r.get("hasil_cache"))
     return {
         "n_terkirim": len(rows),
@@ -180,6 +200,7 @@ def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "biaya_r_rata": round(sum(biaya) / len(biaya), 4) if biaya else None,
         "kategori": dict(sorted(kategori.items())),
         "per_tier": per_tier,
+        "per_versi": per_versi,
         "sama_cache": sama,
         "beda_cache": len(rows) - sama,
     }

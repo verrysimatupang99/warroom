@@ -23,6 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "packages" / "core" / "src"))
 
+from warroom_core.deal_koreksi import KOREKSI_DEFAULT, baca_koreksi, terapkan  # noqa: E402
 from warroom_core.forwardtest import DEALS_DEFAULT, baca_csv  # noqa: E402
 from warroom_core.rekonsiliasi_deal import (  # noqa: E402
     TOLERANSI_DEFAULT,
@@ -43,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Rekonsiliasi statement MT5 vs deals.csv")
     p.add_argument("--statement", type=Path, required=True, help="statement/report MT5 (.htm)")
     p.add_argument("--deals", type=Path, default=DEALS_DEFAULT, help="path deals.csv")
+    p.add_argument("--koreksi", type=Path, default=KOREKSI_DEFAULT, help="path koreksi deal")
     p.add_argument("--sejak", type=_tanggal, default=None, help="batas awal (YYYY-MM-DD)")
     p.add_argument("--sampai", type=_tanggal, default=None, help="batas akhir (YYYY-MM-DD)")
     p.add_argument(
@@ -69,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     deals, deals_ada = baca_csv(args.deals)
+    deals = terapkan(deals, baca_koreksi(args.koreksi))
     if not deals_ada:
         print(f"catatan: {args.deals} belum ada — semua deal statement akan dianggap hilang.",
               file=sys.stderr)

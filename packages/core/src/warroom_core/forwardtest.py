@@ -18,6 +18,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from warroom_core.deal_koreksi import baca_koreksi, terapkan
+
 DEALS_DEFAULT = Path("/var/lib/warroom/deals.csv")
 FILLS_DEFAULT = Path("/var/lib/warroom/fills.csv")
 
@@ -84,6 +86,7 @@ def ringkas(
     *,
     deals_path: Path = DEALS_DEFAULT,
     fills_path: Path = FILLS_DEFAULT,
+    koreksi_path: Path | None = None,
     mulai: date = MULAI_DEFAULT,
     hari_ini: date | None = None,
     target: int = TARGET_TRADE,
@@ -92,6 +95,8 @@ def ringkas(
     """Hitung status DoD forward test. Semua angka berasal dari berkas yang dibaca."""
     hari_ini = hari_ini or datetime.now(UTC).date()
     deals, deals_ada = baca_csv(deals_path)
+    if koreksi_path is not None:
+        deals = terapkan(deals, baca_koreksi(koreksi_path))
     fills, fills_ada = baca_csv(fills_path)
 
     unik: dict[str, dict[str, str]] = {}

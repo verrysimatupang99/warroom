@@ -137,3 +137,18 @@ def test_tanggal_deal_dari_close_time_atau_iso() -> None:
     assert tanggal_deal({"close_time": "2026.10.30 08:15:00"}) == date(2026, 10, 30)
     assert tanggal_deal({"close_time": "", "iso": "2026-11-01 09:00:00"}) == date(2026, 11, 1)
     assert tanggal_deal({"close_time": "bukan tanggal"}) is None
+
+def test_koreksi_net_dipakai_tracker(tmp_path) -> None:
+    _tulis(tmp_path / "deals.csv", DEALS_HEADER, [_deal(9005)])
+    (tmp_path / "koreksi.csv").write_text(
+        "ts,ticket,field,old,new,reason,source\n"
+        "2026-10-30T09:00:00+00:00,9005,net,8.50,9.50,statement,uji\n",
+        encoding="utf-8",
+    )
+    hasil = ringkas(
+        deals_path=tmp_path / "deals.csv",
+        fills_path=tmp_path / "fills.csv",
+        koreksi_path=tmp_path / "koreksi.csv",
+        hari_ini=date(2026, 10, 30),
+    )
+    assert hasil["net_usd"] == 9.5
