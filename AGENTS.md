@@ -41,7 +41,7 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 ```
 
 **`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **30 Okt 2026: 879** (`--collect-only`), dan run penuh sampai 100%
+Jumlah tes per **30 Okt 2026: 882** (`--collect-only`), dan run penuh sampai 100%
 tanpa kegagalan. Angka lama 824 (14 Okt 2026) sudah tidak berlaku. Kalau menyentuh tes,
 perbarui angka ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.

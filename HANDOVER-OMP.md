@@ -131,7 +131,9 @@ sudah di tepi curve-fitting.
   `deals.csv` untuk `closed` dan `fills.csv` untuk `entries`; fills tetap sumber
   slippage/latensi.
 - Uji end-to-end: deal sintetis ticket `999999` muncul di jurnal dengan net $8,50,
-  lalu berkas uji dihapus. Suite: **875 passed, 3 skipped, 1 xfailed (879 collected)**.
+  lalu berkas uji dihapus.
+- Exposure gate kini membaca posisi paper nyata (3 total/2 searah dari settings);
+  verdict tidak lagi menulis `0/2` saat dua SHORT terbuka. Suite: **878 passed, 3 skipped, 1 xfailed (882 collected)**.
 - Rollback EA: `WarRoom_AutoTrader_v3.ex5.v30bak` / `.mq5.v30bak` di data folder Azure;
   source v3.1 juga ada di `MQL5/Experts/WarRoom_AutoTrader_v31.mq5`.
 
