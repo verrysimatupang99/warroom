@@ -79,6 +79,15 @@ pada jendela resminya.
   tidak pernah ditutup saat hari berganti. Job `notify` kini menutup alert benched
   bertanggal lampau (dan format lama tanpa tanggal); `strategi/kill-switch` tidak
   disentuh. Tes: `test_alert_benched_housekeeping.py` (2 kasus).
+- **Bukti kirim Telegram diperkuat.** `telegram 200` saja tidak membuktikan pesan masuk
+  ke topik yang benar. `TelegramTransport` kini membaca JSON Bot API dan menolak
+  `ok=false`, chat id beda, thread beda, atau `message_thread_id` hilang; detail sukses
+  mencatat `msg=<id> chat=<id> thread=<id>`. 4 tes baru (20 total di notifier).
+- **Percobaan pertama paper $20 selalu gagal kirim.** `paper20-cycle.service` membuat
+  alert di prosesnya sendiri tetapi tidak memuat `/etc/warroom/notifier.env`, sehingga
+  transport `null` dan pesan baru terkirim pada siklus `notify` worker (hingga 5 menit).
+  Unit kini memuat env yang sama; dibuktikan lewat `systemd-run` dengan env unit:
+  `transport=telegram chat=-1004383844873 thread=237 token=True`.
 
 ### Berikutnya
 
