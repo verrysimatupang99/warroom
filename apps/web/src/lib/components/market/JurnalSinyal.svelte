@@ -12,6 +12,8 @@
 		winrate?: number | null;
 		total_r?: number;
 		expectancy_r?: number | null;
+		total_r_net?: number;
+		expectancy_net_r?: number | null;
 	}
 	interface Ringkas {
 		n_terkirim?: number;
@@ -22,6 +24,10 @@
 		total_r?: number;
 		expectancy_r?: number | null;
 		expectancy_0r?: number | null;
+		total_r_net?: number;
+		expectancy_net_r?: number | null;
+		expectancy_net_0r?: number | null;
+		biaya_r_rata?: number | null;
 		beda_cache?: number;
 		per_tier?: Record<string, TierRingkas>;
 	}
@@ -33,6 +39,7 @@
 		entry?: number | null;
 		hasil?: string;
 		r?: number | null;
+		r_net?: number | null;
 		hasil_cache?: string;
 		r_cache?: number | null;
 	}
@@ -40,6 +47,7 @@
 	let ringkas = $state<Ringkas | null>(null);
 	let rows = $state<Baris[]>([]);
 	let dihitung = $state<string | null>(null);
+	let fee = $state<number | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -54,6 +62,7 @@
 				ringkas = isi?.ringkas ?? null;
 				rows = (isi?.rows ?? []) as Baris[];
 				dihitung = isi?.dihitung_at ?? null;
+				fee = isi?.fee_bps_per_sisi ?? null;
 			}
 		} catch (e) {
 			galat = e instanceof Error ? e.message : 'gagal menghubungi API';
@@ -95,7 +104,7 @@
 	{:else if !ringkas || (ringkas.n_terkirim ?? 0) === 0}
 		<p class="mt-2 text-11 text-text-3">Belum ada sinyal terkirim yang bisa dinilai.</p>
 	{:else}
-		<dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+		<dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
 			<div>
 				<dt class="label-mikro font-mono text-text-3">TERKIRIM</dt>
 				<dd class="mt-0.5 font-mono text-14 font-bold text-text">{ringkas.n_terkirim}</dd>
@@ -109,16 +118,26 @@
 				<dd class="mt-0.5 font-mono text-14 font-bold text-text">{angka(ringkas.winrate, 1)}%</dd>
 			</div>
 			<div>
-				<dt class="label-mikro font-mono text-text-3">EXPECTANCY</dt>
+				<dt class="label-mikro font-mono text-text-3">EXP GROSS</dt>
 				<dd class="mt-0.5 font-mono text-14 font-bold" class:text-pos={(ringkas.expectancy_r ?? 0) > 0}>
 					{angka(ringkas.expectancy_r)}R
 				</dd>
 			</div>
 			<div>
-				<dt class="label-mikro font-mono text-text-3">TOTAL</dt>
-				<dd class="mt-0.5 font-mono text-14 font-bold text-text">{angka(ringkas.total_r, 2)}R</dd>
+				<dt class="label-mikro font-mono text-text-3">EXP NET</dt>
+				<dd class="mt-0.5 font-mono text-14 font-bold" class:text-pos={(ringkas.expectancy_net_r ?? 0) > 0} class:text-neg={(ringkas.expectancy_net_r ?? 0) <= 0}>
+					{angka(ringkas.expectancy_net_r)}R
+				</dd>
+			</div>
+			<div>
+				<dt class="label-mikro font-mono text-text-3">TOTAL NET</dt>
+				<dd class="mt-0.5 font-mono text-14 font-bold text-text">{angka(ringkas.total_r_net, 2)}R</dd>
 			</div>
 		</dl>
+		<p class="mt-1 font-mono text-10 text-text-3">
+			Net setelah biaya {fee ?? '—'} bps/sisi (round-trip {(2 * (fee ?? 0)).toFixed(1)} bps);
+			rata-rata biaya {angka(ringkas.biaya_r_rata)}R/trade.
+		</p>
 
 		<div class="mt-3 grid gap-2 sm:grid-cols-2">
 			{#each Object.entries(ringkas.per_tier ?? {}) as [tier, t] (tier)}
@@ -129,8 +148,9 @@
 					</div>
 					<div class="mt-1 flex flex-wrap gap-x-3 font-mono text-11">
 						<span class="text-text">WR {angka(t.winrate, 1)}%</span>
-						<span class:text-pos={(t.expectancy_r ?? 0) > 0} class:text-neg={(t.expectancy_r ?? 0) <= 0}>
-							{angka(t.expectancy_r)}R/trade
+						<span class="text-text-3">gross {angka(t.expectancy_r)}R</span>
+						<span class:text-pos={(t.expectancy_net_r ?? 0) > 0} class:text-neg={(t.expectancy_net_r ?? 0) <= 0}>
+							net {angka(t.expectancy_net_r)}R
 						</span>
 						<span class="text-text-3">TP1 {t.tp1 ?? 0} · SL {t.sl ?? 0}</span>
 					</div>
@@ -154,7 +174,7 @@
 							<th class="px-2 py-1.5">Tier</th>
 							<th class="px-2 py-1.5 text-right">Entry</th>
 							<th class="px-2 py-1.5">Hasil</th>
-							<th class="px-2 py-1.5 text-right">R</th>
+							<th class="px-2 py-1.5 text-right">R net</th>
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-line-soft">
@@ -180,8 +200,8 @@
 										{v.hasil ?? '—'}
 									</span>
 								</td>
-								<td class="px-2 py-1.5 text-right font-mono" class:text-pos={(v.r ?? 0) > 0} class:text-neg={(v.r ?? 0) < 0}>
-									{angka(v.r, 2)}
+								<td class="px-2 py-1.5 text-right font-mono" class:text-pos={(v.r_net ?? v.r ?? 0) > 0} class:text-neg={(v.r_net ?? v.r ?? 0) < 0}>
+									{angka(v.r_net ?? v.r, 2)}
 								</td>
 							</tr>
 						{/each}
