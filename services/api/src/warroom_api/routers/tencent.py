@@ -556,6 +556,7 @@ class MT5DealPayload(BaseModel):
     commission: float = 0.0
     magic: int = 0
     comment: str = ""
+    strategy_version: str = ""
 
 
 DEAL_LOG = Path("/var/lib/warroom/deals.csv")
@@ -563,6 +564,7 @@ _DEAL_HEADER = [
     "ts", "iso", "ticket", "position", "symbol", "side", "volume",
     "open_time", "open_price", "close_time", "close_price",
     "profit", "swap", "commission", "net", "magic", "comment",
+    "strategy_version",
 ]
 _DEAL_LOCK = threading.Lock()
 
@@ -617,6 +619,7 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
                     round(net, 2),
                     payload.magic,
                     payload.comment,
+                    payload.strategy_version or "unknown",
                 ])
         except OSError as exc:
             log.warning("gagal tulis deals.csv: %s", exc)

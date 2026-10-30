@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from warroom_core.deal_koreksi import KOREKSI_DEFAULT, baca_koreksi, terapkan
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) WarRoom/2.0"
 MEXC = "https://api.mexc.com"
@@ -301,6 +302,7 @@ def _trade_forex() -> list[dict[str, Any]]:
                 "pnl_usd": r.get("net", ""),
                 "pnl_pct": "",
                 "ticket": r.get("ticket", ""),
+                "strategy_version": r.get("strategy_version") or "unknown",
                 "market": "forex",
             }
         )
@@ -331,12 +333,12 @@ def _baca_fills() -> list[dict[str, Any]]:
         return []
 
 def _baca_deals() -> list[dict[str, Any]]:
-    """Deal tertutup (satu baris per posisi) yang dilaporkan EA."""
+    """Deal tertutup (satu baris per posisi) yang dilaporkan EA, sudah dikoreksi."""
     if not DEALS.exists():
         return []
     try:
         with DEALS.open(newline="") as f:
-            return list(csv.DictReader(f))
+            return terapkan(list(csv.DictReader(f)), baca_koreksi(KOREKSI_DEFAULT))
     except OSError:
         return []
 

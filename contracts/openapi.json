@@ -305,6 +305,11 @@
             "title": "Side",
             "type": "string"
           },
+          "strategy_version": {
+            "default": "",
+            "title": "Strategy Version",
+            "type": "string"
+          },
           "swap": {
             "default": 0.0,
             "title": "Swap",
