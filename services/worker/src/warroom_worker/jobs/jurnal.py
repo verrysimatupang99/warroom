@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Job
 from warroom_core.jurnal_sinyal import biaya_r, cocokkan, muat_outcomes, ringkas
+from warroom_core.montecarlo import bootstrap
 
 from .base import _tulis_fakta, root_dir
 
@@ -46,6 +47,8 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
     keluaran = Path(p.get("output", str(JURNAL_PATH)))
     ttl_s = int(p.get("ttl_s", 86400))
     fee_bps = float(p.get("fee_bps_per_sisi", 5))
+    mc_n = int(p.get("mc_n", 10000))
+    mc_seed = int(p.get("mc_seed", 42))
     catatan = ""
 
     if bool(p.get("refresh_outcomes", True)):
@@ -104,6 +107,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
             "pair": m["pair"],
             "side": m["side"],
             "tier": v.get("tier"),
+            "strategy_version": v.get("strategy_version") or "legacy",
             "entry": v.get("entry"),
             "sl": v.get("sl"),
             "tp1": v.get("tp1"),
@@ -153,6 +157,13 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
             }
         )
     ringkasan = ringkas(hasil)
+    r_net = [
+        float(r["r_net"])
+        for r in hasil
+        if r.get("r_net") is not None
+        and r.get("hasil") in ("tp1", "tp2", "sl", "kedaluwarsa", "terbuka")
+    ]
+    mc = bootstrap(r_net, n=mc_n, seed=mc_seed)
     data = {
         "dihitung_at": now.isoformat(),
         "sumber": "alerts + outcomes.jsonl + Binance 1H sejak jam setelah kirim",
@@ -161,6 +172,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
         "gagal_pair": gagal,
         "catatan": catatan,
         "ringkas": ringkasan,
+        "montecarlo": mc,
         "rows": hasil[-500:],
     }
     keluaran.parent.mkdir(parents=True, exist_ok=True)
@@ -178,6 +190,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
             "n_rows": len(hasil),
             "gagal_pair": gagal,
             "fee_bps_per_sisi": fee_bps,
+            "montecarlo": mc,
         },
         source="lokal:alerts+outcomes+binance",
         ttl_s=ttl_s,
@@ -185,7 +198,7 @@ def handler_jurnal_sinyal(s: SASession, job: Job) -> str:
     return (
         f"alert={len(alerts)} cocok={len(matched)} final={ringkasan['n_terisi']} "
         f"wr={ringkasan['winrate']}% exp={ringkasan['expectancy_r']}R "
-        f"net={ringkasan['expectancy_net_r']}R fee={fee_bps}bps "
+        f"net={ringkasan['expectancy_net_r']}R fee={fee_bps}bps p_profit={mc.get('p_profit')}% "
         f"beda_cache={ringkasan['beda_cache']} gagal_pair={len(gagal)}"
         + (f" catatan={catatan}" if catatan else "")
     )

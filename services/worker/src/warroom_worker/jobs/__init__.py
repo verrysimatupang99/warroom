@@ -35,6 +35,7 @@ from .infra import (
     handler_collect,  # noqa: F401
     handler_forwardtest_watchdog,  # noqa: F401
     handler_freshness,  # noqa: F401
+    handler_job_health,  # noqa: F401
     handler_lp_mark,  # noqa: F401
     handler_notify,  # noqa: F401
     handler_publish_facts,  # noqa: F401
@@ -71,6 +72,7 @@ __all__ = [
     "handler_freshness",
     "handler_forwardtest_watchdog",
     "handler_jurnal_sinyal",
+    "handler_job_health",
     "handler_notify",
     "handler_collect",
     "handler_refresh_snapshot",

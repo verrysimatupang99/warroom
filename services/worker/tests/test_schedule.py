@@ -79,7 +79,7 @@ def test_daftar_job_idempoten(db) -> None:
         kedua = schedule.ensure_jobs(s)
         total = len(s.scalars(select(Job)).all())
     assert set(pertama) == {
-        "publish-facts", "freshness", "forwardtest-watchdog", "jurnal-sinyal", "notify",
+        "publish-facts", "freshness", "forwardtest-watchdog", "jurnal-sinyal", "job-health", "notify",
         "refresh-snapshot",
         "radar-update", "lp-mark",
         "collect", "backup", "poly-sync", "verdict-sync", "parity-drift", "gmgn-sync",
@@ -89,7 +89,7 @@ def test_daftar_job_idempoten(db) -> None:
         "reconcile-crypto", "lpagent-sync", "polybtc-sync", "break-retest-scan",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 32
+    assert total == 33
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -311,6 +311,7 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         "publish-facts",
         "freshness",
         "forwardtest-watchdog",
+        "job-health",
         "notify",
         "lpagent-sync",
         "prompts-sync",

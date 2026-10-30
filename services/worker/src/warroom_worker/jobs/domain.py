@@ -305,6 +305,7 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
             "pair": sg["pair"],
             "arah": sg["arah"],
             "tier": sg.get("tier"),
+            "strategy_version": sg.get("strategy_version") or "legacy",
             "entry": sg.get("entry"),
             "sl": sg.get("sl"),
             "tp1": sg.get("tp1"),

@@ -637,3 +637,57 @@ def handler_forwardtest_watchdog(s: SASession, job: Job) -> str:
     )
 
 
+
+
+def handler_job_health(s: SASession, job: Job) -> str:
+    """Alert bila job aktif gagal atau tidak jalan melewati 3x intervalnya.
+
+    `freshness` hanya melihat umur fakta; job yang tidak menulis fakta (mis. backup,
+    retention, source-health) bisa mati tanpa alarm. DeepSeek 2026 menunjukkan 90%
+    respons cron gagal dan tidak ada yang tahu sampai dibaca manual.
+    """
+    now = datetime.now(UTC)
+    p = job.payload_json or {}
+    faktor = float(p.get("stale_factor", 3))
+    min_stale = float(p.get("min_stale_s", 900))
+    alert_baru = 0
+    pulih = 0
+    diperiksa = 0
+    for j in s.scalars(select(Job).where(Job.enabled.is_(True))).all():
+        if j.name == job.name or j.last_run_at is None:
+            continue
+        diperiksa += 1
+        umur = max(0.0, (now - j.last_run_at).total_seconds())
+        batas = max(faktor * j.interval_s, min_stale)
+        stale = umur > batas
+        gagal = str(j.last_status or "") == "gagal"
+        subjek = f"job/{j.name}"
+        if gagal or stale:
+            alasan = []
+            if gagal:
+                alasan.append(f"status terakhir gagal: {j.last_detail[-120:] if j.last_detail else '-'}")
+            if stale:
+                alasan.append(f"tidak jalan {umur / 60:.1f} mnt (batas {batas / 60:.1f} mnt)")
+            if _alert(
+                s,
+                subject=subjek,
+                severity="warning",
+                message=f"job {j.name}: " + "; ".join(alasan),
+                aksi=(
+                    f"periksa `journalctl -u warroom-worker` dan baris jobs '{j.name}'; "
+                    "jalankan ulang setelah penyebabnya jelas"
+                ),
+            ):
+                alert_baru += 1
+        elif _tutup_alert(s, subjek, "job kembali ok dan tepat waktu", now=now):
+            pulih += 1
+    if alert_baru or pulih:
+        s.add(
+            Event(
+                type="job.health",
+                actor="worker",
+                payload_json={"diperiksa": diperiksa, "alert_baru": alert_baru, "pulih": pulih},
+                severity="warning" if alert_baru else "info",
+            )
+        )
+    return f"diperiksa={diperiksa} alert={alert_baru} pulih={pulih}"

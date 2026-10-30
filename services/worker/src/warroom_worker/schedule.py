@@ -68,6 +68,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="job-health",
+        interval_s=300,
+        enabled=True,
+        payload={"stale_factor": 3, "min_stale_s": 900},
+        note=(
+            "alert bila job aktif gagal atau tidak jalan >3x interval; auto-ack saat pulih. "
+            "Menutup celah job yang tidak menulis fakta (backup/retention/source-health)."
+        ),
+    ),
+    JobSpec(
         name="notify",
         interval_s=300,
         enabled=True,
