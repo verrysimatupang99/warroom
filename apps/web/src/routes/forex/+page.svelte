@@ -25,7 +25,7 @@
 	aktif={sub}
 	judul="Forex & Gold"
 	tag="AKTIF"
-	deskripsi="Eksekusi demo XAUUSD lewat EA di Azure. Sinyal dari Laya Sentinel, eksekusi dicatat lokal."
+	deskripsi="Eksekusi demo XAUUSD lewat EA Reaper di Azure. Sinyal dihitung lokal di EA (EMA+RSI), telemetri dicatat ke server."
 	sumber="Telemetri MT5 + fills.csv"
 	terverifikasi={true}
 >
