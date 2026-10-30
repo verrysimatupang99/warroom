@@ -28,6 +28,7 @@ _FILTER = (
     "/forex/journal/edge",
     "/forex/journal/performance",
     "/forex/journal/multipair",
+    "/forex/journal/scanlog",
 )
 
 
@@ -62,9 +63,9 @@ async def journal_edge(market: str = MarketQ) -> dict[str, Any]:
 
 
 @router.get("/scanlog")
-async def journal_scanlog() -> dict[str, Any]:
-    """Alasan sinyal ditolak (gate reject, blackout, ATR tipis)."""
-    return await _ambil("/forex/journal/scanlog")
+async def journal_scanlog(market: str = MarketQ) -> dict[str, Any]:
+    """Riwayat keputusan: forex = evaluasi EA, crypto = verdicts. Tidak dicampur."""
+    return await _ambil("/forex/journal/scanlog", market)
 
 
 @router.get("/performance")

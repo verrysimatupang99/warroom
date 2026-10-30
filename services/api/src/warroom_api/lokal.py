@@ -358,7 +358,7 @@ async def _snapshot_terakhir() -> dict[str, Any] | None:
 async def _deret_ekuitas(batas: int = 2000) -> list[dict[str, Any]]:
     baris = await _db(
         "select value_json, observed_at from facts where kind='mt5_snapshot' "
-        "order by observed_at asc limit :n",
+        "order by observed_at desc limit :n",
         {"n": batas},
     )
     hasil = []
@@ -368,6 +368,9 @@ async def _deret_ekuitas(batas: int = 2000) -> list[dict[str, Any]]:
             v = json.loads(v)
         hasil.append({"t": str(r["observed_at"]), "equity": v.get("equity"),
                       "balance": v.get("balance"), "pnl_hari": v.get("net_pnl_today_usd")})
+    # Query mengambil N TERBARU (desc) supaya deret tidak membeku di 2000 titik pertama;
+    # grafik butuh urutan waktu naik.
+    hasil.reverse()
     return hasil
 
 
@@ -489,8 +492,45 @@ async def journal_edge(market: str = "all") -> dict[str, Any]:
     }
 
 
+def _drawdown_maks(deret: list[dict[str, Any]]) -> float:
+    """Drawdown maksimum (%) dari puncak berjalan, bukan dari titik awal."""
+    puncak: float | None = None
+    maks = 0.0
+    for d in deret:
+        eq = d.get("equity")
+        if eq is None:
+            continue
+        puncak = float(eq) if puncak is None else max(puncak, float(eq))
+        if puncak > 0:
+            maks = max(maks, (puncak - float(eq)) / puncak * 100)
+    return round(maks, 3)
+
+
+def _marker_forex() -> list[dict[str, Any]]:
+    """Deal tertutup sebagai penanda di kurva ekuitas (terbaru di akhir)."""
+    hasil = []
+    for d in _trade_forex():
+        net = d.get("pnl_usd")
+        try:
+            net_f = round(float(net), 2) if str(net).strip() not in ("", "None") else None
+        except (TypeError, ValueError):
+            net_f = None
+        hasil.append(
+            {
+                "t": d.get("iso", ""),
+                "ticket": d.get("ticket", ""),
+                "symbol": d.get("symbol", ""),
+                "side": d.get("side", ""),
+                "net_usd": net_f,
+            }
+        )
+    hasil.sort(key=lambda x: str(x["t"]))
+    return hasil[-200:]
+
+
 async def journal_performance(market: str = "all") -> dict[str, Any]:
-    if _cek_market(market) == "crypto":
+    m = _cek_market(market)
+    if m == "crypto":
         raise SumberKosong(
             "Riwayat ekuitas crypto belum direkam: paper trader menyimpan kondisi "
             "terakhir saja, bukan deret waktu. Riwayat mulai terkumpul setelah "
@@ -502,12 +542,16 @@ async def journal_performance(market: str = "all") -> dict[str, Any]:
     akhir = deret[-1]
     awal = deret[0]
     puncak = max((d["equity"] or 0) for d in deret)
+    markers = await asyncio.to_thread(_marker_forex) if m in ("all", "forex") else []
     return {
         "sumber": "lokal:mt5_snapshot",
+        "market": m,
         "n_titik": len(deret),
         "ekuitas_awal": awal["equity"],
         "ekuitas_akhir": akhir["equity"],
         "puncak": puncak,
+        "drawdown_max_pct": _drawdown_maks(deret),
+        "markers": markers,
         "perubahan_pct": round((akhir["equity"] - awal["equity"]) / awal["equity"] * 100, 3)
         if awal["equity"] else None,
         "deret": deret[-500:],
@@ -545,8 +589,8 @@ async def journal_watchlist() -> dict[str, Any]:
     }
 
 
-async def journal_scanlog() -> dict[str, Any]:
-    """Alasan sinyal ditolak, dari verdicts harian live-trading."""
+def _baca_verdicts() -> tuple[list[dict[str, Any]], int]:
+    """Verdict crypto terbaru (100 terakhir) + total baris. Berkas tidak ada → SumberKosong."""
     if not VERDICTS.exists():
         raise SumberKosong("Berkas verdicts belum ada di server ini.")
     baris: list[str] = []
@@ -558,14 +602,110 @@ async def journal_scanlog() -> dict[str, Any]:
                     baris.append(ln)
     except OSError as exc:
         raise SumberKosong(f"Gagal baca verdicts: {exc}") from exc
-    ekor = baris[-100:]
     keluar = []
-    for ln in ekor:
+    for ln in baris[-100:]:
         try:
             keluar.append(json.loads(ln))
         except ValueError:
             continue
-    return {"sumber": "lokal:verdicts.jsonl", "n": len(baris), "terakhir": keluar[::-1]}
+    return keluar[::-1], len(baris)
+
+async def _scanlog_crypto() -> dict[str, Any]:
+    keluar, total = await asyncio.to_thread(_baca_verdicts)
+    if not keluar:
+        raise SumberKosong("Berkas verdicts ada tetapi tidak memuat baris JSON yang sah.")
+    return {
+        "sumber": "lokal:verdicts.jsonl",
+        "market": "crypto",
+        "n": total,
+        "terakhir": keluar,
+    }
+
+async def _scanlog_forex() -> dict[str, Any]:
+    """Riwayat evaluasi EA (bukan verdict crypto), dari fakta `mt5_snapshot`.
+
+    Snapshot ditulis maksimal sekali per menit. Baris dengan isi evaluasi identik
+    digabung supaya tabel tidak penuh salinan yang sama; yang ditampilkan adalah
+    perubahan keputusan, bukan irama telemetri.
+    """
+    baris = await _db(
+        "select value_json, observed_at from facts where kind='mt5_snapshot' "
+        "order by observed_at desc limit :n",
+        {"n": 500},
+    )
+    if not baris:
+        raise SumberKosong(
+            "Belum ada telemetri MT5 yang terekam. Riwayat evaluasi EA muncul setelah "
+            "EA mengirim snapshot pertama."
+        )
+    unik: list[dict[str, Any]] = []
+    sudah: set[tuple] = set()
+    for r in baris:
+        v = r.get("value_json")
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except ValueError:
+                continue
+        if not isinstance(v, dict):
+            continue
+        kunci = (
+            v.get("eval_at"),
+            v.get("eval_alasan"),
+            v.get("eval_sesi"),
+            v.get("eval_atr"),
+            v.get("eval_rsi"),
+            v.get("eval_ema_fast"),
+            v.get("eval_ema_slow"),
+            v.get("eval_tren"),
+        )
+        if kunci in sudah:
+            continue
+        sudah.add(kunci)
+        ts = r.get("observed_at")
+        unik.append(
+            {
+                "ts": ts.isoformat() if hasattr(ts, "isoformat") else str(ts or ""),
+                "pair": "XAUUSD",
+                "eval_at": v.get("eval_at"),
+                "sesi": bool(v.get("eval_sesi")),
+                "alasan": v.get("eval_alasan") or "(EA belum mengirim alasan evaluasi)",
+                "atr": v.get("eval_atr"),
+                "spread": v.get("eval_spread"),
+                "rsi": v.get("eval_rsi"),
+                "ema_fast": v.get("eval_ema_fast"),
+                "ema_slow": v.get("eval_ema_slow"),
+                "tren": v.get("eval_tren"),
+            }
+        )
+        if len(unik) >= 50:
+            break
+    return {
+        "sumber": "lokal:mt5_snapshot",
+        "market": "forex",
+        "n": len(unik),
+        "n_snapshot": len(baris),
+        "terakhir": unik,
+    }
+
+async def journal_scanlog(market: str = "all") -> dict[str, Any]:
+    """Alasan keputusan per market. Forex = evaluasi EA; crypto = verdicts.jsonl.
+
+    `all` mengembalikan dua bagian terpisah — tidak pernah mencampur pair crypto ke
+    riwayat forex atau sebaliknya.
+    """
+    m = _cek_market(market)
+    if m == "forex":
+        return await _scanlog_forex()
+    if m == "crypto":
+        return await _scanlog_crypto()
+    hasil: dict[str, Any] = {"market": "all"}
+    for nama, fn in (("forex", _scanlog_forex), ("crypto", _scanlog_crypto)):
+        try:
+            hasil[nama] = await fn()
+        except SumberKosong as exc:
+            hasil[nama] = {"market": nama, "n": 0, "terakhir": [], "catatan": str(exc)}
+    return hasil
 
 
 async def journal_charts() -> dict[str, Any]:
@@ -626,13 +766,14 @@ async def sebar(path: str, params: dict[str, Any] | None = None) -> Any:
         "/forex/journal/multipair": journal_multipair,
     }
     if path in jurnal:
-        # Lima endpoint menerima filter market: all | forex | crypto.
+        # Enam endpoint menerima filter market: all | forex | crypto.
         if path in {
             "/forex/journal/stats",
             "/forex/journal/trades",
             "/forex/journal/edge",
             "/forex/journal/performance",
             "/forex/journal/multipair",
+            "/forex/journal/scanlog",
         }:
             return await jurnal[path](str(p.get("market", "all")))
         return await jurnal[path]()

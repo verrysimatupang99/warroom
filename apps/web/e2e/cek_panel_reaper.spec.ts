@@ -35,3 +35,19 @@ test.describe('/forex — status mesin Reaper', () => {
 		await expect(panel.getByText(/menit lalu/)).toBeVisible();
 	});
 });
+
+test.describe('/forex — riwayat evaluasi EA', () => {
+	test.skip(!KREDENSIAL.user || !KREDENSIAL.pass, PESAN_SKIP);
+
+	test('menampilkan alasan EA tanpa mencampur verdict crypto', async ({ page }) => {
+		expect(await loginLewat(page)).toBe(true);
+		await page.goto('/forex?sub=sinyal');
+		await tungguSiap(page);
+
+		const panel = page.locator('section').filter({ hasText: 'Riwayat evaluasi EA' });
+		await expect(panel).toBeVisible({ timeout: 15_000 });
+		await expect(panel.getByText('XAUUSD', { exact: false }).first()).toBeVisible();
+		// Pair crypto tidak boleh muncul di panel forex.
+		await expect(panel.getByText(/USDT/)).toHaveCount(0);
+	});
+});

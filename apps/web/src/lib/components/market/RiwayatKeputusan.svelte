@@ -4,6 +4,11 @@
 	import { onMount } from 'svelte';
 	import { urlApi } from '$lib/api/client';
 
+	interface Props {
+		market?: 'crypto' | 'forex' | 'all';
+	}
+	let { market = 'crypto' }: Props = $props();
+
 	interface Aturan { rule?: string; ok?: boolean; hard?: boolean; reason?: string }
 	interface Verdict {
 		ts?: string; pair?: string; direction?: string; strategy?: string; mode?: string;
@@ -18,7 +23,9 @@
 
 	onMount(async () => {
 		try {
-			const r = await fetch(urlApi('/api/v1/journal/scanlog'), { credentials: 'include' });
+			const r = await fetch(urlApi(`/api/v1/journal/scanlog?market=${market}`), {
+				credentials: 'include'
+			});
 			const isi = await r.json().catch(() => null);
 			if (!r.ok) galat = isi?.error?.message ?? `HTTP ${r.status}`;
 			else {
@@ -76,7 +83,9 @@
 
 <section class="rounded-card border border-line bg-surface p-4">
 	<div class="flex flex-wrap items-center justify-between gap-2">
-		<h2 class="text-13 font-bold text-text">Riwayat keputusan</h2>
+		<h2 class="text-13 font-bold text-text">
+			Riwayat keputusan{market === 'crypto' ? ' crypto' : market === 'forex' ? ' forex' : ''}
+		</h2>
 		<div class="flex items-center gap-1.5">
 			{#each [['semua', 'Semua'], ['ditolak', 'Ditolak'], ['lolos', 'Lolos']] as [k, label] (k)}
 				<button

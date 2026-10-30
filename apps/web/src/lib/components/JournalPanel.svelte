@@ -4,6 +4,7 @@
 	import { urlApi } from '$lib/api/client';
 	import EmptyState from './EmptyState.svelte';
 	import Skeleton from './Skeleton.svelte';
+	import KurvaEkuitas from './KurvaEkuitas.svelte';
 
 	interface Props {
 		market?: 'all' | 'forex' | 'crypto';
@@ -36,7 +37,9 @@
 	}
 	interface Kinerja {
 		n_titik?: number; ekuitas_awal?: Angka; ekuitas_akhir?: Angka;
-		puncak?: Angka; perubahan_pct?: Angka;
+		puncak?: Angka; perubahan_pct?: Angka; drawdown_max_pct?: Angka;
+		markers?: { t?: string; ticket?: string; symbol?: string; net_usd?: Angka }[];
+		deret?: { t?: string; equity?: Angka }[];
 	}
 
 	let stats = $state<Stats | null>(null);
@@ -183,7 +186,16 @@
 							<dd class="text-right font-mono text-text">
 								{kinerja.perubahan_pct == null ? '—' : `${kinerja.perubahan_pct} %`}
 							</dd>
+							<dt class="text-text-3">Drawdown maks</dt>
+							<dd class="text-right font-mono text-neg">
+								{kinerja.drawdown_max_pct == null ? '—' : `${kinerja.drawdown_max_pct} %`}
+							</dd>
 						</dl>
+						<KurvaEkuitas
+							deret={kinerja.deret ?? []}
+							markers={kinerja.markers ?? []}
+							drawdown_pct={kinerja.drawdown_max_pct}
+						/>
 					{:else}
 						<EmptyState
 							judul="Belum ada riwayat ekuitas"

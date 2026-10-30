@@ -35,7 +35,7 @@
 	{:else if sub === 'sinyal'}
 		<div class="space-y-4">
 			<CryptoSinyal />
-			<RiwayatKeputusan />
+			<RiwayatKeputusan market="crypto" />
 		</div>
 	{:else if sub === 'uji'}
 		<PasarUji filter="crypto" />
