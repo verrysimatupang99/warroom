@@ -1,5 +1,8 @@
 """Tes filter market pada lapisan data lokal (jurnal)."""
 
+import asyncio
+
+import pytest
 from warroom_api import lokal
 
 
@@ -76,3 +79,42 @@ def test_trade_forex_dibentuk_dari_deals(monkeypatch):
     assert hasil[0]["pnl_usd"] == "20.00"
     assert hasil[0]["price_filled"] == "3910.000"
     assert hasil[0]["open_price"] == "3900.000"
+
+# --- US2.2 edge eksekusi dari fills ------------------------------------------------------
+
+def test_edge_fills_mengelompokkan_per_jam_dan_simbol(monkeypatch):
+    monkeypatch.setattr(
+        lokal,
+        "_baca_fills",
+        lambda: [
+            {"iso": "2026-10-30 08:05:00", "symbol": "XAUUSDm",
+             "slippage_pts": "1.5", "latency_ms": "120"},
+            {"iso": "2026-10-30 08:45:00", "symbol": "XAUUSDm",
+             "slippage_pts": "-0.5", "latency_ms": "180"},
+            {"iso": "2026-10-30 09:10:00", "symbol": "EURUSDm",
+             "slippage_pts": "2.0", "latency_ms": ""},
+        ],
+    )
+    hasil = asyncio.run(lokal.journal_edge("forex"))
+    assert hasil["n"] == 3
+    assert hasil["per_jam"]["08"]["n"] == 2
+    assert hasil["per_jam"]["08"]["slip_rata_pts"] == 0.5
+    assert hasil["per_jam"]["08"]["slip_terburuk_pts"] == -0.5
+    assert hasil["per_jam"]["09"]["n"] == 1
+    assert hasil["per_simbol"]["XAUUSDm"]["n"] == 2
+    assert hasil["per_simbol"]["EURUSDm"]["slip_rata_pts"] == 2.0
+    assert hasil["latensi_rata_ms"] == 150.0
+
+
+def test_edge_fills_kosong_hanya_503(monkeypatch):
+    monkeypatch.setattr(lokal, "_baca_fills", lambda: [])
+    with pytest.raises(lokal.SumberKosong) as exc:
+        asyncio.run(lokal.journal_edge("forex"))
+    assert "Belum ada fill forex" in str(exc.value)
+
+
+def test_edge_fills_crypto_ditolak_dengan_alasan(monkeypatch):
+    monkeypatch.setattr(lokal, "_baca_fills", lambda: [{"iso": "2026-10-30 08:00:00"}])
+    with pytest.raises(lokal.SumberKosong) as exc:
+        asyncio.run(lokal.journal_edge("crypto"))
+    assert "slippage nyata" in str(exc.value)
