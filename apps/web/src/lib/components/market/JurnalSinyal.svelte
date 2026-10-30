@@ -30,6 +30,7 @@
 		biaya_r_rata?: number | null;
 		beda_cache?: number;
 		per_tier?: Record<string, TierRingkas>;
+		per_versi?: Record<string, TierRingkas>;
 	}
 	interface Baris {
 		dikirim?: string;
@@ -48,6 +49,7 @@
 	let rows = $state<Baris[]>([]);
 	let dihitung = $state<string | null>(null);
 	let fee = $state<number | null>(null);
+	let mc = $state<{ p_profit?: number; total_p5?: number; total_p50?: number; total_p95?: number; maxdd_p95?: number; n_sampel?: number; n_simulasi?: number } | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -63,6 +65,7 @@
 				rows = (isi?.rows ?? []) as Baris[];
 				dihitung = isi?.dihitung_at ?? null;
 				fee = isi?.fee_bps_per_sisi ?? null;
+				mc = isi?.montecarlo ?? null;
 			}
 		} catch (e) {
 			galat = e instanceof Error ? e.message : 'gagal menghubungi API';
@@ -138,6 +141,14 @@
 			Net setelah biaya {fee ?? '—'} bps/sisi (round-trip {(2 * (fee ?? 0)).toFixed(1)} bps);
 			rata-rata biaya {angka(ringkas.biaya_r_rata)}R/trade.
 		</p>
+		{#if mc && (mc.n_sampel ?? 0) > 0}
+			<p class="mt-1 font-mono text-10 text-text-3" data-testid="montecarlo">
+				Bootstrap {mc.n_simulasi ?? 0}× dari {mc.n_sampel ?? 0} trade:
+				P(profit) <span class:text-pos={(mc.p_profit ?? 0) >= 50} class:text-neg={(mc.p_profit ?? 0) < 50}>{angka(mc.p_profit, 1)}%</span>
+				· total R P5/P50/P95 {angka(mc.total_p5, 1)}/{angka(mc.total_p50, 1)}/{angka(mc.total_p95, 1)}
+				· DD95 {angka(mc.maxdd_p95, 1)}R
+			</p>
+		{/if}
 
 		<div class="mt-3 grid gap-2 sm:grid-cols-2">
 			{#each Object.entries(ringkas.per_tier ?? {}) as [tier, t] (tier)}
@@ -157,6 +168,15 @@
 				</div>
 			{/each}
 		</div>
+
+		{#if Object.keys(ringkas.per_versi ?? {}).length > 0}
+			<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-10 text-text-3">
+				<span>Versi:</span>
+				{#each Object.entries(ringkas.per_versi ?? {}) as [versi, v] (versi)}
+					<span>{versi} · n={v.n_terisi} · WR {angka(v.winrate, 1)}% · net {angka(v.expectancy_net_r)}R</span>
+				{/each}
+			</div>
+		{/if}
 
 		<p class="mt-2 text-10 text-text-3">
 			{ringkas.beda_cache ?? 0} hasil berbeda dari cache berbasis waktu verdict. Selisih
