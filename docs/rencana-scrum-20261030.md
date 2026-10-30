@@ -190,8 +190,15 @@ US1.3 Panel cockpit | 3 | B | Ringkas menampilkan status Reaper |
 US1.4 Watchdog | 3 | A | Uji matikan telemetri → alert muncul |
 US1.5 Tracker DoD | 2 | B | `tools/forwardtest_status.py` mencetak 0/20, hari ke-1 |
 
-**Status 30 Okt:** US1.1 selesai — gate exposure membaca `paper_positions.json`
-(2 SHORT → `2/2 searah` ditolak; LONG → `2/3, 0/2 aman`), tes 882 collected, worker restart.
+**Status 30 Okt:** kelima story Sprint 1 selesai kecuali bukti trade pertama yang
+menunggu pasar.
+- US1.1 gate exposure membaca `paper_positions.json` (2 SHORT → `2/2 searah` ditolak;
+  LONG → `2/3, 0/2 aman`), worker restart.
+- US1.2 `docs/runbook-trade-pertama.md` siap; bagian eksekusi belum diuji pasar.
+- US1.3 panel Reaper diverifikasi e2e (`cek_panel_reaper.spec.ts`, 1 passed).
+- US1.4 `forwardtest-watchdog` aktif tiap 60 s (`ok`, `umur=20s`, `selisih=0`).
+- US1.5 `tools/forwardtest_status.py` mencetak `0/20`, hari 1/30.
+- Regresi: **889** tes perintah AGENTS, **1077** root `pytest`, rc=0; ruff bersih.
 
 **Sprint Review 5 Nov:** demo scan yang menolak SHORT ke-3, panel cockpit, alert watchdog,
 dan tracker DoD.
