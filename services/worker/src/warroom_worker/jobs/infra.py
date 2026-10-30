@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import subprocess
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -229,6 +229,41 @@ def handler_freshness(s: SASession, job: Job) -> str:
     )
 
 
+def _tanggal_benched(subject: str) -> date | None:
+    """Tanggal WIB di ekor subjek `strategi/benched:<strategi>:<YYYY-MM-DD>`."""
+    ekor = subject.rsplit(":", 1)[-1]
+    try:
+        return datetime.strptime(ekor, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _tutup_benched_lampau(s: SASession, *, now: datetime) -> int:
+    """Tutup alert 'benched' dari hari sebelumnya.
+
+    Batas harian per strategi berakhir saat hari berganti; alert kemarin bukan
+    kondisi yang masih berjalan. Tanpa ini, satu alert per hari menumpuk selamanya
+    dan menenggelamkan alert sungguhan (10 alert terbuka pada 30 Okt, semuanya
+    `strategi/benched:legacy-smc` dari hari-hari sebelumnya).
+    """
+    hari_ini = (now + timedelta(hours=7)).date()  # WIB, sama dengan pemilih `hari`
+    buka = s.scalars(
+        select(Alert)
+        .where(Alert.subject.like("strategi/benched:%"))
+        .where(Alert.ack_at.is_(None))
+    ).all()
+    ditutup = 0
+    for a in buka:
+        tanggal = _tanggal_benched(a.subject)
+        # Subjek lama tanpa tanggal juga stale: format itu tidak dibuat lagi.
+        if tanggal is not None and tanggal >= hari_ini:
+            continue
+        a.ack_at = now
+        a.message = (a.message or "") + " | PULIH otomatis: hari berganti"
+        ditutup += 1
+    return ditutup
+
+
 def handler_notify(s: SASession, job: Job) -> str:
     """Kirim alert terbuka lewat transport terkonfigurasi (P1-T8).
 
@@ -236,14 +271,16 @@ def handler_notify(s: SASession, job: Job) -> str:
     diklaim terkirim.
     """
     limit = int(job.payload_json.get("limit", 10))
+    ditutup = _tutup_benched_lampau(s, now=datetime.now(UTC))
     hasil = kirim_tertunda(s, limit=limit)
+    awalan = f"benched_lampau={ditutup} " if ditutup else ""
     if not hasil:
-        return "tidak ada alert terbuka"
+        return f"{awalan}tidak ada alert terbuka".strip()
     dilewati = sum(1 for h in hasil if h.get("alert_id") is None)
     dicoba = [h for h in hasil if h.get("alert_id") is not None]
     ok = sum(1 for h in dicoba if h["ok"])
     ekor = f" dilewati={dilewati}" if dilewati else ""
-    return f"dicoba={len(dicoba)} terkirim={ok} gagal={len(dicoba) - ok}{ekor}"
+    return f"{awalan}dicoba={len(dicoba)} terkirim={ok} gagal={len(dicoba) - ok}{ekor}"
 
 
 def handler_collect(s: SASession, job: Job) -> str:
