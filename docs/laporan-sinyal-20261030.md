@@ -14,44 +14,67 @@ hanya tier PREMIUM yang punya edge yang terlihat; STANDAR mendekati break-even s
 | `outcomes.jsonl` | 784 hasil maju per verdict: `tp1`/`sl`/`tidak_terisi`/`kedaluwarsa`/`terbuka` + R | `/home/admin/live-trading/state/outcomes.jsonl` |
 | Laporan agregat | `lt measure` — gate berguna atau tidak, termasuk kandidat ditolak | `.venv/bin/lt measure` |
 
-Belum ada satu jurnal tergabung permanen. Angka di bawah dihasilkan dengan mencocokkan
-alert terkirim ke verdict `allowed=true` dalam ±120 detik, dedupe per `(ts, pair, arah)`.
+Jurnal tergabung permanen sudah ada: job `jurnal-sinyal` (tiap 6 jam) menjalankan
+`lt measure` lalu menghitung ulang setiap alert dari candle Binance sejak jam setelah
+kirim. Hasilnya ditulis ke `/var/lib/warroom/jurnal_sinyal.json`, dibaca
+`/api/v1/journal/signals`, dan tampil di `/crypto?sub=sinyal` panel **Jurnal sinyal
+terkirim**. Angka di bawah berasal dari jurnal itu (`dihitung_at` 30 Okt 20:52 UTC).
 
-## Hasil sinyal yang terkirim
+## Hasil sinyal yang terkirim — divalidasi ulang dengan data asli saat kirim
 
-451 alert → **450 verdict unik** (1 alert duplikat). Rincian hasil:
+451 alert → **450 verdict unik** (1 alert duplikat). Angka di bawah **bukan cache**:
+setiap alert diuji ulang dengan candle 1H Binance mulai dari **jam penuh setelah alert
+dikirim** (penerima tidak bisa mengisi sebelum pesan sampai). Aturan sama: entry limit,
+TP1=1R, SL swing, isi maks 8 jam, tahan 24 jam, SL didahulukan bila kena di candle sama.
 
 | Hasil | n | Arti |
 |---|---:|---|
-| TP1 | 180 | kena target 1R |
-| SL | 124 | kena stop |
-| Tidak terisi | 121 | harga tidak menyentuh entry dalam 8 jam (0R, bukan rugi) |
-| Kedaluwarsa | 19 | tahan 24 jam tanpa TP/SL |
+| TP1 | 182 | kena target 1R |
+| SL | 129 | kena stop |
+| Tidak terisi | 116 | harga tidak menyentuh entry dalam 8 jam (0R, bukan rugi) |
+| Kedaluwarsa | 17 | tahan 24 jam tanpa TP/SL |
 | Terbuka | 6 | belum selesai saat laporan |
 
-**Dihitung dari yang terisi (n=329):**
-- Win rate TP1: **54,7%**
-- Total: **+56,93R**
-- Expectancy: **+0,173R/trade**
+**Dihitung dari yang terisi (n=334):**
+- Win rate TP1: **54,5%**
+- Total: **+54,89R**
+- Expectancy: **+0,164R/trade**
 - Median: **+1,00R**
 
-**Kalau yang tidak terisi dihitung 0R (n=450):** expectancy **+0,127R**.
-Angka ini penting: 26,9% sinyal yang dikirim tidak pernah bisa dimasuki.
+**Kalau yang tidak terisi dihitung 0R (n=450):** expectancy **+0,122R**.
+25,8% sinyal yang dikirim tidak pernah bisa dimasuki.
 
-### Per tier
+### Per tier (data asli saat kirim)
 
-| Tier | n final | TP1 | SL | Win rate | Expectancy |
-|---|---:|---:|---:|---:|---:|
-| PREMIUM | 156 | 91 | 46 | **58,3%** | **+0,299R** |
-| STANDAR | 173 | 89 | 78 | 51,4% | +0,059R |
+| Tier | n terkirim | n terisi | TP1 | SL | Win rate | Expectancy |
+|---|---:|---:|---:|---:|---:|---:|
+| PREMIUM | 213 | 157 | 92 | 48 | **58,6%** | **+0,289R** |
+| STANDAR | 237 | 177 | 90 | 81 | 50,8% | +0,054R |
 
 PREMIUM adalah satu-satunya tier dengan edge yang cukup jelas. STANDAR praktis
 break-even sebelum biaya; setelah fee/slippage kemungkinan negatif.
 
+### Cache vs data asli saat kirim
+
+`outcomes.jsonl` lama dihitung dari **waktu verdict**, bukan waktu pesan dikirim.
+Hasilnya **97,8% sama** (440/450), tetapi 10 kasus berbeda dan arahnya masuk akal:
+
+| Kasus | Cache (dari verdict) | Asli (mulai setelah kirim) | Penyebab |
+|---|---|---|---|
+| CRVUSDT, INJUSDT 18 Okt | TP1 | **SL** | TP1 kena sebelum pesan terkirim |
+| INJUSDT 20 Okt | kedaluwarsa −0,249R | **SL** | pergerakan setelah kirim berbeda |
+| FILUSDT 21 Okt | tidak terisi | **SL** | entry baru terisi setelah pesan dikirim |
+| 1000PEPEUSDT 21 Okt | tidak terisi | **TP1** | fill terjadi setelah kirim |
+| TIAUSDT 24 Okt, SKHYNIXUSDT 28 Okt, SUIUSDT 30 Okt | tidak terisi | **TP1** | idem |
+
+Kesimpulan validasi: angka cache **tidak bohong secara agregat** (selisih expectancy
++0,173R → +0,165R), tetapi untuk menilai satu sinyal tertentu, waktu kirim harus dipakai.
+Sinyal yang telat dikirim bisa kehilangan TP1 yang sudah terjadi lebih dulu.
+
 ## Pembanding: seluruh kandidat (bukan hanya yang dikirim)
 
 `lt measure` pada 787 kandidat:
-
+…
 | Kelompok | n | TP1 | SL | Win rate | Expectancy | Total |
 |---|---:|---:|---:|---:|---:|---:|
 | Lolos gate | 381 | 203 | 150 | 53,3% | +0,142R | +54,00R |
@@ -82,33 +105,40 @@ kebetulan. Jangan memilih pair hanya dari tabel ini.
    dihitung SL (konservatif).
 2. **Belum dikurangi biaya.** R di atas gross. Fee + slippage 0,1%/sisi dapat memakan
    sebagian besar edge STANDAR.
-3. **Sampel 15 hari / 329 hasil terisi.** Cukup untuk sinyal awal, belum untuk mengunci
+3. **Sampel 15 hari / 334 hasil terisi.** Cukup untuk sinyal awal, belum untuk mengunci
    strategi.
 4. **Sinyal tetap kandidat**, bukan rekomendasi. Label ini sudah ikut di setiap pesan.
-5. `outcomes.jsonl` hanya segar setelah `lt measure` dijalankan; belum ada job terjadwal.
+5. `jurnal-sinyal` menyegarkan `outcomes.jsonl` lewat `lt measure` setiap 6 jam; kalau
+   Binance gagal, jurnal memakai cache lama dan mencatat `catatan` di berkasnya.
 
 ## Cara melihat ulang
 
 ```bash
-# 1. Ringkasan gate: lolos vs ditolak, per aturan
+# 1. Jurnal permanen (API, butuh cookie sesi)
+curl -sS -b /tmp/wr.cookie https://0xgunsl1ng3r.xyz/api/v1/journal/signals | jq .ringkas
+
+# 2. Tampilan: /crypto?sub=sinyal → panel "Jurnal sinyal terkirim"
+
+# 3. Ringkasan gate: lolos vs ditolak, per aturan
 cd /home/admin/warroom && .venv/bin/lt measure
 
-# 2. Alert sinyal yang benar-benar dikirim
+# 4. Alert sinyal yang benar-benar dikirim
 sudo -u postgres psql -d warroom -c \
  "select created_at, subject, left(message,80)
   from alerts where subject like 'sinyal/%' order by id desc limit 20;"
 
-# 3. Hasil per verdict
+# 5. Hasil per verdict
 jq -c 'select(.allowed) | {ts,pair,direction,tier,hasil,r}' \
  /home/admin/live-trading/state/outcomes.jsonl | tail -20
 ```
 
 ## Rekomendasi
 
-1. **Jadwalkan `lt measure`** (harian) agar `outcomes.jsonl` tidak basi.
-2. **Buat jurnal sinyal permanen** yang menggabungkan alert + outcome + status kirim,
-   supaya angka di atas bisa dibuka tanpa skrip ad-hoc.
+1. ~~Jadwalkan `lt measure`~~ **sudah**: job `jurnal-sinyal` menjalankannya tiap 6 jam.
+2. ~~Buat jurnal sinyal permanen~~ **sudah**: JSON + API + panel UI + e2e.
 3. **Pertimbangkan tier STANDAR** — kalau setelah biaya tetap ≤0, kurangi/hentikan
    pengirimannya, atau naikkan syaratnya.
-4. **Kurangi sinyal yang tidak terisi** — 26,9% tidak pernah masuk; filter jarak entry
+4. **Kurangi sinyal yang tidak terisi** — 25,8% tidak pernah masuk; filter jarak entry
    atau kirim hanya saat harga dekat POI.
+5. **Uji biaya nyata** — jalankan ulang perhitungan dengan fee/slippage aktual dari
+   `fills.csv` setelah trade pertama.

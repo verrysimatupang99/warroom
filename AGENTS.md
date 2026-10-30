@@ -32,8 +32,8 @@ journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
 .venv/bin/python -m pytest services/*/tests packages/live-trading -q   # angka terkini: lihat catatan di bawah
-cd apps/web && npm run test                            # 15 berkas, 70 vitest
-npx playwright test                                    # 49 berkas spec e2e (butuh web+nginx hidup + e2e.env)
+cd apps/web && npm run test                            # 16 berkas, 72 vitest
+npx playwright test                                    # 50 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
 # domain (anggota workspace: packages/live-trading/)
@@ -41,11 +41,11 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 ```
 
 **`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **30 Okt 2026**: **906** (`--collect-only`, perintah
+Jumlah tes per **30 Okt 2026**: **908** (`--collect-only`, perintah
 `pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
 tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
-`packages/core/tests`) mengoleksi **1105**. Web: **70** vitest, **49** berkas spec e2e.
-Angka lama 882/889/892/900 sudah tidak berlaku. Kalau menyentuh tes, perbarui angka
+`packages/core/tests`) mengoleksi **1111**. Web: **72** vitest, **50** berkas spec e2e.
+Angka lama 882/889/892/900/906 sudah tidak berlaku. Kalau menyentuh tes, perbarui angka
 ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 
 ## Arsitektur satu layar
