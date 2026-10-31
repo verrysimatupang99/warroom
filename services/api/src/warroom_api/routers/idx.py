@@ -5,7 +5,7 @@ scanner IDX, ledger sinyal, kurva equity, dan aliran dana — semua dengan
 akses database mode=ro. War Room TIDAK menghitung ulang angka sendiri
 (ADR-005: angka hanya dari facts), jadi router ini meneruskan apa adanya.
 
-Jalur: node MiniMax via Tailscale (`http://100.126.10.74:8790`) — sama seperti
+Jalur: node MiniMax lewat env `WARROOM_TENCENT_BASE` — sama seperti
 router `tencent.py`. Tidak ada kredensial yang dibuka di sisi War Room.
 """
 

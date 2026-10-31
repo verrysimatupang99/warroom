@@ -29,8 +29,11 @@ def test_biaya_terukur_dari_buku_nyata() -> None:
     Memanggil Binance; otomatis di-skip bila buku tidak terbaca (jaringan mati).
     """
     hasil = live.ukur_biaya_eksekusi(pair="BTCUSDT", size_usd=100.0)
-    if hasil["status"] != "ok":
-        pytest.skip(f"buku tidak terbaca: {hasil.get('detail')}")
+    # CI (IP runner) sering diblokir Binance: fungsi mengembalikan status "ok" dengan
+    # sumber "asumsi", bukan buku. Itu bukan bukti terukur — lewati dengan alasan jelas,
+    # jangan sampai tes jaringan yang tidak terbaca membuat CI merah.
+    if hasil["status"] != "ok" or hasil["sumber"] != "depth:BTCUSDT":
+        pytest.skip(f"buku tidak terukur: {hasil.get('detail') or hasil.get('sumber')}")
     # Sumber harus menyebut depth:<pair>; "asumsi" berarti slippage tak terukur.
     assert hasil["sumber"] == "depth:BTCUSDT"
     assert hasil["total_bps"] is not None and hasil["total_bps"] > 0

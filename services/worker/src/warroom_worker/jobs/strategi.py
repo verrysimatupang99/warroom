@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import os
 import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -21,6 +22,14 @@ from warroom_worker.facts_publish import canonical_hash
 from .base import _alert
 
 log = logging.getLogger("warroom_worker.strategi")
+
+# Sensor level Tencent hanya hidup bila node-nya dikonfigurasi. Tanpa env ini,
+# permintaan dilewati dengan sengaja (bukan warning tiap siklus) — sebelumnya nama
+# `TENCENT_BASE` bahkan tidak terdefinisi, jadi blok itu selalu gagal dengan NameError.
+TENCENT_BASE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
+
+class _TanpaTencent(Exception):
+    """Penanda konfigurasi kosong; bukan kegagalan yang perlu dilaporkan tiap siklus."""
 
 __all__ = ["handler_strategi_alert", "handler_break_retest_scanner"]
 
@@ -216,8 +225,10 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
 
     # 1. Integrasi Sensor Level Presisi dari Tencent Node (XAUUSD & BTC) via Tailscale
     try:
+        if not TENCENT_BASE:
+            raise _TanpaTencent
         req_tc = urllib.request.Request(
-            "http://100.126.10.74:8790/forex/levels?symbol=XAUUSD",
+            f"{TENCENT_BASE}/forex/levels?symbol=XAUUSD",
             headers={"User-Agent": "WarRoomWorker/2.0"},
         )
         with urllib.request.urlopen(req_tc, timeout=4) as resp:
@@ -270,6 +281,8 @@ def handler_break_retest_scanner(s: SASession, job: Job) -> str:
                     kandidat_list.append(f"XAUUSD_TC:{sig_tc['arah']}")
                     ditemukan += 1
                     dipublikasikan += 1
+    except _TanpaTencent:
+        pass
     except Exception as e:
         log.warning("Gagal query level Tencent node di worker: %s", e)
 

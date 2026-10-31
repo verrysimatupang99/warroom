@@ -14,6 +14,8 @@
 	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import BerandaJelajah from '$lib/components/BerandaJelajah.svelte';
 	// Komponen fondasi tema baru (DESIGN-USULAN 16 Okt): honesty-tag pada setiap
 	// status verifikasi, track bar untuk skor ber-maksimum.
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
@@ -340,15 +342,19 @@ async function muat() {
 			</div>
 		{/if}
 
-		<header class="kepala">
-			<h1 class="merek">War<span>Room</span></h1>
-			{#if arming !== null}
-				<span class="mode" title={arming.detail}>{arming.armed ? 'LIVE' : 'PAPER'}</span>
-			{/if}
-			<span class="dim">multi-market · {daftar.length} pasar</span>
-			<span class="spacer"></span>
-			<span class="dim angka">{umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu</span>
-		</header>
+		<!-- Kepala halaman diseragamkan 28 Okt 2026: sebelumnya Beranda memakai hero
+		     merek sendiri (`.kepala` / `.merek`) sehingga ritmenya berbeda dari 13
+		     halaman lain. Isi blok di bawah tidak diubah. -->
+		<PageHeader
+			eyebrow="War Room · Beranda"
+			title="Ringkasan hari ini"
+			tag={arming ? (arming.armed ? 'LIVE' : 'PAPER') : null}
+			description={`Multi-market · ${daftar.length} pasar · data terakhir ${umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu`}
+			sumber="pasar/ringkas + sinyal/per-pasar"
+			terverifikasi={true}
+		/>
+
+	<BerandaJelajah />
 
 		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
 		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:
@@ -804,6 +810,10 @@ async function muat() {
 		padding: 0.6rem 0;
 		border-bottom: 1px solid var(--garis);
 		/* FLAT: gradient latar dihapus (design 16 Okt). */
+		/* 29 Okt: tanpa overflow-hidden, jalur marquee (1768px) melebarkan
+		   dokumen sampai 1784px dan halaman bisa digeser ke samping di ponsel. */
+		overflow: hidden;
+		max-width: 100%;
 	}
 	.ticker-jalur {
 		display: flex;

@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Whale scanner — 3 lapis, semua gratis & tanpa API key.
 
@@ -72,7 +73,7 @@ def _curl_json(url, timeout=20, retries=2):
             if r.stdout:
                 return json.loads(r.stdout)
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
         if attempt < retries:
             time.sleep(0.4)
     return None

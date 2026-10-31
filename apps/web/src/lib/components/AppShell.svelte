@@ -195,5 +195,10 @@
 			padding: 1.5rem 2rem 4rem;
 			max-width: calc(100vw - 272px);
 		}
+		/* Bar mobile tidak relevan di desktop: sidebar sudah permanen.
+		   Tanpa ini bar 48px menimpa 24px awal konten (main-canvas padding 1.5rem). */
+		.mobile-header {
+			display: none;
+		}
 	}
 </style>

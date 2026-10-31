@@ -1,8 +1,8 @@
 """Panel data dashboard: radar, lp, poly, gmgn, snapshot."""
-
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -614,7 +614,7 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
             }
             snap[f"{prefix}_equity"] = {"stats": v_c["stats"], "points": v_c["points"][-12:]}
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     snap["gmgn"] = _gmgn_panel()
     # `lp_paper` SENGAJA TIDAK ditulis ke snapshot.

@@ -23,11 +23,11 @@ Yang dikodekan di sini:
 
 Modul murni baca berkas; tidak menyentuh jaringan dan tidak menulis apa pun.
 """
-
 from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 import math
 from collections import Counter
 from datetime import UTC, datetime
@@ -490,7 +490,7 @@ def ringkas_idx_sinyal(state_dir: Path) -> dict[str, Any]:
             "tertua_hari": round(max(umur), 1) if umur else None,
         }
     except Exception:  # noqa: BLE001 — ringkasan opsional; daftar tetap tampil
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     terbuka_lama = ringkas_terbuka["lama"]
     return {
         "tersedia": bool(entries),

@@ -1,0 +1,11 @@
+[Unit]
+Description=Jalankan simulator panel tiap 30 detik
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=30
+AccuracySec=5
+Unit=warroom-panel-sim.service
+
+[Install]
+WantedBy=timers.target

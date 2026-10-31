@@ -89,7 +89,7 @@
 					</span>
 				</div>
 				<p class="text-xs text-text-3 font-sans">
-					Sinyal &amp; ledger IDX dari node MiniMax (Tailscale) — read-only
+					Radar IDX dalam mode standby — sumber sinyal &amp; ledger belum aktif
 				</p>
 			</div>
 		</div>

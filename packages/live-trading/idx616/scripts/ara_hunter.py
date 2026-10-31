@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Ara Hunter — replikasi resep screener (Kingdom Saham, V1) via TradingView.
 
@@ -141,7 +142,7 @@ def main():
             json.dump({"time": now_wib().strftime("%Y-%m-%d %H:%M:%S"),
                        "scanned": len(rows), "hits": hits}, f, default=str)
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     if not args.post:
         print(json.dumps({"time": now_wib().strftime("%F %T"),

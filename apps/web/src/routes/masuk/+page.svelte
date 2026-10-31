@@ -99,6 +99,9 @@
 			{memuat ? 'memeriksa…' : 'masuk'}
 		</button>
 	</form>
+	<p class="mt-3 text-center text-11 text-text-3">
+		Belum tahu ini apa? <a href="/mulai" class="text-accent underline-offset-2 hover:underline">Baca ringkasannya</a>.
+	</p>
 </div>
 
 <style>

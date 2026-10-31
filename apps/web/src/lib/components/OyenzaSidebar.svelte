@@ -6,6 +6,7 @@
 	 */
 	import { page } from '$app/state';
 	import { live } from '$lib/api/live.svelte';
+	import { AREAS } from '$lib/nav';
 	import Ikon from './Ikon.svelte';
 
 	interface Props {
@@ -16,23 +17,37 @@
 	const jalur = $derived(page.url.pathname);
 	const sub = $derived(page.url.searchParams.get('sub') ?? '');
 
-	const markets = [
-		{ rute: '/', label: 'Overview / Home', num: '1', ikon: 'home' },
-		{ rute: '/forex', label: 'Gold & Forex (XAUUSD)', num: '2', ikon: 'forex', tag: 'ACTIVE' },
-		{ rute: '/crypto', label: 'Crypto (BTC & SOL)', num: '3', ikon: 'crypto', tag: 'WIP' },
-		{ rute: '/polymarket', label: 'Polymarket CLOB', num: '4', ikon: 'polymarket', tag: 'WIP' },
-		{ rute: '/idx', label: 'IDX Saham Indonesia', num: '5', ikon: 'idx', tag: 'WIP' },
-		{ rute: '/gmgn', label: 'GMGN Solana Radar', num: '6', ikon: 'gmgn', tag: 'WIP' }
-	];
+	/**
+	 * Sumber tunggal: `$lib/nav.ts` (AREAS). Sidebar TIDAK lagi menyimpan daftar
+	 * rute sendiri — dulu daftarnya berbeda dari nav.ts sehingga `/riset` (550 baris
+	 * isi nyata) tidak pernah muncul di menu dan tak punya satu pun tautan masuk.
+	 * Yang disimpan lokal hanya dua hal kosmetik: tag status dan nomor pintasan.
+	 */
+	// Tag status kini dibaca dari nav.ts supaya rail dan isi halaman tidak pernah
+	// berbeda. Sebelumnya daftar ini disimpan lokal dan sempat menulis "WIP" untuk
+	// market yang sebenarnya cuma standby, serta "WIP" untuk Riset yang isinya ada.
+	const TAG: Record<string, string> = Object.fromEntries(
+		AREAS.filter((a) => a.status).map((a) => [a.rute, a.status as string])
+	);
+	TAG['/sistem'] = 'OPS';
 
-	const system = [
-		{ rute: '/agy', label: 'AI Market Agent', num: 'A', ikon: 'sistem', tag: 'WIP' },
-		{ rute: '/tencent', label: 'Server Tencent (Tailscale)', num: '7', ikon: 'mesin', tag: 'NODE' },
-		{ rute: '/riset?sub=bukti', label: 'Kinerja & Bukti Ledger', num: '8', ikon: 'riset', tag: 'WIP' },
-		{ rute: '/riset?sub=leaderboard', label: 'Strategy Leaderboard', num: '9', ikon: 'riset', tag: 'WIP' },
-		{ rute: '/sistem', label: 'Layanan & Kesegaran Data', num: '0', ikon: 'sistem', tag: 'WIP' },
-		{ rute: '/catatan', label: 'Catatan & Alur Engine', num: 'K', ikon: 'info' }
-	];
+	const NUM: Record<string, string> = Object.fromEntries(
+		// Nomor pintasan mengikuti urutan nav, bukan daftar manual. Daftar manual
+		// menyimpan rute yang sudah dialihkan (mis. /tencent) dan bisa meleset
+		// setiap kali area ditambah atau dihapus.
+		AREAS.map((a, i) => [a.rute, String(i + 1)])
+	);
+
+	const keItem = (a: (typeof AREAS)[number]) => ({
+		rute: a.rute,
+		label: a.label,
+		num: NUM[a.rute] ?? '·',
+		ikon: a.ikon,
+		tag: TAG[a.rute]
+	});
+
+	const markets = AREAS.filter((a) => a.kategori === 'pasar').map(keItem);
+	const system = AREAS.filter((a) => a.kategori !== 'pasar').map(keItem);
 
 	function isAktif(rute: string): boolean {
 		if (rute === '/') return jalur === '/';
@@ -69,7 +84,7 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}"></span>
 			<span class="text-11 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">AUTO-TRADE READY</span>
+		<span class="tag-status">DEMO · TANPA UANG NYATA</span>
 	</div>
 
 	<!-- Navigation Group: MARKETS -->
@@ -122,7 +137,7 @@
 			<span class="text-pos">1001STARTUP OK</span>
 		</div>
 		<p class="foot-desc font-sans text-text-3 mt-1">
-			Setiap sinyal tertaut langsung ke feed real-time TVC, CLOB, dan Tencent Cron tanpa angka karangan.
+			Setiap sinyal tertaut ke sumbernya sendiri: MEXC, Yahoo Finance, dan telemetri MT5.
 		</p>
 	</div>
 </aside>

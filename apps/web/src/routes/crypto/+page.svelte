@@ -1,14 +1,47 @@
 <script lang="ts">
-	import UnderConstruction from '$lib/components/UnderConstruction.svelte';
+	import { page } from '$app/state';
+	import { AREAS, SLUG_LAMA } from '$lib/nav';
+	import MarketShell from '$lib/components/MarketShell.svelte';
+	import PasarUji from '$lib/components/market/PasarUji.svelte';
+	import CryptoSinyal from '$lib/components/market/CryptoSinyal.svelte';
+	import CryptoRingkas from '$lib/components/market/CryptoRingkas.svelte';
+	import JournalPanel from '$lib/components/JournalPanel.svelte';
+	import BatasPasar from '$lib/components/BatasPasar.svelte';
+	import RiwayatKeputusan from '$lib/components/market/RiwayatKeputusan.svelte';
+
+	const area = AREAS.find((a) => a.kunci === 'crypto')!;
+	const sub = $derived.by(() => {
+		const s = page.url.searchParams.get('sub') ?? 'ringkas';
+		return SLUG_LAMA[s] ?? s;
+	});
 </script>
 
-<svelte:head>
-	<title>Crypto (BTC &amp; SOL) — Under Construction | War Room</title>
-</svelte:head>
+<svelte:head><title>Crypto | War Room</title></svelte:head>
 
-<UnderConstruction 
-	marketTitle="Pasar Crypto (BTC &amp; SOL)" 
-	category="CRYPTO RADAR &amp; FUTURES"
-	eta="Tahap 2 (Q4 2026)"
-	detail="Pengembangan modul Crypto (Funding rate arbitrage, likuidasi cascade BTC & SOL, serta live venue Binance/Bybit) sementara dipending. Fokus modal dan alur validasi saat ini dialokasikan 100% untuk pasar Gold & Forex (XAUUSD)."
-/>
+<MarketShell
+	{area}
+	aktif={sub}
+	judul="Crypto"
+	tag="PAPER"
+	deskripsi="Paper trading momentum di 40 koin teratas menurut volume. Tanpa order nyata, hanya pencatatan."
+	sumber="MEXC + momentum_paper.json"
+	terverifikasi={true}
+>
+	{#if sub === 'ringkas'}
+		<div class="space-y-4">
+			<CryptoRingkas />
+			<BatasPasar market="crypto" />
+		</div>
+	{:else if sub === 'sinyal'}
+		<div class="space-y-4">
+			<CryptoSinyal />
+			<RiwayatKeputusan />
+		</div>
+	{:else if sub === 'uji'}
+		<PasarUji filter="crypto" />
+	{:else if sub === 'eksekusi'}
+		<JournalPanel market="crypto" />
+	{:else}
+		<CryptoRingkas />
+	{/if}
+</MarketShell>

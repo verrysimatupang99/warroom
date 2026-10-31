@@ -9,9 +9,10 @@ Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
    config. Menjalankan alat read-only miliknya (mis. `qa/favorite-live-verdict.py --json`)
    hanya lewat allowlist sudo yang ada.
 2. **Tencent = baca-saja.** Sama seperti domain `live-trading`.
-   **Azure sudah tidak dipakai lagi (sejak 6 Okt 2026):** radar rantai dipindah **lokal**
-   ke host ini (`lt radar-update` → `state/radar_state.json`), jadi tidak ada lagi SSH
-   ke VM `20.212.52.5`. Bila VM itu dimatikan, tidak ada yang hilang.
+   **Azure: radar rantai tetap lokal** di host ini (`lt radar-update` → `state/radar_state.json`);
+   VM `20.212.52.5` tidak dipakai untuk itu dan boleh mati. **Pengecualian:** VM
+   `mt5-trader-vm` (`FOREX-MT5-RG`, 138.91.35.65) **dipakai aktif** untuk eksekusi demo
+   XAUUSD lewat `WarRoom_AutoTrader_v3`. Jangan matikan; lihat `HANDOVER-OMP.md` §5.
 3. **Gate live tidak pernah disentuh** (`/etc/poly-pilot/activation-approved`): jangan
    dibuat, jangan diubah. Aksi live butuh izin eksplisit owner (grant), dan API menolak
    dengan 409 tanpa itu.
@@ -30,18 +31,22 @@ systemctl status warroom-api warroom-worker warroom-web nginx
 journalctl -u warroom-worker -n 30 --no-pager
 
 # kualitas (dari ~/warroom)
-uv run ruff check . && uv run pytest -q                # suite penuh: 824 tes (audit ulang 14 Okt 2026)
-cd apps/web && npm run test                            # 9 berkas, 36 vitest
-npx playwright test                                    # 47 berkas spec e2e (butuh web+nginx hidup + e2e.env)
+.venv/bin/python -m pytest services/*/tests packages/live-trading -q   # angka terkini: lihat catatan di bawah
+cd apps/web && npm run test                            # 13 berkas, 65 vitest
+npx playwright test                                    # 48 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
 # domain (anggota workspace: packages/live-trading/)
-uv run pytest packages/live-trading -q                 # tes domain, dijalankan dari root repo
+.venv/bin/python -m pytest packages/live-trading -q    # tes domain, dari root repo
 ```
 
-Angka di atas = kondisi per 14 Okt 2026 (diverifikasi ulang lewat `ruff`/`pytest`/`npm run test`).
-Jika menyentuh tes, perbarui angka ini di dokumen yang sama beserta bukti perintahnya.
-Sumber kebenaran tetap output perintah, bukan angka di dokumen ini.
+**`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
+Jumlah tes per **30 Okt 2026**: **889** (`--collect-only`, perintah
+`pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
+tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
+`packages/core/tests`) mengoleksi **1077**. Angka lama 882 (14 Okt 2026) sudah tidak
+berlaku. Kalau menyentuh tes, perbarui angka ini beserta bukti perintahnya — sumber
+kebenaran tetap output, bukan dokumen.
 
 ## Arsitektur satu layar
 
@@ -136,3 +141,29 @@ refactor(idx): satukan duplikasi arjum + hapus skrip mati
 
 Rapi, terstruktur, terdokumentasi. Bukti dijalankan lebih berharga daripada klaim.
 Kalau ada temuan yang tidak nyaman, tulis — termasuk yang membantah pekerjaan sendiri.
+
+## Tambahan 30 Okt 2026 — adopsi Reaper & serah-terima
+
+Rincian lengkap: `HANDOVER-OMP.md`. Yang berubah sejak catatan di atas:
+
+- **AutoTrader v3** di VM Azure (`WarRoom_AutoTrader_v3`) kini menghitung sinyal sendiri
+  dengan logika Reaper (EMA21/55 + EMA200 M15 + RSI14, filter ATR/spread/sesi), bukan
+  hanya menerima sinyal server. Telemetri v2 tidak diubah. Rollback:
+  `config/startup.ini.v2bak` + `WarRoom_AutoTrader.ex5`.
+- Backtest 3 tahun, XAUUSDm M5, Model 2: sesi 08–09 → net +$3.923, PF 1,25, DD 6,01%
+  (**dipasang**); sesi 08–17 → net −$1.787 (rugi tiap tahun, jangan dipakai);
+  varian tanpa partial TP → +$4.697, PF 1,24, DD 7,55%. Titik putus slippage 0,48 vs
+  spread terukur 0,24.
+- `.mobile-header` disembunyikan di `@media (min-width: 768px)`; sebelumnya bar 48px
+  menimpa 24px awal konten di desktop.
+- `fills.csv` masih header saja → `/journal/edge` 503. Sejak v3.1, deal tertutup
+  dilaporkan ke `/mt5/deal` → `deals.csv` dan tampil di `/journal/trades`; fills
+  tetap dipakai untuk kualitas eksekusi (slippage/latensi).
+- EA v3.1 (30 Okt): telemetri menyertakan `eval_alasan`/`eval_sesi`/`eval_atr`/
+  `eval_rsi`/`eval_ema_*`/`server_time`; panel "Status mesin Reaper" di tab Sinyal.
+  Rollback: `WarRoom_AutoTrader_v3.ex5.v30bak` + `WarRoom_AutoTrader_v3.mq5.v30bak`.
+- Password MT5 demo pindah ke `~/.hermes/secrets/mt5_434434290.env` (600); `.ini` di
+  instabox sudah dikosongkan. Rotasi kunci lama (MEXC, IDX, Stitch, MT5) masih terbuka.
+- Jebakan yang memakan waktu ada di `HANDOVER-OMP.md` §9 — terutama: Strategy Tester
+  menuntut akun tersimpan (`accounts.dat` di build 6286), dan `az vm run-command`
+  berjalan sebagai SYSTEM sehingga MT5 membaca data folder yang salah.

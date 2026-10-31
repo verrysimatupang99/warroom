@@ -23,7 +23,12 @@ SL_MIN_PCT = 1.0  # di bawah ini biasanya swing mikro → pakai swing lebih vali
 ATR_MIN_PCT = 1.0  # ATR1H minimum
 ATR_IDEAL_PCT = 1.5
 EXTENDED_MAX_PCT = 4.0  # harga >4% jauh dari POI → setup basi
-MAX_OPEN_POSITIONS = 2
+# Batas ini harus sama dengan Settings.max_concurrent_positions (3) dan
+# Settings.maks_posisi_searah (2). Sebelumnya gate memakai 2 total dan tidak
+# pernah menegakkan batas searah, sehingga verdict bisa bilang "0/2" saat
+# executor sudah memblokir posisi ke-3.
+MAX_OPEN_POSITIONS = 3
+MAX_SAME_DIRECTION = 2
 BTC_MOVE_CORRELATION_PCT = 3.0
 
 
@@ -163,17 +168,37 @@ def poi_valid(
     )
 
 
-def exposure(direction: str, open_positions: list[dict[str, Any]], btc_change_24h: float | None) -> Verdict:
-    """Batas eksposur: jumlah posisi + korelasi BTC.
+def exposure(
+    direction: str,
+    open_positions: list[dict[str, Any]],
+    btc_change_24h: float | None,
+    *,
+    max_total: int = MAX_OPEN_POSITIONS,
+    max_same_dir: int = MAX_SAME_DIRECTION,
+) -> Verdict:
+    """Batas eksposur: total posisi + posisi searah + korelasi BTC.
 
-    Aturan dari prompt: maks 2 posisi; kalau |BTC 24j| > 3%, jangan dua posisi searah.
+    Urutan sengaja: total dulu, lalu searah, lalu korelasi BTC. Batas searah
+    ditegakkan **selalu** (bukan hanya saat BTC bergerak >3%), karena executor
+    juga begitu — verdict dan eksekusi tidak boleh berbeda pendapat.
     """
-    if len(open_positions) >= MAX_OPEN_POSITIONS:
+    total = len(open_positions)
+    if total >= max_total:
         return Verdict(
-            "exposure", False, f"posisi terbuka {len(open_positions)}/{MAX_OPEN_POSITIONS} — penuh"
+            "exposure", False, f"posisi terbuka {total}/{max_total} — penuh"
         )
 
-    same_dir = [p for p in open_positions if str(p.get("direction", "")).lower() == direction.lower()]
+    same_dir = [
+        p for p in open_positions if str(p.get("direction", "")).lower() == direction.lower()
+    ]
+    if len(same_dir) >= max_same_dir:
+        return Verdict(
+            "exposure",
+            False,
+            f"{len(same_dir)}/{max_same_dir} posisi searah {direction.upper()} — korelasi terlalu tinggi",
+            detail={"searah": len(same_dir), "maks_searah": max_same_dir},
+        )
+
     if same_dir and btc_change_24h is not None and abs(btc_change_24h) > BTC_MOVE_CORRELATION_PCT:
         return Verdict(
             "exposure",
@@ -182,7 +207,12 @@ def exposure(direction: str, open_positions: list[dict[str, Any]], btc_change_24
             f"{len(same_dir)} posisi searah — korelasi terlalu tinggi",
             detail={"btc": btc_change_24h},
         )
-    return Verdict("exposure", True, f"{len(open_positions)}/{MAX_OPEN_POSITIONS} posisi, korelasi aman")
+    return Verdict(
+        "exposure",
+        True,
+        f"{total}/{max_total} posisi, {len(same_dir)}/{max_same_dir} searah — aman",
+        detail={"total": total, "searah": len(same_dir)},
+    )
 
 
 # ------------------------------------------------------------------ penilaian
@@ -202,6 +232,8 @@ def assess(
     poi: dict[str, Any] | None,
     open_positions: list[dict[str, Any]] | None = None,
     btc_change_24h: float | None = None,
+    max_total: int = MAX_OPEN_POSITIONS,
+    max_same_dir: int = MAX_SAME_DIRECTION,
 ) -> Assessment:
     """Jalankan semua gate. Urutan tetap supaya outputnya selalu bisa dibandingkan."""
     poi_mid = float((poi or {}).get("mid") or 0.0)
@@ -211,7 +243,8 @@ def assess(
         freshness(direction, tp1, poi_mid, price, recent_high, recent_low),
         sl_distance(direction, entry, sl, atr_pct_value),
         atr_min(atr_pct_value),
-        exposure(direction, open_positions or [], btc_change_24h),
+        exposure(direction, open_positions or [], btc_change_24h,
+                 max_total=max_total, max_same_dir=max_same_dir),
     )
 
     allowed = all(v.ok for v in verdicts if v.hard)

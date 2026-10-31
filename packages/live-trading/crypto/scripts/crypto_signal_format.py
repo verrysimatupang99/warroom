@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Signal post formatter — gaya FULL DETAILS (permintaan Dumbledore 8 Sep).
 
@@ -34,7 +35,7 @@ def fetch_live(pair):
         if ps:
             return float(ps[0]["avgPx"]), float(ps[0]["pos"]), price(okx_inst(pair))
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     return None, None, None
 
 

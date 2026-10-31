@@ -21,6 +21,7 @@ from .housekeeping import handler_retensi
 from .infra import (
     handler_backup,
     handler_collect,
+    handler_forwardtest_watchdog,
     handler_freshness,
     handler_lp_mark,
     handler_notify,
@@ -45,6 +46,7 @@ def register_handlers() -> dict[str, Any]:
         {
             "publish-facts": handler_publish_facts,
             "freshness": handler_freshness,
+            "forwardtest-watchdog": handler_forwardtest_watchdog,
             "notify": handler_notify,
             "collect": handler_collect,
             "refresh-snapshot": handler_refresh_snapshot,

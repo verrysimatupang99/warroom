@@ -1,13 +1,16 @@
 """Router proxy terenkripsi ke node Tencent via Tailscale WireGuard.
 
-Menghubungkan War Room ke API internal Tencent (`http://100.126.10.74:8790`)
+Menghubungkan War Room ke API internal node data (env `WARROOM_TENCENT_BASE`)
 secara aman tanpa membuka port ke internet publik.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import logging
+import os
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -16,16 +19,68 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from warroom_api import lokal
 from warroom_api.auth_ea import verify_mt5_or_admin
 
 router = APIRouter(prefix="/api/v1/tencent", tags=["tencent"])
 log = logging.getLogger("warroom_api.tencent")
 
-TENCENT_BASE = "http://100.126.10.74:8790"
+TENCENT_BASE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 TIMEOUT_S = 6.0
 # Endpoint yang menyentuh sumber eksternal (mis. aliran dana IDX) butuh waktu
 # lebih lama daripada lookup in-memory MiniMax.
 TIMEOUT_S_LARGE = 20.0
+
+# Telemetri EA sebelumnya hanya hidup di memori: begitu API restart, seluruh
+# riwayat ekuitas dan PnL hilang. Sekarang diringkas ke tabel facts, dibatasi
+# sekali per menit supaya tidak membanjiri DB (EA mengirim tiap ~5 detik).
+_MT5_SIMPAN_TERAKHIR = 0.0
+_MT5_JEDA_SIMPAN = 60.0
+
+
+def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
+    global _MT5_SIMPAN_TERAKHIR
+    sekarang = time.time()
+    if sekarang - _MT5_SIMPAN_TERAKHIR < _MT5_JEDA_SIMPAN:
+        return
+    _MT5_SIMPAN_TERAKHIR = sekarang
+    try:
+        import hashlib
+        from datetime import UTC, datetime
+
+        from warroom_core.db import session_scope
+        from warroom_core.db.models import Fact
+
+        ringkas = {
+            k: data.get(k)
+            for k in (
+                "account", "broker", "balance", "equity", "floating_pnl",
+                "margin", "free_margin", "net_pnl_today_usd", "total_trades_today",
+                "wins_today", "losses_today", "win_rate_today_pct",
+                "spread_pts", "bid", "ask", "digits",
+                "eval_at", "eval_alasan", "eval_sesi", "eval_atr", "eval_spread",
+                "eval_rsi", "eval_ema_fast", "eval_ema_slow", "eval_tren",
+                "server_time",
+            )
+        }
+        ringkas["posisi"] = len(data.get("positions") or [])
+        ringkas["pending"] = len(data.get("pending_orders") or [])
+        isi = json.dumps(ringkas, sort_keys=True, default=str)
+        with session_scope() as s:
+            s.add(
+                Fact(
+                    kind="mt5_snapshot",
+                    key="ringkas",
+                    value_json=ringkas,
+                    source="EA telemetry",
+                    observed_at=datetime.now(UTC),
+                    ttl_s=300,
+                    hash=hashlib.sha256(f"{isi}|{int(sekarang)}".encode()).hexdigest(),
+                )
+            )
+    except Exception as exc:  # noqa: BLE001
+        # Kegagalan mencatat tidak boleh menggagalkan telemetri EA.
+        log.warning("gagal simpan snapshot mt5: %s", exc)
 
 
 async def _fetch_tencent(
@@ -33,6 +88,18 @@ async def _fetch_tencent(
     params: dict[str, Any] | None = None,
     timeout_s: float = TIMEOUT_S,
 ) -> Any:
+    if not TENCENT_BASE:
+        # Tidak ada node upstream. Ambil dari sumber publik langsung
+        # (MEXC untuk crypto, Yahoo untuk forex dan IHSG). Kalau sebuah data
+        # memang tidak punya padanan lokal, jawab 503 dengan alasannya,
+        # bukan angka karangan.
+        try:
+            return await lokal.sebar(path, params)
+        except lokal.SumberKosong as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "not_available", "message": str(exc)},
+            ) from exc
     url = f"{TENCENT_BASE}{path}"
     try:
         async with httpx.AsyncClient(timeout=timeout_s) as client:
@@ -58,7 +125,10 @@ async def _fetch_tencent(
         log.warning("Gagal koneksi ke Tencent Tailscale (%s): %s", url, exc)
         raise HTTPException(
             status_code=503,
-            detail=f"Tencent node via Tailscale unreachable (100.126.10.74:8790): {type(exc).__name__}",
+            detail=(
+                f"Node data upstream tidak terjangkau ({TENCENT_BASE}): "
+                f"{type(exc).__name__}"
+            ),
         ) from exc
 
 
@@ -274,6 +344,18 @@ class MT5TelemetryPayload(BaseModel):
     ema21_m5: float | None = None
     high_12: float | None = None
     low_12: float | None = None
+    # Evaluasi sinyal Reaper terakhir (dikirim EA v3.1). Semua opsional supaya
+    # EA lama tetap diterima tanpa error.
+    server_time: int | None = None
+    eval_at: int | None = None
+    eval_alasan: str | None = None
+    eval_sesi: bool | None = None
+    eval_atr: float | None = None
+    eval_spread: float | None = None
+    eval_rsi: float | None = None
+    eval_ema_fast: float | None = None
+    eval_ema_slow: float | None = None
+    eval_tren: str | None = None
 
 latest_mt5_telemetry = {
     "connected": False,
@@ -290,6 +372,42 @@ latest_mt5_telemetry = {
     "total_trades_today": 0,
     "win_rate_pct": 0.0,
 }
+
+# --- Logger telemetri (spread per jam) -------------------------------------
+# Telemetri EA datang tiap 1-5 detik dan sebelumnya hanya disimpan di memori,
+# sehingga histori spread hilang setiap poll. Baris di bawah menambahkan
+# pencatatan ke CSV dengan throttle 10 detik supaya berkas tidak membengkak.
+TELEMETRY_LOG = Path("/var/lib/warroom/telemetry_log.csv")
+_telemetry_log_last = 0.0
+TELEMETRY_LOG_INTERVAL_S = 10.0
+
+
+def _catat_telemetri(t: dict[str, Any]) -> None:
+    global _telemetry_log_last
+    sekarang = time.time()
+    if sekarang - _telemetry_log_last < TELEMETRY_LOG_INTERVAL_S:
+        return
+    _telemetry_log_last = sekarang
+    try:
+        TELEMETRY_LOG.parent.mkdir(parents=True, exist_ok=True)
+        baru = not TELEMETRY_LOG.exists()
+        with TELEMETRY_LOG.open("a", newline="") as f:
+            import csv as _csv
+
+            w = _csv.writer(f)
+            if baru:
+                w.writerow(["ts", "iso", "bid", "ask", "spread_pts", "digits",
+                            "atr_m5", "positions", "net_pnl_today_usd", "equity"])
+            w.writerow([
+                int(sekarang),
+                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(sekarang)),
+                t.get("bid"), t.get("ask"), t.get("spread_pts"), t.get("digits"),
+                t.get("atr_m5"), len(t.get("positions") or []),
+                t.get("net_pnl_today_usd"), t.get("equity"),
+            ])
+    except OSError as exc:  # pragma: no cover - jangan ganggu jalur telemetri
+        log.warning("Gagal menulis log telemetri: %s", exc)
+
 
 @router.post("/mt5/telemetry", dependencies=[Depends(verify_mt5_or_admin)])
 async def report_mt5_telemetry(payload: MT5TelemetryPayload):
@@ -323,7 +441,18 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "ema21_m5": payload.ema21_m5,
         "high_12": payload.high_12,
         "low_12": payload.low_12,
+        "server_time": payload.server_time,
+        "eval_at": payload.eval_at,
+        "eval_alasan": payload.eval_alasan,
+        "eval_sesi": payload.eval_sesi,
+        "eval_atr": payload.eval_atr,
+        "eval_spread": payload.eval_spread,
+        "eval_rsi": payload.eval_rsi,
+        "eval_ema_fast": payload.eval_ema_fast,
+        "eval_ema_slow": payload.eval_ema_slow,
+        "eval_tren": payload.eval_tren,
     }
+    _simpan_snapshot_mt5(latest_mt5_telemetry)
 
     # Instruksi otomatis untuk loop telemetry di Azure VM:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
@@ -341,12 +470,194 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         '}'
     )
 
+    _catat_telemetri(latest_mt5_telemetry)
+
     return {
         "status": "OK",
         "received_at": latest_mt5_telemetry["last_seen_ts"],
         "action": "SYNC_EA_V2",
         "exec_powershell": update_cmd,
     }
+
+class MT5FillPayload(BaseModel):
+    """Satu kejadian eksekusi (entry) yang dilaporkan EA."""
+
+    ticket: int = 0
+    symbol: str = ""
+    side: str = ""
+    volume: float = 0.0
+    price_requested: float = 0.0
+    price_filled: float = 0.0
+    sl: float = 0.0
+    tp: float = 0.0
+    spread_pts: int = 0
+    digits: int = 0
+    latency_ms: int = 0
+    retcode: int = 0
+    execution_mode: int = -1
+    open_positions: int = 0
+    equity: float = 0.0
+
+
+FILL_LOG = Path("/var/lib/warroom/fills.csv")
+
+
+@router.post("/mt5/fill", dependencies=[Depends(verify_mt5_or_admin)])
+async def report_mt5_fill(payload: MT5FillPayload) -> dict[str, Any]:
+    """Catat kualitas eksekusi: harga diminta vs harga didapat + latensi.
+
+    Dipakai untuk mengukur slippage nyata per jam dan per kondisi pasar.
+    Tidak mengubah perilaku EA.
+    """
+    arah = 1.0 if payload.side.upper() in ("BUY", "LONG") else -1.0
+    point = 10.0 ** (-payload.digits) if payload.digits >= 0 else 0.0
+    slip_pts = ((payload.price_filled - payload.price_requested) * arah / point) if point else 0.0
+    try:
+        FILL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        baru = not FILL_LOG.exists()
+        with FILL_LOG.open("a", newline="") as f:
+            import csv as _csv
+
+            w = _csv.writer(f)
+            if baru:
+                w.writerow(["ts", "iso", "ticket", "symbol", "side", "volume",
+                            "price_requested", "price_filled", "slippage_pts",
+                            "spread_pts", "latency_ms", "retcode", "execution_mode",
+                            "open_positions", "equity", "sl", "tp"])
+            w.writerow([
+                int(time.time()), time.strftime("%Y-%m-%d %H:%M:%S"),
+                payload.ticket, payload.symbol, payload.side, payload.volume,
+                payload.price_requested, payload.price_filled, round(slip_pts, 2),
+                payload.spread_pts, payload.latency_ms, payload.retcode,
+                payload.execution_mode, payload.open_positions, payload.equity,
+                payload.sl, payload.tp,
+            ])
+    except OSError as exc:
+        log.warning("Gagal menulis log fill: %s", exc)
+        raise HTTPException(status_code=500, detail="gagal menulis log fill") from exc
+
+    return {"status": "OK", "slippage_pts": round(slip_pts, 2)}
+
+
+class MT5DealPayload(BaseModel):
+    """Deal tertutup yang dilaporkan EA (posisi sudah final)."""
+
+    ticket: int
+    position: int = 0
+    symbol: str = ""
+    side: str = ""
+    volume: float = 0.0
+    open_time: str = ""
+    open_price: float = 0.0
+    close_time: str = ""
+    close_price: float = 0.0
+    profit: float = 0.0
+    swap: float = 0.0
+    commission: float = 0.0
+    magic: int = 0
+    comment: str = ""
+
+
+DEAL_LOG = Path("/var/lib/warroom/deals.csv")
+_DEAL_HEADER = [
+    "ts", "iso", "ticket", "position", "symbol", "side", "volume",
+    "open_time", "open_price", "close_time", "close_price",
+    "profit", "swap", "commission", "net", "magic", "comment",
+]
+_DEAL_LOCK = threading.Lock()
+
+
+@router.post("/mt5/deal", dependencies=[Depends(verify_mt5_or_admin)])
+async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
+    """Catat deal tertutup (satu baris per posisi) untuk jurnal forex.
+
+    Idempoten per `ticket`: EA boleh mengirim ulang setelah restart tanpa
+    menggandakan baris di `deals.csv`.
+    """
+    if payload.ticket <= 0:
+        raise HTTPException(status_code=400, detail="ticket deal tidak valid")
+    net = payload.profit + payload.swap + payload.commission
+    with _DEAL_LOCK:
+        sudah: set[int] = set()
+        baru = not DEAL_LOG.exists()
+        if not baru:
+            try:
+                with DEAL_LOG.open(newline="") as f:
+                    for row in csv.DictReader(f):
+                        try:
+                            sudah.add(int(row.get("ticket") or 0))
+                        except (TypeError, ValueError):
+                            continue
+            except OSError as exc:
+                log.warning("gagal baca deals.csv: %s", exc)
+                raise HTTPException(status_code=500, detail="gagal baca log deal") from exc
+        if payload.ticket in sudah:
+            return {"status": "duplikat", "ticket": payload.ticket, "net": round(net, 2)}
+        try:
+            DEAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with DEAL_LOG.open("a", newline="") as f:
+                w = csv.writer(f)
+                if baru:
+                    w.writerow(_DEAL_HEADER)
+                w.writerow([
+                    int(time.time()),
+                    payload.close_time or time.strftime("%Y-%m-%d %H:%M:%S"),
+                    payload.ticket,
+                    payload.position,
+                    payload.symbol,
+                    payload.side,
+                    payload.volume,
+                    payload.open_time,
+                    payload.open_price,
+                    payload.close_time,
+                    payload.close_price,
+                    payload.profit,
+                    payload.swap,
+                    payload.commission,
+                    round(net, 2),
+                    payload.magic,
+                    payload.comment,
+                ])
+        except OSError as exc:
+            log.warning("gagal tulis deals.csv: %s", exc)
+            raise HTTPException(status_code=500, detail="gagal menulis log deal") from exc
+    return {"status": "OK", "ticket": payload.ticket, "net": round(net, 2)}
+
+
+PANEL_STATE = Path("/var/lib/warroom/panels.json")
+MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
+MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
+
+
+@router.get("/mt5/panels", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_panel_sim() -> dict[str, Any]:
+    """Ringkasan 3 panel simulator (A/B/C) untuk ditampilkan di dashboard."""
+    if not PANEL_STATE.exists():
+        return {"panels": [], "catatan": "simulator belum pernah berjalan"}
+    try:
+        data = json.loads(PANEL_STATE.read_text())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail="state panel tidak terbaca") from exc
+
+    hasil = []
+    for nama in sorted(data):
+        p = data[nama]
+        basis = p["ekuitas"] - p.get("pnl_hari", 0.0)
+        hasil.append({
+            "nama": nama,
+            "risk_pct": p["risk_pct"],
+            "target_pct": p["target_pct"],
+            "stop_pct": p["stop_pct"],
+            "ekuitas": round(p["ekuitas"], 2),
+            "total_pct": round(100 * (p["ekuitas"] / p["modal_awal"] - 1), 2),
+            "hari_pct": round(100 * p.get("pnl_hari", 0.0) / basis, 2) if basis else 0.0,
+            "trades_hari": p["trades_hari"],
+            "max_trades": p["max_trades"],
+            "berhenti": bool(p["berhenti"]),
+            "alasan": p.get("alasan_berhenti", ""),
+        })
+    return {"panels": hasil}
+
 
 def _muat_forex_history() -> list[dict[str, Any]]:
     """Baca riwayat transaksi EA MT5 dari file data lokal (kosong bila belum ada)."""
@@ -502,3 +813,58 @@ async def get_forex_laya_status() -> dict[str, Any]:
     from warroom_api import laya_forex
 
     return laya_forex.middleware.status()
+
+
+@router.get("/crypto/momentum", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_momentum_paper() -> dict[str, Any]:
+    """Ringkasan paper trader momentum (40 koin) untuk dashboard Crypto.
+
+    Sumber: state yang ditulis ops/momentum_paper.py tiap jam.
+    Tidak ada order nyata — ini pencatatan.
+    """
+    if not MOMENTUM_STATE.exists():
+        return {"aktif": False, "catatan": "paper trader belum pernah berjalan"}
+
+    try:
+        st = json.loads(MOMENTUM_STATE.read_text())
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=500, detail="state momentum tidak terbaca") from exc
+
+    # ekuitas butuh harga terakhir; pakai entry sebagai perkiraan konservatif
+    ekuitas = 0.0
+    posisi: list[dict[str, Any]] = []
+    for sym, p in st.items():
+        harga = p.get("harga") or p["entry"] or 0.0
+        nilai = p["kas"] + p["qty"] * harga
+        ekuitas += nilai
+        if p["qty"] > 0:
+            posisi.append({
+                "koin": sym,
+                "entry": round(p["entry"], 8),
+                "harga": round(harga, 8),
+                "qty": round(p["qty"], 8),
+                "puncak": round(p["puncak"], 8),
+                "pl_pct": round((harga / p["entry"] - 1) * 100, 2) if p["entry"] else 0.0,
+            })
+
+    modal = 500.0 * len(st) if st else 0.0
+    dagang: list[dict[str, str]] = []
+    if MOMENTUM_TRADES.exists():
+        baris = MOMENTUM_TRADES.read_text().strip().splitlines()
+        kepala = baris[0].split(",") if baris else []
+        for r in baris[1:][-20:]:
+            nilai_baris = r.split(",")
+            dagang.append(dict(zip(kepala, nilai_baris, strict=False)))
+
+    posisi.sort(key=lambda x: x["koin"])
+    return {
+        "aktif": True,
+        "jumlah_koin": len(st),
+        "modal": round(modal, 2),
+        "ekuitas_perkiraan": round(ekuitas, 2),
+        "return_pct": round((ekuitas / modal - 1) * 100, 2) if modal else 0.0,
+        "posisi_terbuka": len(posisi),
+        "posisi": posisi[:20],
+        "trade_terakhir": dagang,
+        "catatan": "paper trading 40 koin, tanpa order nyata; harga dari candle harian terakhir",
+    }

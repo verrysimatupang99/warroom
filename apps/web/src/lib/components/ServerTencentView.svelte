@@ -1,8 +1,9 @@
 <script lang="ts">
 	/**
 	 * ServerTencentView.svelte
-	 * Dashboard interaktif untuk eksplorasi data tarikan dari Node Server Tencent via Tailscale WireGuard.
-	 * URL Endpoint Asli: http://100.126.10.74:8790
+	 * Dashboard interaktif untuk eksplorasi data pasar: crypto dari MEXC, forex dan
+	 * IHSG dari Yahoo Finance. Bila env WARROOM_TENCENT_BASE diisi, API meneruskan
+	 * ke node upstream dan panel ini menampilkan mode node.
 	 */
 	import { onMount } from 'svelte';
 
@@ -27,7 +28,7 @@
 		};
 	}
 
-	let statusHealth = $state<'loading' | 'ok' | 'error'>('loading');
+	let statusSumber = $state<'loading' | 'lokal' | 'node' | 'error'>('loading');
 	let healthData = $state<any>(null);
 	let dxyData = $state<any>(null);
 	let universeList = $state<string[]>([]);
@@ -45,9 +46,12 @@
 			const resH = await fetch('/api/v1/tencent/health');
 			if (resH.ok) {
 				healthData = await resH.json();
-				statusHealth = 'ok';
+				// `mode` menentukan sumber sebenarnya: node upstream bila dikonfigurasi,
+				// atau sumber publik langsung (MEXC + Yahoo). Jangan tampilkan status
+				// tunnel kalau yang dipakai bukan tunnel.
+				statusSumber = healthData?.mode === 'lokal' ? 'lokal' : 'node';
 			} else {
-				statusHealth = 'error';
+				statusSumber = 'error';
 			}
 
 			const resDxy = await fetch('/api/v1/tencent/forex/dxy');
@@ -59,7 +63,7 @@
 				universeList = u.symbols || [];
 			}
 		} catch (e) {
-			statusHealth = 'error';
+			statusSumber = 'error';
 		}
 	}
 
@@ -104,17 +108,29 @@
 </script>
 
 <div class="space-y-5">
-	<!-- HEADER KONEKSI TAILSCALE TENCENT -->
+	<!-- HEADER SUMBER DATA -->
 	<div class="rounded-card border border-line bg-surface p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 		<div>
 			<div class="flex items-center gap-2.5">
-				<h1 class="text-16 font-bold text-text">Node Tencent (Tailscale WireGuard)</h1>
-				<span class="rounded px-2 py-0.5 text-10 font-mono font-bold border {statusHealth === 'ok' ? 'bg-pos/15 text-pos border-pos/30' : 'bg-neg/15 text-neg border-neg/30'}">
-					{statusHealth === 'ok' ? 'WIREGUARD CONNECTED' : 'DISCONNECTED'}
+				<h1 class="text-16 font-bold text-text">Sumber Data Pasar</h1>
+				<span class="rounded px-2 py-0.5 text-10 font-mono font-bold border {statusSumber === 'error' ? 'bg-neg/15 text-neg border-neg/30' : 'bg-pos/15 text-pos border-pos/30'}">
+					{statusSumber === 'lokal'
+						? 'LOKAL · MEXC + YAHOO'
+						: statusSumber === 'node'
+							? 'NODE UPSTREAM'
+							: statusSumber === 'loading'
+								? 'MEMUAT'
+								: 'TERPUTUS'}
 				</span>
 			</div>
 			<p class="text-12 text-text-3 mt-1 font-mono">
-				Tunnel: <span class="text-accent">http://100.126.10.74:8790</span> · Host: <span class="text-text-2">vm-0-10-ubuntu.tail3e1951.ts.net</span>
+				{#if statusSumber === 'lokal'}
+					Diambil langsung: <span class="text-accent">MEXC</span> (crypto) · <span class="text-text-2">Yahoo Finance</span> (forex &amp; IHSG)
+				{:else if statusSumber === 'node'}
+					Upstream: <span class="text-accent">{healthData?.base ?? 'node data'}</span>
+				{:else}
+					<span class="text-neg">API tidak menjawab</span>
+				{/if}
 			</p>
 		</div>
 
@@ -129,14 +145,6 @@
 				<span class="text-text-3 block text-10">CRYPTO UNIVERSE</span>
 				<span class="font-bold text-accent">{universeList.length} Symbols</span>
 			</div>
-			<a 
-				href="http://100.126.10.74:8790/docs" 
-				target="_blank" 
-				rel="noreferrer"
-				class="px-3 py-2 rounded bg-accent/15 border border-accent/40 text-accent font-bold hover:bg-accent/25 transition-colors"
-			>
-				Open API Docs ↗
-			</a>
 		</div>
 	</div>
 

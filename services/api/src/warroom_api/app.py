@@ -32,7 +32,10 @@ from warroom_api.routers import datasets as datasets_router
 from warroom_api.routers import fakta as fakta_router
 from warroom_api.routers import governance as governance_router
 from warroom_api.routers import idx as idx_router
+from warroom_api.routers import idx_edge as idx_edge_router
+from warroom_api.routers import idx_ws as idx_ws_router
 from warroom_api.routers import journal as journal_router
+from warroom_api.routers import kalender as kalender_router
 from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
@@ -40,6 +43,7 @@ from warroom_api.routers import llm as llm_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
+from warroom_api.routers import status_ops as status_ops_router
 from warroom_api.routers import tencent as tencent_router
 from warroom_api.stream import event_stream
 
@@ -106,13 +110,17 @@ def create_app() -> FastAPI:
 
     # --- sistem ---
     app.include_router(sistem_router.router)
+    app.include_router(status_ops_router.router)
 
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
     app.include_router(tencent_router.router)
     app.include_router(komuter_router.router)
     app.include_router(idx_router.router)
+    app.include_router(idx_edge_router.router)
+    app.include_router(idx_ws_router.router)
     app.include_router(journal_router.router)
+    app.include_router(kalender_router.router)
     app.include_router(cron_router.router)
 
     # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---

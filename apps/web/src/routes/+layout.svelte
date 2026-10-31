@@ -22,7 +22,7 @@
 	});
 
 	$effect(() => {
-		if (page.url.pathname === '/masuk') return;
+		if (page.url.pathname === '/masuk' || page.url.pathname === '/mulai') return;
 		let aktif = true;
 		getAku().catch(() => {
 			if (aktif) {
@@ -36,7 +36,7 @@
 	});
 </script>
 
-{#if page.url.pathname === '/masuk'}
+{#if page.url.pathname === '/masuk' || page.url.pathname === '/mulai'}
 	{@render children()}
 {:else}
 	<AppShell>{@render children()}</AppShell>

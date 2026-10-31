@@ -4,11 +4,11 @@ Ini pengganti peran Agent 1/2/5 untuk bagian yang bisa dihitung. Yang dihasilkan
 "signal", tapi **usulan setup yang sudah dinilai** — lengkap dengan aturan mana yang
 lolos dan mana yang gagal. Narasi dan pemilihan POI terbaik tetap pekerjaan manusia/LLM.
 """
-
 from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -252,15 +252,21 @@ def _propose_golden_smc_gated(st: Structure, direction: str) -> dict[str, Any] |
     if anchor_low is None or anchor_high is None:
         return None
     d = "long" if direction.lower() == "long" else "short"
-    setup = golden_pullback.build_pullback_setup(
-        direction=d,
-        swing_low=min(float(anchor_low), float(anchor_high)),
-        swing_high=max(float(anchor_low), float(anchor_high)),
-        current_price=st.price,
-        structure_bias=st.bias.get("1h", "netral"),
-        liquidity_swept=True,
-        confirmation=confirmation,
-    )
+    # Degenerate swing (level atas dan bawah bertemu) bukan kesalahan data,
+    # hanya tidak ada setup yang bisa dibentuk. Tanpa guard ini satu simbol
+    # yang harganya datar melempar ValueError dan membatalkan seluruh scan.
+    try:
+        setup = golden_pullback.build_pullback_setup(
+            direction=d,
+            swing_low=min(float(anchor_low), float(anchor_high)),
+            swing_high=max(float(anchor_low), float(anchor_high)),
+            current_price=st.price,
+            structure_bias=st.bias.get("1h", "netral"),
+            liquidity_swept=True,
+            confirmation=confirmation,
+        )
+    except ValueError:
+        return None
     if setup is None:
         return None
     return {
@@ -347,7 +353,7 @@ def _record_verdict(
         with path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     except Exception:  # noqa: BLE001
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
 
 def summarize_verdicts(settings: Settings) -> dict[str, Any]:
@@ -526,6 +532,21 @@ def purge_duplicates(
     return {"total": len(baris), "dibuang": len(dibuang), "disimpan": len(disimpan), "diterapkan": apply}
 
 
+def posisi_paper_crypto(settings: Settings) -> list[dict[str, Any]]:
+    """Posisi paper crypto dari sumber yang sama dengan executor.
+
+    Gagal baca bukan alasan menghentikan scan; dicatat sebagai warning dan
+    dianggap tidak ada posisi. Gate tetap berjalan dengan batas total/searah.
+    """
+    try:
+        from ..execution.paper import PaperBroker
+
+        return [p.to_dict() for p in PaperBroker(settings, venue="crypto").positions()]
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("posisi paper tidak terbaca: %s", exc)
+        return []
+
+
 def scan(
     settings: Settings,
     pairs: list[str],
@@ -536,6 +557,10 @@ def scan(
     """Pindai daftar pair: nilai HANYA arah yang didukung struktur."""
     own = client is None
     c = client or make_client(timeout=20.0)
+    # Sumber yang sama dengan executor. Tanpa ini gate exposure melihat [] dan
+    # bisa meloloskan kandidat ke-3 saat executor sudah memblokirnya (insiden
+    # OPUSDT 30 Okt: verdict 0/2 padahal 2 SHORT terbuka).
+    posisi_paper = posisi_paper_crypto(settings)
     out: list[dict[str, Any]] = []
     try:
         for pair in pairs:
@@ -577,7 +602,9 @@ def scan(
                 )
                 continue
 
-            _st, prop, hasil = evaluate(settings, pair, direction, client=c, record=record)
+            _st, prop, hasil = evaluate(
+                settings, pair, direction, client=c, record=record, open_positions=posisi_paper
+            )
             if hasil.duplicate_of:
                 out.append(
                     {
@@ -616,6 +643,8 @@ def assess_setup(
     poi: dict[str, Any] | None,
     open_positions: list[dict[str, Any]] | None = None,
     btc_change_24h: float | None = None,
+    max_total: int = gates.MAX_OPEN_POSITIONS,
+    max_same_dir: int = gates.MAX_SAME_DIRECTION,
 ) -> gates.Assessment:
     """Jalur gate tunggal — dipakai perdagangan nyata DAN backtest.
 
@@ -637,6 +666,8 @@ def assess_setup(
         poi=poi,
         open_positions=open_positions,
         btc_change_24h=btc_change_24h,
+        max_total=max_total,
+        max_same_dir=max_same_dir,
     )
 
 
@@ -723,6 +754,8 @@ def evaluate(
         poi=poi,
         open_positions=open_positions,
         btc_change_24h=btc_change_24h,
+        max_total=settings.max_concurrent_positions,
+        max_same_dir=settings.maks_posisi_searah,
     )
     strategi = str(base.get("strategy") or heat.STRATEGI_LEGACY)
     heat_hasil, filter_hasil = konteks_untuk_strategi(

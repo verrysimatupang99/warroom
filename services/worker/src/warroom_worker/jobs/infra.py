@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import csv
+import json
 import logging
+import os
 import subprocess
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import func, select
@@ -378,5 +382,221 @@ def handler_source_health(s: SASession, job: Job) -> str:
     s.flush()
     ringkas = " ".join(f"{u}={status_ringkas[u]}" for u in units)
     return f"host={host} unit={ditulis} {ringkas} disk={status_ringkas.get('disk_pct', '?')}%"
+
+
+# --- watchdog forward test -------------------------------------------------------------
+# Dua kegagalan yang membuat bukti forward test bohong tanpa suara:
+#   1. EA berhenti mengirim telemetri di tengah sesi 08–09 → tidak ada trade yang dievaluasi,
+#      dan tidak ada yang tahu sampai sesi habis.
+#   2. EA melaporkan `total_trades_today` bertambah, tetapi tidak ada baris baru di
+#      `deals.csv` → trade tertutup hilang dari jurnal.
+# Keduanya dibandingkan dengan DATA, bukan tebakan: fakta `mt5_snapshot` dan berkas deal.
+
+DEALS_DEFAULT = Path("/var/lib/warroom/deals.csv")
+WATCHDOG_STATE_DEFAULT = Path("/var/lib/warroom/forwardtest_watchdog.json")
+
+
+def _snapshot_mt5_terbaru(s: SASession) -> tuple[Fact | None, dict[str, Any]]:
+    f = s.scalar(
+        select(Fact).where(Fact.kind == "mt5_snapshot").order_by(Fact.observed_at.desc()).limit(1)
+    )
+    if f is None:
+        return None, {}
+    v = f.value_json
+    if isinstance(v, str):
+        try:
+            v = json.loads(v)
+        except ValueError:
+            v = {}
+    return f, dict(v) if isinstance(v, dict) else {}
+
+
+def _tiket_deal(path: Path) -> set[str]:
+    """Tiket unik dari deals.csv. Berkas tidak ada/rusak = kosong, bukan exception."""
+    if not path.exists():
+        return set()
+    try:
+        with path.open(newline="", encoding="utf-8", errors="replace") as f:
+            return {str(r.get("ticket") or "").strip() for r in csv.DictReader(f)} - {""}
+    except OSError:
+        return set()
+
+
+def _muat_state(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _simpan_state(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, sort_keys=True), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _tutup_alert(s: SASession, subject: str, alasan: str, *, now: datetime) -> bool:
+    """Selesaikan alert yang masih terbuka untuk subjek ini (pemulihan otomatis)."""
+    a = s.scalar(
+        select(Alert).where(Alert.subject == subject).where(Alert.ack_at.is_(None)).limit(1)
+    )
+    if a is None:
+        return False
+    a.ack_at = now
+    a.message = (a.message or "") + f" | PULIH otomatis: {alasan}"
+    return True
+
+
+def _jam_server(snapshot: dict[str, Any], umur_s: float) -> datetime | None:
+    """Perkiraan jam server broker sekarang.
+
+    `server_time` adalah epoch jam dinding server (TimeCurrent()), bukan UTC. Menambahkan
+    umur fakta membuat perkiraan ini tetap jalan walau EA sudah berhenti — justru kasus
+    yang ingin dideteksi.
+    """
+    st = snapshot.get("server_time")
+    if not isinstance(st, (int, float)) or st <= 0:
+        return None
+    return datetime.fromtimestamp(float(st) + max(0.0, umur_s), UTC)
+
+
+def handler_forwardtest_watchdog(s: SASession, job: Job) -> str:
+    """Alert bila telemetri mati saat sesi, atau deal tertutup tidak masuk `deals.csv`."""
+    now = datetime.now(UTC)
+    p = job.payload_json or {}
+    max_umur_s = float(p.get("max_umur_s", 120))
+    grace_s = float(p.get("deal_grace_s", 300))
+    jam_mulai = int(p.get("sesi_mulai", 8))
+    jam_selesai = int(p.get("sesi_selesai", 9))
+    deals_path = Path(p.get("deals_path", str(DEALS_DEFAULT)))
+    state_path = Path(p.get("state_path", str(WATCHDOG_STATE_DEFAULT)))
+
+    f, snap = _snapshot_mt5_terbaru(s)
+    if f is None:
+        return "tidak ada fakta mt5_snapshot; watchdog menunggu telemetri"
+
+    umur_s = max(0.0, (now - f.observed_at).total_seconds())
+    jam = _jam_server(snap, umur_s)
+    dalam_sesi = bool(
+        jam is not None
+        and jam.weekday() < 5
+        and jam_mulai <= jam.hour < jam_selesai
+    )
+    alert_baru = 0
+    pulih = 0
+
+    # 1) Telemetri mati di tengah sesi.
+    if dalam_sesi and umur_s > max_umur_s:
+        if _alert(
+            s,
+            subject="forwardtest/telemetri",
+            severity="kritis",
+            message=(
+                f"telemetri MT5 berhenti {umur_s:.0f} s saat sesi Reaper "
+                f"({jam:%H:%M} server) — melewati ambang {max_umur_s:.0f} s"
+            ),
+            aksi=(
+                "periksa EA di VM Azure (terminal hidup, AutoTrading, koneksi broker), "
+                "lalu cek /api/v1/tencent/mt5/status"
+            ),
+            fact_ids=[f.id],
+        ):
+            alert_baru += 1
+    elif umur_s <= max_umur_s and _tutup_alert(
+        s, "forwardtest/telemetri", f"telemetri segar lagi ({umur_s:.0f} s)", now=now
+    ):
+        pulih += 1
+
+    # 2) Deal tertutup tidak tercatat. Dihitung dari selisih kumulatif: total deal hari ini
+    #    yang dilaporkan EA vs baris baru di deals.csv. Selisih tidak hilang sampai ada
+    #    baris deal yang menutupnya.
+    total = snap.get("total_trades_today")
+    total = int(total) if isinstance(total, (int, float)) else None
+    jumlah_deal = len(_tiket_deal(deals_path))
+    tanggal = (jam or now).date().isoformat()
+    state = _muat_state(state_path)
+    selisih = 0
+    hilang_sejak: str | None = None
+
+    if total is None:
+        detail_deal = "total_trades_today tidak dikirim EA"
+    else:
+        if state.get("tanggal") != tanggal:
+            # Hari server baru (atau run pertama): jadikan kondisi sekarang sebagai baseline.
+            state = {"tanggal": tanggal, "total": total, "deal": jumlah_deal}
+        selisih_lama = max(0, int(state.get("selisih", 0) or 0))
+        sebelumnya_total = state.get("total")
+        sebelumnya_deal = state.get("deal")
+        prev_total = int(sebelumnya_total) if isinstance(sebelumnya_total, (int, float)) else total
+        prev_deal = int(sebelumnya_deal) if isinstance(sebelumnya_deal, (int, float)) else jumlah_deal
+        tambah_total = max(0, total - prev_total)
+        tambah_deal = max(0, jumlah_deal - prev_deal)
+        selisih = max(0, selisih_lama + tambah_total - tambah_deal)
+        if selisih > 0:
+            hilang_sejak = str(state.get("hilang_sejak") or now.isoformat())
+        detail_deal = f"total_hari_ini={total} deal_csv={jumlah_deal} selisih={selisih}"
+
+        if selisih > 0 and hilang_sejak:
+            sejak = datetime.fromisoformat(hilang_sejak)
+            if (now - sejak).total_seconds() >= grace_s:
+                if _alert(
+                    s,
+                    subject="forwardtest/deal-hilang",
+                    severity="kritis",
+                    message=(
+                        f"{selisih} deal tertutup belum masuk deals.csv "
+                        f"(EA total hari ini {total}, tercatat {jumlah_deal}); "
+                        f"menunggu {int((now - sejak).total_seconds())} s"
+                    ),
+                    aksi=(
+                        "periksa log EA (OnTradeTransaction / POST /mt5/deal), "
+                        "lalu cocokkan dengan statement MT5"
+                    ),
+                ):
+                    alert_baru += 1
+        elif selisih == 0 and _tutup_alert(
+            s, "forwardtest/deal-hilang", "semua deal tertutup sudah tercatat", now=now
+        ):
+            pulih += 1
+
+        state.update(
+            {
+                "tanggal": tanggal,
+                "total": total,
+                "deal": jumlah_deal,
+                "selisih": selisih,
+                "hilang_sejak": hilang_sejak if selisih > 0 else None,
+                "diperiksa": now.isoformat(),
+            }
+        )
+        _simpan_state(state_path, state)
+
+    if alert_baru or pulih:
+        s.add(
+            Event(
+                type="forwardtest.watchdog",
+                actor="worker",
+                payload_json={
+                    "umur_telemetri_s": round(umur_s, 1),
+                    "dalam_sesi": dalam_sesi,
+                    "jam_server": jam.isoformat() if jam else None,
+                    "total_trades_today": total,
+                    "deal_csv": jumlah_deal,
+                    "selisih": selisih,
+                    "alert_baru": alert_baru,
+                    "pulih": pulih,
+                },
+                severity="warning" if alert_baru else "info",
+            )
+        )
+
+    return (
+        f"umur={umur_s:.0f}s sesi={'ya' if dalam_sesi else 'tidak'} "
+        f"{detail_deal} alert={alert_baru} pulih={pulih}"
+    )
 
 

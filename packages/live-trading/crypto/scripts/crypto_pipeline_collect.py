@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """Crypto 5-agent pipeline collector — Agent 1 (scan), 4 (whale), 5 (risk).
 
@@ -288,7 +289,7 @@ def main():
         g = json.loads(out)["data"]["market_cap_percentage"]
         btcdom = g.get("btc")
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     if btcdom:
         lines.append(f"  BTC dominance: {btcdom:.1f}% (alt season jika < 45 & turun)")
     lines.append("  Funding agregat: lihat kolom fund di AGENT 4 (positif ekstrem >0.05% = long crowded).")
@@ -303,7 +304,7 @@ def main():
         open_syms = [it.get("pair") for it in (wl.get("items") or [])
                      if it.get("status") in ("still_open", "tp1_hit_runner")]
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
     lines.append(f"  Posisi open user: {len(open_syms)}" + (f" ({', '.join(open_syms)})" if open_syms else " — clean"))
     # BTC regime
     btc = _data["prices"].get("BTCUSDT") or {}
@@ -351,7 +352,7 @@ def main():
             lines.append("\n=== AGENT 6b — AKUMULASI WHALE WALLET-LEVEL (HYPERLIQUID, konfirmasi saja) ===")
             lines.append(out)
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
     print("\n".join(lines))
 

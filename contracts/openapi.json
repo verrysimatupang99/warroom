@@ -252,6 +252,167 @@
         "title": "LoginBody",
         "type": "object"
       },
+      "MT5DealPayload": {
+        "description": "Deal tertutup yang dilaporkan EA (posisi sudah final).",
+        "properties": {
+          "close_price": {
+            "default": 0.0,
+            "title": "Close Price",
+            "type": "number"
+          },
+          "close_time": {
+            "default": "",
+            "title": "Close Time",
+            "type": "string"
+          },
+          "comment": {
+            "default": "",
+            "title": "Comment",
+            "type": "string"
+          },
+          "commission": {
+            "default": 0.0,
+            "title": "Commission",
+            "type": "number"
+          },
+          "magic": {
+            "default": 0,
+            "title": "Magic",
+            "type": "integer"
+          },
+          "open_price": {
+            "default": 0.0,
+            "title": "Open Price",
+            "type": "number"
+          },
+          "open_time": {
+            "default": "",
+            "title": "Open Time",
+            "type": "string"
+          },
+          "position": {
+            "default": 0,
+            "title": "Position",
+            "type": "integer"
+          },
+          "profit": {
+            "default": 0.0,
+            "title": "Profit",
+            "type": "number"
+          },
+          "side": {
+            "default": "",
+            "title": "Side",
+            "type": "string"
+          },
+          "swap": {
+            "default": 0.0,
+            "title": "Swap",
+            "type": "number"
+          },
+          "symbol": {
+            "default": "",
+            "title": "Symbol",
+            "type": "string"
+          },
+          "ticket": {
+            "title": "Ticket",
+            "type": "integer"
+          },
+          "volume": {
+            "default": 0.0,
+            "title": "Volume",
+            "type": "number"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "title": "MT5DealPayload",
+        "type": "object"
+      },
+      "MT5FillPayload": {
+        "description": "Satu kejadian eksekusi (entry) yang dilaporkan EA.",
+        "properties": {
+          "digits": {
+            "default": 0,
+            "title": "Digits",
+            "type": "integer"
+          },
+          "equity": {
+            "default": 0.0,
+            "title": "Equity",
+            "type": "number"
+          },
+          "execution_mode": {
+            "default": -1,
+            "title": "Execution Mode",
+            "type": "integer"
+          },
+          "latency_ms": {
+            "default": 0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "open_positions": {
+            "default": 0,
+            "title": "Open Positions",
+            "type": "integer"
+          },
+          "price_filled": {
+            "default": 0.0,
+            "title": "Price Filled",
+            "type": "number"
+          },
+          "price_requested": {
+            "default": 0.0,
+            "title": "Price Requested",
+            "type": "number"
+          },
+          "retcode": {
+            "default": 0,
+            "title": "Retcode",
+            "type": "integer"
+          },
+          "side": {
+            "default": "",
+            "title": "Side",
+            "type": "string"
+          },
+          "sl": {
+            "default": 0.0,
+            "title": "Sl",
+            "type": "number"
+          },
+          "spread_pts": {
+            "default": 0,
+            "title": "Spread Pts",
+            "type": "integer"
+          },
+          "symbol": {
+            "default": "",
+            "title": "Symbol",
+            "type": "string"
+          },
+          "ticket": {
+            "default": 0,
+            "title": "Ticket",
+            "type": "integer"
+          },
+          "tp": {
+            "default": 0.0,
+            "title": "Tp",
+            "type": "number"
+          },
+          "volume": {
+            "default": 0.0,
+            "title": "Volume",
+            "type": "number"
+          }
+        },
+        "title": "MT5FillPayload",
+        "type": "object"
+      },
       "MT5PendingOrder": {
         "properties": {
           "placed_at": {
@@ -364,17 +525,182 @@
             "title": "Account",
             "type": "string"
           },
+          "ask": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ask"
+          },
+          "atr_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atr M5"
+          },
           "balance": {
             "title": "Balance",
             "type": "number"
+          },
+          "bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid"
           },
           "broker": {
             "title": "Broker",
             "type": "string"
           },
+          "digits": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digits"
+          },
+          "ema21_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ema21 M5"
+          },
+          "ema9_m5": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ema9 M5"
+          },
           "equity": {
             "title": "Equity",
             "type": "number"
+          },
+          "eval_alasan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Alasan"
+          },
+          "eval_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval At"
+          },
+          "eval_atr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Atr"
+          },
+          "eval_ema_fast": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ema Fast"
+          },
+          "eval_ema_slow": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ema Slow"
+          },
+          "eval_rsi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Rsi"
+          },
+          "eval_sesi": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Sesi"
+          },
+          "eval_spread": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Spread"
+          },
+          "eval_tren": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Tren"
           },
           "floating_pnl": {
             "title": "Floating Pnl",
@@ -384,9 +710,53 @@
             "title": "Free Margin",
             "type": "number"
           },
+          "high_12": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High 12"
+          },
+          "losses_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Losses Today"
+          },
+          "low_12": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low 12"
+          },
           "margin": {
             "title": "Margin",
             "type": "number"
+          },
+          "net_pnl_today_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pnl Today Usd"
           },
           "pending_orders": {
             "default": [],
@@ -403,6 +773,28 @@
             },
             "title": "Positions",
             "type": "array"
+          },
+          "server_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Time"
+          },
+          "spread_pts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spread Pts"
           },
           "total_trades_today": {
             "anyOf": [
@@ -427,6 +819,28 @@
             ],
             "default": 0.0,
             "title": "Win Rate Pct"
+          },
+          "win_rate_today_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate Today Pct"
+          },
+          "wins_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wins Today"
           }
         },
         "required": [
@@ -2731,6 +3145,1056 @@
         "summary": "Area Idx"
       }
     },
+    "/api/v1/idx-edge/akumulasi/{kode}": {
+      "get": {
+        "operationId": "akumulasi_api_v1_idx_edge_akumulasi__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Akumulasi Api V1 Idx Edge Akumulasi  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Akumulasi",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/analisa/{kode}": {
+      "get": {
+        "operationId": "analisa_api_v1_idx_edge_analisa__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Analisa Api V1 Idx Edge Analisa  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analisa",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/broker/{kode}": {
+      "get": {
+        "operationId": "broker_api_v1_idx_edge_broker__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Broker Api V1 Idx Edge Broker  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Broker",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/cari": {
+      "get": {
+        "operationId": "cari_api_v1_idx_edge_cari_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 12,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cari Api V1 Idx Edge Cari Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cari",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/harga": {
+      "get": {
+        "operationId": "harga_banyak_api_v1_idx_edge_harga_get",
+        "parameters": [
+          {
+            "description": "Daftar kode dipisah koma, maks 20",
+            "in": "query",
+            "name": "codes",
+            "required": true,
+            "schema": {
+              "description": "Daftar kode dipisah koma, maks 20",
+              "title": "Codes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Harga Banyak Api V1 Idx Edge Harga Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Harga Banyak",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/harga/{kode}": {
+      "get": {
+        "operationId": "harga_api_v1_idx_edge_harga__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Harga Api V1 Idx Edge Harga  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Harga",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/insider/{kode}": {
+      "get": {
+        "operationId": "insider_api_v1_idx_edge_insider__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Insider Api V1 Idx Edge Insider  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Insider",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/kapitalisasi": {
+      "get": {
+        "operationId": "kapitalisasi_api_v1_idx_edge_kapitalisasi_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "halaman",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Halaman",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Kapitalisasi Api V1 Idx Edge Kapitalisasi Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Kapitalisasi",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/kesehatan": {
+      "get": {
+        "operationId": "kesehatan_api_v1_idx_edge_kesehatan_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Kesehatan Api V1 Idx Edge Kesehatan Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Kesehatan",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/keuangan/{kode}": {
+      "get": {
+        "operationId": "keuangan_api_v1_idx_edge_keuangan__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Keuangan Api V1 Idx Edge Keuangan  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Keuangan",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/musiman/{kode}": {
+      "get": {
+        "operationId": "musiman_api_v1_idx_edge_musiman__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Musiman Api V1 Idx Edge Musiman  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Musiman",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/pemakaian": {
+      "get": {
+        "description": "Hitungan panggilan keluar hari ini. Sisa kuota RESMI tidak bisa ditanya lewat API.",
+        "operationId": "pemakaian_api_v1_idx_edge_pemakaian_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pemakaian Api V1 Idx Edge Pemakaian Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pemakaian",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/penggerak": {
+      "get": {
+        "operationId": "penggerak_api_v1_idx_edge_penggerak_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "urut",
+            "required": false,
+            "schema": {
+              "default": "chg",
+              "pattern": "^(chg|pct)$",
+              "title": "Urut",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Penggerak Api V1 Idx Edge Penggerak Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Penggerak",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/ringkas": {
+      "get": {
+        "operationId": "ringkas_api_v1_idx_edge_ringkas_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ringkas Api V1 Idx Edge Ringkas Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ringkas",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/riwayat/{kode}": {
+      "get": {
+        "operationId": "riwayat_api_v1_idx_edge_riwayat__kode__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kode",
+            "required": true,
+            "schema": {
+              "title": "Kode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 60,
+              "maximum": 500,
+              "minimum": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Riwayat Api V1 Idx Edge Riwayat  Kode  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Riwayat",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-edge/screener": {
+      "get": {
+        "operationId": "screener_api_v1_idx_edge_screener_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Screener Api V1 Idx Edge Screener Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Screener",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-ws/mulai": {
+      "post": {
+        "description": "Nyalakan pendengar latar. Aman dipanggil berulang.",
+        "operationId": "mulai_api_v1_idx_ws_mulai_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Mulai Api V1 Idx Ws Mulai Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mulai",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
+    "/api/v1/idx-ws/running-trade": {
+      "get": {
+        "description": "Transaksi terakhir + top 5 teraktif dari stream. Tanpa kuota request.",
+        "operationId": "running_trade_api_v1_idx_ws_running_trade_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Running Trade Api V1 Idx Ws Running Trade Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Running Trade",
+        "tags": [
+          "idx"
+        ]
+      }
+    },
     "/api/v1/idx/equity": {
       "get": {
         "description": "Kurva equity dan metrik risiko (R, max drawdown).",
@@ -3416,7 +4880,7 @@
     },
     "/api/v1/journal/charts": {
       "get": {
-        "description": "Daftar chart jurnal yang tersedia di node MiniMax.",
+        "description": "Deret ekuitas untuk grafik.",
         "operationId": "journal_charts_api_v1_journal_charts_get",
         "parameters": [
           {
@@ -3471,9 +4935,22 @@
     },
     "/api/v1/journal/edge": {
       "get": {
-        "description": "Edge per sesi, excursion, dan hasil backtest jurnal.",
+        "description": "Slippage dan latensi per jam, dari fill nyata.",
         "operationId": "journal_edge_api_v1_journal_edge_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -3523,9 +5000,22 @@
     },
     "/api/v1/journal/multipair": {
       "get": {
-        "description": "Snapshot multi-pair (XAUUSD, NAS100) beserta entry aktif.",
+        "description": "Rekap per simbol dari kedua market.",
         "operationId": "journal_multipair_api_v1_journal_multipair_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -3575,9 +5065,22 @@
     },
     "/api/v1/journal/performance": {
       "get": {
-        "description": "Performa per pair beserta konversi R.",
+        "description": "Kurva ekuitas forex dari snapshot per menit.",
         "operationId": "journal_performance_api_v1_journal_performance_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -3627,7 +5130,7 @@
     },
     "/api/v1/journal/scanlog": {
       "get": {
-        "description": "Alasan sinyal ditolak (gate reject, blackout, ATR tipis, dsb).",
+        "description": "Alasan sinyal ditolak (gate reject, blackout, ATR tipis).",
         "operationId": "journal_scanlog_api_v1_journal_scanlog_get",
         "parameters": [
           {
@@ -3679,7 +5182,7 @@
     },
     "/api/v1/journal/session": {
       "get": {
-        "description": "Sesi market aktif, killzone, dan jadwal run berikutnya.",
+        "description": "Kondisi sesi terakhir: spread, bid/ask, posisi.",
         "operationId": "journal_session_api_v1_journal_session_get",
         "parameters": [
           {
@@ -3731,9 +5234,22 @@
     },
     "/api/v1/journal/stats": {
       "get": {
-        "description": "Statistik jurnal: jumlah sinyal, closed/open, win rate.",
+        "description": "Statistik jurnal per market: ekuitas, PnL, trade, win rate.",
         "operationId": "journal_stats_api_v1_journal_stats_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -3783,7 +5299,7 @@
     },
     "/api/v1/journal/symbol/{symbol}": {
       "get": {
-        "description": "Ringkasan jurnal untuk satu pair.",
+        "description": "Ringkasan jurnal untuk satu simbol.",
         "operationId": "journal_symbol_api_v1_journal_symbol__symbol__get",
         "parameters": [
           {
@@ -3844,9 +5360,22 @@
     },
     "/api/v1/journal/trades": {
       "get": {
-        "description": "Trade open dan closed dari jurnal.",
+        "description": "Trade tercatat dari kedua market, terbaru lebih dulu.",
         "operationId": "journal_trades_api_v1_journal_trades_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -3896,7 +5425,7 @@
     },
     "/api/v1/journal/watchlist": {
       "get": {
-        "description": "Watchlist zone aktif beserta usia dan status basi.",
+        "description": "Posisi dan pending order yang sedang terbuka di terminal MT5.",
         "operationId": "journal_watchlist_api_v1_journal_watchlist_get",
         "parameters": [
           {
@@ -3943,6 +5472,81 @@
         "summary": "Journal Watchlist",
         "tags": [
           "journal"
+        ]
+      }
+    },
+    "/api/v1/kalender/makro": {
+      "get": {
+        "description": "Agenda ekonomi pekan ini.\n\ndampak=tinggi  : hanya High\ndampak=utama   : High atau Medium untuk mata uang utama\ndampak=semua   : semua kecuali Holiday",
+        "operationId": "kalender_makro_api_v1_kalender_makro_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dampak",
+            "required": false,
+            "schema": {
+              "default": "semua",
+              "pattern": "^(semua|tinggi|utama)$",
+              "title": "Dampak",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "batas",
+            "required": false,
+            "schema": {
+              "default": 40,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Batas",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Kalender Makro Api V1 Kalender Makro Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Kalender Makro",
+        "tags": [
+          "kalender"
         ]
       }
     },
@@ -5333,6 +6937,55 @@
         "summary": "Area Sistem"
       }
     },
+    "/api/v1/sistem/status": {
+      "get": {
+        "description": "Ringkasan hidup/mati unit dan umur berkas data.",
+        "operationId": "status_sistem_api_v1_sistem_status_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Status Sistem Api V1 Sistem Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status Sistem"
+      }
+    },
     "/api/v1/stream": {
       "get": {
         "operationId": "stream_api_v1_stream_get",
@@ -5503,6 +7156,58 @@
         ]
       }
     },
+    "/api/v1/tencent/crypto/momentum": {
+      "get": {
+        "description": "Ringkasan paper trader momentum (40 koin) untuk dashboard Crypto.\n\nSumber: state yang ditulis ops/momentum_paper.py tiap jam.\nTidak ada order nyata — ini pencatatan.",
+        "operationId": "get_momentum_paper_api_v1_tencent_crypto_momentum_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Momentum Paper Api V1 Tencent Crypto Momentum Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Momentum Paper",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/forex/bias": {
       "get": {
         "description": "Menyajikan bias sentimen dan blackout status untuk konsumsi langsung EA MT5.",
@@ -5570,6 +7275,110 @@
           }
         },
         "summary": "Tencent Forex Dxy",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/forex/laya": {
+      "get": {
+        "description": "Verdict Laya AI atas kondisi akun MT5 + sinyal aktif (middleware nyata).\n\nBerbeda dari `/forex/bias` yang hanya membaca kalender event: endpoint ini\nmemanggil model `convaiinnovations/laya` dengan ringkasan data mentah MT5\n(balance/equity/posisi) dan sinyal level yang sedang berlaku.\n\nBila model tidak tersedia, balasannya `tersedia:false` + alasan — bukan angka\nkarangan. Read-only: tidak membuka order dan tidak menyentuh gate live.",
+        "operationId": "get_forex_laya_verdict_api_v1_tencent_forex_laya_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Forex Laya Verdict Api V1 Tencent Forex Laya Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Forex Laya Verdict",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/forex/laya/status": {
+      "get": {
+        "description": "Status middleware Laya (tersedia/tidak, ambang, verdict terakhir).",
+        "operationId": "get_forex_laya_status_api_v1_tencent_forex_laya_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Forex Laya Status Api V1 Tencent Forex Laya Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Forex Laya Status",
         "tags": [
           "tencent"
         ]
@@ -5776,6 +7585,130 @@
         ]
       }
     },
+    "/api/v1/tencent/mt5/deal": {
+      "post": {
+        "description": "Catat deal tertutup (satu baris per posisi) untuk jurnal forex.\n\nIdempoten per `ticket`: EA boleh mengirim ulang setelah restart tanpa\nmenggandakan baris di `deals.csv`.",
+        "operationId": "report_mt5_deal_api_v1_tencent_mt5_deal_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MT5DealPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Report Mt5 Deal Api V1 Tencent Mt5 Deal Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Mt5 Deal",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/mt5/fill": {
+      "post": {
+        "description": "Catat kualitas eksekusi: harga diminta vs harga didapat + latensi.\n\nDipakai untuk mengukur slippage nyata per jam dan per kondisi pasar.\nTidak mengubah perilaku EA.",
+        "operationId": "report_mt5_fill_api_v1_tencent_mt5_fill_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MT5FillPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Report Mt5 Fill Api V1 Tencent Mt5 Fill Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Mt5 Fill",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/mt5/history": {
       "get": {
         "description": "Mengembalikan daftar lengkap history transaksi EA MT5 untuk halaman Forex.",
@@ -5791,6 +7724,58 @@
           }
         },
         "summary": "Get Mt5 History",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
+    "/api/v1/tencent/mt5/panels": {
+      "get": {
+        "description": "Ringkasan 3 panel simulator (A/B/C) untuk ditampilkan di dashboard.",
+        "operationId": "get_panel_sim_api_v1_tencent_mt5_panels_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Panel Sim Api V1 Tencent Mt5 Panels Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Panel Sim",
         "tags": [
           "tencent"
         ]

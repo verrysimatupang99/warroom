@@ -3,11 +3,11 @@
 ``doctor`` sengaja jadi perintah pertama: sebelum menyentuh uang, semua jalur
 data harus terbukti hidup dari mesin ini.
 """
-
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 import time
 from pathlib import Path
@@ -544,7 +544,7 @@ def cmd_smc(args: argparse.Namespace) -> int:
                     f"({konteks['funding_annual_pct']:+.0f}%/tahun) — konteks, BUKAN gate"
                 )
         except Exception:  # noqa: BLE001 — konteks opsional, jangan gagalkan analisis
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
         return 0 if hasil.allowed else 2
     return 0
 

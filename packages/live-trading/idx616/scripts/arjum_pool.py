@@ -1,3 +1,4 @@
+import logging
 #!/usr/bin/env python3
 """arjum_pool.py — singleton wrapper di atas arjum_client (REST).
 
@@ -85,7 +86,7 @@ def _log_audit(endpoint, code, status, source):
         with path.open("a") as f:
             f.write(json.dumps(rec) + "\n")
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
 
 def _cache_path(key):
@@ -116,7 +117,7 @@ def _cache_save(key, endpoint, data):
             "endpoint": endpoint, "data": data, "saved_at": time.time()
         }))
     except Exception:
-        pass
+        logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
 
 
 def _cached_or_fetch(endpoint_name, fn, *args, ttl_override=None, quota_free=False, **kwargs):
@@ -187,7 +188,7 @@ def _yf_load():
             _yf_state["mod"] = _yf
             return _yf_state["mod"]
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("operasi dilewati", exc_info=True)
         for sp in _yf_paths():
             if not sp.is_dir():
                 continue
