@@ -152,3 +152,24 @@ def test_koreksi_net_dipakai_tracker(tmp_path) -> None:
         hari_ini=date(2026, 10, 30),
     )
     assert hasil["net_usd"] == 9.5
+
+def test_tidak_izin_dibaca_bukan_nol(tmp_path, monkeypatch) -> None:
+    """Berkas ada tapi tidak boleh dibaca bukan alasan menulis 0 trade."""
+    from warroom_core import forwardtest as ft
+
+    asli = ft.baca_csv_detail
+
+    def tolak(path):
+        if path.name == "deals.csv":
+            return [], "tidak-izin"
+        return asli(path)
+
+    monkeypatch.setattr(ft, "baca_csv_detail", tolak)
+    hasil = ft.ringkas(deals_path=tmp_path / "deals.csv", fills_path=tmp_path / "fills.csv",
+                       hari_ini=date(2026, 10, 31))
+    assert hasil["trade_tertutup"] is None
+    assert hasil["net_usd"] is None
+    assert hasil["status"] == "tidak-izin"
+    assert hasil["sumber"]["deals_status"] == "tidak-izin"
+    assert "n/a" in ft.teks(hasil)
+    assert "tidak izin" in ft.teks(hasil)
