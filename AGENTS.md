@@ -10,9 +10,14 @@ Rancangan lengkap: `../live-trading/docs/blueprint/` (00–07).
    hanya lewat allowlist sudo yang ada.
 2. **Tencent = baca-saja.** Sama seperti domain `live-trading`.
    **Azure: radar rantai tetap lokal** di host ini (`lt radar-update` → `state/radar_state.json`);
-   VM `20.212.52.5` tidak dipakai untuk itu dan boleh mati. **Pengecualian:** VM
-   `mt5-trader-vm` (`FOREX-MT5-RG`, 138.91.35.65) **dipakai aktif** untuk eksekusi demo
-   XAUUSD lewat `WarRoom_AutoTrader_v3`. Jangan matikan; lihat `HANDOVER-OMP.md` §5.
+   VM `20.212.52.5` tidak dipakai untuk itu dan boleh mati.
+   **VM trader aktif = `mt5-trader-vm2`** (`FOREX-MT5-RG`, `20.212.109.170`): akun live
+   cent `36525553` (Vantage Markets Live 21), `BTCUSD.sc` H1, EA
+   `Fomofx_Satrion_BTC_v1.00`. **Jangan** restart/stop/mengubah config VM itu, jangan
+   menyentuh `terminal64.exe`, jangan memasang EA lain di chart `BTCUSD.sc`, dan jangan
+   menjalankan `az vm restart|stop|run-command` ke sana. Aturan resmi:
+   `HOLD_DO_NOT_TOUCH_AZURE_VM.md`. Telemetri War Room **belum** memantau akun
+   `36525553`; `mt5_snapshot` yang tercatat masih akun demo `416510164`.
 3. **Gate live tidak pernah disentuh** (`/etc/poly-pilot/activation-approved`): jangan
    dibuat, jangan diubah. Aksi live butuh izin eksplisit owner (grant), dan API menolak
    dengan 409 tanpa itu.
@@ -168,3 +173,8 @@ Rincian lengkap: `HANDOVER-OMP.md`. Yang berubah sejak catatan di atas:
 - Jebakan yang memakan waktu ada di `HANDOVER-OMP.md` §9 — terutama: Strategy Tester
   menuntut akun tersimpan (`accounts.dat` di build 6286), dan `az vm run-command`
   berjalan sebagai SYSTEM sehingga MT5 membaca data folder yang salah.
+- **Pembaruan 31 Okt 2026:** VM trader aktif adalah `mt5-trader-vm2`
+  (`20.212.109.170`), bukan `mt5-trader-vm`. Akun live cent `36525553` menjalankan
+  `Fomofx_Satrion_BTC_v1.00` pada `BTCUSD.sc` H1 dengan 5 pending order. Jangan
+  restart/stop/ubah konfigurasi; lihat `HOLD_DO_NOT_TOUCH_AZURE_VM.md`. Akun itu
+  belum terhubung ke telemetri War Room.

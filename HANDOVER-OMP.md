@@ -13,9 +13,17 @@ Repo | `/home/admin/warroom`, branch `main`, commit `8e00176`, tree **bersih** |
 Situs | `https://0xgunsl1ng3r.xyz`, build `8e00176-20261030T114631Z` |
 Layanan | `warroom-api` `warroom-web` `warroom-worker` **running**, 0 unit gagal |
 Database | PostgreSQL 16, db `warroom` |
-EA produksi | `WarRoom_AutoTrader_v3` (logika Reaper) di VM Azure, akun demo `416510164` |
-Telemetri | hidup, snapshot tiap 60 detik, terverifikasi masuk tabel `facts` |
-Trade forex tercatat | **0** — belum pernah ada satu pun |
+EA produksi | `Fomofx_Satrion_BTC_v1.00` di `mt5-trader-vm2`, akun live cent `36525553` (sejak 31 Okt; lihat catatan di bawah) |
+Telemetri | War Room menerima `mt5_snapshot` untuk akun demo `416510164`; akun live `36525553` **belum** dipantau |
+Trade forex tercatat | **0** untuk akun yang dipantau (demo `416510164`) |
+
+> **Pembaruan 31 Okt 2026, 23:05 WIB.** VM trader yang aktif sekarang adalah
+> `mt5-trader-vm2` (`FOREX-MT5-RG`, `20.212.109.170`), akun live cent `36525553`
+> (Vantage Markets Live 21), `BTCUSD.sc` H1, EA `Fomofx_Satrion_BTC_v1.00`, 5 pending
+> order. **Jangan restart/stop/mengubah konfigurasi VM itu, jangan menyentuh
+> `terminal64.exe`, dan jangan memasang EA lain.** Aturan resmi:
+> `HOLD_DO_NOT_TOUCH_AZURE_VM.md`. Angka telemetri di tabel ini tetap milik akun demo
+> `416510164`; akun live belum terhubung ke War Room.
 
 ---
 
@@ -27,8 +35,9 @@ Pengguna ──HTTPS──> nginx ──> warroom-web (SvelteKit, :3100)
                                      ^
                                      │ HTTPS: telemetry / fill / sinyal
                                      │
-                          MT5 di Azure (mt5-trader-vm)
-                          WarRoom_AutoTrader_v3, XAUUSDm M5
+                          MT5 di Azure (mt5-trader-vm2)
+                          Fomofx_Satrion_BTC, BTCUSD.sc H1
+                          (telemetri War Room: demo 416510164)
 ```
 
 Tiga layanan systemd: `warroom-api`, `warroom-web`, `warroom-worker`.
@@ -177,7 +186,24 @@ update sessions set revoked_at=now() where id like 'aud-%' and revoked_at is nul
 
 ## 5. Infrastruktur di luar VPS
 
-### VM Azure — `mt5-trader-vm`
+### VM Azure — `mt5-trader-vm2` (aktif) dan `mt5-trader-vm` (historis)
+
+#### Aktif sejak 31 Okt 2026 — `mt5-trader-vm2`
+```
+RG            FOREX-MT5-RG
+IP            20.212.109.170
+Akun          36525553 @ Vantage Markets Live 21 (Cent ECN, 2.000 USC)
+Chart         BTCUSD.sc, H1
+EA            Fomofx_Satrion_BTC_v1.00 36525553.ex5
+Preset        Satrion BTC Fix lot.set (Breakout & Pulsar 0,01 lot)
+Eksekusi      LIVE 24/7, 5 pending order (Breakout Trap), Algo Trading ON
+```
+**Dilarang** restart/stop/mengubah konfigurasi VM, menyentuh `terminal64.exe`, atau
+memasang EA lain di chart `BTCUSD.sc`. Jangan menjalankan `az vm restart|stop|run-command`
+ke VM ini. Rujukan resmi: `HOLD_DO_NOT_TOUCH_AZURE_VM.md`. Akun ini **belum** terhubung
+ke telemetri War Room.
+
+#### Historis / demo — `mt5-trader-vm`
 ```
 RG            FOREX-MT5-RG
 IP            138.91.35.65
