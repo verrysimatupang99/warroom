@@ -21,7 +21,20 @@ set -euo pipefail
 OPS_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE="${WARROOM_CSP_BASE:-http://127.0.0.1:3100}"
 NGINX_CONF_TMPL="$OPS_DIR/nginx-warroom.conf"
-NGINX_CONF_TARGET="/etc/nginx/sites-available/warroom"
+NGINX_CONF_AVAIL="/etc/nginx/sites-available/warroom"
+NGINX_CONF_ENABLED="/etc/nginx/sites-enabled/warroom"
+
+# nginx menyajikan berkas di sites-enabled. Di host ini entri itu SALINAN biasa, bukan
+# symlink ke sites-available (temuan 31 Okt 2026: hash baru ditulis ke available tetapi
+# report-only yang disajikan tetap hash lama). Jadi tulis ke semua target yang ada,
+# bukan hanya available.
+NGINX_CONF_TARGETS=("$NGINX_CONF_AVAIL")
+if sudo -n test -e "$NGINX_CONF_ENABLED"; then
+	ENABLED_REAL="$(sudo -n readlink -f "$NGINX_CONF_ENABLED")"
+	if [[ "$ENABLED_REAL" != "$NGINX_CONF_AVAIL" ]]; then
+		NGINX_CONF_TARGETS+=("$ENABLED_REAL")
+	fi
+fi
 
 HEADERS="$(mktemp)"
 trap 'rm -f "$HEADERS"' EXIT
@@ -52,20 +65,26 @@ if grep -q '__BOOTSTRAP_HASH__' "$NGINX_CONF_TMPL"; then
 	# Tulis config dengan placeholder diganti hash nyata.
 	RENDERED="$(mktemp)"
 	sed "s|__BOOTSTRAP_HASH__|'$HASH'|g" "$NGINX_CONF_TMPL" >"$RENDERED"
-	if ! sudo -n test -w "$NGINX_CONF_TARGET"; then
-		echo "CSP: tidak bisa menulis $NGINX_CONF_TARGET (butuh sudo -n)" >&2
-		rm -f "$RENDERED"
-		exit 1
-	fi
-	if ! diff -q "$RENDERED" "$NGINX_CONF_TARGET" >/dev/null 2>&1; then
-		sudo -n install -m 0644 "$RENDERED" "$NGINX_CONF_TARGET"
+	berubah=0
+	for target in "${NGINX_CONF_TARGETS[@]}"; do
+		if ! sudo -n test -w "$target"; then
+			echo "CSP: tidak bisa menulis $target (butuh sudo -n)" >&2
+			rm -f "$RENDERED"
+			exit 1
+		fi
+		if ! diff -q "$RENDERED" "$target" >/dev/null 2>&1; then
+			sudo -n install -m 0644 "$RENDERED" "$target"
+			berubah=1
+		fi
+	done
+	if (( berubah == 1 )); then
 		if ! sudo -n nginx -t >/dev/null 2>&1; then
 			echo "CSP: nginx -t GAGAL setelah menulis config — tidak di-reload" >&2
 			rm -f "$RENDERED"
 			exit 1
 		fi
 		sudo -n systemctl reload nginx
-		echo "CSP: config nginx diperbarui dengan hash build baru + reload"
+		echo "CSP: config nginx diperbarui (${#NGINX_CONF_TARGETS[@]} berkas) + reload"
 	else
 		echo "CSP: config nginx sudah sinkron (hash cocok)"
 	fi
