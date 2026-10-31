@@ -41,12 +41,13 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 ```
 
 **`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **30 Okt 2026**: **912** (`--collect-only`, perintah
-`pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
-tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
-`packages/core/tests`) mengoleksi **1126**. Web: **72** vitest, **52** berkas spec e2e.
-Angka lama 882/889/892/900/906/908/909 sudah tidak berlaku. Kalau menyentuh tes, perbarui
-angka ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
+Jumlah tes per **31 Okt 2026**: **914** (`--collect-only`, perintah
+`pytest services/*/tests packages/live-trading`), dan run penuh rc=0. Root `pytest`
+(testpaths `packages` + `services`, termasuk `packages/core/tests`) mengoleksi
+**1129**. Web: **74** vitest (17 berkas), **52** berkas spec e2e.
+Angka lama 882/889/892/900/906/908/909/912/1126 sudah tidak berlaku. Kalau menyentuh
+tes, perbarui angka ini beserta bukti perintahnya — sumber kebenaran tetap output,
+bukan dokumen.
 
 ## Arsitektur satu layar
 
