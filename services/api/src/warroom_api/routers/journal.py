@@ -32,9 +32,12 @@ _FILTER = (
 )
 
 
-async def _ambil(path: str, market: str | None = None) -> Any:
+async def _ambil(path: str, market: str | None = None, account: str | None = None) -> Any:
     if market is not None and path in _FILTER:
-        return await _fetch_tencent(path, params={"market": market})
+        params = {"market": market}
+        if account:
+            params["account"] = account
+        return await _fetch_tencent(path, params=params)
     return await _fetch_tencent(path)
 
 
@@ -81,9 +84,11 @@ async def journal_scanlog(market: str = MarketQ) -> dict[str, Any]:
 
 
 @router.get("/performance")
-async def journal_performance(market: str = MarketQ) -> dict[str, Any]:
-    """Kurva ekuitas forex dari snapshot per menit."""
-    return await _ambil("/forex/journal/performance", market)
+async def journal_performance(
+    market: str = MarketQ, account: str | None = Query(None)
+) -> dict[str, Any]:
+    """Kurva ekuitas forex dari snapshot per menit, opsional per akun MT5."""
+    return await _ambil("/forex/journal/performance", market, account)
 
 
 @router.get("/session")

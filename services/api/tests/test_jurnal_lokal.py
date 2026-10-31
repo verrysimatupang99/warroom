@@ -224,7 +224,7 @@ def test_drawdown_maks_dari_puncak_berjalan():
 
 
 def test_performance_memuat_marker_deal(monkeypatch):
-    async def fake_deret(batas: int = 2000) -> list[dict]:
+    async def fake_deret(batas: int = 2000, account: str | None = None) -> list[dict]:
         return [
             {"t": "2026-10-30T08:00:00+00:00", "equity": 1000.0, "balance": 1000.0},
             {"t": "2026-10-30T08:10:00+00:00", "equity": 1010.0, "balance": 1000.0},
@@ -271,3 +271,18 @@ def test_journal_signals_belum_ada_503(monkeypatch, tmp_path):
     with pytest.raises(lokal.SumberKosong) as exc:
         asyncio.run(lokal.journal_signals())
     assert "belum dihitung" in str(exc.value)
+
+
+def test_performance_meneruskan_akun_mt5(monkeypatch):
+    """Kurva akun kedua tidak boleh memakai deret akun utama."""
+    terlihat: list[str | None] = []
+
+    async def fake_deret(batas: int = 2000, account: str | None = None) -> list[dict]:
+        terlihat.append(account)
+        return [{"t": "2026-10-31T00:00:00+00:00", "equity": 10.0, "balance": 10.0}]
+
+    monkeypatch.setattr(lokal, "_deret_ekuitas", fake_deret)
+    monkeypatch.setattr(lokal, "_marker_forex", lambda: [])
+    hasil = asyncio.run(lokal.journal_performance("forex", "999001"))
+    assert terlihat == ["999001"]
+    assert hasil["ekuitas_akhir"] == 10.0

@@ -22,6 +22,7 @@ from typing import Any
 
 import httpx
 from warroom_core.deal_koreksi import KOREKSI_DEFAULT, baca_koreksi, terapkan
+from warroom_core.mt5_accounts import snapshot_key
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) WarRoom/2.0"
 MEXC = "https://api.mexc.com"
@@ -302,6 +303,7 @@ def _trade_forex() -> list[dict[str, Any]]:
                 "pnl_usd": r.get("net", ""),
                 "pnl_pct": "",
                 "ticket": r.get("ticket", ""),
+                "account": r.get("account") or "unknown",
                 "strategy_version": r.get("strategy_version") or "unknown",
                 "market": "forex",
             }
@@ -343,10 +345,11 @@ def _baca_deals() -> list[dict[str, Any]]:
         return []
 
 
-async def _snapshot_terakhir() -> dict[str, Any] | None:
+async def _snapshot_terakhir(account: str | None = None) -> dict[str, Any] | None:
     baris = await _db(
         "select value_json, observed_at from facts where kind='mt5_snapshot' "
-        "order by observed_at desc limit 1"
+        "and key=:key order by observed_at desc limit 1",
+        {"key": snapshot_key(account)},
     )
     if not baris:
         return None
@@ -358,11 +361,11 @@ async def _snapshot_terakhir() -> dict[str, Any] | None:
     return v
 
 
-async def _deret_ekuitas(batas: int = 2000) -> list[dict[str, Any]]:
+async def _deret_ekuitas(batas: int = 2000, account: str | None = None) -> list[dict[str, Any]]:
     baris = await _db(
         "select value_json, observed_at from facts where kind='mt5_snapshot' "
-        "order by observed_at desc limit :n",
-        {"n": batas},
+        "and key=:key order by observed_at desc limit :n",
+        {"n": batas, "key": snapshot_key(account)},
     )
     hasil = []
     for r in baris:
@@ -531,7 +534,7 @@ def _marker_forex() -> list[dict[str, Any]]:
     return hasil[-200:]
 
 
-async def journal_performance(market: str = "all") -> dict[str, Any]:
+async def journal_performance(market: str = "all", account: str | None = None) -> dict[str, Any]:
     m = _cek_market(market)
     if m == "crypto":
         raise SumberKosong(
@@ -539,7 +542,7 @@ async def journal_performance(market: str = "all") -> dict[str, Any]:
             "terakhir saja, bukan deret waktu. Riwayat mulai terkumpul setelah "
             "pencatatan per siklus ditambahkan."
         )
-    deret = await _deret_ekuitas()
+    deret = await _deret_ekuitas(account=account)
     if not deret:
         raise SumberKosong("Belum ada riwayat ekuitas. Rekaman dimulai saat EA mengirim telemetri.")
     akhir = deret[-1]
@@ -633,7 +636,7 @@ async def _scanlog_forex() -> dict[str, Any]:
     """
     baris = await _db(
         "select value_json, observed_at from facts where kind='mt5_snapshot' "
-        "order by observed_at desc limit :n",
+        "and key='ringkas' order by observed_at desc limit :n",
         {"n": 500},
     )
     if not baris:
@@ -785,6 +788,8 @@ async def sebar(path: str, params: dict[str, Any] | None = None) -> Any:
         "/forex/journal/multipair": journal_multipair,
     }
     if path in jurnal:
+        if path == "/forex/journal/performance":
+            return await jurnal[path](str(p.get("market", "all")), p.get("account"))
         # Enam endpoint menerima filter market: all | forex | crypto.
         if path in {
             "/forex/journal/stats",
