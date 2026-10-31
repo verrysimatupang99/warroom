@@ -2051,9 +2051,21 @@
     },
     "/api/v1/cron/executions": {
       "get": {
-        "description": "Riwayat eksekusi job cron terakhir.",
+        "description": "Riwayat `job.ran` terakhir, terbaru lebih dulu.",
         "operationId": "cron_executions_api_v1_cron_executions_get",
         "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -2103,7 +2115,7 @@
     },
     "/api/v1/cron/jobs": {
       "get": {
-        "description": "Daftar seluruh job cron beserta jadwal dan statusnya.",
+        "description": "Seluruh job beserta jadwal dan hasil terakhirnya.",
         "operationId": "cron_jobs_api_v1_cron_jobs_get",
         "parameters": [
           {
@@ -2155,7 +2167,7 @@
     },
     "/api/v1/cron/jobs/{job_id}": {
       "get": {
-        "description": "Detail satu job cron.",
+        "description": "Detail satu job berdasarkan id numerik atau nama unik.",
         "operationId": "cron_job_api_v1_cron_jobs__job_id__get",
         "parameters": [
           {
@@ -2216,7 +2228,7 @@
     },
     "/api/v1/cron/summary": {
       "get": {
-        "description": "Ringkasan scheduler: total, aktif, mati, dan status eksekusi terakhir.",
+        "description": "Ringkasan scheduler lokal, dihitung dari status terakhir tiap job.",
         "operationId": "cron_summary_api_v1_cron_summary_get",
         "parameters": [
           {
