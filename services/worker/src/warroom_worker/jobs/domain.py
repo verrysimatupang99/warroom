@@ -225,10 +225,18 @@ def handler_rekonsiliasi_crypto(s: SASession, job: Job) -> str:
     rincian = "; ".join(
         f"{b.get('signal_id')} {b.get('status')} {float(b.get('r') or 0):+.1f}R" for b in baru
     )
-    return (
+    gagal = rep.get("gagal") or []
+    ringkas = (
         f"diperiksa={rep.get('diperiksa')} baru={len(baru)} "
-        f"gagal={len(rep.get('gagal') or [])} detail={rincian or 'nihil'}"
+        f"gagal={len(gagal)} detail={rincian or 'nihil'}"
     )
+    if gagal:
+        # Status job harus mencerminkan kegagalan nyata. Sebelum ini handler mengembalikan
+        # string dengan "gagal=2" tetapi runner selalu mencatat `ok`, sehingga job-health
+        # tidak pernah melihatnya (31 Okt 2026: gagal tiap jam, nol alert).
+        sebab = "; ".join(f"{g.get('signal_id')}: {g.get('alasan')}" for g in gagal[:3])
+        raise RuntimeError(f"{ringkas}; sebab: {sebab}"[:500])
+    return ringkas
 
 
 def handler_gmgn_sync(s: SASession, job: Job) -> str:

@@ -85,15 +85,19 @@ def ready(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
         pass
     worker = checks.get("worker_heartbeats", {})
     stale = checks.get("stale_facts", {})
-    blocking = (
-        not db_ok
-        or worker.get("status") == "stale"
-        or stale.get("status") == "stale"
-    )
+    # Kesiapan menjawab "bisa melayani permintaan?", bukan "apakah semua data segar?".
+    # Sebelumnya fakta basi ikut memblokir, sehingga /ready merah berhari-hari padahal
+    # DB dan worker sehat (31 Okt 2026: 25 fakta basi, 4 heartbeat ok). Kesegaran data
+    # tetap dilaporkan terpisah di `freshness` supaya tidak hilang dari observasi.
+    blocking = not db_ok or worker.get("status") == "stale"
     return {
         "status": "ready" if not blocking else "not_ready",
         "db": db_ok,
         "checks": checks,
+        "freshness": {
+            "status": stale.get("status", "unknown"),
+            "count": stale.get("count", 0),
+        },
         "time": datetime.now(UTC).isoformat(),
         "user": user.username,
     }
