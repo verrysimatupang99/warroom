@@ -33,7 +33,7 @@ journalctl -u warroom-worker -n 30 --no-pager
 # kualitas (dari ~/warroom)
 .venv/bin/python -m pytest services/*/tests packages/live-trading -q   # angka terkini: lihat catatan di bawah
 cd apps/web && npm run test                            # 16 berkas, 72 vitest
-npx playwright test                                    # 51 berkas spec e2e (butuh web+nginx hidup + e2e.env)
+npx playwright test                                    # 52 berkas spec e2e (butuh web+nginx hidup + e2e.env)
 bash ops/ci-local.sh                                   # versi CI yang sama, termasuk gitleaks
 
 # domain (anggota workspace: packages/live-trading/)
@@ -44,7 +44,7 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 Jumlah tes per **30 Okt 2026**: **912** (`--collect-only`, perintah
 `pytest services/*/tests packages/live-trading`), dan run penuh sampai 100%
 tanpa kegagalan. Root `pytest` (testpaths `packages` + `services`, termasuk
-`packages/core/tests`) mengoleksi **1126**. Web: **72** vitest, **51** berkas spec e2e.
+`packages/core/tests`) mengoleksi **1126**. Web: **72** vitest, **52** berkas spec e2e.
 Angka lama 882/889/892/900/906/908/909 sudah tidak berlaku. Kalau menyentuh tes, perbarui
 angka ini beserta bukti perintahnya — sumber kebenaran tetap output, bukan dokumen.
 
