@@ -10,9 +10,9 @@ hanya forex yang punya antrean order nyata (slippage, latensi, sesi).
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from warroom_api import auth
+from warroom_api import auth, lokal
 from warroom_api.routers.tencent import _fetch_tencent
 
 router = APIRouter(
@@ -28,12 +28,16 @@ _FILTER = (
     "/forex/journal/edge",
     "/forex/journal/performance",
     "/forex/journal/multipair",
+    "/forex/journal/scanlog",
 )
 
 
-async def _ambil(path: str, market: str | None = None) -> Any:
+async def _ambil(path: str, market: str | None = None, account: str | None = None) -> Any:
     if market is not None and path in _FILTER:
-        return await _fetch_tencent(path, params={"market": market})
+        params = {"market": market}
+        if account:
+            params["account"] = account
+        return await _fetch_tencent(path, params=params)
     return await _fetch_tencent(path)
 
 
@@ -61,16 +65,30 @@ async def journal_edge(market: str = MarketQ) -> dict[str, Any]:
     return await _ambil("/forex/journal/edge", market)
 
 
+@router.get("/signals")
+async def journal_signals() -> dict[str, Any]:
+    """Jurnal sinyal terkirim: hasil dihitung dari candle sejak jam setelah kirim."""
+    try:
+        return await lokal.journal_signals()
+    except lokal.SumberKosong as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "not_available", "message": str(exc)},
+        ) from exc
+
+
 @router.get("/scanlog")
-async def journal_scanlog() -> dict[str, Any]:
-    """Alasan sinyal ditolak (gate reject, blackout, ATR tipis)."""
-    return await _ambil("/forex/journal/scanlog")
+async def journal_scanlog(market: str = MarketQ) -> dict[str, Any]:
+    """Riwayat keputusan: forex = evaluasi EA, crypto = verdicts. Tidak dicampur."""
+    return await _ambil("/forex/journal/scanlog", market)
 
 
 @router.get("/performance")
-async def journal_performance(market: str = MarketQ) -> dict[str, Any]:
-    """Kurva ekuitas forex dari snapshot per menit."""
-    return await _ambil("/forex/journal/performance", market)
+async def journal_performance(
+    market: str = MarketQ, account: str | None = Query(None)
+) -> dict[str, Any]:
+    """Kurva ekuitas forex dari snapshot per menit, opsional per akun MT5."""
+    return await _ambil("/forex/journal/performance", market, account)
 
 
 @router.get("/session")

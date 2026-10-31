@@ -9,6 +9,11 @@ User=admin
 Group=admin
 WorkingDirectory=/home/admin/warroom
 EnvironmentFile=/etc/warroom/db.env
+# Alert trade dari siklus $20 ini dibuat di proses ini, bukan di worker. Tanpa env
+# notifier, transport = null: percobaan pertama selalu "gagal" dan pesan baru terkirim
+# pada siklus notify worker berikutnya (hingga 5 menit). File ini 600 root; systemd
+# membacanya sebagai root lalu meng-inject ke proses admin.
+EnvironmentFile=-/etc/warroom/notifier.env
 Environment=LT_HOME=/home/admin/live-trading/state-paper20
 Environment=LT_EQUITY_USD=20
 Environment=LT_PAPER=true

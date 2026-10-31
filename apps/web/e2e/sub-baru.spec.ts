@@ -13,35 +13,21 @@ test.describe('sub dataset & kebijakan', () => {
 		expect(await loginLewat(page)).toBe(true);
 	});
 
-	test('polymarket → riset menampilkan katalog dataset dari fakta', async ({ page }) => {
+	test('polymarket menampilkan status standby, bukan galat', async ({ page }) => {
 		await page.goto('/polymarket');
 		await tungguSiap(page);
-		// Sub "Dataset" DIGANTI menjadi "Riset" pada 7 Okt (keputusan owner: fokus setup B;
-		// verdict→setup-b, dataset→riset). Tes lama masih mencari tab "Dataset" sehingga
-		// menunggu selamanya — tes usang, bukan fitur rusak.
-		const tab = page.getByRole('tab', { name: 'Riset', exact: true });
-		await expect(tab).toBeVisible({ timeout: 20000 });
-		await tab.click();
-		const isi = await page.locator('body').innerText();
-		expect(isi).not.toContain('GAGAL MEMUAT');
-		// DatasetExplorer punya data nyata (paired) — atau minimal EmptyState jujur, bukan galat.
-		await expect(page.locator('[data-testid="dataset-explorer"]')).toBeVisible({ timeout: 20000 });
+		await expect(page.getByText('Polymarket', { exact: false }).first()).toBeVisible();
+		await expect(page.getByText(/ditangguhkan sementara/)).toBeVisible();
+		expect(await page.locator('body').innerText()).not.toContain('GAGAL MEMUAT');
 	});
 
-	test('sistem → kebijakan menampilkan usulan parameter', async ({ page }) => {
+	test('sistem → kebijakan menampilkan gate dan parameter aktif', async ({ page }) => {
 		await page.goto('/sistem');
 		await tungguSiap(page);
-		// Tunggu tombol tab SIAP diklik: dulu klik dilakukan sebelum halaman interaktif
-		// (dan sempat tertutup shell pra-hydration) → tes flaky, bukan fitur rusak.
-		// Role sebenarnya = 'tab' (SubNav merender role="tab"). Saya sempat mengubahnya ke
-		// 'button' karena salah mendiagnosis flaky — akibatnya tes gagal konsisten. Yang
-		// benar: role='tab' + tungguSiap (hydration selesai) sebelum klik.
-		const tab = page.getByRole('tab', { name: 'Kebijakan', exact: true });
-		await expect(tab).toBeVisible({ timeout: 20000 });
-		await tab.click();
-		await expect(page.locator('[data-testid="proposal-list"], [data-testid="empty-state"]').first()).toBeVisible({ timeout: 20000 });
-		const isi = await page.locator('body').innerText();
-		expect(isi.toLowerCase()).toContain('usulan parameter');
-		expect(isi).not.toContain('GAGAL MEMUAT');
+		await page.getByRole('tab', { name: 'Kebijakan', exact: true }).click();
+		await expect(page.getByText('Gate yang berlaku')).toBeVisible({ timeout: 20000 });
+		await expect(page.getByText('Parameter aktif')).toBeVisible();
+		expect(await page.locator('body').innerText()).not.toContain('GAGAL MEMUAT');
 	});
+
 });

@@ -58,6 +58,26 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="jurnal-sinyal",
+        interval_s=21600,
+        enabled=True,
+        payload={"max_alerts": 2000, "ttl_s": 86400},
+        note=(
+            "jurnal sinyal: alert terkirim → hasil dari candle Binance sejak jam setelah "
+            "kirim (bukan sejak verdict). Tulis /var/lib/warroom/jurnal_sinyal.json + fakta."
+        ),
+    ),
+    JobSpec(
+        name="job-health",
+        interval_s=300,
+        enabled=True,
+        payload={"stale_factor": 3, "min_stale_s": 900},
+        note=(
+            "alert bila job aktif gagal atau tidak jalan >3x interval; auto-ack saat pulih. "
+            "Menutup celah job yang tidak menulis fakta (backup/retention/source-health)."
+        ),
+    ),
+    JobSpec(
         name="notify",
         interval_s=300,
         enabled=True,
@@ -106,10 +126,11 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         # TTL 6 jam > interval 15 mnt (aturan rumah: fakta tidak boleh basi di antara dua tulis).
         # Ledger `verdicts.jsonl` tumbuh ~20 baris/hari, jadi jendela 6 jam cukup untuk
         # menangkap sinyal baru tanpa mengabarkan ulang yang lama.
-        payload={"jam_terakhir": 6, "ttl_s": 21600, "kabari": True},
+        payload={"jam_terakhir": 6, "ttl_s": 21600, "kabari": True, "kabar_tier": ["PREMIUM"]},
         note=(
             "baca-saja ledger verdict domain (`lt scan`) → fakta `signal.<pair>` + kabar Telegram "
-            "lewat alert ber-dedupe subjek. Setiap pesan membawa label jujur: kandidat, bukan ajakan beli."
+            "untuk tier PREMIUM saja. STANDAR tetap jadi fakta untuk jurnal, tidak dikabarkan "
+            "(net expectancy -0,012R setelah biaya). Setiap pesan membawa label jujur."
         ),
     ),
     JobSpec(

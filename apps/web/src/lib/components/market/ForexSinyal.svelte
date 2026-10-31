@@ -5,6 +5,7 @@
 	import { urlApi } from '$lib/api/client';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import RiwayatEvaluasiEA from './RiwayatEvaluasiEA.svelte';
 
 	interface Level {
 		symbol?: string; play?: string; status?: string; price?: number; trend?: string;
@@ -265,5 +266,7 @@
 				</p>
 			{/if}
 		</section>
+
+		<RiwayatEvaluasiEA />
 	</div>
 {/if}

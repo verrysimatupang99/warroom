@@ -44,7 +44,8 @@
   - `warroom_core.forwardtest` + CLI `tools/forwardtest_status.py` (`--json`).
   - Output live 30 Okt: `Trade tertutup 0/20`, `hari 1/30`, `Fill belum deal 0`,
     `Deal tanpa fill 0`, catatan `deals.csv belum ada`.
-  - Tes: 7 kasus di `packages/core/tests/test_forwardtest.py`.
+  - Tes: 9 kasus di `packages/core/tests/test_forwardtest.py` (31 Okt: tambah
+    `tidak-izin` — berkas ada tapi tak terbaca dilaporkan `n/a`, bukan nol).
 - **Regresi & deploy.**
   - `pytest` root: **1077 terkumpul, 100% lulus**; perintah AGENTS
     (`services/*/tests packages/live-trading`): **889 terkumpul, lulus**.

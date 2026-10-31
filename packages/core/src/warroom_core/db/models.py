@@ -140,7 +140,13 @@ class Strategy(Base):
 
 
 class Trade(Base):
-    """Paper & live dibedakan tegas lewat (venue, mode) — bukan boolean."""
+    """Paper & live dibedakan tegas lewat (venue, mode) — bukan boolean.
+
+    DEPRECATED untuk forex (ADR-009): jurnal forward test forex membaca
+    `/var/lib/warroom/deals.csv`, dan tidak ada kode yang menulis tabel ini.
+    Jangan menambah penulis forex di sini; bila DB dipakai, impor CSV → DB.
+    Tabel dipertahankan untuk venue lain sampai ada penulis nyata.
+    """
 
     __tablename__ = "trades"
 

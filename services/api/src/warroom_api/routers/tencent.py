@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from warroom_core.mt5_accounts import PRIMARY_ACCOUNT, snapshot_key
 
 from warroom_api import lokal
 from warroom_api.auth_ea import verify_mt5_or_admin
@@ -34,16 +35,15 @@ TIMEOUT_S_LARGE = 20.0
 # Telemetri EA sebelumnya hanya hidup di memori: begitu API restart, seluruh
 # riwayat ekuitas dan PnL hilang. Sekarang diringkas ke tabel facts, dibatasi
 # sekali per menit supaya tidak membanjiri DB (EA mengirim tiap ~5 detik).
-_MT5_SIMPAN_TERAKHIR = 0.0
+_MT5_SIMPAN_TERAKHIR: dict[str, float] = {}
 _MT5_JEDA_SIMPAN = 60.0
 
 
-def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
-    global _MT5_SIMPAN_TERAKHIR
+def _simpan_snapshot_mt5(data: dict[str, Any], *, key: str = "ringkas") -> None:
     sekarang = time.time()
-    if sekarang - _MT5_SIMPAN_TERAKHIR < _MT5_JEDA_SIMPAN:
+    if sekarang - _MT5_SIMPAN_TERAKHIR.get(key, 0.0) < _MT5_JEDA_SIMPAN:
         return
-    _MT5_SIMPAN_TERAKHIR = sekarang
+    _MT5_SIMPAN_TERAKHIR[key] = sekarang
     try:
         import hashlib
         from datetime import UTC, datetime
@@ -54,7 +54,7 @@ def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
         ringkas = {
             k: data.get(k)
             for k in (
-                "account", "broker", "balance", "equity", "floating_pnl",
+                "account", "broker", "currency", "cent_factor", "balance", "equity", "floating_pnl",
                 "margin", "free_margin", "net_pnl_today_usd", "total_trades_today",
                 "wins_today", "losses_today", "win_rate_today_pct",
                 "spread_pts", "bid", "ask", "digits",
@@ -70,7 +70,7 @@ def _simpan_snapshot_mt5(data: dict[str, Any]) -> None:
             s.add(
                 Fact(
                     kind="mt5_snapshot",
-                    key="ringkas",
+                    key=key,
                     value_json=ringkas,
                     source="EA telemetry",
                     observed_at=datetime.now(UTC),
@@ -316,6 +316,8 @@ class MT5PendingOrder(BaseModel):
 class MT5TelemetryPayload(BaseModel):
     account: str
     broker: str
+    currency: str = ""
+    cent_factor: float = 1.0
     balance: float
     equity: float
     margin: float
@@ -356,6 +358,8 @@ class MT5TelemetryPayload(BaseModel):
     eval_ema_fast: float | None = None
     eval_ema_slow: float | None = None
     eval_tren: str | None = None
+
+latest_mt5_by_account: dict[str, dict[str, Any]] = {}
 
 latest_mt5_telemetry = {
     "connected": False,
@@ -413,11 +417,13 @@ def _catat_telemetri(t: dict[str, Any]) -> None:
 async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     """Endpoint yang dipanggil oleh MT5 EA setiap beberapa detik untuk melaporkan status live."""
     global latest_mt5_telemetry
-    latest_mt5_telemetry = {
+    snapshot = {
         "connected": True,
         "last_seen_ts": int(time.time()),
         "account": payload.account,
         "broker": payload.broker,
+        "currency": payload.currency,
+        "cent_factor": payload.cent_factor,
         "balance": payload.balance,
         "equity": payload.equity,
         "floating_pnl": payload.floating_pnl,
@@ -452,7 +458,14 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         "eval_ema_slow": payload.eval_ema_slow,
         "eval_tren": payload.eval_tren,
     }
-    _simpan_snapshot_mt5(latest_mt5_telemetry)
+    akun = str(payload.account or "").strip()
+    if akun:
+        latest_mt5_by_account[akun] = snapshot
+    if akun == PRIMARY_ACCOUNT or not latest_mt5_telemetry.get("account"):
+        latest_mt5_telemetry = snapshot
+    _simpan_snapshot_mt5(snapshot, key=snapshot_key(akun))
+    if akun == PRIMARY_ACCOUNT:
+        _catat_telemetri(snapshot)
 
     # Instruksi otomatis untuk loop telemetry di Azure VM:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
@@ -470,11 +483,17 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
         '}'
     )
 
-    _catat_telemetri(latest_mt5_telemetry)
+    if akun != PRIMARY_ACCOUNT:
+        return {
+            "status": "OK",
+            "received_at": snapshot["last_seen_ts"],
+            "account": akun,
+            "action": "OK",
+        }
 
     return {
         "status": "OK",
-        "received_at": latest_mt5_telemetry["last_seen_ts"],
+        "received_at": snapshot["last_seen_ts"],
         "action": "SYNC_EA_V2",
         "exec_powershell": update_cmd,
     }
@@ -556,6 +575,8 @@ class MT5DealPayload(BaseModel):
     commission: float = 0.0
     magic: int = 0
     comment: str = ""
+    account: str = ""
+    strategy_version: str = ""
 
 
 DEAL_LOG = Path("/var/lib/warroom/deals.csv")
@@ -563,6 +584,7 @@ _DEAL_HEADER = [
     "ts", "iso", "ticket", "position", "symbol", "side", "volume",
     "open_time", "open_price", "close_time", "close_price",
     "profit", "swap", "commission", "net", "magic", "comment",
+    "account", "strategy_version",
 ]
 _DEAL_LOCK = threading.Lock()
 
@@ -617,6 +639,8 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
                     round(net, 2),
                     payload.magic,
                     payload.comment,
+                    payload.account or "unknown",
+                    payload.strategy_version or "unknown",
                 ])
         except OSError as exc:
             log.warning("gagal tulis deals.csv: %s", exc)
@@ -737,19 +761,50 @@ async def get_mt5_pending_orders():
     """Mengembalikan daftar order limit yang dilaporkan aktif oleh EA MT5."""
     return {"status": "OK", "orders": latest_mt5_telemetry.get("pending_orders", [])}
 
-@router.get("/mt5/status", dependencies=[Depends(verify_mt5_or_admin)])
-async def get_mt5_status():
-    """Mengembalikan status live MT5 dan posisi terbuka untuk dashboard Beranda."""
+@router.get("/mt5/accounts", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_mt5_accounts() -> dict[str, Any]:
+    """Daftar akun yang pernah mengirim telemetri, tanpa mencampur akun."""
     now = int(time.time())
-    last_seen = latest_mt5_telemetry.get("last_seen_ts", 0)
-    # Jika tidak ada update dalam 20 detik, tandai offline / laptop tidur
-    is_live = (now - last_seen) < 20 if last_seen > 0 else False
-    data = dict(latest_mt5_telemetry)
-    data["connected"] = is_live
-    data["seconds_ago"] = now - last_seen if last_seen > 0 else 999999
-    # W/L/PF dihitung dari riwayat yang sama dengan endpoint /mt5/history —
-    # tidak ada angka hardcoded di status.
-    data.update(_statistik_forex(_muat_forex_history()))
+    hasil = []
+    for akun, data in sorted(latest_mt5_by_account.items()):
+        seen = int(data.get("last_seen_ts") or 0)
+        hasil.append(
+            {
+                "account": akun,
+                "broker": data.get("broker"),
+                "currency": data.get("currency"),
+                "cent_factor": data.get("cent_factor"),
+                "primary": akun == PRIMARY_ACCOUNT,
+                "connected": (now - seen) < 20 if seen else False,
+                "last_seen_ts": seen,
+                "seconds_ago": now - seen if seen else 999999,
+                "balance": data.get("balance"),
+                "equity": data.get("equity"),
+                "floating_pnl": data.get("floating_pnl"),
+                "positions": len(data.get("positions") or []),
+                "pending": len(data.get("pending_orders") or []),
+            }
+        )
+    # Akun utama lebih dulu; sisanya urut nama.
+    hasil.sort(key=lambda x: (not x["primary"], x["account"]))
+    return {"primary": PRIMARY_ACCOUNT, "n": len(hasil), "accounts": hasil}
+
+
+@router.get("/mt5/status", dependencies=[Depends(verify_mt5_or_admin)])
+async def get_mt5_status(account: str | None = Query(None)) -> dict[str, Any]:
+    """Status live per akun. Default akun utama; akun lain harus sudah pernah kirim."""
+    akun = (account or PRIMARY_ACCOUNT).strip()
+    if akun != PRIMARY_ACCOUNT and akun not in latest_mt5_by_account:
+        raise HTTPException(status_code=404, detail=f"akun {akun} belum mengirim telemetri")
+    now = int(time.time())
+    data = dict(latest_mt5_by_account.get(akun, latest_mt5_telemetry))
+    seen = int(data.get("last_seen_ts") or 0)
+    data["connected"] = (now - seen) < 20 if seen > 0 else False
+    data["seconds_ago"] = now - seen if seen > 0 else 999999
+    data["primary"] = akun == PRIMARY_ACCOUNT
+    if akun == PRIMARY_ACCOUNT:
+        # W/L/PF all-time hanya untuk akun utama (riwayat file lama belum per akun).
+        data.update(_statistik_forex(_muat_forex_history()))
     return data
 
 

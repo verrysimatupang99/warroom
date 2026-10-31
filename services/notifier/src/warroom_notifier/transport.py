@@ -134,12 +134,45 @@ class TelegramTransport:
         )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:  # noqa: S310
-                return DeliveryResult(200 <= resp.status < 300, f"telegram {resp.status}")
+                status = resp.status
+                mentah = resp.read()
         except urllib.error.HTTPError as exc:
             # Badan respons bisa memuat id chat, bukan token — tetap dipotong pendek.
             return DeliveryResult(False, f"telegram http {exc.code}")
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             return DeliveryResult(False, f"{type(exc).__name__}: {exc}")
+
+        if not 200 <= status < 300:
+            return DeliveryResult(False, f"telegram {status}")
+        try:
+            data = json.loads(mentah.decode("utf-8", errors="replace"))
+        except ValueError:
+            return DeliveryResult(False, f"telegram {status} tanpa JSON")
+        if not isinstance(data, dict) or data.get("ok") is not True:
+            alasan = str(data.get("description") or "") if isinstance(data, dict) else ""
+            return DeliveryResult(False, f"telegram {status} ok=false {alasan[:120]}".strip())
+        hasil = data.get("result") if isinstance(data.get("result"), dict) else {}
+        chat = str((hasil.get("chat") or {}).get("id") or "")
+        if not chat:
+            return DeliveryResult(False, f"telegram {status} tanpa chat id")
+        if chat != str(self.chat_id):
+            return DeliveryResult(False, f"telegram {status} chat {chat} != {self.chat_id}")
+        thread = hasil.get("message_thread_id")
+        if self.thread_id:
+            if thread is None:
+                return DeliveryResult(
+                    False, f"telegram {status} tanpa message_thread_id (diminta {self.thread_id})"
+                )
+            if str(thread) != str(self.thread_id):
+                return DeliveryResult(
+                    False, f"telegram {status} thread {thread} != {self.thread_id}"
+                )
+        pesan_id = hasil.get("message_id")
+        return DeliveryResult(
+            True,
+            f"telegram {status} msg={pesan_id} chat={chat} "
+            f"thread={thread if thread is not None else '-'}",
+        )
 
 
 def _env_file() -> Path:

@@ -271,6 +271,14 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
     jam = float(job.payload_json.get("jam_terakhir", 6))
     ttl = int(job.payload_json.get("ttl_s", 21600))
     kabari = bool(job.payload_json.get("kabari", True))
+    # Hanya tier ini yang dikabarkan ke Telegram. Fakta untuk tier lain tetap ditulis
+    # supaya jurnal/pengukuran tidak buta; yang dihentikan hanya notifikasinya.
+    # Bukti 160 sinyal: STANDAR net expectancy -0,012R (fee 5 bps/sisi), PREMIUM +0,230R.
+    kabar_tier = {
+        str(t).strip().upper()
+        for t in (job.payload_json.get("kabar_tier") or ["PREMIUM"])
+        if str(t).strip()
+    }
     d = sig.sinyal_terakhir(root_dir() / "state", jam_terakhir=jam)
     if d.get("status") != "ok":
         return f"ledger sinyal {d.get('status')}: {str(d.get('detail') or '')[:80]}"
@@ -297,6 +305,7 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
             "pair": sg["pair"],
             "arah": sg["arah"],
             "tier": sg.get("tier"),
+            "strategy_version": sg.get("strategy_version") or "legacy",
             "entry": sg.get("entry"),
             "sl": sg.get("sl"),
             "tp1": sg.get("tp1"),
@@ -321,18 +330,23 @@ def handler_signal_sync(s: SASession, job: Job) -> str:
         s.add(fakta)
         s.flush()
         n_fakta += 1
-        if kabari and _alert(
-            s,
-            subject=f"sinyal/{sg['pair']}/{sg['arah']}",
-            message=_pesan_sinyal(sg, sig.LABEL_JUJUR),
-            aksi="Tinjau manual — ini kandidat, bukan ajakan beli. Eksekusi tetap keputusan Anda.",
-            severity="info",
-            fact_ids=[fakta.id],
+        if (
+            kabari
+            and str(sg.get("tier") or "").strip().upper() in kabar_tier
+            and _alert(
+                s,
+                subject=f"sinyal/{sg['pair']}/{sg['arah']}",
+                message=_pesan_sinyal(sg, sig.LABEL_JUJUR),
+                aksi="Tinjau manual — ini kandidat, bukan ajakan beli. Eksekusi tetap keputusan Anda.",
+                severity="info",
+                fact_ids=[fakta.id],
+            )
         ):
             dikabarkan += 1
     return (
         f"ledger={d.get('path')} jendela={jam:g}j sinyal={d.get('jumlah')} "
-        f"baru={n_fakta} sudah_ada={dilewati} dikabarkan={dikabarkan}"
+        f"baru={n_fakta} sudah_ada={dilewati} dikabarkan={dikabarkan} "
+        f"tier_kabar={','.join(sorted(kabar_tier)) or '-'}"
     )
 
 

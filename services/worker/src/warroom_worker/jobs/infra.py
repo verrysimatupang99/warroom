@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import subprocess
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -229,6 +229,41 @@ def handler_freshness(s: SASession, job: Job) -> str:
     )
 
 
+def _tanggal_benched(subject: str) -> date | None:
+    """Tanggal WIB di ekor subjek `strategi/benched:<strategi>:<YYYY-MM-DD>`."""
+    ekor = subject.rsplit(":", 1)[-1]
+    try:
+        return datetime.strptime(ekor, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _tutup_benched_lampau(s: SASession, *, now: datetime) -> int:
+    """Tutup alert 'benched' dari hari sebelumnya.
+
+    Batas harian per strategi berakhir saat hari berganti; alert kemarin bukan
+    kondisi yang masih berjalan. Tanpa ini, satu alert per hari menumpuk selamanya
+    dan menenggelamkan alert sungguhan (10 alert terbuka pada 30 Okt, semuanya
+    `strategi/benched:legacy-smc` dari hari-hari sebelumnya).
+    """
+    hari_ini = (now + timedelta(hours=7)).date()  # WIB, sama dengan pemilih `hari`
+    buka = s.scalars(
+        select(Alert)
+        .where(Alert.subject.like("strategi/benched:%"))
+        .where(Alert.ack_at.is_(None))
+    ).all()
+    ditutup = 0
+    for a in buka:
+        tanggal = _tanggal_benched(a.subject)
+        # Subjek lama tanpa tanggal juga stale: format itu tidak dibuat lagi.
+        if tanggal is not None and tanggal >= hari_ini:
+            continue
+        a.ack_at = now
+        a.message = (a.message or "") + " | PULIH otomatis: hari berganti"
+        ditutup += 1
+    return ditutup
+
+
 def handler_notify(s: SASession, job: Job) -> str:
     """Kirim alert terbuka lewat transport terkonfigurasi (P1-T8).
 
@@ -236,14 +271,16 @@ def handler_notify(s: SASession, job: Job) -> str:
     diklaim terkirim.
     """
     limit = int(job.payload_json.get("limit", 10))
+    ditutup = _tutup_benched_lampau(s, now=datetime.now(UTC))
     hasil = kirim_tertunda(s, limit=limit)
+    awalan = f"benched_lampau={ditutup} " if ditutup else ""
     if not hasil:
-        return "tidak ada alert terbuka"
+        return f"{awalan}tidak ada alert terbuka".strip()
     dilewati = sum(1 for h in hasil if h.get("alert_id") is None)
     dicoba = [h for h in hasil if h.get("alert_id") is not None]
     ok = sum(1 for h in dicoba if h["ok"])
     ekor = f" dilewati={dilewati}" if dilewati else ""
-    return f"dicoba={len(dicoba)} terkirim={ok} gagal={len(dicoba) - ok}{ekor}"
+    return f"{awalan}dicoba={len(dicoba)} terkirim={ok} gagal={len(dicoba) - ok}{ekor}"
 
 
 def handler_collect(s: SASession, job: Job) -> str:
@@ -600,3 +637,57 @@ def handler_forwardtest_watchdog(s: SASession, job: Job) -> str:
     )
 
 
+
+
+def handler_job_health(s: SASession, job: Job) -> str:
+    """Alert bila job aktif gagal atau tidak jalan melewati 3x intervalnya.
+
+    `freshness` hanya melihat umur fakta; job yang tidak menulis fakta (mis. backup,
+    retention, source-health) bisa mati tanpa alarm. DeepSeek 2026 menunjukkan 90%
+    respons cron gagal dan tidak ada yang tahu sampai dibaca manual.
+    """
+    now = datetime.now(UTC)
+    p = job.payload_json or {}
+    faktor = float(p.get("stale_factor", 3))
+    min_stale = float(p.get("min_stale_s", 900))
+    alert_baru = 0
+    pulih = 0
+    diperiksa = 0
+    for j in s.scalars(select(Job).where(Job.enabled.is_(True))).all():
+        if j.name == job.name or j.last_run_at is None:
+            continue
+        diperiksa += 1
+        umur = max(0.0, (now - j.last_run_at).total_seconds())
+        batas = max(faktor * j.interval_s, min_stale)
+        stale = umur > batas
+        gagal = str(j.last_status or "") == "gagal"
+        subjek = f"job/{j.name}"
+        if gagal or stale:
+            alasan = []
+            if gagal:
+                alasan.append(f"status terakhir gagal: {j.last_detail[-120:] if j.last_detail else '-'}")
+            if stale:
+                alasan.append(f"tidak jalan {umur / 60:.1f} mnt (batas {batas / 60:.1f} mnt)")
+            if _alert(
+                s,
+                subject=subjek,
+                severity="warning",
+                message=f"job {j.name}: " + "; ".join(alasan),
+                aksi=(
+                    f"periksa `journalctl -u warroom-worker` dan baris jobs '{j.name}'; "
+                    "jalankan ulang setelah penyebabnya jelas"
+                ),
+            ):
+                alert_baru += 1
+        elif _tutup_alert(s, subjek, "job kembali ok dan tepat waktu", now=now):
+            pulih += 1
+    if alert_baru or pulih:
+        s.add(
+            Event(
+                type="job.health",
+                actor="worker",
+                payload_json={"diperiksa": diperiksa, "alert_baru": alert_baru, "pulih": pulih},
+                severity="warning" if alert_baru else "info",
+            )
+        )
+    return f"diperiksa={diperiksa} alert={alert_baru} pulih={pulih}"

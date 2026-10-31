@@ -255,6 +255,11 @@
       "MT5DealPayload": {
         "description": "Deal tertutup yang dilaporkan EA (posisi sudah final).",
         "properties": {
+          "account": {
+            "default": "",
+            "title": "Account",
+            "type": "string"
+          },
           "close_price": {
             "default": 0.0,
             "title": "Close Price",
@@ -303,6 +308,11 @@
           "side": {
             "default": "",
             "title": "Side",
+            "type": "string"
+          },
+          "strategy_version": {
+            "default": "",
+            "title": "Strategy Version",
             "type": "string"
           },
           "swap": {
@@ -564,6 +574,16 @@
           },
           "broker": {
             "title": "Broker",
+            "type": "string"
+          },
+          "cent_factor": {
+            "default": 1.0,
+            "title": "Cent Factor",
+            "type": "number"
+          },
+          "currency": {
+            "default": "",
+            "title": "Currency",
             "type": "string"
           },
           "digits": {
@@ -5065,7 +5085,7 @@
     },
     "/api/v1/journal/performance": {
       "get": {
-        "description": "Kurva ekuitas forex dari snapshot per menit.",
+        "description": "Kurva ekuitas forex dari snapshot per menit, opsional per akun MT5.",
         "operationId": "journal_performance_api_v1_journal_performance_get",
         "parameters": [
           {
@@ -5079,6 +5099,22 @@
               "pattern": "^(all|forex|crypto)$",
               "title": "Market",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
             }
           },
           {
@@ -5130,9 +5166,22 @@
     },
     "/api/v1/journal/scanlog": {
       "get": {
-        "description": "Alasan sinyal ditolak (gate reject, blackout, ATR tipis).",
+        "description": "Riwayat keputusan: forex = evaluasi EA, crypto = verdicts. Tidak dicampur.",
         "operationId": "journal_scanlog_api_v1_journal_scanlog_get",
         "parameters": [
+          {
+            "description": "Filter market",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Filter market",
+              "pattern": "^(all|forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "wr_session",
@@ -5227,6 +5276,58 @@
           }
         },
         "summary": "Journal Session",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
+    "/api/v1/journal/signals": {
+      "get": {
+        "description": "Jurnal sinyal terkirim: hasil dihitung dari candle sejak jam setelah kirim.",
+        "operationId": "journal_signals_api_v1_journal_signals_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Journal Signals Api V1 Journal Signals Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Journal Signals",
         "tags": [
           "journal"
         ]
@@ -7585,6 +7686,58 @@
         ]
       }
     },
+    "/api/v1/tencent/mt5/accounts": {
+      "get": {
+        "description": "Daftar akun yang pernah mengirim telemetri, tanpa mencampur akun.",
+        "operationId": "get_mt5_accounts_api_v1_tencent_mt5_accounts_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Mt5 Accounts Api V1 Tencent Mt5 Accounts Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Mt5 Accounts",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/mt5/deal": {
       "post": {
         "description": "Catat deal tertutup (satu baris per posisi) untuk jurnal forex.\n\nIdempoten per `ticket`: EA boleh mengirim ulang setelah restart tanpa\nmenggandakan baris di `deals.csv`.",
@@ -7927,9 +8080,25 @@
     },
     "/api/v1/tencent/mt5/status": {
       "get": {
-        "description": "Mengembalikan status live MT5 dan posisi terbuka untuk dashboard Beranda.",
+        "description": "Status live per akun. Default akun utama; akun lain harus sudah pernah kirim.",
         "operationId": "get_mt5_status_api_v1_tencent_mt5_status_get",
         "parameters": [
+          {
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
+            }
+          },
           {
             "in": "header",
             "name": "X-Warroom-Token",
@@ -7951,7 +8120,11 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Mt5 Status Api V1 Tencent Mt5 Status Get",
+                  "type": "object"
+                }
               }
             },
             "description": "Successful Response"

@@ -429,7 +429,7 @@ def test_telemetry_menyimpan_alasan_skip(client, make_user, monkeypatch) -> None
     from warroom_api.routers import tencent
 
     monkeypatch.setattr(tencent, "_catat_telemetri", lambda t: None)
-    monkeypatch.setattr(tencent, "_simpan_snapshot_mt5", lambda t: None)
+    monkeypatch.setattr(tencent, "_simpan_snapshot_mt5", lambda t, **k: None)
     _, sid = make_user("ea-telemetry", role="operator")
     payload = {
         "account": "416510164", "broker": "Exness", "balance": 1000.0,
@@ -443,3 +443,38 @@ def test_telemetry_menyimpan_alasan_skip(client, make_user, monkeypatch) -> None
     assert tencent.latest_mt5_telemetry["eval_alasan"] == "di luar sesi Reaper"
     assert tencent.latest_mt5_telemetry["eval_sesi"] is False
     assert tencent.latest_mt5_telemetry["eval_tren"] == "naik"
+
+
+def test_telemetri_multi_akun_tidak_saling_menimpa(client, make_user, monkeypatch) -> None:
+    """Akun cent HSFX tidak boleh mengganti state/status akun Reaper."""
+    from warroom_api.routers import tencent
+
+    monkeypatch.setattr(tencent, "_catat_telemetri", lambda t: None)
+    monkeypatch.setattr(tencent, "_simpan_snapshot_mt5", lambda t, **k: None)
+    monkeypatch.setattr(tencent, "latest_mt5_by_account", {})
+    monkeypatch.setattr(tencent, "latest_mt5_telemetry", dict(tencent.latest_mt5_telemetry))
+    _, sid = make_user("ea-multi", role="operator")
+
+    def kirim(akun: str, balance: float) -> None:
+        body = {
+            "account": akun, "broker": "Uji", "balance": balance, "equity": balance,
+            "margin": 0.0, "free_margin": balance, "floating_pnl": 0.0,
+        }
+        r = client.post("/api/v1/tencent/mt5/telemetry", json=body, headers=_cookie(sid))
+        assert r.status_code == 200, r.text
+
+    kirim("416510164", 1000.0)
+    kirim("999001", 10.0)
+    assert tencent.latest_mt5_telemetry["account"] == "416510164"
+    assert tencent.latest_mt5_by_account["999001"]["balance"] == 10.0
+
+    acc = client.get("/api/v1/tencent/mt5/accounts", headers=_cookie(sid)).json()
+    assert acc["primary"] == "416510164"
+    assert {a["account"] for a in acc["accounts"]} == {"416510164", "999001"}
+    assert next(a for a in acc["accounts"] if a["account"] == "416510164")["primary"] is True
+
+    utama = client.get("/api/v1/tencent/mt5/status", headers=_cookie(sid)).json()
+    assert utama["account"] == "416510164" and utama["balance"] == 1000.0
+    kedua = client.get("/api/v1/tencent/mt5/status?account=999001", headers=_cookie(sid)).json()
+    assert kedua["account"] == "999001" and kedua["balance"] == 10.0
+    assert kedua["primary"] is False

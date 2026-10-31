@@ -23,6 +23,7 @@ from .infra import (
     handler_collect,
     handler_forwardtest_watchdog,
     handler_freshness,
+    handler_job_health,
     handler_lp_mark,
     handler_notify,
     handler_publish_facts,
@@ -30,6 +31,7 @@ from .infra import (
     handler_refresh_snapshot,
     handler_source_health,
 )
+from .jurnal import handler_jurnal_sinyal
 from .llm import (
     handler_learner,
     handler_llm_brief,
@@ -47,6 +49,8 @@ def register_handlers() -> dict[str, Any]:
             "publish-facts": handler_publish_facts,
             "freshness": handler_freshness,
             "forwardtest-watchdog": handler_forwardtest_watchdog,
+            "jurnal-sinyal": handler_jurnal_sinyal,
+            "job-health": handler_job_health,
             "notify": handler_notify,
             "collect": handler_collect,
             "refresh-snapshot": handler_refresh_snapshot,

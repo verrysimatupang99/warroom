@@ -198,7 +198,7 @@ menunggu pasar.
 - US1.3 panel Reaper diverifikasi e2e (`cek_panel_reaper.spec.ts`, 1 passed).
 - US1.4 `forwardtest-watchdog` aktif tiap 60 s (`ok`, `umur=20s`, `selisih=0`).
 - US1.5 `tools/forwardtest_status.py` mencetak `0/20`, hari 1/30.
-- Regresi: **889** tes perintah AGENTS, **1077** root `pytest`, rc=0; ruff bersih.
+- Regresi: **892** tes perintah AGENTS, **1091** root `pytest`, rc=0; ruff bersih.
 
 **Sprint Review 5 Nov:** demo scan yang menolak SHORT ke-3, panel cockpit, alert watchdog,
 dan tracker DoD.
@@ -208,17 +208,44 @@ dan tracker DoD.
 
 US2.1 rekonsiliasi (3) · US2.2 edge chart (3) · US2.3 ADR trades DB (5) · US3.2 scanlog forex (3) · US2.4 marker ekuitas (2) = 16 SP.
 
+**Status 30 Okt (ditarik maju): seluruh 16 SP selesai.**
+- US2.1 modul `warroom_core.rekonsiliasi_deal` + CLI; 11 tes; bukti sintetis
+  menemukan selisih $0,10 pada ticket 102. Statement nyata menunggu trade pertama.
+- US2.2 `journal_edge` dikunci 3 tes (jam/simbol, kosong → 503, crypto ditolak).
+- US2.3 ADR-009: `deals.csv` sumber kebenaran forex; tabel `trades` deprecated
+  untuk forex (0 baris, tanpa pembaca/penulis).
+- US3.2 `/journal/scanlog?market=…`: forex dari `mt5_snapshot` (50 evaluasi),
+  crypto dari `verdicts.jsonl` (777), tidak dicampur; panel riwayat EA + e2e.
+- US2.4 marker deal + drawdown di `/journal/performance`; bug deret 2000 titik
+  tertua diperbaiki; komponen `KurvaEkuitas` + e2e.
+- Regresi: **912** tes perintah AGENTS, **1126** root `pytest`, 72 vitest,
+  52 spec e2e; ruff bersih; build/deploy web lolos health gate.
+
 ### Sprint 3 — 13–19 Nov 2026
 **Goal:** *Cockpit Obsidian Telemetry.*
 
 US4.1 token+kontras (3) · US4.2 layout (5) · US4.3 komponen (5) · US4.5 copy (3) = 16 SP.
 
+**Status 31 Okt:** terverifikasi (audit, bukan redesign). Token 0 hardcoded; semua
+pasangan kontras utama lulus AA; layout 3 kolom desktop/1 kolom mobile; e2e responsif
+390/768/1280/1920 lulus (4 tes). Log: `docs/sprint-3.md`; audit:
+`docs/audit-token-kontras-20261031.md`.
+
 ### Sprint 4 — 20–26 Nov 2026
 **Goal:** *Aman untuk ditinggal.*
+
+**Status 31 Okt:** restore drill lulus (facts=93.099, alerts=685, jobs=34); npm prod
+0 vuln; OSV Python 88 advisory (belum upgrade buta); allowlist sudo terverifikasi;
+rotasi kredensial dilewati owner. Log: `docs/sprint-4.md`; audit:
+`docs/audit-ops-20261031.md`.
 
 US4.4 responsif (3) · US5.1 rotasi (3) · US5.2 sudoers (3) · US5.3 restore drill (3) · US5.5 dependency audit (2) · US3.1 alert center (2) = 16 SP.
 
 ### Sprint 5 — 27 Nov–3 Des 2026
+
+**Status 31 Okt:** matriks vendor EA selesai; registry parameter terverifikasi
+(10 baris, bounds+locked); memo gate 90% vs 95%+deff siap (menunggu owner); real-tick
+Model 3 masih blocked (butuh RDP/akun tersimpan). Log: `docs/sprint-5.md`.
 **Goal:** *Strategi punya batas yang jelas.*
 
 US6.1 real-tick (5) · US6.2 vendor matrix (3) · US6.3 registry parameter (3) · US7.1 ADR (2) · US7.2 runbook (3) = 16 SP.

@@ -106,3 +106,38 @@ def test_handler_bisa_dipanggil_langsung(db, tmp_path, monkeypatch) -> None:
         j = s.get(Job, job.id)
         keluar = handler_signal_sync(s, j)
     assert "sinyal=1" in keluar and "baru=1" in keluar
+
+def test_standar_tetap_fakta_tetapi_tidak_dikabarkan(db, tmp_path, monkeypatch) -> None:
+    """STANDAR tetap diukur, tetapi tidak dikirim ke Telegram (net expectancy negatif)."""
+    d = tmp_path / "state"
+    d.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(UTC) - timedelta(minutes=20)
+    dasar = {
+        "ts": now.isoformat(timespec="seconds"),
+        "allowed": True,
+        "direction": "SHORT",
+        "entry": 100.0,
+        "sl": 101.5,
+        "tp1": 98.5,
+        "risk_pct": 1.5,
+        "rules": [],
+    }
+    baris = [
+        {**dasar, "pair": "BTCUSDT", "tier": "PREMIUM"},
+        {**dasar, "pair": "ETHUSDT", "tier": "STANDAR"},
+    ]
+    (d / "verdicts.jsonl").write_text(
+        "\n".join(json.dumps(b) for b in baris) + "\n", encoding="utf-8"
+    )
+    job = _job_signal(tmp_path, monkeypatch)
+    with session_scope() as s:
+        j = s.get(Job, job.id)
+        _, detail = schedule.run_one(s, j)
+    assert "baru=2" in detail
+    assert "dikabarkan=1" in detail
+    assert "tier_kabar=PREMIUM" in detail
+    with session_scope() as s:
+        fakta = s.scalars(select(Fact).where(Fact.kind == "signal")).all()
+        alerts = s.scalars(select(Alert)).all()
+    assert {f.key for f in fakta} == {"BTCUSDT", "ETHUSDT"}
+    assert [a.subject for a in alerts] == ["sinyal/BTCUSDT/SHORT"]

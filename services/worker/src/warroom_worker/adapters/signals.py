@@ -82,6 +82,7 @@ def sinyal_terakhir(
             "pair": pair,
             "arah": arah,
             "tier": r.get("tier"),
+            "strategy_version": r.get("strategy_version"),
             "entry": r.get("entry"),
             "sl": r.get("sl"),
             "tp1": r.get("tp1"),
