@@ -148,6 +148,33 @@ def test_ready_melaporkan_worker_stale_dan_fakta_dengan_provenance(client, make_
     assert body["checks"]["stale_facts"]["items"][0]["source"] == "test-source"
 
 
+def test_ready_tetap_ready_saat_hanya_fakta_basi(client, make_user) -> None:
+    """Kesiapan layanan tidak boleh merah hanya karena data historis kedaluwarsa."""
+    from sqlalchemy import delete
+    from warroom_core.db import Fact, Heartbeat, session_scope
+
+    _, sid = make_user("ready-freshness", role="viewer")
+    now = datetime.now(UTC)
+    try:
+        with session_scope() as s:
+            s.execute(delete(Fact))
+            s.execute(delete(Heartbeat))
+            s.add(Fact(
+                kind="signal", key="BTCUSDT", value_json={}, source="ledger-verdict",
+                observed_at=now - timedelta(hours=20), ttl_s=21600, hash="h",
+            ))
+        r = client.get("/api/v1/ready", headers=_cookie(sid))
+        assert r.status_code == 200
+        body = r.json()
+        assert body["status"] == "ready"
+        assert body["freshness"] == {"status": "stale", "count": 1}
+        assert body["checks"]["stale_facts"]["status"] == "stale"
+    finally:
+        with session_scope() as s:
+            s.execute(delete(Fact))
+            s.execute(delete(Heartbeat))
+
+
 
 
 
