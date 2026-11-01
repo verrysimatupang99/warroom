@@ -359,6 +359,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         payload={"keep_versi": 3, "hapus_events": False, "timeout_s": 120},
         note="retensi harian: batasi versi `facts` per kunci; `events` (audit) dibiarkan.",
     ),
+    JobSpec(
+        name="okx-sync",
+        interval_s=300,
+        enabled=True,
+        # TTL 900 s = 3x interval: fakta tidak "basi" di antara dua tulisan.
+        payload={"ttl_s": 900},
+        note=(
+            "baca-saja saldo & posisi OKX (API key Read, whitelist IP host) → fakta "
+            "`okx.account`/`okx.positions`. Tidak pernah mengirim order."
+        ),
+    ),
 )
 
 # Nama job → fungsi. Diisi oleh `warroom_worker.jobs` saat impor untuk menghindari impor melingkar.
