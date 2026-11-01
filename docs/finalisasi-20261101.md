@@ -1,24 +1,25 @@
 # Finalisasi produksi — 1 Nov 2026
 
-Snapshot setelah rangkaian PR #61–#70 dan deploy `b6bcaad`.
+Snapshot setelah rangkaian PR #61–#72 dan deploy `abad66b`.
 Semua angka di bawah hasil perintah pada 1 Nov 2026, 06:20–06:30 UTC.
 
 ## Yang sudah selesai dan terbukti
 
 | Area | Bukti |
 |---|---|
-| Build produksi | API, web, dan disk sama: `b6bcaad-20261101T062307Z` |
+| Build produksi | API, web, dan disk sama: `abad66b-20261101T105935Z` |
 | Layanan | `warroom-api`, `warroom-worker`, `warroom-web`, `nginx` aktif |
 | Halaman | `/`, `/masuk`, `/crypto`, `/idx`, `/forex`, `/polymarket`, `/gmgn`, `/sistem`, `/riset`, `/jurnal` = 200 |
 | Readiness | `ready`, `freshness={stale, count:24}`, 4 heartbeat ok |
-| Job | 35 job, **0 non-ok**; `reconcile-crypto` ok setelah perbaikan timestamp OKX |
-| Alert | `job/reconcile-crypto` auto-ack saat job pulih (`pulih=1`) |
+| Job | 36 job, **0 non-ok**; `reconcile-crypto` ok, `slo-check` ok |
+| Alert | 0 terbuka; `job/reconcile-crypto` auto-ack, alert MT5 demo di-ack setelah pensiun |
 | CSP | enforce == report-only; hash ditulis ke 2 vhost |
 | Restore drill | Timer bulanan aktif; run 1 Nov: facts 96.326, alerts 669, jobs 34, 32 detik, DB uji dihapus |
 | OKX read-only | Job `okx-sync` 5 menit; run 06:23: `equity_usd=104.7364`, `posisi=2`, `upl_usd=-1.3944` |
 | Area crypto | Fakta `okx.account/ringkas` dan `okx.positions/ringkas` muncul di `/api/v1/areas/crypto` |
 | Provider gateway | Urutan efektif nutaraline → qonek → kiyara |
-| Model CLI | default/smol: `bluesminds-2/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`; subagent `scout` terbukti jalan |
+| Model CLI | `nectere/deepseek-v4.1-flash` untuk default dan smol; subagent `scout` terbukti jalan |
+
 
 ## Perubahan kode utama
 
@@ -35,9 +36,8 @@ Semua angka di bawah hasil perintah pada 1 Nov 2026, 06:20–06:30 UTC.
 1. **Akun live `36525553` (VM2)** masih di luar telemetri War Room. Larangan menyentuh VM tetap berlaku. Opsi: investor password/statement read-only untuk pemantau eksternal.
 2. **Backup offsite**: belum ada tujuan terukur (tanpa rclone/restic/borg, tanpa bucket). Backup harian tetap lokal.
 3. **Kunci provider**: qonek `401 Key expired`; kiyara `429` (maks 6 bersamaan); nutaraline menolak probe pendek. Perbaikan kunci/limit di sisi owner.
-4. **MT5 demo `416510164`**: dua snapshot basi karena sumbernya sudah tidak aktif. Pilih: pensiunkan faktanya atau sambungkan ulang.
-5. **SLO formal**: metric dasar sudah ada (`warroom_up`, `facts_basi`, readiness), tetapi ambang error-budget/p95/disk belum ditetapkan owner.
-6. **Disk 75%**: tren naik; belum ada alert ambang.
+4. **p95/5xx**: belum diukur karena access log nginx tidak memuat `request_time`. Ambang lain (disk, backup, drill, API up) sudah berjalan di job `slo-check`.
+5. **Disk 74–76%**: alert warn 80% dan crit 90% sudah aktif; belum ada tindakan pemangkasan.
 
 ## Verifikasi cepat
 
