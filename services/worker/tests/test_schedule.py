@@ -87,9 +87,10 @@ def test_daftar_job_idempoten(db) -> None:
         "paper-scan", "strategi-alert", "retention", "source-health", "llm-brief-crypto",
         "llm-brief-forex", "llm-brief-idx", "llm-brief-gmgn", "llm-brief-polymarket",
         "reconcile-crypto", "lpagent-sync", "polybtc-sync", "break-retest-scan",
+        "okx-sync", "slo-check",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 33
+    assert total == 35
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -316,6 +317,8 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         "lpagent-sync",
         "prompts-sync",
         "source-health",
+        "okx-sync",
+        "slo-check",
     }
     with session_scope() as s:
         jenis = {e.type for e in s.scalars(select(Event)).all()}

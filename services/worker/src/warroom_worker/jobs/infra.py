@@ -12,11 +12,13 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Event, Fact, Heartbeat, Job
+from warroom_core.telemetry_policy import is_retired
 from warroom_notifier.dispatch import kirim_tertunda
 
 from .base import (
     _alert,
     _jalankan_lt,
+    _tulis_fakta,
     _unit_state,
     _upsert_service,
     publish_snapshot,
@@ -107,6 +109,8 @@ def handler_freshness(s: SASession, job: Job) -> str:
     grace_faktor = float(job.payload_json.get("grace_faktor", 1.5))
     basi: list[Fact] = []
     for f in rows:
+        if is_retired(f.kind, f.key):
+            continue
         umur = (now - f.observed_at).total_seconds()
         ambang = max(f.ttl_s * grace_faktor, f.ttl_s + grace_min_s)
         if umur > ambang:
@@ -691,3 +695,110 @@ def handler_job_health(s: SASession, job: Job) -> str:
             )
         )
     return f"diperiksa={diperiksa} alert={alert_baru} pulih={pulih}"
+
+
+def evaluate_slo(
+    *,
+    disk_pct: float,
+    backup_age_h: float | None,
+    drill_age_d: float | None,
+    api_ok: bool,
+    disk_warn: float = 80.0,
+    disk_crit: float = 90.0,
+    backup_max_h: float = 26.0,
+    drill_max_d: float = 35.0,
+) -> list[dict[str, str]]:
+    """Ambang SLO yang disetujui owner 1 Nov 2026. Murni, supaya bisa diuji."""
+    temuan: list[dict[str, str]] = []
+    if disk_pct >= disk_crit:
+        temuan.append({"kode": "disk", "severity": "critical",
+                       "pesan": f"disk {disk_pct:.1f}% (crit {disk_crit:.0f}%)"})
+    elif disk_pct >= disk_warn:
+        temuan.append({"kode": "disk", "severity": "warning",
+                       "pesan": f"disk {disk_pct:.1f}% (warn {disk_warn:.0f}%)"})
+    if backup_age_h is None or backup_age_h > backup_max_h:
+        umur = "tidak ada dump" if backup_age_h is None else f"{backup_age_h:.1f} jam"
+        temuan.append({"kode": "backup", "severity": "warning",
+                       "pesan": f"backup Postgres {umur} (batas {backup_max_h:.0f} jam)"})
+    if drill_age_d is None or drill_age_d > drill_max_d:
+        umur = "belum pernah" if drill_age_d is None else f"{drill_age_d:.0f} hari"
+        temuan.append({"kode": "drill", "severity": "warning",
+                       "pesan": f"drill restore {umur} (batas {drill_max_d:.0f} hari)"})
+    if not api_ok:
+        temuan.append({"kode": "api", "severity": "warning",
+                       "pesan": "probe /api/v1/build gagal"})
+    return temuan
+
+
+def _umur_jam(path: Path, now: datetime) -> float | None:
+    try:
+        return (now - datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)).total_seconds() / 3600
+    except OSError:
+        return None
+
+
+def handler_slo_check(s: SASession, job: Job) -> str:
+    """Periksa ambang SLO yang bisa diukur dari host; alert ber-dedupe + auto-ack."""
+    import shutil
+    import urllib.request
+
+    now = datetime.now(UTC)
+    p = job.payload_json or {}
+    disk = shutil.disk_usage("/")
+    disk_pct = disk.used / disk.total * 100
+
+    dumps = sorted(Path("/home/admin/backups/postgres").glob("warroom-*.dump"))
+    backup_age_h = _umur_jam(dumps[-1], now) if dumps else None
+
+    drill_age_d = None
+    try:
+        bukti = json.loads(Path("/var/lib/warroom/restore-drill/last.json").read_text("utf-8"))
+        selesai = datetime.fromisoformat(bukti["selesai_at"])
+        drill_age_d = (now - selesai).total_seconds() / 86400
+    except (OSError, KeyError, ValueError, json.JSONDecodeError):
+        drill_age_d = None
+
+    api_ok = False
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8800/api/v1/build", timeout=5) as r:
+            api_ok = r.status == 200
+    except OSError:
+        api_ok = False
+
+    temuan = evaluate_slo(
+        disk_pct=disk_pct,
+        backup_age_h=backup_age_h,
+        drill_age_d=drill_age_d,
+        api_ok=api_ok,
+        disk_warn=float(p.get("disk_warn", 80)),
+        disk_crit=float(p.get("disk_crit", 90)),
+        backup_max_h=float(p.get("backup_max_h", 26)),
+        drill_max_d=float(p.get("drill_max_d", 35)),
+    )
+    kode_aktif = {t["kode"] for t in temuan}
+    alert = 0
+    pulih = 0
+    for t in temuan:
+        if _alert(s, subject=f"slo/{t['kode']}", severity=t["severity"],
+                  message=t["pesan"], aksi="periksa dashboard /sistem dan log unit terkait"):
+            alert += 1
+    for kode in ("disk", "backup", "drill", "api"):
+        if kode not in kode_aktif and _tutup_alert(s, f"slo/{kode}", "SLO kembali normal", now=now):
+            pulih += 1
+
+    _tulis_fakta(
+        s, kind="slo", key="ringkas",
+        value={
+            "disk_pct": round(disk_pct, 1),
+            "backup_age_h": round(backup_age_h, 1) if backup_age_h is not None else None,
+            "drill_age_d": round(drill_age_d, 1) if drill_age_d is not None else None,
+            "api_ok": api_ok,
+            "temuan": temuan,
+            "checked_at": now.isoformat(),
+        },
+        source="handler slo-check", ttl_s=int(p.get("ttl_s", 180)),
+    )
+    return (
+        f"disk={disk_pct:.1f}% backup_h={backup_age_h} drill_d={drill_age_d} "
+        f"api={api_ok} alert={alert} pulih={pulih}"
+    )

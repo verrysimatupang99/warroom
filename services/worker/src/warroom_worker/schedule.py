@@ -360,6 +360,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="retensi harian: batasi versi `facts` per kunci; `events` (audit) dibiarkan.",
     ),
     JobSpec(
+        name="slo-check",
+        interval_s=60,
+        enabled=True,
+        payload={"disk_warn": 80, "disk_crit": 90, "backup_max_h": 26,
+                 "drill_max_d": 35, "ttl_s": 180},
+        note=(
+            "ambang SLO owner 1 Nov 2026: disk, umur backup, umur drill, probe API. "
+            "Alert ber-dedupe dan auto-ack. p95/5xx menunggu log latensi nginx."
+        ),
+    ),
+    JobSpec(
         name="okx-sync",
         interval_s=300,
         enabled=True,

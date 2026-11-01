@@ -16,6 +16,7 @@ from warroom_core import build_id as core_build_id
 from warroom_core import domain_version as core_domain_version
 from warroom_core.db import Fact, User, session_scope
 from warroom_core.fingerprint import jumlah_berkas, kode_fingerprint
+from warroom_core.telemetry_policy import is_retired
 
 from warroom_api import auth
 from warroom_api.metrics import collect_readiness
@@ -197,6 +198,8 @@ def freshness(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, An
             )
         ).all()
         for f in rows:
+            if is_retired(f.kind, f.key):
+                continue
             age = (now - f.observed_at).total_seconds()
             out.append(
                 {
