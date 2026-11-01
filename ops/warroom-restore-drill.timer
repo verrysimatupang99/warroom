@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal drill restore Postgres War Room (tanggal 1, 03:30 UTC)
+
+[Timer]
+OnCalendar=*-*-01 03:30:00 UTC
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target
