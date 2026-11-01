@@ -59,6 +59,11 @@ def _klines(pair: str, sejak_iso: str, timeout: float = 20.0) -> dict[str, list[
     Bentuk MEXC dulu: {time:[...], high:[...], low:[...]}. Di sini dikembalikan
     dengan URUTAN SAMA seperti pemakai lama: urut MENAIK (paling tua dulu),
     supaya logika rekonsiliasi di bawah tidak perlu diubah.
+
+    OKX mengirim ``ts`` dalam MILIDETIK. Pemakai di modul ini memanggil
+    ``datetime.fromtimestamp(ts)`` yang mengharapkan detik, jadi konversi dilakukan di
+    sini (temuan 31 Okt 2026: tanpa konversi, tahun hasilnya 58791 dan semua posisi
+    dilaporkan gagal).
     """
     req = urllib.request.Request(
         _KLINE.format(pair=_pair_okx(pair)),
@@ -67,11 +72,11 @@ def _klines(pair: str, sejak_iso: str, timeout: float = 20.0) -> dict[str, list[
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.load(r)
     rows = d.get("data") or []
-    t0 = int(datetime.fromisoformat(sejak_iso).timestamp()) - 3600
+    t0 = (int(datetime.fromisoformat(sejak_iso).timestamp()) - 3600) * 1000
     rows = [x for x in rows if int(x[0]) >= t0]
     rows.sort(key=lambda x: int(x[0]))  # OKX kirim terbaru dulu -> balik ke menaik
     return {
-        "t": [int(x[0]) for x in rows],
+        "t": [int(x[0]) // 1000 for x in rows],
         "h": [float(x[2]) for x in rows],
         "l": [float(x[3]) for x in rows],
     }

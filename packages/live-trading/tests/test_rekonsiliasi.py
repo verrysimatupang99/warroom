@@ -7,6 +7,7 @@ hari kemudian. Ledger melaporkan +3,844R; seharusnya +1,844R.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 from live_trading import rekonsiliasi as rk
@@ -104,3 +105,38 @@ def test_menulis_baris_hasil_ke_ledger(tmp_path: Path):
     assert len(rep["baru"]) == 1
     baris = json.loads((tmp_path / "crypto_equity.jsonl").read_text().strip())
     assert baris["status"] == "closed_SL" and baris["source"] == "rekonsiliasi"
+
+
+def test_klines_okx_milidetik_dikonversi_ke_detik(monkeypatch):
+    """OKX mengirim ts milidetik; pemakai memanggil fromtimestamp(detik).
+
+    Tanpa konversi, tahun menjadi 58791 dan semua posisi dilaporkan gagal
+    (gejala produksi 31 Okt 2026).
+    """
+
+    class _Resp:
+        def __init__(self, payload):
+            self._payload = json.dumps(payload).encode()
+
+        def __enter__(self):
+            import io
+
+            return io.BytesIO(self._payload)
+
+        def __exit__(self, *exc):
+            return False
+
+    sejak = "2026-09-26T20:00:00+00:00"
+    detik = int(datetime.fromisoformat(sejak).timestamp())
+    ts_ms = detik * 1000
+    lama_ms = (detik - 7200) * 1000
+    payload = {"data": [[ts_ms, "0", "0.15", "0.14", "0.146", "1", "0", "0", "0"]]}
+    monkeypatch.setattr(rk.urllib.request, "urlopen", lambda *a, **kw: _Resp(payload))
+    k = rk._klines("OP_USDT", sejak)
+    assert k["t"] == [detik]
+
+    payload = {"data": [[lama_ms, "0", "0.15", "0.14", "0.146", "1", "0", "0", "0"],
+                        [ts_ms, "0", "0.16", "0.15", "0.155", "1", "0", "0", "0"]]}
+    monkeypatch.setattr(rk.urllib.request, "urlopen", lambda *a, **kw: _Resp(payload))
+    k = rk._klines("OP_USDT", sejak)
+    assert k["t"] == [detik]
