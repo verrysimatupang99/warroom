@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -23,6 +24,7 @@ from warroom_core.db import User, dispose_engine
 from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
 from warroom_api.laya_sentinel import laya_sentinel
+from warroom_api.metrics import record_http
 from warroom_api.routers import agents_hub as agents_hub_router
 from warroom_api.routers import agy as agy_router
 from warroom_api.routers import alert as alert_router
@@ -88,6 +90,20 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     install_error_handlers(app)
+
+    @app.middleware("http")
+    async def ukur_http(request, call_next):
+        """Ukur hanya path /api/ agar p95 tidak tercampur scrape /metrics atau halaman web."""
+        if not request.url.path.startswith("/api/"):
+            return await call_next(request)
+        mulai = time.perf_counter()
+        try:
+            respons = await call_next(request)
+        except Exception:
+            record_http(500, time.perf_counter() - mulai)
+            raise
+        record_http(respons.status_code, time.perf_counter() - mulai)
+        return respons
 
     # CORS hanya bila diminta eksplisit lewat env. Produksi menaruh web dan API di origin
     # yang sama (Caddy), jadi tidak butuh CORS; daftar kosong = tidak ada header CORS.

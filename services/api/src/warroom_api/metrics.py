@@ -10,7 +10,9 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
+from collections import deque
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,6 +24,41 @@ from warroom_core.telemetry_policy import is_retired
 __all__ = ["collect_metrics", "collect_readiness", "render_prometheus", "setup_json_logging"]
 
 _START = time.time()
+
+# Metrik HTTP di memori proses: cukup untuk p95 dan error rate jendela pendek.
+# Sengaja tidak persisten; restart API mengosongkan jendela, bukan mengarang angka.
+_HTTP_LOCK = threading.Lock()
+_HTTP_TOTAL = 0
+_HTTP_ERRORS = 0
+_HTTP_DURASI: deque[float] = deque(maxlen=2000)
+
+
+def record_http(status: int, detik: float) -> None:
+    """Catat satu request API. Hanya path /api/ yang boleh memanggil ini."""
+    global _HTTP_TOTAL, _HTTP_ERRORS
+    with _HTTP_LOCK:
+        _HTTP_TOTAL += 1
+        if status >= 500:
+            _HTTP_ERRORS += 1
+        _HTTP_DURASI.append(max(0.0, detik))
+
+
+def http_snapshot() -> dict[str, Any]:
+    with _HTTP_LOCK:
+        total = _HTTP_TOTAL
+        errors = _HTTP_ERRORS
+        durasi = sorted(_HTTP_DURASI)
+    if durasi:
+        idx = min(len(durasi) - 1, int(round(0.95 * (len(durasi) - 1))))
+        p95 = round(durasi[idx] * 1000, 1)
+    else:
+        p95 = 0.0
+    return {
+        "requests_total": total,
+        "errors_total": errors,
+        "error_rate": round(errors / total, 4) if total else 0.0,
+        "latency_p95_ms": p95,
+    }
 MAX_LABEL_VALUES = 50
 MAX_STALE_FACTS = 100
 DEFAULT_HEARTBEAT_STALE_S = 300
@@ -161,7 +198,9 @@ def collect_metrics(s: SASession, now: datetime | None = None) -> dict[str, Any]
     jobs = s.scalars(select(Job)).all()
     readiness = collect_readiness(s, t)
 
+    http = http_snapshot()
     return {
+        "http": http,
         "facts_total": total,
         "facts_basi": basi,
         "facts_terbaru": len(terbaru),
@@ -192,6 +231,19 @@ def render_prometheus(m: dict[str, Any]) -> str:
     L.append("# HELP warroom_uptime_seconds Umur proses API.")
     L.append("# TYPE warroom_uptime_seconds gauge")
     L.append(f"warroom_uptime_seconds {m['uptime_s']}")
+    http = m.get("http") or {}
+    L.append("# HELP warroom_http_requests_total Request API yang diukur (path /api/).")
+    L.append("# TYPE warroom_http_requests_total counter")
+    L.append(f"warroom_http_requests_total {int(http.get('requests_total', 0))}")
+    L.append("# HELP warroom_http_errors_total Request API dengan status >= 500.")
+    L.append("# TYPE warroom_http_errors_total counter")
+    L.append(f"warroom_http_errors_total {int(http.get('errors_total', 0))}")
+    L.append("# HELP warroom_http_latency_p95_ms p95 latensi API dalam milidetik.")
+    L.append("# TYPE warroom_http_latency_p95_ms gauge")
+    L.append(f"warroom_http_latency_p95_ms {float(http.get('latency_p95_ms', 0))}")
+    L.append("# HELP warroom_http_error_rate Rasio error 5xx terhadap total request.")
+    L.append("# TYPE warroom_http_error_rate gauge")
+    L.append(f"warroom_http_error_rate {float(http.get('error_rate', 0))}")
     L.append("# HELP warroom_facts_total Jumlah baris fakta tersimpan.")
     L.append("# TYPE warroom_facts_total gauge")
     L.append(f"warroom_facts_total {m['facts_total']}")

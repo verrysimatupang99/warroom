@@ -703,10 +703,16 @@ def evaluate_slo(
     backup_age_h: float | None,
     drill_age_d: float | None,
     api_ok: bool,
+    p95_ms: float = 0.0,
+    requests_total: int = 0,
+    error_rate: float = 0.0,
     disk_warn: float = 80.0,
     disk_crit: float = 90.0,
     backup_max_h: float = 26.0,
     drill_max_d: float = 35.0,
+    p95_max_ms: float = 1000.0,
+    error_rate_max: float = 0.01,
+    min_requests: int = 20,
 ) -> list[dict[str, str]]:
     """Ambang SLO yang disetujui owner 1 Nov 2026. Murni, supaya bisa diuji."""
     temuan: list[dict[str, str]] = []
@@ -727,6 +733,14 @@ def evaluate_slo(
     if not api_ok:
         temuan.append({"kode": "api", "severity": "warning",
                        "pesan": "probe /api/v1/build gagal"})
+    if requests_total >= min_requests and p95_ms > p95_max_ms:
+        temuan.append({"kode": "latency", "severity": "warning",
+                       "pesan": f"p95 API {p95_ms:.0f} ms > {p95_max_ms:.0f} ms "
+                                f"({requests_total} request)"})
+    if requests_total >= min_requests and error_rate > error_rate_max:
+        temuan.append({"kode": "error_rate", "severity": "warning",
+                       "pesan": f"error 5xx {error_rate * 100:.2f}% > {error_rate_max * 100:.1f}% "
+                                f"({requests_total} request)"})
     return temuan
 
 
@@ -765,8 +779,21 @@ def handler_slo_check(s: SASession, job: Job) -> str:
     except OSError:
         api_ok = False
 
+    http: dict[str, float] = {}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8800/metrics", timeout=5) as r:
+            for baris in r.read().decode("utf-8", "replace").splitlines():
+                if baris.startswith("warroom_http_") and " " in baris:
+                    nama, nilai = baris.rsplit(" ", 1)
+                    http[nama] = float(nilai)
+    except (OSError, ValueError):
+        http = {}
+
     temuan = evaluate_slo(
         disk_pct=disk_pct,
+        p95_ms=float(http.get("warroom_http_latency_p95_ms", 0.0)),
+        requests_total=int(http.get("warroom_http_requests_total", 0)),
+        error_rate=float(http.get("warroom_http_error_rate", 0.0)),
         backup_age_h=backup_age_h,
         drill_age_d=drill_age_d,
         api_ok=api_ok,
@@ -782,7 +809,7 @@ def handler_slo_check(s: SASession, job: Job) -> str:
         if _alert(s, subject=f"slo/{t['kode']}", severity=t["severity"],
                   message=t["pesan"], aksi="periksa dashboard /sistem dan log unit terkait"):
             alert += 1
-    for kode in ("disk", "backup", "drill", "api"):
+    for kode in ("disk", "backup", "drill", "api", "latency", "error_rate"):
         if kode not in kode_aktif and _tutup_alert(s, f"slo/{kode}", "SLO kembali normal", now=now):
             pulih += 1
 
