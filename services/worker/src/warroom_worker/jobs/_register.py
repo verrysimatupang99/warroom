@@ -29,6 +29,7 @@ from .infra import (
     handler_publish_facts,
     handler_radar_update,
     handler_refresh_snapshot,
+    handler_slo_check,
     handler_source_health,
 )
 from .jurnal import handler_jurnal_sinyal
@@ -82,6 +83,7 @@ def register_handlers() -> dict[str, Any]:
             "retention": handler_retensi,
             "source-health": handler_source_health,
             "okx-sync": handler_okx_sync,
+            "slo-check": handler_slo_check,
         }
     )
     return schedule.HANDLERS
