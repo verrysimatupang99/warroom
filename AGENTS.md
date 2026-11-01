@@ -178,3 +178,35 @@ Rincian lengkap: `HANDOVER-OMP.md`. Yang berubah sejak catatan di atas:
   `Fomofx_Satrion_BTC_v1.00` pada `BTCUSD.sc` H1 dengan 5 pending order. Jangan
   restart/stop/ubah konfigurasi; lihat `HOLD_DO_NOT_TOUCH_AZURE_VM.md`. Akun itu
   belum terhubung ke telemetri War Room.
+
+## Fakta operasional Webdock — 1 Nov 2026
+
+Bagian ini mengikat agen yang bekerja di server ini. Sumbernya verifikasi langsung
+di Webdock, bukan catatan laptop. Vault laptop bukan sumber kebenaran untuk server.
+
+- **Batas host.** Path produksi: repo `/home/admin/warroom`, env `/etc/warroom/*.env`,
+  `llm.json` di `/etc/warroom/llm.json`, skrip alert `/usr/local/sbin/warroom-alert-push.py`
+  (kini symlink ke `tools/warroom-alert-push.py`). Path `/home/verry/...` dari catatan
+  laptop tidak ada di server dan tidak boleh dipakai sebagai bukti.
+- **Unit di luar repo.** `live-trading-dashboard`, `mt5-beat`, `live-trading-watchdog`,
+  `warroom-alert-push`, dan adapter LLM bersama `n33-adapter`, `nanomuse-pool`,
+  `opensatan` berjalan di host ini. Jangan menghentikan adapter bersama tanpa izin owner.
+- **Retensi yang mengikat.** `handler_retensi` menyimpan **3 versi per kunci** dan
+  **tidak menghapus `events`** (`hapus_events=false`). Angka 30/90 hari hanyalah target
+  yang belum diimplementasikan.
+- **Dua lapisan provider.** Gateway War Room memakai `/etc/warroom/llm.json` dengan urutan
+  `nutaraline → qonek → kiyara` dan budget $3/hari. Nectere adalah provider CLI/IDE di
+  `~/.omp/models.yml`, bukan bagian gateway. qonek masih di rantai tetapi kuncinya 401.
+- **Telemetri pensiun.** `WARROOM_RETIRED_FACTS` mengecualikan `mt5_snapshot/ringkas` dan
+  `ringkas:452009427` dari readiness, metrics, dan alert. `warroom-pantau-tick.timer`
+  dimatikan karena bergantung pada endpoint MT5 Tencent yang sudah mati; nyalakan lagi
+  hanya setelah pipa telemetri pengganti ada.
+- **Akun live tidak terpantau.** Akun `36525553` (Vantage, cent) berjalan di
+  `mt5-trader-vm2` dengan EA `Fomofx_Satrion_BTC_v1.00`. War Room belum menerima
+  telemetrinya; `/var/lib/warroom/fills.csv` hanya header. Jangan menyentuh VM2.
+- **Integrasi live masih proposal.** `WarRoom_TelemetryBridge.mq5` dan endpoint
+  `/api/v1/telemetry/push` belum ada di server maupun repo. Jangan menganggapnya ada.
+- **Offsite belum ada.** Tanpa bucket/SSH tujuan, dan `instabox-sshjump` tetap dilarang
+  dipakai sebagai target otomatis.
+- **Aturan risiko.** Batas 3% harian dan 5% total, serta kriteria kill-switch, ada di
+  `docs/runbook-trading.md`.
