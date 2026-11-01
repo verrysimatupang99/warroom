@@ -210,3 +210,6 @@ di Webdock, bukan catatan laptop. Vault laptop bukan sumber kebenaran untuk serv
   dipakai sebagai target otomatis.
 - **Aturan risiko.** Batas 3% harian dan 5% total, serta kriteria kill-switch, ada di
   `docs/runbook-trading.md`.
+- **MT5 Linux berjalan di container.** `warroom-mt5-node` (Webtop/Wine) di
+  `127.0.0.1:3300`, MT5 portable di `/config/.wine`. Dipakai untuk login read-only
+  (demo atau investor password), bukan eksekusi. Detail: `docs/runbook-mt5-linux.md`.
