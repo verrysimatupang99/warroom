@@ -30,7 +30,7 @@ Yang tidak cocok untuk server ini:
 `ops/docker-mt5/docker-compose.yml` menjalankan `linuxserver/webtop:ubuntu-xfce`
 (akses lokal `127.0.0.1:3300`). Di dalam container:
 
-- Ubuntu 26.04, Wine 10 dari repo distro.
+- Ubuntu 26.04, WineHQ staging 11.12 (repo questing + libavcodec61 questing). Wine 10 distro gagal: MT5 menampilkan "A debugger has been found running" walau `SYS_PTRACE` sudah dihapus.
 - MT5 dipasang portable di
   `/config/.wine/drive_c/Program Files/MetaTrader 5`.
 - Desktop launcher: `config/Desktop/metatrader5.desktop`.
@@ -69,6 +69,8 @@ Verifikasi: `terminal64.exe` ada (117 MB), folder `Config`, `Profiles`, dan
 - Disk host 93% (3,5 GiB bebas) setelah image dan prefix Wine. Jangan menambah image
   besar sebelum ruang dibersihkan.
 - Container memakai memori sekitar 350 MiB saat idle.
+- Instalasi Wine berada di layer container, bukan volume. `docker compose up --force-recreate` menghapus Wine; prefix MT5 di `/config/.wine` tetap ada. Untuk produksi, Wine harus dipindah ke Dockerfile.
+- Disk host 95% (2,7 GiB bebas). Ini risiko produksi; jangan menambah image/instalasi besar sebelum ruang dibebaskan.
 - Jangan menyalin EA ke container ini tanpa keputusan owner; tujuannya pemantauan.
 
 ## Rollback
@@ -78,3 +80,15 @@ cd ops/docker-mt5 && docker compose down
 ```
 
 Image dan prefix tetap ada sampai `docker image rm` dan folder `config/.wine` dihapus.
+
+## Hasil uji 1 Nov 2026 — login belum selesai
+
+- MT5 build 6295 berjalan di Wine 11.12 (screenshot terminal terbuka).
+- Login akun `452009427` gagal: server `Exness-MT5Real48` tidak ada di daftar
+  perusahaan yang tersedia. Daftar Exness SC hanya memuat `ExnessSC-MT5Real0..12`;
+  daftar UK memuat `ExnessUK-*`. Pesan: `authorization on Exness-MT5Real failed
+  (invalid account)`.
+- Artinya entitas Exness yang dipilih belum benar, atau server itu milik entitas lain.
+  Perlu entitas yang tepat dari layar login MT5 pengguna.
+- File `startup.ini` berisi kredensial sudah dihapus setelah uji. Jangan menyimpan
+  master password di server; gunakan investor password.
