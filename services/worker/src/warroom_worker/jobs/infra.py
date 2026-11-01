@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Event, Fact, Heartbeat, Job
+from warroom_core.telemetry_policy import is_retired
 from warroom_notifier.dispatch import kirim_tertunda
 
 from .base import (
@@ -107,6 +108,8 @@ def handler_freshness(s: SASession, job: Job) -> str:
     grace_faktor = float(job.payload_json.get("grace_faktor", 1.5))
     basi: list[Fact] = []
     for f in rows:
+        if is_retired(f.kind, f.key):
+            continue
         umur = (now - f.observed_at).total_seconds()
         ambang = max(f.ttl_s * grace_faktor, f.ttl_s + grace_min_s)
         if umur > ambang:

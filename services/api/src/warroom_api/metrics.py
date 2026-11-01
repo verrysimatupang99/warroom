@@ -17,6 +17,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SASession
 from warroom_core.db import Alert, Event, Fact, Heartbeat, Job
+from warroom_core.telemetry_policy import is_retired
 
 __all__ = ["collect_metrics", "collect_readiness", "render_prometheus", "setup_json_logging"]
 
@@ -88,7 +89,7 @@ def collect_readiness(s: SASession, now: datetime | None = None) -> dict[str, An
             "ttl_s": f.ttl_s,
         }
         for f in facts
-        if (t - f.observed_at).total_seconds() > f.ttl_s
+        if (t - f.observed_at).total_seconds() > f.ttl_s and not is_retired(f.kind, f.key)
     ][:MAX_STALE_FACTS]
     return {
         "database": "ok",
@@ -148,6 +149,7 @@ def collect_metrics(s: SASession, now: datetime | None = None) -> dict[str, Any]
             & (Fact.observed_at == sub.c.obs),
         )
     ).all()
+    terbaru = [f for f in terbaru if not is_retired(f.kind, f.key)]
     basi = sum(1 for f in terbaru if (t - f.observed_at).total_seconds() > f.ttl_s)
 
     per_tipe = dict(
