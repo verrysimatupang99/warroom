@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from warroom_core.db import User, session_scope
 
@@ -20,10 +20,15 @@ router = APIRouter()
 
 @router.get("/metrics")
 def metrics(
+    request: Request,
     user: Annotated[User | None, Depends(auth.optional_user)],
 ) -> PlainTextResponse:
     publik = os.environ.get("WARROOM_METRICS_PUBLIC", "0").strip().lower() in {"1", "true", "yes"}
-    if user is None and not publik:
+    # Scraper lokal (worker slo-check) boleh membaca tanpa sesi; nginx tidak mem-proxy
+    # /metrics, jadi permukaan publik tetap localhost.
+    klien = request.client.host if request.client else ""
+    lokal = klien in {"127.0.0.1", "::1"}
+    if user is None and not (publik or lokal):
         raise HTTPException(status_code=401, detail="belum login")
     with session_scope() as s:
         teks = render_prometheus(collect_metrics(s))

@@ -12,6 +12,7 @@ Semua angka di bawah hasil perintah pada 1 Nov 2026, 06:20–06:30 UTC.
 | Halaman | `/`, `/masuk`, `/crypto`, `/idx`, `/forex`, `/polymarket`, `/gmgn`, `/sistem`, `/riset`, `/jurnal` = 200 |
 | Readiness | `ready`, `freshness={stale, count:24}`, 4 heartbeat ok |
 | Job | 36 job, **0 non-ok**; `reconcile-crypto` ok, `slo-check` ok |
+| SLO HTTP | `warroom_http_latency_p95_ms`, `warroom_http_errors_total`, `warroom_http_error_rate` aktif; alert `slo/latency` dan `slo/error_rate` |
 | Alert | 0 terbuka; `job/reconcile-crypto` auto-ack, alert MT5 demo di-ack setelah pensiun |
 | CSP | enforce == report-only; hash ditulis ke 2 vhost |
 | Restore drill | Timer bulanan aktif; run 1 Nov: facts 96.326, alerts 669, jobs 34, 32 detik, DB uji dihapus |
@@ -36,8 +37,8 @@ Semua angka di bawah hasil perintah pada 1 Nov 2026, 06:20–06:30 UTC.
 1. **Akun live `36525553` (VM2)** masih di luar telemetri War Room. Larangan menyentuh VM tetap berlaku. Opsi: investor password/statement read-only untuk pemantau eksternal.
 2. **Backup offsite**: belum ada tujuan terukur (tanpa rclone/restic/borg, tanpa bucket). Backup harian tetap lokal.
 3. **Kunci provider**: qonek `401 Key expired`; kiyara `429` (maks 6 bersamaan); nutaraline menolak probe pendek. Perbaikan kunci/limit di sisi owner.
-4. **p95/5xx**: belum diukur karena access log nginx tidak memuat `request_time`. Ambang lain (disk, backup, drill, API up) sudah berjalan di job `slo-check`.
-5. **Disk 74–76%**: alert warn 80% dan crit 90% sudah aktif; belum ada tindakan pemangkasan.
+4. **Disk 92–96%**: alert warn 80% dan crit 90% aktif; pemangkasan belum dilakukan karena menunggu keputusan owner.
+5. **Verifikasi final**: `bash ops/verify-final.sh` menjadi satu perintah pemeriksaan.
 
 ## Verifikasi cepat
 

@@ -24,3 +24,19 @@ def test_backup_drill_dan_api() -> None:
 def test_backup_tidak_ada_dihitung_pelanggaran() -> None:
     temuan = evaluate_slo(disk_pct=50, backup_age_h=None, drill_age_d=None, api_ok=True)
     assert {t["kode"] for t in temuan} == {"backup", "drill"}
+
+
+def test_latency_dan_error_rate_di_atas_ambang() -> None:
+    temuan = evaluate_slo(
+        disk_pct=50, backup_age_h=1, drill_age_d=1, api_ok=True,
+        p95_ms=1500, requests_total=100, error_rate=0.02,
+    )
+    assert {t["kode"] for t in temuan} == {"latency", "error_rate"}
+
+
+def test_request_sedikit_tidak_divonis() -> None:
+    temuan = evaluate_slo(
+        disk_pct=50, backup_age_h=1, drill_age_d=1, api_ok=True,
+        p95_ms=5000, requests_total=5, error_rate=1.0,
+    )
+    assert temuan == []
