@@ -6,7 +6,8 @@ services:
       - seccomp:unconfined
       - apparmor:unconfined
     cap_add:
-      - SYS_PTRACE
+      # SYS_PTRACE sengaja TIDAK ada: MT5 mendeteksinya sebagai debugger dan menolak
+      # jalan ("A debugger has been found running"). SYS_ADMIN tetap untuk Wine.
       - SYS_ADMIN
     environment:
       - PUID=1000
