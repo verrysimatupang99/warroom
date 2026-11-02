@@ -81,6 +81,7 @@ def test_lihat_sandi_owner_only_dan_isi_benar(client, make_user, kunci_vault) ->
 
 def test_tanpa_kunci_vault_tulis_503(client, make_user, monkeypatch) -> None:
     monkeypatch.delenv("WARROOM_MT5_VAULT_KEY", raising=False)
+    monkeypatch.setattr("warroom_core.mt5_crypto._KEY_PATHS", ("/nonexistent/kunci",))
     _, sid = make_user("owner-vault4", role="owner")
     r = client.post("/api/v1/mt5-vault", json=BODY, headers=_cookie(sid))
     assert r.status_code == 503
