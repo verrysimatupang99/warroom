@@ -15,7 +15,6 @@
     "src/lib/components/Block.svelte",
     "src/lib/components/CockpitCrypto.svelte",
     "src/lib/components/DataProvenanceCard.svelte",
-    "src/lib/components/DecisionCard.svelte",
     "src/lib/components/DecisionFeed.svelte",
     "src/lib/components/DompetLintasMarket.svelte",
     "src/lib/components/Drawer.svelte",

@@ -11,8 +11,8 @@
 | No | Spesialis Pasar | Path Direktori | File Kunci / Struktur | Status Direktori |
 |---|---|---|---|---|
 | 1 | **Chief Orchestrator** | `/home/admin/warroom-agents/orchestrator` | `AGENTS.md`, `packages/`, `services/`, `apps/`, `ops/`, `pyproject.toml` | Aktif / Workspace Utama |
-| 2 | **Forex Specialist** | `/home/admin/warroom-agents/forex` | `AGENTS.md`, `packages/`, `services/`, `proof_of_crud.json`, `pyproject.toml` | Terverifikasi / Siap |
-| 3 | **Crypto Specialist** | `/home/admin/warroom-agents/crypto` | `AGENTS.md`, `packages/`, `services/`, `backtest_summary.md`, `pyproject.toml` | Terverifikasi / Siap |
+| 2 | **Forex Specialist** | `/home/admin/warroom-agents/forex` | `AGENTS.md`, `packages/`, `services/`, `docs/laporan/proof_of_crud.json`, `pyproject.toml` | Terverifikasi / Siap |
+| 3 | **Crypto Specialist** | `/home/admin/warroom-agents/crypto` | `AGENTS.md`, `packages/`, `services/`, `docs/laporan/backtest_summary.md`, `pyproject.toml` | Terverifikasi / Siap |
 | 4 | **Polymarket Specialist** | `/home/admin/warroom-agents/polymarket` | `AGENTS.md`, `packages/`, `services/`, `pyproject.toml`, `contracts/` | Terverifikasi / Siap |
 | 5 | **IDX Specialist** | `/home/admin/warroom-agents/idx` | `AGENTS.md`, `packages/`, `services/`, `pyproject.toml`, `scripts/` | Terverifikasi / Siap |
 

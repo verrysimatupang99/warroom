@@ -8,8 +8,8 @@ sendiri dan menghasilkan audit pasar + audit codebase.
 
 | Berkas | Isi |
 |---|---|
-| `CONSENSUS_RECOMMENDATIONS.md` | Konsensus terpadu + matriks alokasi modal. Status: **NO-GO live penuh**. |
-| `<pasar>_market_audit.md` / `polymarket_audit.md` | Audit per pasar: kondisi pasar + kesiapan codebase + vektor risiko. |
+| `docs/laporan/CONSENSUS_RECOMMENDATIONS.md` | Konsensus terpadu + matriks alokasi modal. Status: **NO-GO live penuh**. |
+| `docs/laporan/<pasar>_market_audit.md` / `docs/laporan/polymarket_audit.md` | Audit per pasar: kondisi pasar + kesiapan codebase + vektor risiko. |
 | `docs/trading-floor/directive-<pasar>.json` | Direktif orkestrator per pasar (mandat, model utama/validator, deliverables). |
 | `docs/MACRO_ORCHESTRATION_DIRECTIVE.md` | Tesis makro lintas aset. |
 | `docs/MARKET_SPECIALISTS_AUDIT.md` | Status kesiapan tiap workspace spesialis. |

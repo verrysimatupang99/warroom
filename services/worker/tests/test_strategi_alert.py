@@ -158,7 +158,7 @@ def test_handler_gagal_siklus_berikutnya_tetap_mengabarkan(db) -> None:
 
     handler_asli = schedule.HANDLERS["strategi-alert"]
     try:
-        def handler_error(s_err, j_err):
+        def handler_error(_s_err, _j_err):
             raise RuntimeError("koneksi facts sesaat terputus")
 
         schedule.HANDLERS["strategi-alert"] = handler_error

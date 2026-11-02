@@ -304,8 +304,8 @@ def main():
             f"RRR=1:{cfg['rrr']}"
         )
 
-    # Simpan hasil perbaikan tuning ke backtest_summary.md
-    summary_path = os.path.join(base_dir, 'backtest_summary.md')
+    # Simpan hasil perbaikan tuning ke docs/laporan/backtest_summary.md
+    summary_path = os.path.join(base_dir, 'docs', 'laporan', 'backtest_summary.md')
     with open(summary_path, 'w') as f:
         f.write("# 🚀 Laporan Validasi & Backtest Multi-Asset (Hasil Tuning Presisi)\n\n")
         f.write(

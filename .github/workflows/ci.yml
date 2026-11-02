@@ -94,6 +94,22 @@ jobs:
         run: uv run pytest -q
 
   # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
+
+  # Deteksi kode mati Python (padanan knip di job web): whitelist di
+  # ops/vulture-whitelist.py — fixture pytest & param interface yang memang tak dipakai.
+  hygiene:
+    name: hygiene — vulture (kode mati Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uvx vulture packages/core/src packages/live-trading/src services tools ops/vulture-whitelist.py --min-confidence 90
+
+  # Kredensial tidak boleh masuk repo (00-ringkasan.md §3 butir 7).
   secrets:
     name: secrets — gitleaks
     runs-on: ubuntu-latest

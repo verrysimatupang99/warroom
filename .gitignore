@@ -55,3 +55,7 @@ data/hist/
 
 # cadangan lokal dari operasi agent (jangan di-commit)
 *.bak-*
+
+# Riwayat chat agent lokal & arsip patch hasil sesi (bukan sumber repo)
+.agent_chat_history.json
+artifacts/archives/*.patch
