@@ -81,6 +81,13 @@ jobs:
       - name: Skema DB di head alembic (wajib DB — cek tidak boleh di-skip diam-diam)
         # DB service CI kosong (ephemeral) — upgrade ke head dulu, lalu pastikan di head.
         run: uv run python ops/check-db-head.py --upgrade
+      # DB service CI hanya membuat POSTGRES_DB (warroom_ci); pytest butuh
+      # DB terpisah "warroom_test" (kontrak conftest/test_url_bukan_produksi).
+      - name: Siapkan DB tes (warroom_test)
+        run: |
+          PGPASSWORD=warroom psql -h 127.0.0.1 -U warroom -d warroom_ci \
+            -c "CREATE DATABASE warroom_test OWNER warroom" \
+            -c "REVOKE ALL ON DATABASE warroom_test FROM PUBLIC"
       # Tes platform (api/worker/core) ikut CI dengan Postgres service di atas.
       # conftest.py pakai WARROOM_TEST_DB_URL (job-level env).
       - name: pytest platform
