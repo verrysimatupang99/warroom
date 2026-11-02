@@ -42,6 +42,7 @@ from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
 from warroom_api.routers import llm as llm_router
+from warroom_api.routers import mt5_vault as mt5_vault_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
@@ -175,6 +176,9 @@ def create_app() -> FastAPI:
 
     # --- P6: kesiapan live + grant ---
     app.include_router(live_router.router)
+
+    # --- Vault kredensial MT5 (gudang salin-tempel, bukan auto-login) ---
+    app.include_router(mt5_vault_router.router)
 
     # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
     app.include_router(llm_router.router)

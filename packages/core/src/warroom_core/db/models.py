@@ -519,3 +519,30 @@ class Grant(Base):
         Index("ix_grants_scope_expires", "scope", "expires_at"),
         UniqueConstraint("scope", "message_id", name="uq_grants_scope_message"),
     )
+
+
+class MT5Account(Base):
+    """Vault kredensial MT5 — sandi terenkripsi, tidak pernah keluar via API metadata."""
+
+    __tablename__ = "mt5_accounts"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    label: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    login: Mapped[str] = mapped_column(String(32), nullable=False)
+    server: Mapped[str] = mapped_column(String(160), nullable=False)
+    password_enc: Mapped[str] = mapped_column(Text, nullable=False)
+    # investor|master — investor disarankan (read-only)
+    password_kind: Mapped[str] = mapped_column(String(16), nullable=False, default="investor")
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_by: Mapped[int | None] = mapped_column(BigInteger)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("uq_mt5_accounts_login_server", "login", "server", unique=True),
+    )
