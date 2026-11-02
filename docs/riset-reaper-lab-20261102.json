@@ -1,0 +1,275 @@
+{
+  "A_momentum_sesi": {
+    "n": 2144,
+    "win_rate": 0.3358,
+    "expectancy_r": -0.1337,
+    "profit_factor": 0.791,
+    "r_kotor_total": -166.91,
+    "r_bersih_total": -286.68,
+    "max_dd_pct": 97.69,
+    "t_stat": -4.29,
+    "lolos": false,
+    "alasan_gagal": [
+      "expectancy -0.1337 < 0.05",
+      "PF 0.791 < 1.15",
+      "t -4.29 < 2.0",
+      "DD 97.69% > 10.0%"
+    ],
+    "blok": [
+      {
+        "n": 429,
+        "win_rate": 0.303,
+        "expectancy_r": -0.2116,
+        "profit_factor": 0.691,
+        "r_kotor_total": -63.7,
+        "r_bersih_total": -90.76,
+        "max_dd_pct": 68.88,
+        "t_stat": -2.9,
+        "blok": 1,
+        "dari": "2021-01-04",
+        "sampai": "2022-03-07"
+      },
+      {
+        "n": 429,
+        "win_rate": 0.3007,
+        "expectancy_r": -0.231,
+        "profit_factor": 0.675,
+        "r_kotor_total": -65.52,
+        "r_bersih_total": -99.11,
+        "max_dd_pct": 70.07,
+        "t_stat": -3.19,
+        "blok": 2,
+        "dari": "2022-03-08",
+        "sampai": "2023-05-04"
+      },
+      {
+        "n": 429,
+        "win_rate": 0.3193,
+        "expectancy_r": -0.1968,
+        "profit_factor": 0.706,
+        "r_kotor_total": -55.06,
+        "r_bersih_total": -84.43,
+        "max_dd_pct": 68.12,
+        "t_stat": -2.97,
+        "blok": 3,
+        "dari": "2023-05-05",
+        "sampai": "2024-07-01"
+      },
+      {
+        "n": 429,
+        "win_rate": 0.3683,
+        "expectancy_r": -0.1163,
+        "profit_factor": 0.801,
+        "r_kotor_total": -33.3,
+        "r_bersih_total": -49.9,
+        "max_dd_pct": 43.35,
+        "t_stat": -1.86,
+        "blok": 4,
+        "dari": "2024-07-02",
+        "sampai": "2025-09-02"
+      },
+      {
+        "n": 428,
+        "win_rate": 0.3879,
+        "expectancy_r": 0.0876,
+        "profit_factor": 1.16,
+        "r_kotor_total": 50.68,
+        "r_bersih_total": 37.51,
+        "max_dd_pct": 24.39,
+        "t_stat": 1.21,
+        "blok": 5,
+        "dari": "2025-09-03",
+        "sampai": "2026-11-02"
+      }
+    ],
+    "mc": {
+      "p_expectancy_positif": 0.0,
+      "p05": -0.186,
+      "p50": -0.1335,
+      "p95": -0.0798
+    },
+    "nama": "A_momentum_sesi"
+  },
+  "B_opening_range": {
+    "n": 1269,
+    "win_rate": 0.4854,
+    "expectancy_r": -0.0989,
+    "profit_factor": 0.8,
+    "r_kotor_total": -49.01,
+    "r_bersih_total": -125.46,
+    "max_dd_pct": 75.4,
+    "t_stat": -3.67,
+    "lolos": false,
+    "alasan_gagal": [
+      "expectancy -0.0989 < 0.05",
+      "PF 0.8 < 1.15",
+      "t -3.67 < 2.0",
+      "DD 75.4% > 10.0%"
+    ],
+    "blok": [
+      {
+        "n": 254,
+        "win_rate": 0.4409,
+        "expectancy_r": -0.1559,
+        "profit_factor": 0.717,
+        "r_kotor_total": -26.43,
+        "r_bersih_total": -39.61,
+        "max_dd_pct": 41.16,
+        "t_stat": -2.52,
+        "blok": 1,
+        "dari": "2021-01-04",
+        "sampai": "2022-01-19"
+      },
+      {
+        "n": 254,
+        "win_rate": 0.5394,
+        "expectancy_r": -0.0611,
+        "profit_factor": 0.856,
+        "r_kotor_total": 3.79,
+        "r_bersih_total": -15.51,
+        "max_dd_pct": 20.11,
+        "t_stat": -1.12,
+        "blok": 2,
+        "dari": "2022-01-21",
+        "sampai": "2023-03-25"
+      },
+      {
+        "n": 254,
+        "win_rate": 0.4528,
+        "expectancy_r": -0.1408,
+        "profit_factor": 0.723,
+        "r_kotor_total": -18.32,
+        "r_bersih_total": -35.77,
+        "max_dd_pct": 35.48,
+        "t_stat": -2.29,
+        "blok": 3,
+        "dari": "2023-03-27",
+        "sampai": "2024-05-20"
+      },
+      {
+        "n": 254,
+        "win_rate": 0.5079,
+        "expectancy_r": -0.0161,
+        "profit_factor": 0.965,
+        "r_kotor_total": 6.47,
+        "r_bersih_total": -4.08,
+        "max_dd_pct": 14.23,
+        "t_stat": -0.26,
+        "blok": 4,
+        "dari": "2024-05-22",
+        "sampai": "2025-06-06"
+      },
+      {
+        "n": 253,
+        "win_rate": 0.4862,
+        "expectancy_r": -0.1205,
+        "profit_factor": 0.77,
+        "r_kotor_total": -14.52,
+        "r_bersih_total": -30.48,
+        "max_dd_pct": 33.27,
+        "t_stat": -1.97,
+        "blok": 5,
+        "dari": "2025-06-07",
+        "sampai": "2026-10-31"
+      }
+    ],
+    "mc": {
+      "p_expectancy_positif": 0.0,
+      "p05": -0.145,
+      "p50": -0.099,
+      "p95": -0.0549
+    },
+    "nama": "B_opening_range"
+  },
+  "C_trend_sesi": {
+    "n": 6222,
+    "win_rate": 0.3055,
+    "expectancy_r": -0.1927,
+    "profit_factor": 0.741,
+    "r_kotor_total": -674.89,
+    "r_bersih_total": -1198.84,
+    "max_dd_pct": 100.0,
+    "t_stat": -11.17,
+    "lolos": false,
+    "alasan_gagal": [
+      "expectancy -0.1927 < 0.05",
+      "PF 0.741 < 1.15",
+      "t -11.17 < 2.0",
+      "DD 100.0% > 10.0%"
+    ],
+    "blok": [
+      {
+        "n": 1245,
+        "win_rate": 0.245,
+        "expectancy_r": -0.3721,
+        "profit_factor": 0.535,
+        "r_kotor_total": -374.75,
+        "r_bersih_total": -463.28,
+        "max_dd_pct": 99.14,
+        "t_stat": -10.57,
+        "blok": 1,
+        "dari": "2021-01-04",
+        "sampai": "2022-04-05"
+      },
+      {
+        "n": 1245,
+        "win_rate": 0.3141,
+        "expectancy_r": -0.1845,
+        "profit_factor": 0.756,
+        "r_kotor_total": -88.12,
+        "r_bersih_total": -229.72,
+        "max_dd_pct": 91.12,
+        "t_stat": -4.64,
+        "blok": 2,
+        "dari": "2022-04-05",
+        "sampai": "2023-06-13"
+      },
+      {
+        "n": 1245,
+        "win_rate": 0.2667,
+        "expectancy_r": -0.2993,
+        "profit_factor": 0.619,
+        "r_kotor_total": -266.09,
+        "r_bersih_total": -372.68,
+        "max_dd_pct": 97.87,
+        "t_stat": -8.0,
+        "blok": 3,
+        "dari": "2023-06-14",
+        "sampai": "2024-10-08"
+      },
+      {
+        "n": 1245,
+        "win_rate": 0.3382,
+        "expectancy_r": -0.0775,
+        "profit_factor": 0.89,
+        "r_kotor_total": -9.17,
+        "r_bersih_total": -96.55,
+        "max_dd_pct": 69.0,
+        "t_stat": -1.95,
+        "blok": 4,
+        "dari": "2024-10-08",
+        "sampai": "2025-11-28"
+      },
+      {
+        "n": 1242,
+        "win_rate": 0.3639,
+        "expectancy_r": -0.0295,
+        "profit_factor": 0.957,
+        "r_kotor_total": 63.24,
+        "r_bersih_total": -36.61,
+        "max_dd_pct": 55.79,
+        "t_stat": -0.75,
+        "blok": 5,
+        "dari": "2025-11-28",
+        "sampai": "2026-11-02"
+      }
+    ],
+    "mc": {
+      "p_expectancy_positif": 0.0,
+      "p05": -0.2213,
+      "p50": -0.1932,
+      "p95": -0.1642
+    },
+    "nama": "C_trend_sesi"
+  }
+}
