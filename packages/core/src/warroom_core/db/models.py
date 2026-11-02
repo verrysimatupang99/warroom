@@ -565,14 +565,9 @@ class VaultCredential(Base):
     # pasangan ekstra bebas (JSON terenkripsi), mis. passphrase OKX
     extra_enc: Mapped[str | None] = mapped_column(Text)
     aktif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_by: Mapped[int | None] = mapped_column(BigInteger)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-
+    dibuat_oleh: Mapped[int | None] = mapped_column(BigInteger)
+    dibuat = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    diubah = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     __table_args__ = (
         Index("uq_vault_platform_label", "platform", "label", unique=True),
         Index("ix_vault_credentials_platform", "platform"),

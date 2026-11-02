@@ -116,8 +116,8 @@ def _meta(row: VaultCredential) -> dict[str, Any]:
         "punya_key": row.api_key_enc is not None,
         "punya_secret": row.api_secret_enc is not None,
         "extra_keys": sorted(extra_decode(row.extra_enc)) if row.extra_enc else [],
-        "dibuat": row.created_at.isoformat(),
-        "diubah": (row.updated_at or row.created_at).isoformat(),
+        "dibuat": row.dibuat.isoformat(),
+        "diubah": (row.diubah or row.dibuat).isoformat(),
     }
 
 
@@ -179,9 +179,9 @@ def simpan_kredensial(body: CredentialIn, user: OwnerDep) -> dict[str, Any]:
             api_secret_enc=rahasia_enc,
             extra_enc=extra_enc,
             aktif=body.aktif,
-            created_by=user.id,
-            created_at=now,
-            updated_at=now,
+            dibuat_oleh=user.id,
+            dibuat=now,
+            diubah=now,
         )
         db.add(row)
         db.flush()
@@ -207,7 +207,7 @@ def ubah_kredensial(kid: int, body: CredentialUpdate, user: OwnerDep) -> dict[st
             row.extra_enc = extra_encode(body.extra) if body.extra else None
         if body.aktif is not None:
             row.aktif = body.aktif
-        row.updated_at = datetime.now(UTC)
+        row.diubah = datetime.now(UTC)
         db.flush()
         hasil = _meta(row)
     return hasil
