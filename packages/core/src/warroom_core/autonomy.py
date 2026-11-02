@@ -48,7 +48,7 @@ __all__ = [
 KEPUTUSAN_AI = Literal["diterapkan", "ditolak", "butuh_manusia", "prohibited"]
 
 # Nama parameter yang menyentuh ambang gate/rumus BE — TIDAK BOLEH disentuh agen.
-GATE_TERLARANG = ("gate.min_n", "gate.ci", "gate.be", "gate.rumus_be", "fee.rumpus")
+GATE_TERLARANG = ("gate.min_n", "gate.ci", "gate.be", "gate.rumus_be", "fee.rumus")
 
 
 @dataclass(frozen=True)
@@ -142,11 +142,11 @@ def decide_proposal(
 
     Urutan pemeriksaan sengaja: terlarang → terkunci → di luar batas → butuh manusia → boleh.
     """
+    if nama in GATE_TERLARANG or nama.startswith("gate."):
+        return "prohibited", "menyentuh ambang gate/rumus BE — hanya manusia (owner)"
     p = s.scalar(select(Parameter).where(Parameter.name == nama))
     if p is None:
         return "ditolak", f"parameter '{nama}' tidak terdaftar"
-    if nama in GATE_TERLARANG or nama.startswith("gate."):
-        return "prohibited", "menyentuh ambang gate/rumus BE — hanya manusia (owner)"
     if p.locked:
         return "prohibited", "parameter terkunci (locked)"
     if not _dalam_batas(nilai_baru, p.bounds_json):

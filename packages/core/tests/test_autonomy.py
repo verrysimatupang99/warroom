@@ -51,6 +51,7 @@ def test_parameter_gate_dan_locked_prohibited(db) -> None:
         assert autonomy.decide_proposal(s, "gate.min_n", 10)[0] == "prohibited"
         assert autonomy.decide_proposal(s, "mode", "live")[0] == "prohibited"
         assert autonomy.decide_proposal(s, "gate.ci", 0.9)[0] == "prohibited"
+        assert autonomy.decide_proposal(s, "fee.rumus", 0.01)[0] == "prohibited"
 
 
 def test_di_luar_batas_ditolak_dengan_alasan_tercatat(db) -> None:

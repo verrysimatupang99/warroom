@@ -5,13 +5,13 @@ import { KREDENSIAL, PESAN_SKIP, RUTE, loginLewat } from './util';
 
 /**
  * A11y (W8): jalankan axe pada /masuk (selalu) dan 7 rute (butuh sesi).
- * Ambang: **0 pelanggaran critical** — pelanggaran lain dilaporkan di output tapi tidak
- * menggagalkan (kontras dsb. sering butuh penilaian manusia).
+ * Ambang: **0 pelanggaran critical & serious** — pelanggaran lain (moderate/minor,
+ * mis. kontras) dilaporkan di output tapi tidak menggagalkan (butuh penilaian manusia).
  */
 async function periksa(page: Page): Promise<void> {
 	const hasil = await new AxeBuilder({ page }).analyze();
-	const kritis = hasil.violations.filter((v) => v.impact === 'critical');
-	expect(kritis.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+	const serius = hasil.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
+	expect(serius.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 }
 
 test('a11y /masuk', async ({ page }) => {
