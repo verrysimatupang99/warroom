@@ -120,7 +120,9 @@ angka tidak boleh dikarang, dan ambang gate & rumus BE hanya boleh diubah manusi
 ## Untuk pengembang
 
 Panduan teknis (stack, struktur folder, perintah harian, environment, deploy nginx/systemd)
-ada di **[`docs/pengembangan.md`](docs/pengembangan.md)**. Aturan kerja & keselamatan ada di
+ada di **[`docs/pengembangan.md`](docs/pengembangan.md)**. Operasional harian (restart layanan,
+log, gate blocking, backup/restore Postgres) ada di **[`docs/runbook.md`](docs/runbook.md)**.
+Diagram sistem di [`docs/arsitektur.md`](docs/arsitektur.md). Aturan kerja & keselamatan ada di
 [`AGENTS.md`](AGENTS.md). Dilarang push langsung ke `main` — semua perubahan lewat branch → PR
 (lihat `.github/pull_request_template.md`).
 
