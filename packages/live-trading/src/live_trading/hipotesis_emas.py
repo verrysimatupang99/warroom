@@ -17,6 +17,7 @@ from typing import Any
 
 from live_trading.lab_emas import atr, ema, jam_utc, tanggal_utc
 
+
 def _balik(s: dict[str, Any], acuan: float) -> dict[str, Any]:
     """Cerminkan sinyal: arah ditukar, jarak stop & target dipertahankan.
 
