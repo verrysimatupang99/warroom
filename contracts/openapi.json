@@ -252,6 +252,129 @@
         "title": "LoginBody",
         "type": "object"
       },
+      "MT5AccountIn": {
+        "properties": {
+          "label": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Label",
+            "type": "string"
+          },
+          "login": {
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^\\d+$",
+            "title": "Login",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Note",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          },
+          "password_kind": {
+            "default": "investor",
+            "title": "Password Kind",
+            "type": "string"
+          },
+          "server": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "login",
+          "server",
+          "password"
+        ],
+        "title": "MT5AccountIn",
+        "type": "object"
+      },
+      "MT5AccountUpdate": {
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "password_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password Kind"
+          },
+          "server": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server"
+          }
+        },
+        "title": "MT5AccountUpdate",
+        "type": "object"
+      },
       "MT5DealPayload": {
         "description": "Deal tertutup yang dilaporkan EA (posisi sudah final).",
         "properties": {
@@ -6357,6 +6480,298 @@
           }
         },
         "summary": "Metrics Ui"
+      }
+    },
+    "/api/v1/mt5-vault": {
+      "get": {
+        "operationId": "daftar_akun_api_v1_mt5_vault_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Daftar Akun Api V1 Mt5 Vault Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Daftar Akun",
+        "tags": [
+          "mt5-vault"
+        ]
+      },
+      "post": {
+        "operationId": "simpan_akun_api_v1_mt5_vault_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MT5AccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Simpan Akun Api V1 Mt5 Vault Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simpan Akun",
+        "tags": [
+          "mt5-vault"
+        ]
+      }
+    },
+    "/api/v1/mt5-vault/{akun_id}": {
+      "delete": {
+        "operationId": "hapus_akun_api_v1_mt5_vault__akun_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akun_id",
+            "required": true,
+            "schema": {
+              "title": "Akun Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hapus Akun",
+        "tags": [
+          "mt5-vault"
+        ]
+      },
+      "patch": {
+        "operationId": "ubah_akun_api_v1_mt5_vault__akun_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akun_id",
+            "required": true,
+            "schema": {
+              "title": "Akun Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MT5AccountUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ubah Akun Api V1 Mt5 Vault  Akun Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ubah Akun",
+        "tags": [
+          "mt5-vault"
+        ]
+      }
+    },
+    "/api/v1/mt5-vault/{akun_id}/sandi": {
+      "get": {
+        "description": "Satu-satunya jalan sandi keluar: eksplisit, owner-only, satu akun.\nDitujukan untuk salin-tempel login manual di UI MT5 Webtop.",
+        "operationId": "lihat_sandi_api_v1_mt5_vault__akun_id__sandi_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akun_id",
+            "required": true,
+            "schema": {
+              "title": "Akun Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Lihat Sandi Api V1 Mt5 Vault  Akun Id  Sandi Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lihat Sandi",
+        "tags": [
+          "mt5-vault"
+        ]
       }
     },
     "/api/v1/params": {
