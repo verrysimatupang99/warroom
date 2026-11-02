@@ -53,6 +53,7 @@ extend-exclude = [
     "node_modules",
     "packages/live-trading/vendor",
     "packages/live-trading/crypto",
+    "ops/vulture-whitelist.py",  # whitelist vulture: nama memang "tak terdefinisi" (F821)
 ]
 
 [tool.ruff.lint]
