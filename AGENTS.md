@@ -195,8 +195,9 @@ di Webdock, bukan catatan laptop. Vault laptop bukan sumber kebenaran untuk serv
   **tidak menghapus `events`** (`hapus_events=false`). Angka 30/90 hari hanyalah target
   yang belum diimplementasikan.
 - **Dua lapisan provider.** Gateway War Room memakai `/etc/warroom/llm.json` dengan urutan
-  `nutaraline → qonek → kiyara` dan budget $3/hari. Nectere adalah provider CLI/IDE di
-  `~/.omp/models.yml`, bukan bagian gateway. qonek masih di rantai tetapi kuncinya 401.
+  `nutaraline → qonek → kiyara` dan budget $3/hari. (Catatan lama: Nectere dulu dipakai
+  lewat `~/.omp/models.yml` — OMP sudah dilepas dari server ini.) qonek masih di rantai
+  tetapi kuncinya 401.
 - **Telemetri pensiun.** `WARROOM_RETIRED_FACTS` mengecualikan `mt5_snapshot/ringkas` dan
   `ringkas:452009427` dari readiness, metrics, dan alert. `warroom-pantau-tick.timer`
   dimatikan karena bergantung pada endpoint MT5 Tencent yang sudah mati; nyalakan lagi
