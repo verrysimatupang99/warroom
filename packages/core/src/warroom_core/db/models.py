@@ -564,7 +564,7 @@ class VaultCredential(Base):
     api_secret_enc: Mapped[str | None] = mapped_column(Text)
     # pasangan ekstra bebas (JSON terenkripsi), mis. passphrase OKX
     extra_enc: Mapped[str | None] = mapped_column(Text)
-    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    aktif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_by: Mapped[int | None] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
