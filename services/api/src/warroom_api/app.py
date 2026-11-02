@@ -48,6 +48,7 @@ from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.routers import status_ops as status_ops_router
 from warroom_api.routers import tencent as tencent_router
+from warroom_api.routers import vault as vault_router
 from warroom_api.stream import event_stream
 
 __all__ = ["app", "create_app"]
@@ -179,6 +180,7 @@ def create_app() -> FastAPI:
 
     # --- Vault kredensial MT5 (gudang salin-tempel, bukan auto-login) ---
     app.include_router(mt5_vault_router.router)
+    app.include_router(vault_router.router)
 
     # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
     app.include_router(llm_router.router)

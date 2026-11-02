@@ -278,6 +278,18 @@
 				{/if}
 			</section>
 		</div>
+	{:else if sub === 'vault'}
+		<section class="rounded-card border border-line bg-surface p-4">
+			<h2 class="text-13 font-bold text-text">Vault Kredensial</h2>
+			<p class="mt-2 text-12 text-text-2">
+				Simpan endpoint + API key platform manapun (Binance, Bybit, OKX, dan lainnya).
+				Vault hanya menyimpan — salin-tempel manual, tidak ada auto-login.
+				Polymarket tidak didukung.
+			</p>
+			<p class="mt-3">
+				<a class="text-12 font-bold underline text-text" href="/vault">Buka Vault Kredensial →</a>
+			</p>
+		</section>
 	{:else}
 		<p class="text-12 text-text-3">Tab tidak dikenal: {sub}</p>
 	{/if}

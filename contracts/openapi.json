@@ -62,6 +62,157 @@
         "title": "AgyPromptRequest",
         "type": "object"
       },
+      "CredentialIn": {
+        "properties": {
+          "aktif": {
+            "default": true,
+            "title": "Aktif",
+            "type": "boolean"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "api_secret": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Secret"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "extra": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 16,
+            "title": "Extra",
+            "type": "object"
+          },
+          "label": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "platform": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Platform",
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform",
+          "label"
+        ],
+        "title": "CredentialIn",
+        "type": "object"
+      },
+      "CredentialUpdate": {
+        "properties": {
+          "aktif": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aktif"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "api_secret": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Secret"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "extra": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          }
+        },
+        "title": "CredentialUpdate",
+        "type": "object"
+      },
       "FactBody": {
         "properties": {
           "hash": {
@@ -8740,6 +8891,348 @@
           }
         },
         "summary": "Calculate Position Sizing"
+      }
+    },
+    "/api/v1/vault": {
+      "get": {
+        "operationId": "daftar_kredensial_api_v1_vault_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Daftar Kredensial Api V1 Vault Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Daftar Kredensial",
+        "tags": [
+          "vault"
+        ]
+      },
+      "post": {
+        "operationId": "simpan_kredensial_api_v1_vault_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Simpan Kredensial Api V1 Vault Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simpan Kredensial",
+        "tags": [
+          "vault"
+        ]
+      }
+    },
+    "/api/v1/vault/platform": {
+      "get": {
+        "description": "Daftar preset untuk dropdown UI (Polymarket tidak ikut).",
+        "operationId": "daftar_platform_api_v1_vault_platform_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Daftar Platform Api V1 Vault Platform Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Daftar Platform",
+        "tags": [
+          "vault"
+        ]
+      }
+    },
+    "/api/v1/vault/{kid}": {
+      "delete": {
+        "operationId": "hapus_kredensial_api_v1_vault__kid__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kid",
+            "required": true,
+            "schema": {
+              "title": "Kid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hapus Kredensial",
+        "tags": [
+          "vault"
+        ]
+      },
+      "patch": {
+        "operationId": "ubah_kredensial_api_v1_vault__kid__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kid",
+            "required": true,
+            "schema": {
+              "title": "Kid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ubah Kredensial Api V1 Vault  Kid  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ubah Kredensial",
+        "tags": [
+          "vault"
+        ]
+      }
+    },
+    "/api/v1/vault/{kid}/rahasia": {
+      "get": {
+        "description": "Endpoint eksplisit untuk salin-tempel manual. Jangan pernah dipanggil otomatis.",
+        "operationId": "lihat_rahasia_api_v1_vault__kid__rahasia_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kid",
+            "required": true,
+            "schema": {
+              "title": "Kid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Lihat Rahasia Api V1 Vault  Kid  Rahasia Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lihat Rahasia",
+        "tags": [
+          "vault"
+        ]
       }
     },
     "/api/v1/verdict": {
