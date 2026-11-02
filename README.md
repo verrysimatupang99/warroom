@@ -124,7 +124,8 @@ ada di **[`docs/pengembangan.md`](docs/pengembangan.md)**. Operasional harian (r
 log, gate blocking, backup/restore Postgres) ada di **[`docs/runbook.md`](docs/runbook.md)**.
 Diagram sistem di [`docs/arsitektur.md`](docs/arsitektur.md). Aturan kerja & keselamatan ada di
 [`AGENTS.md`](AGENTS.md). Dilarang push langsung ke `main` — semua perubahan lewat branch → PR
-(lihat `.github/pull_request_template.md`).
+(lihat `.github/pull_request_template.md`). Setup & inventaris akun MT5 (Wine) ada di
+**[`docs/mt5-wine-akun.md`](docs/mt5-wine-akun.md)**.
 
 ### Dokumentasi Paket & Layanan
 
