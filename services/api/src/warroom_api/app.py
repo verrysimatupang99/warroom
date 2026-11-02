@@ -41,8 +41,8 @@ from warroom_api.routers import kalender as kalender_router
 from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
-from warroom_api.routers import mt5_vault as mt5_vault_router
 from warroom_api.routers import llm as llm_router
+from warroom_api.routers import mt5_vault as mt5_vault_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import sistem as sistem_router

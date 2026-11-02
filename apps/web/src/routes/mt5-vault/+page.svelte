@@ -159,19 +159,19 @@
 </section>
 
 <style>
-  .vault { max-width: 860px; margin: 0 auto; padding: 1rem; }
-  .hint { color: #666; font-size: 0.9rem; }
-  .err { color: #b00020; }
-  .ok { color: #0a7d28; }
-  form { display: grid; gap: 0.5rem; grid-template-columns: 1fr 1fr; margin: 1rem 0; }
+  .vault { max-width: 60rem; margin: 0 auto; padding: var(--space-3, 1rem); }
+  .hint { color: var(--color-text-muted, var(--color-text)); }
+  .err { color: var(--color-neg); }
+  .ok { color: var(--color-pos); }
+  form { display: grid; gap: var(--space-2, 0.5rem); grid-template-columns: 1fr 1fr; margin: var(--space-3, 1rem) 0; }
   textarea, form button { grid-column: 1 / -1; }
-  input, select, textarea, button { padding: 0.45rem; border: 1px solid #ccc; border-radius: 6px; font: inherit; }
+  input, select, textarea, button { border: 1px solid var(--color-line); border-radius: var(--radius-sm, 0.375rem); font: inherit; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid #eee; }
+  th, td { text-align: left; border-bottom: 1px solid var(--color-line-soft); }
   .nonaktif { opacity: 0.5; }
-  .aksi { display: flex; gap: 0.4rem; }
-  .bahaya { color: #b00020; }
-  .reveal { position: fixed; inset: auto 0 20% 0; margin: 0 auto; width: min(480px, 90vw);
-    background: #fff; border: 1px solid #999; border-radius: 10px; padding: 1rem; text-align: center; }
-  .reveal code { display: block; margin: 0.5rem 0; font-size: 1.1rem; user-select: all; }
+  .aksi { display: flex; gap: var(--space-2, 0.5rem); }
+  .bahaya { color: var(--color-neg); }
+  .reveal { position: fixed; inset: auto 0 20% 0; margin: 0 auto; width: min(30rem, 90vw);
+    background: var(--color-paper); border: 1px solid var(--color-line); border-radius: var(--radius-md, 0.625rem); padding: var(--space-3, 1rem); text-align: center; }
+  .reveal code { display: block; margin: var(--space-2, 0.5rem) 0; font-size: 1.1rem; user-select: all; }
 </style>
