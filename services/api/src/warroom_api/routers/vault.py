@@ -179,7 +179,6 @@ def simpan_kredensial(body: CredentialIn, user: OwnerDep) -> dict[str, Any]:
             api_secret_enc=rahasia_enc,
             extra_enc=extra_enc,
             aktif=body.aktif,
-            dibuat_oleh=user.id,
             dibuat=now,
             diubah=now,
         )
