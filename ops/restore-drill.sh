@@ -18,7 +18,7 @@ if [[ -z "$LATEST" ]]; then
 	echo "GAGAL: tidak ada dump di $OUT_DIR" >&2
 	exit 1
 fi
-if [[ ! -f "$LATEST.sha256" ]] || ! sha256sum -c "$LATEST.sha256" >/dev/null 2>&1; then
+if [[ ! -f "$LATEST.sha256" ]] || ! ( cd "$OUT_DIR" && sha256sum -c "$(basename "$LATEST").sha256" >/dev/null 2>&1 ); then
 	echo "GAGAL: checksum tidak cocok untuk $(basename "$LATEST")" >&2
 	exit 1
 fi

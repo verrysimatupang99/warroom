@@ -42,7 +42,10 @@ trap - EXIT
 
 # Header/TOC terbaca = dump benar-benar berformat; bukan pengganti drill restore.
 pg_restore --list "$pas" >/dev/null
-sha256sum "$pas" > "$pas.sha256"
+# Checksum disimpan dengan path RELATIF (basename) supaya verifikasi tetap
+# valid setelah dump disalin ke tujuan offsite. Dengan path absolut, `sha256sum -c`
+# akan memeriksa file ASLI dan memberi "OK" hijau palsu pada salinan yang rusak.
+( cd "$OUT_DIR" && sha256sum "$(basename "$pas")" > "$(basename "$pas").sha256" )
 echo "dump: $pas ($(du -h "$pas" | cut -f1)) + .sha256"
 
 # Rotasi: sisakan $KEEP dump terbaru; checksum ikut terhapus bersama dumpnya.
