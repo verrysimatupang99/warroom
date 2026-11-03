@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from sqlalchemy import select
 from warroom_api import auth
+from warroom_core.db import Fact, session_scope
 
 
 def _cookie(sid: str) -> dict[str, str]:
@@ -32,9 +34,6 @@ def test_sinyal_arah_salah_422(client, make_user) -> None:
 
 
 def test_sinyal_ok_menulis_fakta(client, make_user) -> None:
-    from warroom_core.db import Fact, session_scope
-    from sqlalchemy import select
-
     _, sid = make_user("sin-ok", role="operator")
     r = client.post("/api/v1/sinyal/telegram",
                     json={"pasar": "crypto", "simbol": "BTCUSDT", "arah": "short",

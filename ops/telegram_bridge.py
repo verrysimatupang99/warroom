@@ -72,7 +72,6 @@ def parse(teks: str, kategori: list[str]) -> dict | None:
     simbol = m.group(2).upper()
     if simbol == "GOLD":
         simbol = "XAUUSD"
-    ekor = t[m.end(3):m.end(3) + 200]
     # cari entry/sl/tp di sekitar kata kunci
     def ambil(kunci: str) -> float | None:
         mm = re.search(r"(?i)\b" + kunci + r"\b[^\d]{0,10}(\d[\d.,]*)", t)
@@ -121,7 +120,7 @@ async def main() -> int:
     try:
         semua = json.loads(KANALS.read_text())
     except FileNotFoundError:
-        print("kanal belum ada");
+        print("kanal belum ada")
         return 2
     kanals = [k for k in semua
               if k.get("terverifikasi") and k.get("id")]
