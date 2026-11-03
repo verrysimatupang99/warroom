@@ -21,8 +21,10 @@ dan tiap pasar berisi `per_setup: {<nama_setup>: {n, n_hari, winrate_pct, ...}}`
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from urllib.parse import urlparse
 
 from sqlalchemy import create_engine
@@ -434,7 +436,39 @@ def main() -> int:
         s.commit()
 
     print(f"seed e2e: {len(baris)} fakta disemai ({', '.join(f.kind for f in baris)})")
+    _semai_jurnal_sintetis(kini)
     return 0
+
+
+def _semai_jurnal_sintetis(kini) -> None:
+    """Tulis jurnal sinyal SINTETIS bila `WARROOM_JURNAL_SINYAL` diset (CI/e2e).
+
+    Produksi tidak tersentuh: tanpa env ini, berkas /var/lib dibiarkan apa adanya.
+    Isi minimal agar panel jurnal tampil: TERKIRIM, WIN RATE TP1, beda_cache.
+    """
+    target = os.environ.get("WARROOM_JURNAL_SINYAL", "")
+    if not target:
+        return
+    isi = {
+        "dihitung_at": kini.isoformat(),
+        "sumber": "seed-e2e (SINTETIS — bukan hasil worker)",
+        "fee_bps_per_sisi": 5.0,
+        "ringkas": {
+            "n_terkirim": 2, "n_terisi": 2, "tp1": 1, "sl": 1,
+            "winrate": 50.0, "beda_cache": 1,
+        },
+        "montecarlo": {"n_sampel": 2, "n_simulasi": 100},
+        "rows": [
+            {"pair": "BTCUSDT", "side": "LONG", "tier": "PREMIUM",
+             "entry": 97000.5, "sl": 96000.0, "tp1": 99000.0,
+             "hasil": "tp1", "r": 1.0, "dikirim": kini.isoformat()},
+            {"pair": "ETHUSDT", "side": "SHORT", "tier": "STANDAR",
+             "entry": 3500.0, "sl": 3550.0, "tp1": 3400.0,
+             "hasil": "sl", "r": -1.0, "dikirim": kini.isoformat()},
+        ],
+    }
+    Path(target).write_text(json.dumps(isi), encoding="utf-8")
+    print(f"seed e2e: jurnal sintetis ditulis ke {target}")
 
 
 if __name__ == "__main__":

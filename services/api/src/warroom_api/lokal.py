@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any
@@ -313,10 +314,17 @@ async def idx_stats() -> dict[str, Any]:
 
 # ------------------------------------------------------------- jurnal ---
 
+
+def _jalur_env(nama: str, bawaan: str) -> Path:
+    v = os.environ.get(nama)
+    return Path(v) if v else Path(bawaan)
+
+
 FILLS = Path("/var/lib/warroom/fills.csv")
 DEALS = Path("/var/lib/warroom/deals.csv")
 VERDICTS = Path("/home/admin/live-trading/state/verdicts.jsonl")
-JURNAL_SINYAL = Path("/var/lib/warroom/jurnal_sinyal.json")
+# Bisa dioverride (CI/e2e menunjuk ke berkas sintetis; produksi tetap /var/lib).
+JURNAL_SINYAL = _jalur_env("WARROOM_JURNAL_SINYAL", "/var/lib/warroom/jurnal_sinyal.json")
 MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
 MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")
 

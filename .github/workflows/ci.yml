@@ -223,6 +223,10 @@ jobs:
       # lalu spec melaporkan "verdict is not iterable" dan sejenisnya. Matikan hanya
       # di sini; produksi di balik TLS tetap memakai cookie Secure.
       WARROOM_COOKIE_SECURE: "0"
+      # Jurnal sinyal dibaca dari berkas server-lokal. Di CI tidak ada
+      # /var/lib/..., jadi seed menulis jurnal SINTETIS ke path ini dan API
+      # membacanya lewat override yang sama. Produksi tidak menyetel env ini.
+      WARROOM_JURNAL_SINYAL: /tmp/e2e-jurnal-sinyal.json
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
