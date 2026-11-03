@@ -47,8 +47,10 @@ test('kredensial benar → masuk ke Ringkas', async ({ browser }) => {
 		}
 	}
 	expect(masuk, 'login harus berhasil (cek kredensial / limiter 429)').toBe(true);
-	// Home tidak lagi berjudul "Ringkas" — h1-nya "WarRoom" (merek). Yang dijaga: sudah keluar
-	// dari /masuk dan halaman utama benar-benar render.
-	await expect(page.getByRole('heading', { name: /WarRoom/ }).first()).toBeVisible();
+	// Yang dijaga: sudah keluar dari /masuk dan halaman utama benar-benar render.
+	// Judul h1 Home berganti lagi 22–23 Okt: dulu "WarRoom" (merek), kini PageHeader
+	// dengan title="Ringkasan hari ini" dan eyebrow "War Room · Beranda". Assert
+	// mengikuti UI yang ADA, bukan yang lama — maksud test tidak berubah.
+	await expect(page.getByRole('heading', { name: /Ringkasan hari ini/i }).first()).toBeVisible();
 	await ctx.close();
 });

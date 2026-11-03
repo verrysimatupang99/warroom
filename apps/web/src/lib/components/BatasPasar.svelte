@@ -13,11 +13,11 @@
 			'Entry dicatat di harga candle, bukan harga fill. Jadi tidak ada slippage dan tidak ada biaya taker yang terukur.',
 			'Riwayat ekuitas baru direkam sejak 28 Okt 2026; sebelumnya hanya kondisi terakhir yang disimpan.',
 			'Level SMC belum tersedia lokal. Yang tampil di tab Sinyal hanya level struktur dari candle.',
-			'Universe dan harga dari MEXC. Kalau MEXC membatasi akses, angka berhenti diperbarui tanpa peringatan otomatis.'
+			'Universe dan harga dari OKX. Kalau OKX membatasi akses, angka berhenti diperbarui tanpa peringatan otomatis.'
 		],
 		forex: [
 			'Telemetri bergantung pada VM Azure. Kalau VM mati, angka forex berhenti diperbarui; situs tetap hidup dengan data terakhir.',
-			'Sinyal berasal dari Laya Sentinel di server ini. Kalau daemon itu berhenti, status akan tetap "menunggu setup" dan bukan berarti pasar sepi.',
+			'Sinyal dihitung dari telemetri MT5 + aturan EMA/RSI di EA. Laya AI sedang dinonaktifkan, jadi tidak ada penilai AI yang berjalan; "menunggu setup" berarti aturan belum terpenuhi.',
 			'Baru ada 6 trade live di akun demo. Itu terlalu kecil untuk menyimpulkan win rate 66,7% sebagai edge.',
 			'Spread yang terukur 240 point ($0,28) adalah kondisi sekarang. Saat rollover dan berita, spread bisa melebar beberapa kali.',
 			'War Room tidak mengirim order sendiri. Eksekusi dilakukan EA di terminal MT5, dan selisih antara sinyal dan fill dicatat di jurnal.'

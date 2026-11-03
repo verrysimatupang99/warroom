@@ -16,5 +16,11 @@ description = "fixture sintetis uji scrub & golden set (bukan kredensial)"
 paths = [
   '''services/llm/golden/.*''',
   '''services/llm/tools/generate_fixtures\.py''',
-  '''services/llm/tests/test_pipeline\.py'''
+  '''services/llm/tests/test_pipeline\.py''',
+]
+
+[[allowlists]]
+description = "kunci fakta sintetis 'crypto/BTCUSDT' di uji ingest sinyal (bukan kredensial)"
+paths = [
+  '''services/api/tests/test_sinyal\.py''',
 ]

@@ -25,14 +25,29 @@ router = APIRouter()
 
 
 def _docs_dir() -> Path | None:
-    """Lokasi docs/belajar — dicari dari beberapa akar supaya tahan cara deploy."""
-    for p in (
-        Path("/home/admin/warroom/docs/belajar"),
-        Path(__file__).resolve().parents[4] / "docs" / "belajar",
-    ):
-        if p.is_dir():
-            return p
-    return None
+    """Lokasi docs/belajar — dicari dari beberapa akar supaya tahan cara deploy.
+
+    Env `WARROOM_DOCS_DIR` menang (dipakai CI/e2e). Kalau tidak, naik dari
+    berkas ini dan dari cwd sampai ketemu `docs/belajar`. Jalur absolut lama
+    dipertahankan paling akhir. (Catatan: fallback `parents[4]` yang lama
+    salah hitung — jatuhnya ke `services/docs`, bukan repo.)
+    """
+    import os
+
+    env = os.environ.get("WARROOM_DOCS_DIR")
+    if env and Path(env).is_dir():
+        return Path(env)
+    awal = [Path(__file__).resolve().parent, Path.cwd()]
+    for basis in awal:
+        p = basis
+        for _ in range(8):
+            if (p / "docs" / "belajar").is_dir():
+                return p / "docs" / "belajar"
+            if p.parent == p:
+                break
+            p = p.parent
+    lama = Path("/home/admin/warroom/docs/belajar")
+    return lama if lama.is_dir() else None
 
 
 @router.get("/api/v1/build")

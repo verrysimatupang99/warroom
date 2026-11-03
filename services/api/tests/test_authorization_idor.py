@@ -33,7 +33,7 @@ def test_tanpa_sesi_semua_endpoint_sensitif_401(client) -> None:
         "/api/v1/alerts",
         "/api/v1/freshness",
         "/api/v1/ai/status",
-        "/api/v1/ai/prompts",
+        "/api/v1/pengaturan/laya",
         "/api/v1/live/arming",
         "/api/v1/live/grants",
         "/api/v1/params",

@@ -8,7 +8,6 @@ dependencies = [
     "warroom-core",
     "warroom-api",
     "warroom-worker",
-    "warroom-llm",
     "warroom-notifier",
     "live-trading",
 ]
@@ -24,7 +23,6 @@ members = ["packages/*", "services/*"]
 warroom-core = { workspace = true }
 warroom-api = { workspace = true }
 warroom-worker = { workspace = true }
-warroom-llm = { workspace = true }
 warroom-notifier = { workspace = true }
 # F3 (4 Okt 2026): live-trading kini ANGGOTA WORKSPACE — kode domain ada di dalam repo ini
 # (packages/live-trading/), bukan lagi path ke ../live-trading. State runtime tetap di

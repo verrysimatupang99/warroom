@@ -1,67 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AgentDispatchRequest": {
-        "properties": {
-          "agent_id": {
-            "title": "Agent Id",
-            "type": "string"
-          },
-          "async_mode": {
-            "default": true,
-            "title": "Async Mode",
-            "type": "boolean"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "prompt": {
-            "title": "Prompt",
-            "type": "string"
-          }
-        },
-        "required": [
-          "agent_id",
-          "prompt"
-        ],
-        "title": "AgentDispatchRequest",
-        "type": "object"
-      },
-      "AgyPromptRequest": {
-        "properties": {
-          "async_mode": {
-            "default": true,
-            "description": "Jalankan sebagai background task",
-            "title": "Async Mode",
-            "type": "boolean"
-          },
-          "model": {
-            "default": "inherit",
-            "description": "Model yang dipilih (inherit, deepseek, gpt6, gemini, dll)",
-            "title": "Model",
-            "type": "string"
-          },
-          "prompt": {
-            "description": "Pesan chat dari user ke AI Agent",
-            "minLength": 1,
-            "title": "Prompt",
-            "type": "string"
-          }
-        },
-        "required": [
-          "prompt"
-        ],
-        "title": "AgyPromptRequest",
-        "type": "object"
-      },
       "CredentialIn": {
         "properties": {
           "aktif": {
@@ -1149,6 +1088,74 @@
         "title": "MT5TelemetryPayload",
         "type": "object"
       },
+      "SinyalTelegram": {
+        "properties": {
+          "arah": {
+            "maxLength": 5,
+            "minLength": 4,
+            "title": "Arah",
+            "type": "string"
+          },
+          "catatan": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Catatan",
+            "type": "string"
+          },
+          "entry": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry"
+          },
+          "pasar": {
+            "maxLength": 24,
+            "minLength": 2,
+            "title": "Pasar",
+            "type": "string"
+          },
+          "simbol": {
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Simbol",
+            "type": "string"
+          },
+          "sl": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sl"
+          },
+          "tp1": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tp1"
+          }
+        },
+        "required": [
+          "pasar",
+          "simbol",
+          "arah"
+        ],
+        "title": "SinyalTelegram",
+        "type": "object"
+      },
       "SizingRequest": {
         "properties": {
           "account_size": {
@@ -1235,359 +1242,6 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/v1/agents/dispatch": {
-      "post": {
-        "description": "Mengirim perintah ke agen tertentu (atau orchestrator) di workspace terisolasi.",
-        "operationId": "dispatch_to_agent_api_v1_agents_dispatch_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AgentDispatchRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Dispatch To Agent Api V1 Agents Dispatch Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Dispatch To Agent",
-        "tags": [
-          "agents"
-        ]
-      }
-    },
-    "/api/v1/agents/list": {
-      "get": {
-        "description": "Mengembalikan daftar seluruh agen terisolasi beserta status workspace & modelnya.",
-        "operationId": "list_agents_api_v1_agents_list_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response List Agents Api V1 Agents List Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List Agents",
-        "tags": [
-          "agents"
-        ]
-      }
-    },
-    "/api/v1/agents/messages": {
-      "get": {
-        "description": "Membaca riwayat interaksi khusus agen terkait.",
-        "operationId": "get_agent_messages_api_v1_agents_messages_get",
-        "parameters": [
-          {
-            "description": "ID agen: orchestrator, forex, crypto, polymarket, idx",
-            "in": "query",
-            "name": "agent_id",
-            "required": true,
-            "schema": {
-              "description": "ID agen: orchestrator, forex, crypto, polymarket, idx",
-              "title": "Agent Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Agent Messages Api V1 Agents Messages Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Agent Messages",
-        "tags": [
-          "agents"
-        ]
-      }
-    },
-    "/api/v1/agy/dispatch": {
-      "post": {
-        "operationId": "dispatch_agy_prompt_api_v1_agy_dispatch_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AgyPromptRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Dispatch Agy Prompt Api V1 Agy Dispatch Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Dispatch Agy Prompt",
-        "tags": [
-          "agy-control"
-        ]
-      }
-    },
-    "/api/v1/agy/messages": {
-      "get": {
-        "description": "Mengambil riwayat percakapan bersih (User vs Assistant) layaknya ChatGPT.",
-        "operationId": "get_chat_messages_api_v1_agy_messages_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 100,
-              "maximum": 300,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Chat Messages Api V1 Agy Messages Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Chat Messages",
-        "tags": [
-          "agy-control"
-        ]
-      }
-    },
-    "/api/v1/agy/status": {
-      "get": {
-        "operationId": "get_agy_status_api_v1_agy_status_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "X-Warroom-Token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Warroom-Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Agy Status Api V1 Agy Status Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Agy Status",
-        "tags": [
-          "agy-control"
-        ]
-      }
-    },
     "/api/v1/ai/kill-switch": {
       "post": {
         "operationId": "ai_kill_switch_api_v1_ai_kill_switch_post",
@@ -1648,164 +1302,6 @@
         "summary": "Ai Kill Switch"
       }
     },
-    "/api/v1/ai/llm-console": {
-      "get": {
-        "description": "Kesehatan provider dari `llm_calls` — tanpa perhitungan manual.",
-        "operationId": "llm_console_api_v1_ai_llm_console_get",
-        "parameters": [
-          {
-            "in": "cookie",
-            "name": "wr_session",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Wr Session"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Llm Console Api V1 Ai Llm Console Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Llm Console"
-      }
-    },
-    "/api/v1/ai/narrate": {
-      "post": {
-        "description": "Narasi ber-grounding dari fakta di DB. Tanpa fakta → `insufficient`, bukan tebakan.",
-        "operationId": "ai_narrate_api_v1_ai_narrate_post",
-        "parameters": [
-          {
-            "in": "cookie",
-            "name": "wr_session",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Wr Session"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "additionalProperties": true,
-                "title": "Body",
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Ai Narrate Api V1 Ai Narrate Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Ai Narrate"
-      }
-    },
-    "/api/v1/ai/prompts": {
-      "get": {
-        "operationId": "ai_prompts_api_v1_ai_prompts_get",
-        "parameters": [
-          {
-            "in": "cookie",
-            "name": "wr_session",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Wr Session"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Ai Prompts Api V1 Ai Prompts Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Ai Prompts"
-      }
-    },
     "/api/v1/ai/status": {
       "get": {
         "operationId": "ai_status_api_v1_ai_status_get",
@@ -1852,67 +1348,6 @@
           }
         },
         "summary": "Ai Status"
-      }
-    },
-    "/api/v1/ai/verifier": {
-      "post": {
-        "description": "Penilai kedua untuk kartu pod (P3-T5).\n\nDipanggil **hanya** dari proses lokal: token layanan (`WARROOM_SERVICE_TOKEN`)\natau berasal dari 127.0.0.1. Jalur sesi pengguna **wajib** peran `operator` —\ntemuan audit 5 Okt 2026: sebelumnya `viewer` pun bisa memanggil, dan endpoint\nini membakar kuota LLM berbayar. Setiap jalur dibatasi laju.",
-        "operationId": "ai_verifier_api_v1_ai_verifier_post",
-        "parameters": [
-          {
-            "in": "cookie",
-            "name": "wr_session",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Wr Session"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "additionalProperties": true,
-                "title": "Body",
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Ai Verifier Api V1 Ai Verifier Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Ai Verifier"
       }
     },
     "/api/v1/alerts": {
@@ -7043,6 +6478,112 @@
         "summary": "Pasar Ringkas"
       }
     },
+    "/api/v1/pengaturan/laya": {
+      "get": {
+        "operationId": "laya_status_api_v1_pengaturan_laya_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Laya Status Api V1 Pengaturan Laya Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Laya Status"
+      },
+      "post": {
+        "operationId": "laya_setel_api_v1_pengaturan_laya_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Laya Setel Api V1 Pengaturan Laya Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Laya Setel"
+      }
+    },
     "/api/v1/polymarket": {
       "get": {
         "operationId": "area_polymarket_api_v1_polymarket_get",
@@ -7566,6 +7107,64 @@
           }
         },
         "summary": "Signals Per Market"
+      }
+    },
+    "/api/v1/sinyal/telegram": {
+      "post": {
+        "operationId": "terima_sinyal_telegram_api_v1_sinyal_telegram_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SinyalTelegram"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Terima Sinyal Telegram Api V1 Sinyal Telegram Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Terima Sinyal Telegram"
       }
     },
     "/api/v1/sistem": {

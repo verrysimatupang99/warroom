@@ -5,7 +5,6 @@
  */
 import { env as envPublik } from '$env/dynamic/public';
 import type {
-	LlmConsole,
 	AlertsPayload,
 	AreaPayload,
 	AreasPayload,
@@ -117,9 +116,6 @@ export const getFakta = (kind: string, key: string, riwayat = 20) =>
 	);
 export const nilaiGate = (masukan: GateInput) =>
 	minta<GateResult>('/api/v1/gate/evaluate', { method: 'POST', body: JSON.stringify(masukan) });
-
-/** Health provider LLM (W6): dari tabel `llm_calls`, tanpa penghitung di memori. */
-export const getAiConsole = () => minta<LlmConsole>('/api/v1/ai/llm-console');
 
 /** Alert terbuka + status transport (W5). Transport kosong tidak pernah diklaim terkirim. */
 export const getAlerts = () => minta<AlertsPayload>('/api/v1/alerts');

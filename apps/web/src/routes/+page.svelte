@@ -15,16 +15,10 @@
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import BerandaJelajah from '$lib/components/BerandaJelajah.svelte';
 	// Komponen fondasi tema baru (DESIGN-USULAN 16 Okt): honesty-tag pada setiap
 	// status verifikasi, track bar untuk skor ber-maksimum.
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import TrackBar from '$lib/components/TrackBar.svelte';
-	import QuantStrategyCard from '$lib/components/QuantStrategyCard.svelte';
-	import OyenzaToolsSuite from '$lib/components/OyenzaToolsSuite.svelte';
-	import SystemArchitectureExplainer from '$lib/components/SystemArchitectureExplainer.svelte';
-	import LiveMT5ExecutionCard from '$lib/components/LiveMT5ExecutionCard.svelte';
-	import IdxMarketRadarCard from '$lib/components/IdxMarketRadarCard.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -305,7 +299,6 @@ async function muat() {
 	</div>
 
 	<div class="isi">
-		<LiveMT5ExecutionCard />
 		{#if sumber.length}
 			<section class="dompet20-strip" aria-label="Dompet paper $20 per market">
 				<span class="sumber-judul">Dompet paper $20</span>
@@ -353,8 +346,6 @@ async function muat() {
 			sumber="pasar/ringkas + sinyal/per-pasar"
 			terverifikasi={true}
 		/>
-
-	<BerandaJelajah />
 
 		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
 		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:
@@ -509,17 +500,6 @@ async function muat() {
 			</div>
 		</details>
 		</section>
-
-		<!-- OYENZA TOOLS SUITE DI ATAS STRATEGY AGAR LANGSUNG KELIHATAN -->
-		<OyenzaToolsSuite />
-
-		<!-- RADAR INTELIJEN PASAR SAHAM INDONESIA (IDX) -->
-		<IdxMarketRadarCard />
-
-		<QuantStrategyCard />
-
-		<!-- TRANSPARANSI SISTEM & ALUR KEPUTUSAN ENGINE -->
-		<SystemArchitectureExplainer />
 
 		<!-- 3. SINYAL PER MARKET (revisi pemilik 7 Okt).
 		     Format Seragam DEX Confluence Alert (Threads):

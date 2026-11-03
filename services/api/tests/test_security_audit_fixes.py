@@ -1,14 +1,12 @@
 """Regresi untuk temuan audit keamanan 5 Okt 2026.
 
-Dua temuan yang ditutup di sini:
-1. ``/api/v1/ai/verifier`` menerima **sesi apa pun** (termasuk `viewer`) dan tidak
-   berkuota → kuota LLM berbayar bisa dibakar tanpa batas.
-2. ``/api/v1/auth/login`` tanpa batas laju → brute force + amplifikasi scrypt
-   (~16 MiB/percobaan).
+Temuan yang ditutup di sini:
+``/api/v1/auth/login`` tanpa batas laju → brute force + amplifikasi scrypt
+(~16 MiB/percobaan).
 
-Aturan yang dikodekan: jalur sesi pada endpoint berbiaya butuh peran `operator`;
-setiap jalur berbiaya dibatasi laju; batas laju memancarkan **429** (kode yang
-sebelumnya hanya terdaftar di `errors.py` tapi tak pernah dipakai).
+Catatan 3 Nov: endpoint ``/api/v1/ai/verifier`` sudah DIBUANG bersama sistem LLM
+(strategi formula-based, tanpa AI) — 4 test verifier dihapus dari berkas ini.
+Batas laju memancarkan **429**.
 """
 
 from __future__ import annotations
@@ -72,45 +70,3 @@ def test_login_dibatasi_laju_429(client, make_user) -> None:
     r = client.post("/api/v1/auth/login", json={"username": "tak-ada", "password": "salah"})
     assert r.status_code == 429
     assert r.json()["error"]["code"] == "rate_limited"
-
-
-# --- regresi: verifier butuh peran + dibatasi ------------------------------------------
-
-
-def test_verifier_viewer_ditolak(client, make_user, monkeypatch) -> None:
-    """Sesi `viewer` tidak boleh memanggil endpoint berbiaya."""
-    monkeypatch.delenv("WARROOM_SERVICE_TOKEN", raising=False)
-    _, sid = make_user("audit-viewer", role="viewer")
-    r = client.post("/api/v1/ai/verifier", json={"klaim": []}, headers=_cookie(sid))
-    assert r.status_code == 401
-
-
-def test_verifier_tanpa_sesi_ditolak(client, monkeypatch) -> None:
-    """TestClient berasal dari 'testserver' (bukan 127.0.0.1) → tanpa token harus 401."""
-    monkeypatch.delenv("WARROOM_SERVICE_TOKEN", raising=False)
-    r = client.post("/api/v1/ai/verifier", json={"klaim": []})
-    assert r.status_code == 401
-
-
-def test_verifier_operator_lolos_gerbang_auth_tanpa_bakar_token(client, make_user, monkeypatch) -> None:
-    """Operator lolos gerbang auth; `klaim` kosong berhenti di 422 SEBELUM panggilan LLM.
-
-    Inilah pembuktian bypass yang dipakai di laporan audit: klaim kosong sengaja
-    supaya nol token provider terbakar.
-    """
-    monkeypatch.delenv("WARROOM_SERVICE_TOKEN", raising=False)
-    _, sid = make_user("audit-operator", role="operator")
-    r = client.post("/api/v1/ai/verifier", json={"klaim": []}, headers=_cookie(sid))
-    assert r.status_code == 422
-    assert r.json()["error"]["detail"]["code"] == "klaim_kosong"
-
-
-def test_verifier_dibatasi_laju(client, make_user, monkeypatch) -> None:
-    """Bahkan operator dibatasi laju — kuota tidak bisa dibakar beruntun."""
-    monkeypatch.delenv("WARROOM_SERVICE_TOKEN", raising=False)
-    _, sid = make_user("audit-operator-2", role="operator")
-    batas = app_mod.VERIFIER_LIMITER.batas
-    kode = [client.post("/api/v1/ai/verifier", json={"klaim": []}, headers=_cookie(sid)).status_code
-            for _ in range(batas + 1)]
-    assert kode[:-1] == [422] * batas
-    assert kode[-1] == 429

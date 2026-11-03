@@ -697,6 +697,41 @@ def handler_job_health(s: SASession, job: Job) -> str:
     return f"diperiksa={diperiksa} alert={alert_baru} pulih={pulih}"
 
 
+def handler_denyut(s: SASession, job: Job) -> str:
+    """Denyut Telegram berkala: ringkasan kesehatan 6 jam terakhir sebagai alert `info`.
+
+    Dikirim lewat `notify` seperti alert lain (auto-ack saat terkirim), jadi tiap
+    siklus = 1 pesan Telegram. Isinya jujur dari DB: fakta baru, alert terbuka,
+    job yang status terakhirnya gagal. Bila transport mati, alert menumpuk di DB
+    dan tidak diklaim terkirim.
+    """
+    now = datetime.now(UTC)
+    sejak = now - timedelta(hours=6)
+    fakta_baru = s.scalar(
+        select(func.count()).select_from(Fact).where(Fact.observed_at >= sejak)
+    ) or 0
+    terbuka = s.scalar(
+        select(func.count()).select_from(Alert).where(Alert.ack_at.is_(None))
+    ) or 0
+    gagal = [
+        j.name
+        for j in s.scalars(select(Job).where(Job.enabled.is_(True))).all()
+        if str(j.last_status or "") == "gagal"
+    ]
+    pesan = (
+        f"denyut war-room 6 jam: fakta_baru={fakta_baru} alert_terbuka={terbuka} "
+        f"job_gagal={','.join(sorted(gagal)) if gagal else '-'}"
+    )
+    dibuat = _alert(
+        s,
+        subject="denyut/war-room",
+        severity="info",
+        message=pesan,
+        aksi="tidak perlu aksi bila angka wajar; selidiki bila job_gagal terisi",
+    )
+    return f"{pesan} alert_baru={int(dibuat)}"
+
+
 def evaluate_slo(
     *,
     disk_pct: float,

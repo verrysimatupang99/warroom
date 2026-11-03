@@ -171,62 +171,6 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
-        name="prompts-sync",
-        interval_s=3600,
-        enabled=True,
-        payload={"ttl_s": 86400},
-        note="sinkronkan registry prompt berkas → tabel `prompts` (versi baru, tidak menimpa).",
-    ),
-    JobSpec(
-        name="llm-brief-crypto",
-        interval_s=21600,
-        enabled=True,
-        # 6 jam sekali: cukup untuk kartu agen, jauh di bawah batas biaya harian; cache gateway
-        # 900 s membuat panggilan berulang tidak menambah biaya.
-        # TTL fakta (8 jam) WAJIB lebih panjang dari interval (6 jam): kalau sama, fakta selalu
-        # "basi" tepat sebelum run berikutnya dan alert freshness berbunyi tiap siklus.
-        payload={
-            "area": "crypto",
-            "_keys": ["crypto_sinyal", "pasar_akurasi", "kandidat"],
-            "max_facts": 8,
-            "ttl_s": 28800,
-        },
-        note="narasi narrator dari fakta nyata; gagal → `status` dicatat di fakta ai.brief.",
-    ),
-    JobSpec(
-        name="llm-brief-forex",
-        interval_s=21600,
-        enabled=True,
-        payload={"area": "forex", "_keys": ["forex_sinyal", "pasar_akurasi"], "max_facts": 8, "ttl_s": 28800},
-        note="narasi narrator forex dari jurnal mesin XAUUSD/multi-pair (angka apa adanya).",
-    ),
-    JobSpec(
-        name="llm-brief-idx",
-        interval_s=21600,
-        enabled=True,
-        payload={
-            "area": "idx",
-            "_keys": ["idx_sinyal", "idx_akurasi", "pasar_akurasi"],
-            "max_facts": 8,
-            "ttl_s": 28800,
-        },
-        note="narasi narrator IDX dari ledger mesin (ARA/BSJP/INTRADAY).",
-    ),
-    JobSpec(
-        name="llm-brief-gmgn",
-        interval_s=21600,
-        enabled=True,
-        payload={"area": "gmgn", "_keys": ["lp_mark", "pasar_akurasi"], "max_facts": 8, "ttl_s": 28800},
-        note="narasi narrator GMGN/LP dari mark lokal (P&L USD, bukan R).",
-    ),
-    JobSpec(
-        name="llm-brief-polymarket",
-        interval_s=21600,
-        enabled=True,
-        payload={"area": "polymarket", "_keys": ["pasar_akurasi"], "max_facts": 8, "ttl_s": 28800},
-        note="narasi narrator Polymarket dari akurasi per arm (win-rate entri, fees dibebankan).",
-    ),
-    JobSpec(
         name="reconcile-crypto",
         interval_s=3600,
         enabled=True,
@@ -379,6 +323,27 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note=(
             "baca-saja saldo & posisi OKX (API key Read, whitelist IP host) → fakta "
             "`okx.account`/`okx.positions`. Tidak pernah mengirim order."
+        ),
+    ),
+    JobSpec(
+        name="denyut",
+        interval_s=21600,
+        enabled=True,
+        payload={},
+        note=(
+            "denyut Telegram tiap 6 jam: ringkasan fakta/alert/job-gagal sebagai "
+            "alert info (auto-ack saat terkirim). Bukti worker hidup, bukan klaim."
+        ),
+    ),
+    JobSpec(
+        name="konfluensi-feed",
+        interval_s=3600,
+        enabled=True,
+        payload={},
+        note=(
+            "samakan kandidat feed Telegram (<=6 jam) dengan sinyal sendiri "
+            "(24 jam); bila simbol+arah cocok, alert info konfluensi. "
+            "Bukan perintah eksekusi — tanpa pasangan, kandidat kedaluwarsa."
         ),
     ),
 )

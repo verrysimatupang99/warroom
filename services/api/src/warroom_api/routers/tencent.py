@@ -90,7 +90,7 @@ async def _fetch_tencent(
 ) -> Any:
     if not TENCENT_BASE:
         # Tidak ada node upstream. Ambil dari sumber publik langsung
-        # (MEXC untuk crypto, Yahoo untuk forex dan IHSG). Kalau sebuah data
+        # (OKX untuk crypto, Yahoo untuk forex dan IHSG). Kalau sebuah data
         # memang tidak punya padanan lokal, jawab 503 dengan alasannya,
         # bukan angka karangan.
         try:
@@ -843,6 +843,9 @@ async def get_forex_laya_verdict() -> dict[str, Any]:
     Bila model tidak tersedia, balasannya `tersedia:false` + alasan — bukan angka
     karangan. Read-only: tidak membuka order dan tidak menyentuh gate live.
     """
+    from warroom_api.routers.pengaturan import laya_aktif_atau_503
+
+    laya_aktif_atau_503()
     from warroom_api import laya_forex
 
     sinyal: dict[str, Any] = {}
@@ -865,6 +868,9 @@ async def get_forex_laya_verdict() -> dict[str, Any]:
 @router.get("/forex/laya/status", dependencies=[Depends(verify_mt5_or_admin)])
 async def get_forex_laya_status() -> dict[str, Any]:
     """Status middleware Laya (tersedia/tidak, ambang, verdict terakhir)."""
+    from warroom_api.routers.pengaturan import laya_aktif_atau_503
+
+    laya_aktif_atau_503()
     from warroom_api import laya_forex
 
     return laya_forex.middleware.status()

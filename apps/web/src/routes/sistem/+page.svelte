@@ -91,9 +91,46 @@
 		kejadian = (arr as Record<string, unknown>[]).slice(0, 12);
 		if (!kejadian.length) galatEvent = 'Belum ada kejadian terekam.';
 		params = await ambil<Record<string, unknown>>('/api/v1/params');
+		laya = await ambil<LayaPengaturan>('/api/v1/pengaturan/laya');
 		void ukurLatensi();
 		memuat = false;
 	});
+
+	interface LayaPengaturan {
+	aktif?: boolean;
+	systemd_timer?: boolean;
+	catatan?: string;
+	}
+
+	let laya = $state<LayaPengaturan | null>(null);
+	let layaPesan = $state<string | null>(null);
+	let layaSibuk = $state(false);
+
+	async function toggleLaya() {
+		if (layaSibuk) return;
+		layaSibuk = true;
+		layaPesan = null;
+		try {
+			const r = await fetch(urlApi('/api/v1/pengaturan/laya'), {
+				method: 'POST',
+				credentials: 'include',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ aktif: !(laya?.aktif ?? false) })
+			});
+			const isi = await r.json().catch(() => null);
+			if (!r.ok) {
+				layaPesan = (isi?.detail as string) ?? `HTTP ${r.status} — hanya owner yang boleh mengubah.`;
+			} else {
+				laya = { aktif: !!isi?.aktif, systemd_timer: !!isi?.systemd_timer, catatan: laya?.catatan };
+				layaPesan = isi?.systemd_ok
+					? 'Tersimpan + timer systemd diperbarui.'
+					: `Tersimpan, tetapi timer systemd gagal: ${isi?.systemd_detail ?? '?'} — hubungi operator.`;
+			}
+		} catch (e) {
+			layaPesan = e instanceof Error ? e.message : 'gagal menghubungi API';
+		}
+		layaSibuk = false;
+	}
 </script>
 
 <svelte:head><title>Sistem | War Room</title></svelte:head>
@@ -275,6 +312,43 @@
 					</p>
 				{:else}
 					<EmptyState judul="Parameter tidak terbaca" pesan="Endpoint params tidak mengembalikan data." ringkas={true} />
+				{/if}
+			</section>
+		</div>
+	{:else if sub === 'pengaturan'}
+		<div class="space-y-3">
+			<section class="rounded-card border border-line bg-surface p-4">
+				<h2 class="text-13 font-bold text-text">Laya AI</h2>
+				<p class="mt-2 text-12 text-text-2">
+					Penilai AI untuk forex (verdict + timer tiap 60 detik). Saat ini
+					<strong class="text-text">nonaktif</strong> — angka forex dihitung murni dari
+					telemetri MT5 + rumus lokal. Menyalakannya mengaktifkan kembali endpoint
+					verdict dan timer verdict.
+				</p>
+				<div class="mt-3 flex flex-wrap items-center gap-3">
+					<span
+						class="rounded px-2 py-0.5 text-10 font-mono font-bold border {laya?.aktif
+							? 'bg-pos/15 text-pos border-pos/30'
+							: 'bg-surface-2 text-text-3 border-line'}"
+					>
+						{laya == null ? 'MEMUAT…' : laya.aktif ? 'AKTIF' : 'NONAKTIF'}
+					</span>
+					<span class="text-11 font-mono text-text-3">
+						timer systemd: {laya == null ? '…' : laya.systemd_timer ? 'jalan' : 'mati'}
+					</span>
+					<button
+						class="rounded-control border border-line bg-surface-2 px-3 py-2 text-12 font-bold text-text disabled:opacity-50"
+						disabled={layaSibuk}
+						onclick={() => void toggleLaya()}
+					>
+						{layaSibuk ? 'Menyimpan…' : laya?.aktif ? 'Nonaktifkan' : 'Aktifkan'}
+					</button>
+				</div>
+				{#if layaPesan}
+					<p class="mt-2 text-12 text-text-2">{layaPesan}</p>
+				{/if}
+				{#if laya?.catatan}
+					<p class="mt-1 text-11 text-text-3">{laya.catatan}</p>
 				{/if}
 			</section>
 		</div>

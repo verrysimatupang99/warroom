@@ -137,7 +137,7 @@
 			<span class="text-pos">1001STARTUP OK</span>
 		</div>
 		<p class="foot-desc font-sans text-text-3 mt-1">
-			Setiap sinyal tertaut ke sumbernya sendiri: MEXC, Yahoo Finance, dan telemetri MT5.
+			Setiap sinyal tertaut ke sumbernya sendiri: OKX, Yahoo Finance, dan telemetri MT5.
 		</p>
 	</div>
 </aside>

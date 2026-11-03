@@ -50,7 +50,10 @@ test.describe('screenshot bukti', () => {
 	// 7 Okt: sub "Dataset" berganti nama menjadi "Riset" (keputusan owner) — dan SubNav
 	// merender role="tab", bukan "button". Dua hal itu membuat tes lama gagal.
 	const SUB: { rute: string; tombol: string; nama: string }[] = [
-		{ rute: '/polymarket', tombol: 'Riset', nama: 'polymarket-riset' },
+		// '/polymarket' + tab "Riset" DILEPAS 3 Nov: halaman /polymarket kini hanya
+		// merender StandbyPasar (fitur ditangguhkan) dan TIDAK punya penanganan `sub`
+		// sama sekali — tak ada tab untuk diklik. Tabel BE-WR yang dulu dijaga di sini
+		// hidup di AkurasiPasar, komponen yang tidak diimpor route mana pun.
 		{ rute: '/sistem', tombol: 'Kebijakan', nama: 'sistem-kebijakan' }
 	];
 	for (const s of SUB) {

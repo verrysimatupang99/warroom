@@ -1,12 +1,18 @@
+"""Handler formula-based: learner berbatas, evaluasi/scan paper (tanpa LLM).
+
+Riwayat: modul ini dulu bernama ``llm.py`` — handler AI (narrator brief,
+registry prompt) sudah dibuang; yang tersisa murni hitungan rumus."""
+
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core import autonomy
-from warroom_core.db import Event, Job
+from warroom_core.db import Event, Fact, Job
 from warroom_notifier.dispatch import kirim_tertunda
 from warroom_notifier.strategy_alert import (
     alert_benched,
@@ -17,9 +23,7 @@ from warroom_notifier.strategy_alert import (
 
 from .base import (
     _alert,
-    _fakta_terbaru,
     _pelajaran_terakhir,
-    _ringkas_fakta,
     _tulis_fakta,
 )
 
@@ -103,80 +107,6 @@ def handler_learner(s: SASession, job: Job) -> str:
         source="agent-lessons.jsonl + registry parameter", ttl_s=90_000,
     )
     return f"diusulkan={dipakai} keputusan={ringkas_keputusan} seed_baru={len(dibuat)}"
-
-
-def handler_prompts_sync(s: SASession, job: Job) -> str:
-    """Sinkronkan registry prompt dari berkas → tabel `prompts` (versi baru, bukan timpa)."""
-    from warroom_core import prompts_dir
-    from warroom_llm.prompts import load_prompts, sync_prompts
-
-    direktori = str(job.payload_json.get("dir") or prompts_dir())
-    prompts = load_prompts(direktori)
-    jumlah = sync_prompts(s, prompts)
-    versi = {r: p.version for r, p in prompts.items()}
-    _tulis_fakta(
-        s,
-        kind="ai.prompt_registry",
-        key="registry",
-        value={"jumlah_disinkron": jumlah, "peran": versi, "sumber": direktori},
-        source=direktori,
-        ttl_s=int(job.payload_json.get("ttl_s", 86400)),
-    )
-    return f"prompts: {jumlah} baris disinkronkan dari {len(prompts)} berkas; versi={versi}"
-
-
-def handler_llm_brief(s: SASession, job: Job) -> str:
-    """Narasi ringkas terjadwal dari fakta nyata (peran narrator). Gagal → dicatat, bukan dipaksa."""
-    from warroom_core import prompts_dir
-    from warroom_llm import CallRequest, FactRef, Gateway
-    from warroom_llm.config import default_config
-    from warroom_llm.prompts import PromptRegistry
-
-    area = str(job.payload_json.get("area", "crypto"))
-    # Nama baru memakai `_keys` (underscore = bukan milik skema gateway); `keys` lama tetap dibaca.
-    kunci = job.payload_json.get("_keys") or job.payload_json.get("keys") or []
-    terbaru = _fakta_terbaru(s, kunci or None, batas=int(job.payload_json.get("max_facts", 8)))
-    fakta = tuple(
-        FactRef(
-            fact_id=f.id,
-            label=f"F{i + 1}",
-            text=f"[{f.key}] {_ringkas_fakta(f, f.key)} (sumber={f.source}, umur_s="
-            f"{int((datetime.now(UTC) - f.observed_at).total_seconds())})",
-        )
-        for i, f in enumerate(terbaru)
-    )
-    if not fakta:
-        return "lewati: belum ada fakta untuk dinarasikan"
-    gw = Gateway(
-        config=default_config(),
-        prompts=PromptRegistry.from_dir(str(job.payload_json.get("prompts_dir") or prompts_dir())),
-    )
-    hasil = gw.call(
-        CallRequest(
-            role="narrator",
-            user=f"Ringkas 2 kalimat untuk area {area} berdasarkan fakta.",
-            facts=fakta,
-            min_facts=1,
-        )
-    )
-    _tulis_fakta(
-        s,
-        kind="ai.brief",
-        key=area,
-        value={
-            "status": hasil.status,
-            "provider": hasil.provider,
-            "fallback_from": hasil.fallback_from,
-            "prompt_version": hasil.prompt_version,
-            "latency_ms": hasil.latency_ms,
-            "fact_ids": list(hasil.fact_ids),
-            "output": hasil.output,
-            "error_code": hasil.error_code,
-        },
-        source=f"gateway:{hasil.provider or '-'}",
-        ttl_s=int(job.payload_json.get("ttl_s", 21600)),
-    )
-    return f"narrator {hasil.status} via {hasil.provider} ({hasil.latency_ms} ms, {len(fakta)} fakta)"
 
 
 def handler_paper_eval(s: SASession, job: Job) -> str:
@@ -606,3 +536,62 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     return f"kandidat={len(rows)} dibuka={len(dibuka)}{lewat} detail={detail}"
 
 
+
+
+def _norm_simbol(s: str) -> str:
+    return s.upper().replace("/", "").replace("-", "").replace(" ", "")
+
+
+def handler_konfluensi_feed(s: SASession, job: Job) -> str:
+    """Konfluensi feed Telegram vs sinyal War Room sendiri (tanpa AI, tanpa auto-trade).
+
+    Untuk tiap fakta feed `kandidat` yang masih segar (<=6 jam): bila ada sinyal
+    milik sendiri (kind=signal, sumber BUKAN telegram-feed) untuk simbol+arah yang
+    sama dalam 24 jam terakhir, tulis alert info `konfluensi/{pasar}/{simbol}`.
+    Alert adalah kabar kesepakatan dua sumber — BUKAN perintah eksekusi.
+    Tanpa pasangan, kandidat dibiarkan kedaluwarsa (TTL 6 jam).
+    """
+    now = datetime.now(UTC)
+    batas_feed = now - timedelta(hours=6)
+    batas_sendiri = now - timedelta(hours=24)
+    kandidat = s.scalars(
+        select(Fact)
+        .where(Fact.kind == "signal")
+        .where(Fact.source.like("telegram-feed:%"))
+        .where(Fact.observed_at >= batas_feed)
+    ).all()
+    sendiri = s.scalars(
+        select(Fact)
+        .where(Fact.kind == "signal")
+        .where(~Fact.source.like("telegram-feed:%"))
+        .where(Fact.observed_at >= batas_sendiri)
+    ).all()
+    pasang = {
+        (_norm_simbol(str(f.key).split("/")[-1]),
+         str((f.value_json or {}).get("arah", "")).upper())
+        for f in sendiri
+    }
+    cocok = dikabarkan = 0
+    for f in kandidat:
+        v = f.value_json or {}
+        if str(v.get("status", "")).lower() != "kandidat":
+            continue
+        simbol = _norm_simbol(str(v.get("simbol") or f.key.split("/")[-1]))
+        arah = str(v.get("arah", "")).upper()
+        pasar = str(v.get("pasar", "?"))
+        if (simbol, arah) not in pasang:
+            continue
+        cocok += 1
+        if _alert(
+            s,
+            subject=f"konfluensi/{pasar}/{simbol}",
+            severity="info",
+            message=(
+                f"feed Telegram ({f.source}) dan sinyal War Room sepakat: "
+                f"{pasar}/{simbol} {arah}. BUKAN perintah eksekusi — "
+                "keputusan tetap lewat gate dan tangan pemilik."
+            ),
+            aksi="cek /sinyal dan gate statistik sebelum bertindak",
+        ):
+            dikabarkan += 1
+    return f"kandidat={len(kandidat)} cocok={cocok} dikabarkan={dikabarkan}"

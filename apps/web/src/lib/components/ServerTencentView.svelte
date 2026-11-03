@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
 	 * ServerTencentView.svelte
-	 * Dashboard interaktif untuk eksplorasi data pasar: crypto dari MEXC, forex dan
+	 * Dashboard interaktif untuk eksplorasi data pasar: crypto dari OKX, forex dan
 	 * IHSG dari Yahoo Finance. Bila env WARROOM_TENCENT_BASE diisi, API meneruskan
 	 * ke node upstream dan panel ini menampilkan mode node.
 	 */
@@ -47,7 +47,7 @@
 			if (resH.ok) {
 				healthData = await resH.json();
 				// `mode` menentukan sumber sebenarnya: node upstream bila dikonfigurasi,
-				// atau sumber publik langsung (MEXC + Yahoo). Jangan tampilkan status
+				// atau sumber publik langsung (OKX + Yahoo). Jangan tampilkan status
 				// tunnel kalau yang dipakai bukan tunnel.
 				statusSumber = healthData?.mode === 'lokal' ? 'lokal' : 'node';
 			} else {
@@ -115,7 +115,7 @@
 				<h1 class="text-16 font-bold text-text">Sumber Data Pasar</h1>
 				<span class="rounded px-2 py-0.5 text-10 font-mono font-bold border {statusSumber === 'error' ? 'bg-neg/15 text-neg border-neg/30' : 'bg-pos/15 text-pos border-pos/30'}">
 					{statusSumber === 'lokal'
-						? 'LOKAL · MEXC + YAHOO'
+						? 'LOKAL · OKX + YAHOO'
 						: statusSumber === 'node'
 							? 'NODE UPSTREAM'
 							: statusSumber === 'loading'
@@ -125,7 +125,7 @@
 			</div>
 			<p class="text-12 text-text-3 mt-1 font-mono">
 				{#if statusSumber === 'lokal'}
-					Diambil langsung: <span class="text-accent">MEXC</span> (crypto) · <span class="text-text-2">Yahoo Finance</span> (forex &amp; IHSG)
+					Diambil langsung: <span class="text-accent">OKX</span> (crypto) · <span class="text-text-2">Yahoo Finance</span> (forex &amp; IHSG)
 				{:else if statusSumber === 'node'}
 					Upstream: <span class="text-accent">{healthData?.base ?? 'node data'}</span>
 				{:else}

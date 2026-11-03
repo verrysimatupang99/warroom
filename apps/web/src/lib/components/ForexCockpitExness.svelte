@@ -237,22 +237,22 @@
 						</span>
 					</div>
 					<div class="flex justify-between items-center py-1 border-b border-white/5">
-						<span class="text-zinc-400">AI Confidence:</span>
+						<span class="text-zinc-400">Keyakinan aturan:</span>
 						<span class="text-white font-bold">
-							{((sentinel?.confidence ?? 0.92) * 100).toFixed(0)}% Terkalibrasi
+							{sentinel?.confidence == null ? '—' : `${(sentinel.confidence * 100).toFixed(0)}% Terkalibrasi`}
 						</span>
 					</div>
 					<div class="flex justify-between items-center py-1 border-b border-white/5">
 						<span class="text-zinc-400">Strategi PNP Aktif:</span>
 						<span class="text-accent font-bold truncate max-w-[150px]">
-							{sentinel?.active_strategy ?? 'Multi-Session Laya Precision'}
+							{sentinel?.active_strategy ?? 'Multi-Session EMA+RSI (formula)'}
 						</span>
 					</div>
 				</div>
 			</div>
 
 			<div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-sans text-zinc-400 leading-relaxed">
-				Hakim AI Laya memvalidasi setiap micro-breakout M5 sebelum order 0.10 lot ditembakkan ke Exness, melindungi dari jebakan false sweep & zero-day threats.
+				Aturan EMA+RSI memvalidasi setiap micro-breakout M5 sebelum order 0.10 lot ditembakkan ke Exness, melindungi dari jebakan false sweep. Laya AI sedang dinonaktifkan.
 			</div>
 		</div>
 	</div>
