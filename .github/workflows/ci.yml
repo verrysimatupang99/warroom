@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Bukti otomatis harian (TODO 2 Nov #2): jalur paper diuji end-to-end tiap hari,
+  # bukan hanya saat ada push. Hasilnya diunggah sebagai artefak.
+  schedule:
+    - cron: "17 21 * * *"   # 04:17 WIB (21:17 UTC)
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -150,3 +155,123 @@ jobs:
       - name: knip (tak ada berkas/dependensi mati)
         run: npm run knip
       - run: npm run build
+
+  # TODO 2 Nov #2 - bukti otomatis jalur paper: order paper, dedup, kill switch,
+  # rem rugi harian, data basi, fail-closed policy kosong. Laporan JSON diunggah
+  # sebagai artefak supaya "sehat" bisa diperiksa, bukan diklaim.
+  paper-smoke:
+    name: paper - smoke end-to-end (laporan artefak)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: jalankan smoke jalur paper
+        run: uv run python ops/paper-smoke.py -o paper-smoke-report.json
+      - name: unggah laporan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-smoke-report
+          path: paper-smoke-report.json
+          if-no-files-found: error
+          retention-days: 30
+
+  # TODO 2 Nov #6 - e2e Playwright terhadap stack LOKAL (vite preview + API + Postgres
+  # di job ini), bukan produksi. Kredensial e2e disemai ke DB sementara, jadi suite
+  # ber-sesi pun ikut berjalan. Laporan + trace diunggah sebagai artefak.
+  e2e:
+    name: e2e - Playwright (stack lokal)
+    runs-on: ubuntu-latest
+    # Suite penuh 54 spec x timeout 120 dtk dengan 2 worker (batas login 10/menit)
+    # memang panjang: 25 menit tidak cukup. Beri ruang, dan jangan blokir merge
+    # sampai terbukti stabil — cek ini ADVISORY, bukan syarat merge.
+    timeout-minutes: 50
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: warroom
+          POSTGRES_PASSWORD: warroom
+          POSTGRES_DB: warroom_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U warroom"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      WARROOM_DB_URL: postgresql+psycopg://warroom:warroom@127.0.0.1:5432/warroom_ci
+      WARROOM_E2E_USER: uji-web
+      # Sandi hanya untuk DB sementara di job ini; tidak pernah dipakai di produksi.
+      WARROOM_E2E_PASS: ci-e2e-bukan-rahasia
+      WARROOM_E2E_BASE: http://127.0.0.1:4173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: siapkan skema DB
+        run: uv sync --frozen && uv run python ops/check-db-head.py --upgrade
+
+      - name: semai user e2e
+        run: uv run python ops/e2e-seed-user.py --username "$WARROOM_E2E_USER"
+
+      - name: jalankan API
+        run: |
+          uv sync --frozen --all-packages
+          uv run uvicorn warroom_api.app:app --host 127.0.0.1 --port 8800 &
+          # Kesiapan = server MENJAWAB, bukan status 2xx: endpoint /api/v1/* memang
+          # butuh sesi (401), jadi memakai `curl -f` akan menunggu selamanya.
+          for i in $(seq 1 40); do
+            kode=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:8800/metrics || true)
+            if [ "$kode" != "000" ] && [ -n "$kode" ]; then
+              echo "API siap (GET /metrics -> $kode)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API tidak menjawab dalam 80 detik" >&2
+          exit 1
+
+      - name: pasang web + browser Playwright
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run build
+
+      - name: jalankan suite e2e
+        working-directory: apps/web
+        run: |
+          # --host 127.0.0.1 WAJIB: tanpa itu vite preview hanya bind ke [::1]
+          # (IPv6), sehingga Playwright ke http://127.0.0.1:4173 ditolak
+          # ECONNREFUSED walau server hidup.
+          npx vite preview --port 4173 --strictPort --host 127.0.0.1 &
+          for i in $(seq 1 30); do
+            kode=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:4173/ || true)
+            [ "$kode" = "200" ] && break
+            sleep 1
+          done
+          echo "web preview -> HTTP $kode"
+          npx playwright test --reporter=list,html
+
+      - name: unggah laporan Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
