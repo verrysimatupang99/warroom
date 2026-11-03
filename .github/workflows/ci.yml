@@ -228,6 +228,11 @@ jobs:
       - name: semai user e2e
         run: uv run python ops/e2e-seed-user.py --username "$WARROOM_E2E_USER"
 
+      - name: semai fakta e2e
+        # DB CI kosong; tanpa fakta, test menguji keberadaan data bukan perilaku UI.
+        # Lihat docs/e2e-ci-status-20261103.md.
+        run: uv run python ops/e2e-seed-fakta.py
+
       - name: jalankan API
         run: |
           uv sync --frozen --all-packages
