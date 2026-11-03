@@ -228,11 +228,17 @@ jobs:
         run: |
           uv sync --frozen --all-packages
           uv run uvicorn warroom_api.app:app --host 127.0.0.1 --port 8800 &
+          # Kesiapan = server MENJAWAB, bukan status 2xx: endpoint /api/v1/* memang
+          # butuh sesi (401), jadi memakai `curl -f` akan menunggu selamanya.
           for i in $(seq 1 40); do
-            curl -sf http://127.0.0.1:8800/api/v1/health >/dev/null && exit 0
+            kode=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:8800/metrics || true)
+            if [ "$kode" != "000" ] && [ -n "$kode" ]; then
+              echo "API siap (GET /metrics -> $kode)"
+              exit 0
+            fi
             sleep 2
           done
-          echo "API tidak siap dalam 80 detik" >&2
+          echo "API tidak menjawab dalam 80 detik" >&2
           exit 1
 
       - name: pasang web + browser Playwright

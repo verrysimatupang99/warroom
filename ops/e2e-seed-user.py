@@ -16,12 +16,10 @@ from __future__ import annotations
 
 import argparse
 import os
-import sys
 from urllib.parse import urlparse
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
-
 from warroom_api.auth import hash_password
 from warroom_core.db.models import User
 
