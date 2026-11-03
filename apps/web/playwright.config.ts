@@ -28,6 +28,9 @@ bacaEnvFile();
 
 export default defineConfig({
 	testDir: 'e2e',
+	// Spec yang menjaga UI yang sudah dilepas dipindah ke e2e/_pensiun/ (lihat
+	// README di sana) supaya riwayatnya tetap ada tanpa menambah waktu CI.
+	testIgnore: ['**/_pensiun/**'],
 	// Keliling seluruh rute+sub (QA) memang panjang; 45 dtk terlalu ketat di host ini.
 	timeout: 120_000,
 	// Login SEKALI untuk seluruh suite (7 Okt): tiap tes yang login sendiri menghabiskan
