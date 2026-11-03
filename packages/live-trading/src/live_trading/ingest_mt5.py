@@ -31,22 +31,22 @@ def bersihkan(sumber: Path, keluar: Path) -> dict[str, object]:
         cacah["masuk"] += 1
         try:
             detik = int(float(b[0]))
-            o, h, l, c = (float(x) for x in b[1:5])
+            o, h, lo, c = (float(x) for x in b[1:5])
             vol = float(b[5])
             spread = int(float(b[7]))
         except (ValueError, IndexError):
             cacah["baris_rusak"] += 1
             continue
-        if min(o, h, l, c) <= 0:
+        if min(o, h, lo, c) <= 0:
             cacah["harga_nol"] += 1
             continue
-        if h < l or not (l <= min(o, c) and max(o, c) <= h):
+        if h < lo or not (lo <= min(o, c) and max(o, c) <= h):
             cacah["ohlc_tidak_konsisten"] += 1
             continue
         if spread < 0:
             cacah["spread_negatif"] += 1
             continue
-        terlihat[detik] = [str(detik * 1000), f"{o}", f"{h}", f"{l}", f"{c}", f"{int(vol)}"]
+        terlihat[detik] = [str(detik * 1000), f"{o}", f"{h}", f"{lo}", f"{c}", f"{int(vol)}"]
 
     cacah["duplikat"] = cacah["masuk"] - cacah["baris_rusak"] - len(terlihat)
 
