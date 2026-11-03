@@ -251,11 +251,16 @@ jobs:
       - name: jalankan suite e2e
         working-directory: apps/web
         run: |
-          npx vite preview --port 4173 --strictPort &
+          # --host 127.0.0.1 WAJIB: tanpa itu vite preview hanya bind ke [::1]
+          # (IPv6), sehingga Playwright ke http://127.0.0.1:4173 ditolak
+          # ECONNREFUSED walau server hidup.
+          npx vite preview --port 4173 --strictPort --host 127.0.0.1 &
           for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:4173 >/dev/null && break
+            kode=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://127.0.0.1:4173/ || true)
+            [ "$kode" = "200" ] && break
             sleep 1
           done
+          echo "web preview -> HTTP $kode"
           npx playwright test --reporter=list,html
 
       - name: unggah laporan Playwright
