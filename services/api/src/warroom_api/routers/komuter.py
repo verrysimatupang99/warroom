@@ -74,12 +74,12 @@ async def _teruskan(path: str, params: dict[str, Any] | None = None) -> Any:
 
 
 @router.get("/health")
-async def komuter_health() -> Any:
+async def komuter_health() -> dict[str, Any]:
     return await _teruskan("/health")
 
 
 @router.get("/geocode")
-async def komuter_geocode(q: str = Query(..., min_length=1)) -> Any:
+async def komuter_geocode(q: str = Query(..., min_length=1)) -> dict[str, Any]:
     return await _teruskan("/geocode", {"q": q})
 
 
@@ -90,7 +90,7 @@ async def komuter_plan(
     to_lat: float = Query(...),
     to_lon: float = Query(...),
     preference: str = Query("TERCEPAT", pattern="^(TERCEPAT|SEDIKIT_TRANSIT)$"),
-) -> Any:
+) -> dict[str, Any]:
     return await _teruskan(
         "/plan",
         {
@@ -107,7 +107,7 @@ async def komuter_plan(
 async def komuter_stations(
     kind: str | None = Query(None, description="Filter: KRL, MRT, LRT"),
     limit: int = Query(200, ge=1, le=500),
-) -> Any:
+) -> dict[str, Any]:
     params: dict[str, Any] = {"limit": limit}
     if kind:
         params["kind"] = kind
