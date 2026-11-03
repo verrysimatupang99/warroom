@@ -335,6 +335,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
             "alert info (auto-ack saat terkirim). Bukti worker hidup, bukan klaim."
         ),
     ),
+    JobSpec(
+        name="konfluensi-feed",
+        interval_s=3600,
+        enabled=True,
+        payload={},
+        note=(
+            "samakan kandidat feed Telegram (<=6 jam) dengan sinyal sendiri "
+            "(24 jam); bila simbol+arah cocok, alert info konfluensi. "
+            "Bukan perintah eksekusi — tanpa pasangan, kandidat kedaluwarsa."
+        ),
+    ),
 )
 
 # Nama job → fungsi. Diisi oleh `warroom_worker.jobs` saat impor untuk menghindari impor melingkar.

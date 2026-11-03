@@ -6,11 +6,13 @@ registry prompt) sudah dibuang; yang tersisa murni hitungan rumus."""
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 from warroom_core import autonomy
-from warroom_core.db import Event, Job
+from warroom_core.db import Event, Fact, Job
 from warroom_notifier.dispatch import kirim_tertunda
 from warroom_notifier.strategy_alert import (
     alert_benched,
@@ -534,3 +536,62 @@ def handler_paper_scan(s: SASession, job: Job) -> str:
     return f"kandidat={len(rows)} dibuka={len(dibuka)}{lewat} detail={detail}"
 
 
+
+
+def _norm_simbol(s: str) -> str:
+    return s.upper().replace("/", "").replace("-", "").replace(" ", "")
+
+
+def handler_konfluensi_feed(s: SASession, job: Job) -> str:
+    """Konfluensi feed Telegram vs sinyal War Room sendiri (tanpa AI, tanpa auto-trade).
+
+    Untuk tiap fakta feed `kandidat` yang masih segar (<=6 jam): bila ada sinyal
+    milik sendiri (kind=signal, sumber BUKAN telegram-feed) untuk simbol+arah yang
+    sama dalam 24 jam terakhir, tulis alert info `konfluensi/{pasar}/{simbol}`.
+    Alert adalah kabar kesepakatan dua sumber — BUKAN perintah eksekusi.
+    Tanpa pasangan, kandidat dibiarkan kedaluwarsa (TTL 6 jam).
+    """
+    now = datetime.now(UTC)
+    batas_feed = now - timedelta(hours=6)
+    batas_sendiri = now - timedelta(hours=24)
+    kandidat = s.scalars(
+        select(Fact)
+        .where(Fact.kind == "signal")
+        .where(Fact.source.like("telegram-feed:%"))
+        .where(Fact.observed_at >= batas_feed)
+    ).all()
+    sendiri = s.scalars(
+        select(Fact)
+        .where(Fact.kind == "signal")
+        .where(~Fact.source.like("telegram-feed:%"))
+        .where(Fact.observed_at >= batas_sendiri)
+    ).all()
+    pasang = {
+        (_norm_simbol(str(f.key).split("/")[-1]),
+         str((f.value_json or {}).get("arah", "")).upper())
+        for f in sendiri
+    }
+    cocok = dikabarkan = 0
+    for f in kandidat:
+        v = f.value_json or {}
+        if str(v.get("status", "")).lower() != "kandidat":
+            continue
+        simbol = _norm_simbol(str(v.get("simbol") or f.key.split("/")[-1]))
+        arah = str(v.get("arah", "")).upper()
+        pasar = str(v.get("pasar", "?"))
+        if (simbol, arah) not in pasang:
+            continue
+        cocok += 1
+        if _alert(
+            s,
+            subject=f"konfluensi/{pasar}/{simbol}",
+            severity="info",
+            message=(
+                f"feed Telegram ({f.source}) dan sinyal War Room sepakat: "
+                f"{pasar}/{simbol} {arah}. BUKAN perintah eksekusi — "
+                "keputusan tetap lewat gate dan tangan pemilik."
+            ),
+            aksi="cek /sinyal dan gate statistik sebelum bertindak",
+        ):
+            dikabarkan += 1
+    return f"kandidat={len(kandidat)} cocok={cocok} dikabarkan={dikabarkan}"

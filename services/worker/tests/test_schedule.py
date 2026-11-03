@@ -86,10 +86,10 @@ def test_daftar_job_idempoten(db) -> None:
         "signal-sync", "reconcile", "learner", "paper-eval",
         "paper-scan", "strategi-alert", "retention", "source-health",
         "reconcile-crypto", "lpagent-sync", "polybtc-sync", "break-retest-scan",
-        "okx-sync", "slo-check", "denyut",
+        "okx-sync", "slo-check", "denyut", "konfluensi-feed",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 30
+    assert total == 31
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:
@@ -306,8 +306,12 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
     with session_scope() as s:
         schedule.ensure_jobs(s)
     _matikan_job_berat()
-    hasil = run_once()
-    assert {h["job"] for h in hasil} == {
+    # Satu siklus menampung maks 10 job (`run_due(limit=10)`); dengan 11 job
+    # ringan, gabungkan dua siklus supaya semua kebagian tanpa bergantung urutan.
+    jalan = set()
+    for _ in range(2):
+        jalan |= {h["job"] for h in run_once()}
+    assert jalan == {
         "publish-facts",
         "freshness",
         "forwardtest-watchdog",
@@ -318,6 +322,7 @@ def test_run_once_mencatat_event_per_job(db, tmp_path: Path, monkeypatch) -> Non
         "okx-sync",
         "slo-check",
         "denyut",
+        "konfluensi-feed",
     }
     with session_scope() as s:
         jenis = {e.type for e in s.scalars(select(Event)).all()}

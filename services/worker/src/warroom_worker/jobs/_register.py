@@ -18,6 +18,7 @@ from .domain import (
     handler_verdict_sync,
 )
 from .formula import (
+    handler_konfluensi_feed,
     handler_learner,
     handler_paper_eval,
     handler_paper_scan,
@@ -69,6 +70,7 @@ def register_handlers() -> dict[str, Any]:
             "signal-sync": handler_signal_sync,
             "polybtc-sync": handler_polybtc_sync,
             "learner": handler_learner,
+            "konfluensi-feed": handler_konfluensi_feed,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
             "break-retest-scan": handler_break_retest_scanner,
