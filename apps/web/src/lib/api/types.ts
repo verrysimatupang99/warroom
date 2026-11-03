@@ -149,15 +149,6 @@ export interface ProviderHealth {
 	error_terakhir: string | null;
 }
 
-export interface LlmConsole {
-	total_panggilan: number;
-	fallback_rate: number | null;
-	biaya_usd: number;
-	per_provider: ProviderHealth[];
-	per_peran: { role: string; n: number; gagal: number }[];
-	catatan: string;
-}
-
 export interface AlertItem {
 	id: number;
 	severity: string;

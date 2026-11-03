@@ -25,7 +25,7 @@
 	judul="Crypto"
 	tag="PAPER"
 	deskripsi="Paper trading momentum di 40 koin teratas menurut volume. Tanpa order nyata, hanya pencatatan."
-	sumber="MEXC + momentum_paper.json"
+	sumber="OKX + momentum_paper.json"
 	terverifikasi={true}
 >
 	{#if sub === 'ringkas'}

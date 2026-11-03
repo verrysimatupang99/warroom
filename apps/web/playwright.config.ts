@@ -50,12 +50,17 @@ export default defineConfig({
 	retries: 1,
 	reporter: [['list']],
 	use: {
-		// Jalur PRODUKSI: https://0xgunsl1ng3r.xyz (nginx + Let's Encrypt → web :3100 + API :8800).
-		// Alternatif lokal: WARROOM_E2E_BASE=http://127.0.0.1:8081 (perlu `sudo systemctl start caddy`;
-		// Caddy terpasang tapi dinonaktifkan agar nginx menjadi satu-satunya proxy).
-		// Prasyarat: warroom-api + warroom-worker + warroom-web aktif; kredensial di
-		// ~/.config/warroom/e2e.env.
-		baseURL: process.env.WARROOM_E2E_BASE ?? 'https://0xgunsl1ng3r.xyz',
+		// Default LOKAL, bukan produksi. Sebelumnya default-nya https://0xgunsl1ng3r.xyz —
+		// artinya `npx playwright test` tanpa env akan LOGIN KE PRODUKSI, menulis baris
+		// `sessions` di DB produksi dan membaca data asli. Terbukti: tabel sessions
+		// produksi memuat login `uji-web` pada 3 Nov 03:39–06:53 UTC.
+		//
+		// Sekarang produksi harus diminta eksplisit:
+		//   WARROOM_E2E_BASE=https://<domain-produksi> npx playwright test …
+		//
+		// Prasyarat lokal: `npx vite preview --port 4174` (WARROOM_API_TARGET ke API uji)
+		// atau server web lain; kredensial di ~/.config/warroom/e2e.env.
+		baseURL: process.env.WARROOM_E2E_BASE ?? 'http://127.0.0.1:4174',
 		trace: 'retain-on-failure',
 		storageState: 'e2e/.auth/sesi.json'
 	},

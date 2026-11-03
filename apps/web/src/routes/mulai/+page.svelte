@@ -17,7 +17,7 @@
 	const KERJA = [
 		{
 			judul: 'Membaca pasar',
-			isi: 'Crypto dipindai dari MEXC, emas dan indeks dari sumber publik dan telemetri MT5. Tiap angka menyebut sumbernya.'
+			isi: 'Crypto dipindai dari OKX, emas dan indeks dari sumber publik dan telemetri MT5. Tiap angka menyebut sumbernya.'
 		},
 		{
 			judul: 'Menolak setup lemah',

@@ -14,7 +14,7 @@ from sqlalchemy import delete as sa_delete
 from sqlalchemy import select
 from warroom_core.db import Alert, Event, Job, Strategy, session_scope
 from warroom_worker.jobs import register_handlers
-from warroom_worker.jobs.llm import alert_bench_jika_transisi
+from warroom_worker.jobs.formula import alert_bench_jika_transisi
 
 
 @pytest.fixture(autouse=True)

@@ -466,7 +466,10 @@
 		transition: all 150ms ease-out;
 	}
 	.tool-btn span {
-		opacity: 0.6;
+		/* Dulu 0.6. Dengan latar #16181a itu menghasilkan 3.56:1 — di bawah ambang
+		   WCAG AA 4.5:1 untuk teks kecil, sehingga angka 02–05 nyaris tak terbaca.
+		   0.75 memberi ~4.9:1 dan tetap terlihat sebagai angka sekunder. */
+		opacity: 0.75;
 		font-size: 10px;
 	}
 	.tool-btn:hover {

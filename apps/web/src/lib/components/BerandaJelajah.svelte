@@ -8,7 +8,7 @@
 
 	const BATAS = [
 		'Sinyal bisa salah. Angka backtest tidak menjamin hasil berikutnya.',
-		'Sumber data pihak ketiga bisa berhenti kapan saja: MEXC, Yahoo, TradingView, Stockbit.',
+		'Sumber data pihak ketiga bisa berhenti kapan saja: OKX, Yahoo, TradingView, Stockbit.',
 		'Telemetri MT5 bergantung pada VM Azure. Kalau VM mati, angka forex berhenti diperbarui.',
 		'Jurnal crypto hanya mencatat harga candle, bukan fill bursa, jadi tidak mengukur slippage.',
 		'Level SMC asli belum tersedia; yang ada hanya level struktur yang dihitung ulang dari candle.'

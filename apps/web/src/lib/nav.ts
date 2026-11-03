@@ -157,7 +157,8 @@ export const AREAS: Area[] = [
 			{ slug: 'data', label: 'Data & Kesegaran', kunci: [], catatan: 'Sumber data, endpoint, umur data, dan mode lokal/upstream' },
 			{ slug: 'event', label: 'Event & Audit', kunci: [], catatan: 'Umpan kejadian dan riwayat perubahan' },
 			{ slug: 'kebijakan', label: 'Kebijakan', kunci: [], catatan: 'Gate, batas risiko, dan biaya berjalan' },
-			{ slug: 'vault', label: 'Vault Kredensial', kunci: [], catatan: 'Simpan endpoint + API key platform (salin-tempel manual)' }
+			{ slug: 'vault', label: 'Vault Kredensial', kunci: [], catatan: 'Simpan endpoint + API key platform (salin-tempel manual)' },
+			{ slug: 'pengaturan', label: 'Pengaturan', kunci: [], catatan: 'Sakelar fitur: Laya AI hidup/mati' },
 		]
 	},
 	{

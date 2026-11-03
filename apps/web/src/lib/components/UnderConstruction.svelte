@@ -12,7 +12,7 @@
 		marketTitle = 'Pasar Ini',
 		category = 'PENGEMBANGAN SISTEM',
 		eta = 'Pasca Stabilitas Forex',
-		detail = 'Sistem sedang difokuskan 100% pada eksekusi dan validasi Pasar Gold & Forex (XAUUSD) Exness Demo. Integrasi modul ini sementara ditangguhkan agar alokasi modal dan pemantauan Laya Sentinel terkonsentrasi penuh.'
+		detail = 'Sistem sedang difokuskan 100% pada eksekusi dan validasi Pasar Gold & Forex (XAUUSD) Exness Demo. Integrasi modul ini sementara ditangguhkan agar alokasi modal dan pemantauan terpusat penuh (mode formula, Laya nonaktif).'
 	}: Props = $props();
 </script>
 
@@ -57,7 +57,7 @@
 						</div>
 						<div>
 							<div class="text-13 font-bold text-text font-display">Pasar Aktif: Gold &amp; Forex (XAUUSD)</div>
-							<div class="text-11 text-text-3 font-mono">Exness Demo #416510164 • Modal: $456.98 USD • Laya Sentinel Active</div>
+							<div class="text-11 text-text-3 font-mono">Exness Demo #416510164 • Modal: $456.98 USD • Mode formula (Laya nonaktif)</div>
 						</div>
 					</div>
 

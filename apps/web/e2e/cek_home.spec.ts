@@ -60,12 +60,25 @@ test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
 
   // dan pasar yang mengirim waktu harus menyebutkannya apa adanya — DIBATASI ke bagian
   // "Sinyal per Market" saja; labelnya juga muncul di teks verdikt di atas.
+  //
+  // Pasar TANPA sinyal tidak bisa menyebut waktu, dan itu benar: kartunya berbunyi
+  // "Tidak ada sinyal". Menuntut timestamp di sana berarti menuntut data yang tidak
+  // ada. Yang dijaga tetap utuh: setiap pasar yang PUNYA sinyal wajib menyebut
+  // kesegarannya. (DB tes kosong untuk sebagian pasar — perilaku yang sama terjadi
+  // di produksi saat sebuah pasar belum mengirim.)
   const bagian = t.slice(i);
+  const TANPA_SINYAL = /Tidak ada sinyal|Belum ada sinyal/i;
   for (const label of ['Crypto (SMC)', 'Polymarket']) {
     const j = bagian.indexOf(label);
-    if (j >= 0) {
-      const seg = bagian.slice(j, j + 400);
-      expect(seg).toMatch(/lalu|dibuat/);
+    if (j < 0) continue;
+    const seg = bagian.slice(j, j + 400);
+    // Punya waktu → wajib lolos tanpa syarat (jangan sampai "Tidak ada sinyal" milik
+    // kartu sebelah membuat pasar yang PUNYA sinyal ikut dilewati).
+    if (/lalu|dibuat/.test(seg)) continue;
+    if (TANPA_SINYAL.test(seg)) {
+      console.log(`  ${label}: tanpa sinyal — kesegaran tidak berlaku`);
+      continue;
     }
+    expect(seg, `${label} punya sinyal, jadi wajib menyebut waktu`).toMatch(/lalu|dibuat/);
   }
 });

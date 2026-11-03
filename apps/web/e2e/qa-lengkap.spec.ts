@@ -27,7 +27,26 @@ function bacaEnv(p: string): Record<string, string> {
 }
 
 const AKUN = bacaEnv(`${process.env.HOME}/.config/warroom/accounts.env`);
-const PUNYA = Boolean(AKUN.owner_user && AKUN.owner_pass && AKUN.operator_user && AKUN.operator_pass);
+
+/**
+ * Akun untuk QA: utamakan env (mis. akun uji di DB tes), baru jatuh ke accounts.env.
+ *
+ * Kenapa: suite ini butuh DUA peran (owner + operator). `accounts.env` berisi akun
+ * ASLI produksi, yang tidak ada di DB tes — akibatnya login UI selalu menjawab
+ * "kredensial tidak sah" saat dijalankan terhadap stack uji, dan kegagalannya
+ * terbaca seperti bug. Dengan env, stack uji menyemai akunnya sendiri
+ * (ops/e2e-seed-user.py) tanpa pernah memakai kredensial produksi.
+ */
+const dari = (kunci: string): string =>
+	process.env[kunci]?.trim() || AKUN[kunci] || '';
+
+const QA = {
+	owner_user: dari('QA_OWNER_USER'),
+	owner_pass: dari('QA_OWNER_PASS'),
+	operator_user: dari('QA_OPERATOR_USER'),
+	operator_pass: dari('QA_OPERATOR_PASS')
+};
+const PUNYA = Boolean(QA.owner_user && QA.owner_pass && QA.operator_user && QA.operator_pass);
 
 const AREA: { rute: string; subs: string[] }[] = [
 	{ rute: '/', subs: [] },
@@ -89,12 +108,40 @@ function pantauKonsol(page: Page): string[] {
  * halaman — kalau tidak disaring, tes QA ini gagal palsu tiap run panjang.
  */
 function saringArtefakSuite(galat: string[]): string[] {
-	return galat.filter(
-		(g) =>
-			!/\/api\/v1\/auth\/login/.test(g) &&
-			!/status of 429/.test(g) &&
-			!/Too Many Requests/i.test(g)
-	);
+	/**
+	 * 503 `code:"unavailable"` BUKAN kerusakan halaman.
+	 *
+	 * War Room sengaja membalas 503 ber-alasan ketika data tidak punya padanan lokal,
+	 * ketimbang mengarang angka. Diukur dengan mengumpulkan seluruh respons 503 saat
+	 * keliling 8 rute (e2e/_kumpul503.spec.ts) — ada tepat 4, semuanya ber-alasan:
+	 *
+	 *   /api/v1/idx/ledger          "belum punya padanan lokal … node scanner sudah tidak ada"
+	 *   /api/v1/idx/signals         idem
+	 *   /api/v1/journal/edge        "Belum ada fill forex."
+	 *   /api/v1/journal/performance "Belum ada riwayat ekuitas."
+	 *
+	 * Daftar ini sengaja eksplisit, bukan pola "semua 503": 500, exception JS, dan 503
+	 * dari endpoint lain tetap menggagalkan tes.
+	 */
+	const TANPA_PADANAN =
+		/\/api\/v1\/(idx\/ledger|idx\/signals|journal\/edge|journal\/performance)/;
+	/**
+	 * Pesan "Failed to load resource … status of 503" TIDAK memuat URL, jadi pola
+	 * endpoint tak pernah cocok padanya — itu sebabnya versi sebelumnya lolos.
+	 *
+	 * Aturannya: buang pesan 503 tanpa URL HANYA bila setiap 503 yang tercatat
+	 * dengan URL memang berasal dari endpoint ber-alasan. Bila ada 503 dari endpoint
+	 * lain, pesan tanpa URL tidak boleh dibuang (bisa jadi milik endpoint itu).
+	 */
+	const berUrl = galat.filter((g) => /503/.test(g) && /\/api\/v1\//.test(g));
+	const semuaBerAlasan = berUrl.every((g) => TANPA_PADANAN.test(g));
+	return galat.filter((g) => {
+		if (/\/api\/v1\/auth\/login/.test(g)) return false;
+		if (/status of 429/.test(g) || /Too Many Requests/i.test(g)) return false;
+		if (TANPA_PADANAN.test(g) && /503/.test(g)) return false;
+		if (semuaBerAlasan && /503/.test(g) && !/\/api\/v1\//.test(g)) return false;
+		return true;
+	});
 }
 
 test.describe('QA owner', () => {
@@ -106,7 +153,7 @@ test.describe('QA owner', () => {
 
 	test('login UI owner + keliling semua rute/sub', async ({ page }) => {
 		const galat = pantauKonsol(page);
-		await loginUi(page, AKUN.owner_user, AKUN.owner_pass);
+		await loginUi(page, QA.owner_user, QA.owner_pass);
 		await expect(page).toHaveURL(/\/$/);
 
 		const temuan: string[] = [];
@@ -140,20 +187,23 @@ test.describe('QA owner', () => {
 		expect(bersih, `error konsol: ${bersih.slice(0, 5).join(' | ')}`).toEqual([]);
 	});
 
-	test('owner: tombol terapkan/rollback tampil di Kebijakan', async ({ page }) => {
-		await loginUi(page, AKUN.owner_user, AKUN.owner_pass);
+	test('owner: Kebijakan menampilkan gate + parameter, tanpa tombol usulan', async ({ page }) => {
+		// Dulu test ini menunggu `[data-testid="proposal-card"]`. Panel usulan itu sudah
+		// TIDAK ADA di UI: ProposalCard hanya diimpor oleh unit test-nya, `getProposals`
+		// tidak dipanggil satu pun komponen, dan tab Kebijakan kini berisi "Gate yang
+		// berlaku" + "Parameter aktif" (lihat history a169f00 → b57fcab). Menunggu kartu
+		// usulan = menunggu elemen yang tak akan pernah dirender, apa pun datanya.
+		// Yang tetap dijaga: tab Kebijakan hidup dan isinya nyata.
+		await loginUi(page, QA.owner_user, QA.owner_pass);
 		await page.goto('/sistem');
-		// Tab di halaman Sistem memakai role=button (bukan role=tab seperti SubNav).
-		// Tunggu siap dulu — klik sebelum interaktif adalah sumber flaky yang lama.
-		// Role sebenarnya = 'tab' (bukan 'button') — lihat catatan di sub-baru.spec.ts.
 		const tab = page.getByRole('tab', { name: 'Kebijakan', exact: true });
 		await expect(tab).toBeVisible({ timeout: 20000 });
 		await tab.click();
-		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
-		// usulan berstatus ditolak → tombol "terapkan" tidak ditampilkan (hanya untuk butuh_manusia)
-		const kartuDitolak = page.locator('[data-testid="proposal-card"]').filter({ hasText: 'DITOLAK' }).first();
-		await expect(kartuDitolak).toBeVisible();
-		await expect(kartuDitolak.getByRole('button', { name: 'terapkan' })).toHaveCount(0);
+		await expect(page.getByText('Gate yang berlaku')).toBeVisible({ timeout: 20000 });
+		await expect(page.getByText('Parameter aktif')).toBeVisible();
+		// Tanpa panel usulan tidak boleh ada tombol aksi menggantung.
+		await expect(page.getByRole('button', { name: 'terapkan' })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: 'rollback' })).toHaveCount(0);
 	});
 
 	test('guard: tanpa sesi → redirect /masuk', async ({ browser }) => {
@@ -170,15 +220,16 @@ test.describe('QA operator', () => {
 
 	test('operator: login UI + tidak ada tombol owner', async ({ page }) => {
 		const galat = pantauKonsol(page);
-		await loginUi(page, AKUN.operator_user, AKUN.operator_pass);
+		await loginUi(page, QA.operator_user, QA.operator_pass);
 		await page.goto('/sistem');
 		await tungguSiap(page);
 		// Role sebenarnya = 'tab' (bukan 'button') — lihat catatan di sub-baru.spec.ts.
 		const tab = page.getByRole('tab', { name: 'Kebijakan', exact: true });
 		await expect(tab).toBeVisible({ timeout: 20000 });
 		await tab.click();
-		await expect(page.locator('[data-testid="proposal-card"]').first()).toBeVisible({ timeout: 20000 });
-		// operator tidak boleh melihat tombol aksi owner
+		// Panel usulan (proposal-card) sudah tidak dirender — lihat catatan di test owner.
+		// RBAC tetap diuji: operator tidak boleh melihat tombol aksi milik owner.
+		await expect(page.getByText('Gate yang berlaku')).toBeVisible({ timeout: 20000 });
 		await expect(page.getByRole('button', { name: 'terapkan' })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: 'rollback' })).toHaveCount(0);
 		expect(saringArtefakSuite(galat)).toEqual([]);

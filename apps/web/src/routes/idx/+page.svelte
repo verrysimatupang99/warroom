@@ -3,7 +3,9 @@
 	// yang benar-benar tersedia: IHSG publik, ringkasan pasar (penggerak + blue chip),
 	// dan pencarian saham. Yang belum ada tetap dinyatakan, bukan disembunyikan.
 	import { onMount } from 'svelte';
+	import { AREAS } from '$lib/nav';
 	import { urlApi } from '$lib/api/client';
+	import MarketShell from '$lib/components/MarketShell.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
@@ -36,6 +38,8 @@
 	let hasilCari = $state<{ stock_code?: string; stock_name?: string }[]>([]);
 	let detail = $state<Emiten | null>(null);
 	let memuatCari = $state(false);
+
+	const area = AREAS.find((a) => a.kunci === 'idx')!;
 
 	onMount(async () => {
 		const [p, r] = await Promise.allSettled([
@@ -100,6 +104,7 @@
 
 <svelte:head><title>IDX | War Room</title></svelte:head>
 
+<MarketShell {area} aktif="ringkas" tanpaKepala>
 <div class="space-y-4">
 	<PageHeader
 		eyebrow="War Room · IDX"
@@ -331,3 +336,4 @@
 		</section>
 	{/if}
 </div>
+</MarketShell>

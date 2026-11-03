@@ -25,8 +25,6 @@ from warroom_api import auth, limits
 from warroom_api.errors import install_error_handlers
 from warroom_api.laya_sentinel import laya_sentinel
 from warroom_api.metrics import record_http
-from warroom_api.routers import agents_hub as agents_hub_router
-from warroom_api.routers import agy as agy_router
 from warroom_api.routers import alert as alert_router
 from warroom_api.routers import auth as auth_router
 from warroom_api.routers import cron as cron_router
@@ -41,10 +39,11 @@ from warroom_api.routers import kalender as kalender_router
 from warroom_api.routers import komuter as komuter_router
 from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
-from warroom_api.routers import llm as llm_router
 from warroom_api.routers import mt5_vault as mt5_vault_router
 from warroom_api.routers import observability as observability_router
 from warroom_api.routers import pasar as pasar_router
+from warroom_api.routers import pengaturan as pengaturan_router
+from warroom_api.routers import sinyal as sinyal_router
 from warroom_api.routers import sistem as sistem_router
 from warroom_api.routers import status_ops as status_ops_router
 from warroom_api.routers import tencent as tencent_router
@@ -132,6 +131,8 @@ def create_app() -> FastAPI:
 
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
+    app.include_router(sinyal_router.router)
+    app.include_router(pengaturan_router.router)
     app.include_router(tencent_router.router)
     app.include_router(komuter_router.router)
     app.include_router(idx_router.router)
@@ -183,11 +184,9 @@ def create_app() -> FastAPI:
     app.include_router(vault_router.router)
 
     # --- P3: LLM gateway (konsol, prompt, narasi, verifier) ---
-    app.include_router(llm_router.router)
-
+    # DIBUANG 3 Nov: strategi/metode formula-based, tanpa LLM. Router llm.py dihapus.
     # --- AGY-CLI & Antigravity Web Control Manager ---
-    app.include_router(agy_router.router)
-    app.include_router(agents_hub_router.router)
+    # DIBUANG 3 Nov: orchestrator + sub-agent AI dibuang. Router agy.py & agents_hub.py dihapus.
 
     # --- Protected OpenAPI & Swagger UI (Hanya Admin dengan Sesi Sah) ---
     @app.get("/api/openapi.json", include_in_schema=False)

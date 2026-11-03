@@ -17,10 +17,16 @@ from .domain import (
     handler_signal_sync,
     handler_verdict_sync,
 )
+from .formula import (
+    handler_learner,
+    handler_paper_eval,
+    handler_paper_scan,
+)
 from .housekeeping import handler_retensi
 from .infra import (
     handler_backup,
     handler_collect,
+    handler_denyut,
     handler_forwardtest_watchdog,
     handler_freshness,
     handler_job_health,
@@ -33,13 +39,6 @@ from .infra import (
     handler_source_health,
 )
 from .jurnal import handler_jurnal_sinyal
-from .llm import (
-    handler_learner,
-    handler_llm_brief,
-    handler_paper_eval,
-    handler_paper_scan,
-    handler_prompts_sync,
-)
 from .okx import handler_okx_sync
 from .strategi import handler_break_retest_scanner, handler_strategi_alert
 
@@ -59,6 +58,7 @@ def register_handlers() -> dict[str, Any]:
             "radar-update": handler_radar_update,
             "lp-mark": handler_lp_mark,
             "backup": handler_backup,
+            "denyut": handler_denyut,
             "poly-sync": handler_poly_sync,
             "verdict-sync": handler_verdict_sync,
             "parity-drift": handler_parity_drift,
@@ -69,13 +69,6 @@ def register_handlers() -> dict[str, Any]:
             "signal-sync": handler_signal_sync,
             "polybtc-sync": handler_polybtc_sync,
             "learner": handler_learner,
-            "prompts-sync": handler_prompts_sync,
-            "llm-brief": handler_llm_brief,
-            "llm-brief-crypto": handler_llm_brief,
-            "llm-brief-forex": handler_llm_brief,
-            "llm-brief-idx": handler_llm_brief,
-            "llm-brief-gmgn": handler_llm_brief,
-            "llm-brief-polymarket": handler_llm_brief,
             "paper-eval": handler_paper_eval,
             "paper-scan": handler_paper_scan,
             "break-retest-scan": handler_break_retest_scanner,

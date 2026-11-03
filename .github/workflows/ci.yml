@@ -211,6 +211,18 @@ jobs:
       # Sandi hanya untuk DB sementara di job ini; tidak pernah dipakai di produksi.
       WARROOM_E2E_PASS: ci-e2e-bukan-rahasia
       WARROOM_E2E_BASE: http://127.0.0.1:4173
+      # Limiter login bawaan 10/menit (limits.py) — cukup untuk manusia, terlalu
+      # kecil untuk suite ini: 24 berkas spec login di beforeEach, jadi run normal
+      # menghabiskan kuota dan sisa test gagal karena 429, bukan karena bug.
+      # Dinaikkan HANYA untuk API di job ini (DB sementara, loopback); produksi
+      # tetap 10/menit karena tidak pernah menyetel env ini.
+      WARROOM_LOGIN_PER_MIN: "600"
+      # API menyetel cookie wr_session dengan Secure=true (auth.cookie_secure).
+      # Job ini memakai http://127.0.0.1:4173, dan browser MENOLAK mengirim cookie
+      # Secure lewat HTTP — akibatnya semua request sesi jadi 401 walau login 200,
+      # lalu spec melaporkan "verdict is not iterable" dan sejenisnya. Matikan hanya
+      # di sini; produksi di balik TLS tetap memakai cookie Secure.
+      WARROOM_COOKIE_SECURE: "0"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5

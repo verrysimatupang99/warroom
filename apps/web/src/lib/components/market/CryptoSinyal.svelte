@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Tab Sinyal crypto: universe MEXC, ticker, dan candle. Semua dari sumber lokal.
+	// Tab Sinyal crypto: universe OKX, ticker, dan candle. Semua dari sumber lokal.
 	import { onMount } from 'svelte';
 	import { urlApi } from '$lib/api/client';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -95,7 +95,7 @@
 					<option value={s}>{s}</option>
 				{/each}
 			</select>
-			<span class="text-11 text-text-3">{universe.length} simbol USDT di MEXC</span>
+			<span class="text-11 text-text-3">{universe.length} simbol USDT di OKX</span>
 		</section>
 
 		<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -177,7 +177,7 @@
 				</table>
 			</div>
 			<p class="mt-2 text-11 text-text-3">
-				Sumber: MEXC public API. Level SMC belum punya padanan lokal, jadi tab ini
+				Sumber: OKX public API. Level SMC belum punya padanan lokal, jadi tab ini
 				sengaja tidak menampilkan level yang tidak bisa dihitung di server.
 			</p>
 		</section>

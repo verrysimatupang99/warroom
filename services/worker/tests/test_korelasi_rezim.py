@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from warroom_worker.jobs.llm import blokir_korelasi_rezim
+from warroom_worker.jobs.formula import blokir_korelasi_rezim
 
 "Pengawas aturan #9: cap korelasi searah + filter rezim BTC (15 Okt 2026)."
 

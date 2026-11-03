@@ -91,12 +91,6 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
         # bukan bagian arm D favorit.
         ("poly.alt", "btc-5m"),
     ),
-    # Narasi LLM per market (6 Okt): kind `ai.brief`, key = nama area. Ditulis job
-    # `llm-brief-<market>`; hanya tampil bila ada — tidak ada fakta = tidak ada kartu.
-    "crypto": (("ai.brief", "crypto"),),
-    "idx": (("ai.brief", "idx"),),
-    "forex": (("ai.brief", "forex"),),
-    "gmgn": (("ai.brief", "gmgn"),),
 }
 
 # Kind yang SELURUH faktanya milik satu area (banyak kunci, mis. `signal/AAVEUSDT`,

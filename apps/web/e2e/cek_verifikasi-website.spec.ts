@@ -10,6 +10,24 @@ import { KREDENSIAL, PESAN_SKIP, loginLewat, tungguSiap } from './util';
 
 test.skip(!KREDENSIAL.user || !KREDENSIAL.pass, PESAN_SKIP);
 
+/**
+ * Spec ini memverifikasi SITUS PRODUKSI, bukan stack uji.
+ *
+ * Dijalankan terhadap API lokal ia melaporkan 503/401 sebagai "kerusakan", padahal
+ * itu jawaban wajar dari database uji yang kosong. Karena itu ia hanya jalan bila
+ * diminta secara eksplisit — bukan dilewati diam-diam:
+ *
+ *   WARROOM_VERIFIKASI_PRODUKSI=1 \
+ *   WARROOM_E2E_BASE=https://<domain-produksi> \
+ *   WARROOM_E2E_USER=… WARROOM_E2E_PASS=… \
+ *   npx playwright test e2e/cek_verifikasi-website.spec.ts
+ */
+const PRODUKSI = process.env.WARROOM_VERIFIKASI_PRODUKSI === '1';
+test.skip(
+	!PRODUKSI,
+	'verifikasi produksi saja: setel WARROOM_VERIFIKASI_PRODUKSI=1 dan WARROOM_E2E_BASE ke domain produksi'
+);
+
 const BUKTI = path.resolve('../../artifacts/verifikasi-web-20261031');
 fs.mkdirSync(BUKTI, { recursive: true });
 

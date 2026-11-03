@@ -4,7 +4,9 @@ Latar: seluruh data crypto/forex/IDX dulu diambil dari satu node di luar server
 lewat Tailscale. Node itu sudah tidak ada. Modul ini mengambil data langsung
 dari sumber publik, tanpa kredensial dan tanpa perantara:
 
-  - Crypto  : MEXC public API (tanpa key). Dipakai juga oleh `lt scan`.
+  - Crypto  : OKX public API (tanpa key), fallback MEXC bila OKX gagal.
+              Field `sumber`/`source` selalu menyebut siapa yang benar-benar
+              menjawab — tidak pernah mengklaim OKX saat yang dipakai fallback.
   - Forex   : Yahoo Finance chart API (butuh User-Agent; tanpa UA dibalas 429).
   - IDX     : Yahoo Finance untuk IHSG (^JKSE).
 
@@ -26,12 +28,15 @@ from warroom_core.mt5_accounts import snapshot_key
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) WarRoom/2.0"
 MEXC = "https://api.mexc.com"
+OKX = "https://www.okx.com"
 YAHOO = "https://query2.finance.yahoo.com"
 TIMEOUT = 12.0
 
 # Pemetaan interval yang dipakai UI ke format masing-masing penyedia.
 _INTERVAL_MEXC = {"1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
                   "1h": "60m", "60": "60m", "4h": "4h", "1d": "1d"}
+_INTERVAL_OKX = {"1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
+                 "1h": "1H", "60": "1H", "4h": "4H", "1d": "1D"}
 # Yahoo memakai 60m untuk per jam, dan rentang harus cocok dengan intervalnya.
 _INTERVAL_YAHOO = {"1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
                    "1h": "60m", "60": "60m", "1d": "1d"}
@@ -64,8 +69,40 @@ async def _get_json(url: str, params: dict[str, Any] | None = None) -> Any:
 # ---------------------------------------------------------------- crypto ---
 
 
-async def crypto_universe(jumlah: int = 80) -> dict[str, Any]:
-    """Pasangan USDT aktif di MEXC, diurutkan menurut volume 24 jam."""
+def _simbol_ke_okx(simbol: str) -> str:
+    """`BTCUSDT` (gaya UI/MEXC) -> `BTC-USDT` (gaya OKX spot)."""
+    s = simbol.upper().strip()
+    if "-" in s:
+        return s
+    if s.endswith("USDT") and len(s) > 4:
+        return s[:-4] + "-USDT"
+    return s
+
+
+def _simbol_dari_okx(inst_id: str) -> str:
+    """`BTC-USDT` -> `BTCUSDT` (bentuk yang dipakai UI)."""
+    return inst_id.upper().replace("-", "")
+
+
+# ---------------------------------------------------------------- crypto ---
+
+
+async def _okx_universe(jumlah: int) -> dict[str, Any]:
+    data = await _get_json(f"{OKX}/api/v5/market/tickers", {"instType": "SPOT"})
+    if str(data.get("code")) != "0":
+        raise SumberKosong(f"OKX tickers code={data.get('code')}")
+    rows = [t for t in (data.get("data") or []) if str(t.get("instId", "")).endswith("-USDT")]
+    rows.sort(key=lambda t: float(t.get("volCcy24h") or 0), reverse=True)
+    return {
+        "symbols": [_simbol_dari_okx(t["instId"]) for t in rows[:jumlah]],
+        "total": len(rows),
+        "sumber": "okx-lokal",
+        "diambil": int(time.time()),
+    }
+
+
+async def _mexc_universe(jumlah: int) -> dict[str, Any]:
+    """Fallback lama bila OKX tidak bisa dihubungi."""
     ticker = await _get_json(f"{MEXC}/api/v3/ticker/24hr")
     if not isinstance(ticker, list):
         raise SumberKosong("ticker MEXC bukan list")
@@ -74,12 +111,43 @@ async def crypto_universe(jumlah: int = 80) -> dict[str, Any]:
     return {
         "symbols": [t["symbol"] for t in koin[:jumlah]],
         "total": len(koin),
-        "sumber": "mexc-lokal",
+        "sumber": "mexc-lokal (fallback)",
         "diambil": int(time.time()),
     }
 
 
-async def crypto_ticker(simbol: str) -> dict[str, Any]:
+async def crypto_universe(jumlah: int = 80) -> dict[str, Any]:
+    """Pasangan USDT aktif, diurutkan menurut volume 24 jam. OKX dulu, MEXC cadangan."""
+    try:
+        return await _okx_universe(jumlah)
+    except SumberKosong:
+        return await _mexc_universe(jumlah)
+
+
+async def _okx_ticker(simbol: str) -> dict[str, Any]:
+    inst = _simbol_ke_okx(simbol)
+    data = await _get_json(f"{OKX}/api/v5/market/ticker", {"instId": inst})
+    rows = data.get("data") or []
+    if str(data.get("code")) != "0" or not rows:
+        raise SumberKosong(f"ticker OKX {inst} kosong (code={data.get('code')})")
+    d = rows[0]
+    last = float(d.get("last") or 0)
+    high = float(d.get("high24h") or 0)
+    low = float(d.get("low24h") or 0)
+    buka = float(d.get("open24h") or 0)
+    ubah = ((last - buka) / buka * 100) if buka else 0.0
+    return {
+        "symbol": _simbol_dari_okx(inst),
+        "last_price": last,
+        "high_": high,
+        "low_": low,
+        "change_pct_": ubah,
+        "volume_": float(d.get("volCcy24h") or 0),
+        "source": "okx-lokal",
+    }
+
+
+async def _mexc_ticker(simbol: str) -> dict[str, Any]:
     d = await _get_json(f"{MEXC}/api/v3/ticker/24hr", {"symbol": simbol.upper()})
     if isinstance(d, list):
         d = d[0] if d else {}
@@ -92,11 +160,42 @@ async def crypto_ticker(simbol: str) -> dict[str, Any]:
         "low_": float(d.get("lowPrice") or 0),
         "change_pct_": float(d.get("priceChangePercent") or 0),
         "volume_": float(d.get("quoteVolume") or 0),
-        "source": "mexc-lokal",
+        "source": "mexc-lokal (fallback)",
     }
 
 
-async def crypto_klines(simbol: str, interval: str = "1h", limit: int = 15) -> dict[str, Any]:
+async def crypto_ticker(simbol: str) -> dict[str, Any]:
+    try:
+        return await _okx_ticker(simbol)
+    except SumberKosong:
+        return await _mexc_ticker(simbol)
+
+
+async def _okx_klines(simbol: str, interval: str = "1h", limit: int = 15) -> dict[str, Any]:
+    bar = _INTERVAL_OKX.get(interval)
+    if not bar:
+        raise SumberKosong(f"interval {interval} tidak didukung OKX")
+    inst = _simbol_ke_okx(simbol)
+    data = await _get_json(
+        f"{OKX}/api/v5/market/candles",
+        {"instId": inst, "bar": bar, "limit": str(max(2, min(int(limit), 300)))},
+    )
+    if str(data.get("code")) != "0":
+        raise SumberKosong(f"OKX candles {inst} code={data.get('code')}")
+    mentah = data.get("data") or []
+    # OKX mengembalikan terbaru dulu; grafik butuh menaik.
+    mentah = sorted(mentah, key=lambda r: int(r[0]))
+    return {
+        "candles": [
+            {"t": int(r[0]), "o": float(r[1]), "h": float(r[2]),
+             "l": float(r[3]), "c": float(r[4]), "v": float(r[5])}
+            for r in mentah
+        ],
+        "sumber": "okx-lokal",
+    }
+
+
+async def _mexc_klines(simbol: str, interval: str = "1h", limit: int = 15) -> dict[str, Any]:
     iv = _INTERVAL_MEXC.get(interval)
     if not iv:
         raise SumberKosong(f"interval {interval} tidak didukung MEXC")
@@ -110,8 +209,15 @@ async def crypto_klines(simbol: str, interval: str = "1h", limit: int = 15) -> d
              "l": float(r[3]), "c": float(r[4]), "v": float(r[5])}
             for r in mentah
         ],
-        "sumber": "mexc-lokal",
+        "sumber": "mexc-lokal (fallback)",
     }
+
+
+async def crypto_klines(simbol: str, interval: str = "1h", limit: int = 15) -> dict[str, Any]:
+    try:
+        return await _okx_klines(simbol, interval, limit)
+    except SumberKosong:
+        return await _mexc_klines(simbol, interval, limit)
 
 
 # ------------------------------------------------------- forex & indeks ---
@@ -802,7 +908,7 @@ async def sebar(path: str, params: dict[str, Any] | None = None) -> Any:
             return await jurnal[path](str(p.get("market", "all")))
         return await jurnal[path]()
     if path in ("/health", "/health/"):
-        return {"ok": True, "mode": "lokal", "sumber": "mexc+yahoo"}
+        return {"ok": True, "mode": "lokal", "sumber": "okx+yahoo"}
     if path in ("/crypto/universe", "/universe"):
         return await crypto_universe()
     if path in ("/crypto/ticker", "/ticker"):

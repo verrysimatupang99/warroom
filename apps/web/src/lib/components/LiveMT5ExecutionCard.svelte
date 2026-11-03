@@ -99,7 +99,7 @@
 					</span>
 				</div>
 				<p class="text-xs text-zinc-400 font-sans">
-					Eksekutor Algo Trading Otomatis (Exness Demo #416510164 &bull; Laya AI &bull; Lot 0.10)
+					Eksekutor Algo Trading Otomatis (Exness Demo #416510164 &bull; Aturan EMA+RSI &bull; Lot 0.10)
 				</p>
 			</div>
 		</div>

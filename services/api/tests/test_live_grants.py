@@ -309,7 +309,7 @@ def test_dry_run_tidak_mengirim_order(client, make_user, monkeypatch) -> None:
     assert all("order" not in " ".join(c) for c in dipanggil)
     assert json.dumps(r.json())[:1] == "{"
 
-# --- W6: kesehatan provider di ai/status & llm-console ------------------------------------
+# --- W6: kesehatan provider di ai/status ------------------------------------
 
 
 def test_ai_status_melaporkan_kesehatan_provider(client, make_user) -> None:
@@ -330,7 +330,3 @@ def test_ai_status_melaporkan_kesehatan_provider(client, make_user) -> None:
     assert per["nutaraline"]["error_terakhir"] == "http_401"
     assert per["nutaraline"]["ok_rate"] == 0.5
     assert per["qonek"]["fallback"] == 1 and per["qonek"]["ok"] == 1
-
-    konsol = client.get("/api/v1/ai/llm-console", headers=_cookie(sid)).json()
-    assert konsol["per_provider"] and "ok_rate" in konsol["per_provider"][0]
-    assert konsol["per_provider"][0]["error_terakhir"] in ("http_401", None)
