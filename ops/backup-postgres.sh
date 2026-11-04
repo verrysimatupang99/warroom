@@ -53,3 +53,7 @@ ls -1t "$OUT_DIR"/warroom-*.dump 2>/dev/null | tail -n "+$((KEEP + 1))" | while 
 	rm -f "$f" "$f.sha256"
 	echo "rotasi: hapus $(basename "$f")"
 done
+
+# Sisa dump gagal (0 byte, `.part` yang tak sempat di-mv). Glob rotasi di atas hanya
+# cocok dengan `*.dump`, jadi berkas ini tidak pernah ikut terhapus sendiri.
+rm -f "$OUT_DIR"/warroom-*.dump.invalid "$OUT_DIR"/warroom-*.dump.part

@@ -21,8 +21,12 @@ sha256sum "$LATEST"                      # catat hash arsip yang dipakai
 stat -c '%s byte  %y' "$LATEST"
 ```
 
-Irama backup: `live-trading-backup.timer` tiap 6 jam, rotasi 14 arsip terakhir
-(`scripts/ops/backup-state.sh`). Isi arsip: `live-trading/state` + `gmgn-paper/state`,
+Irama backup: arsip dibuat oleh **job `backup` di worker** (`warroom-worker`), bukan
+`live-trading-backup.timer` — unit itu **disabled** dan skrip yang dirujuknya
+(`scripts/ops/backup-state.sh` di `~/live-trading`) tidak ada. Rotasi bergantung pada
+kebijakan job, bukan angka tetap; jangan mengasumsikan "14 arsip".
+Per 4 Nov 2026 jumlah arsip nyata: **10**. Periksa sendiri dengan `ls -1 | wc -l`
+sebelum mengandalkan jumlah apa pun. Isi arsip: `live-trading/state` + `gmgn-paper/state`,
 relatif terhadap `/home/admin`.
 
 ## 2. Restore ke lokasi sementara DULU (jangan langsung menimpa)
