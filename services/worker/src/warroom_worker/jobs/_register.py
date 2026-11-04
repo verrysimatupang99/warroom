@@ -42,6 +42,7 @@ from .infra import (
 from .jurnal import handler_jurnal_sinyal
 from .okx import handler_okx_sync
 from .strategi import handler_break_retest_scanner, handler_strategi_alert
+from .trades_sync import handler_trades_crypto_sync
 
 
 def register_handlers() -> dict[str, Any]:
@@ -79,6 +80,7 @@ def register_handlers() -> dict[str, Any]:
             "source-health": handler_source_health,
             "okx-sync": handler_okx_sync,
             "slo-check": handler_slo_check,
+            "trades-crypto-sync": handler_trades_crypto_sync,
         }
     )
     return schedule.HANDLERS
