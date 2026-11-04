@@ -28,7 +28,7 @@ DIKECUALIKAN = {
 ROOT = Path(__file__).resolve().parents[1]
 
 # Kode warisan yang juga dikecualikan dari ruff (vendor/crypto = Tencent).
-DILEWATI_BAGIAN = {"idx616", "vendor", "crypto", "__pycache__", ".venv"}
+DILEWATI_BAGIAN = {"idx616", "vendor", "crypto", "__pycache__", ".venv", "venv", "node_modules"}
 
 
 def iter_py():
