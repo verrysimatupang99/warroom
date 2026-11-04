@@ -45,14 +45,11 @@ bash ops/ci-local.sh                                   # versi CI yang sama, ter
 .venv/bin/python -m pytest packages/live-trading -q    # tes domain, dari root repo
 ```
 
-**`uv` sudah tidak terpasang** di host ini; pakai `.venv/bin/python -m pytest`.
-Jumlah tes per **31 Okt 2026**: **914** (`--collect-only`, perintah
-`pytest services/*/tests packages/live-trading`), dan run penuh rc=0. Root `pytest`
-(testpaths `packages` + `services`, termasuk `packages/core/tests`) mengoleksi
-**1129**. Web: **74** vitest (17 berkas), **52** berkas spec e2e.
-Angka lama 882/889/892/900/906/908/909/912/1126 sudah tidak berlaku. Kalau menyentuh
-tes, perbarui angka ini beserta bukti perintahnya — sumber kebenaran tetap output,
-bukan dokumen.
+**`uv` tersedia** di `~/.local/bin/uv` (per 4 Nov 2026) dan `bash ops/ci-local.sh` jalan
+penuh 4/4 — ini alat bukti terbaik repo, jangan dihindari. Perintah
+`pytest services/*/tests packages/live-trading` mengoleksi **904** tes (4 Nov 2026).
+Kalau menyentuh tes, perbarui angka ini beserta bukti perintahnya — sumber kebenaran
+tetap output, bukan dokumen.
 
 ## Arsitektur satu layar
 
@@ -60,7 +57,6 @@ bukan dokumen.
 apps/web/         SvelteKit (adapter-node, port 3100) — konsumsi API, tanpa logika domain
 services/api/     FastAPI :8800 — REST /api/v1/*, SSE /api/v1/stream, auth cookie+RBAC
 services/worker/  job runner (jadwal deklaratif di tabel `jobs`, --every 30)
-services/llm/     gateway LLM (nutaraline → qonek, breaker, cache, audit `llm_calls`)
 services/notifier/ transport Telegram/webhook/null + retry ≤3 (tidak pernah klaim terkirim)
 packages/core/    façade domain: gate, autonomy, db models, prompts, db/session
 ops/              systemd units, Caddyfile(.lokal), runbook, skrip bukti
@@ -139,9 +135,13 @@ refactor(idx): satukan duplikasi arjum + hapus skrip mati
 
 1. ~~URL webhook/Telegram~~ **selesai 3 Okt** — transport Telegram aktif (bot Hermes, topic War Room); alert macet tetap terlihat di UI dengan label & kesalahan terakhir.
 2. Domain + DNS → `ops/Caddyfile` (TLS) menggantikan `Caddyfile.lokal`.
-3. Keputusan kebijakan gate (90% vs 95%+deff) + `split=frozen:<id>` untuk data uji.
-4. Kunci/urutan provider nutaraline (401 + lambat; qonek menyelamatkan).
-5. Perbaikan baris `%sudo` di `/etc/sudoers`.
+3. ~~Kebijakan gate~~ **diputuskan owner 4 Nov: 90%** — `gate.ci=0,9`, `gate.min_n=30`,
+   keduanya `locked` (hanya manusia). `split=frozen:<id>` untuk data uji masih terbuka.
+4. ~~Provider LLM~~ **tidak berlaku lagi** — jalur LLM sudah dibuang seluruhnya 4 Nov.
+5. ~~Baris `%sudo` di `/etc/sudoers`~~ **selesai 4 Nov** — baris nyasar
+   `%sudo ALL=(ALL) NOPASSWD: ALL` dihapus; `admin` tetap punya `(ALL:ALL) ALL` via grup.
+   Konsekuensi: `sudo` kini minta password. Jalur resmi untuk agen = `SUDO_PASSWORD` di
+   `~/.hermes/.env` (diisi owner sendiri, jangan pernah diketik agen).
 
 ## Gaya yang diminta user
 
@@ -185,19 +185,22 @@ Bagian ini mengikat agen yang bekerja di server ini. Sumbernya verifikasi langsu
 di Webdock, bukan catatan laptop. Vault laptop bukan sumber kebenaran untuk server.
 
 - **Batas host.** Path produksi: repo `/home/admin/warroom`, env `/etc/warroom/*.env`,
-  `llm.json` di `/etc/warroom/llm.json`, skrip alert `/usr/local/sbin/warroom-alert-push.py`
+  skrip alert `/usr/local/sbin/warroom-alert-push.py`
   (kini symlink ke `tools/warroom-alert-push.py`). Path `/home/verry/...` dari catatan
   laptop tidak ada di server dan tidak boleh dipakai sebagai bukti.
-- **Unit di luar repo.** `live-trading-dashboard`, `mt5-beat`, `live-trading-watchdog`,
-  `warroom-alert-push`, dan adapter LLM bersama `n33-adapter`, `nanomuse-pool`,
-  `opensatan` berjalan di host ini. Jangan menghentikan adapter bersama tanpa izin owner.
+- **Unit di luar repo.** Hanya `live-trading-dashboard` yang masih hidup. Adapter LLM
+  bersama `n33-adapter`, `nanomuse-pool`, dan `opensatan` **sudah dipindahkan ke instabox
+  testing** (4 Nov 2026) — ketiganya `not-found` di host ini, file unit dan prosesnya
+  bersih, jadi jangan dicari lagi. `mt5-beat`, `live-trading-watchdog`, `warroom-alert-push`,
+  dan `warroom-llm` berstatus `inactive`.
 - **Retensi yang mengikat.** `handler_retensi` menyimpan **3 versi per kunci** dan
   **tidak menghapus `events`** (`hapus_events=false`). Angka 30/90 hari hanyalah target
   yang belum diimplementasikan.
-- **Dua lapisan provider.** Gateway War Room memakai `/etc/warroom/llm.json` dengan urutan
-  `nutaraline → qonek → kiyara` dan budget $3/hari. (Catatan lama: Nectere dulu dipakai
-  lewat `~/.omp/models.yml` — OMP sudah dilepas dari server ini.) qonek masih di rantai
-  tetapi kuncinya 401.
+- **LLM sudah tidak ada di War Room.** Per 4 Nov 2026 tabel `llm_calls`/`prompts`, endpoint
+  kesehatan provider, `ops/verify-p3-llm.py`, dan penilai pod (`pods/nilai.py`) dibuang;
+  `/etc/warroom/llm.json` dihapus dari host. Sinyal dan kartu pod murni rumus + data.
+  `/etc/warroom/llm.env` **sengaja dipertahankan** karena masih jadi `EnvironmentFile`
+  unit api/worker. Jangan menghidupkan kembali jalur LLM tanpa keputusan owner.
 - **Telemetri pensiun.** `WARROOM_RETIRED_FACTS` mengecualikan `mt5_snapshot/ringkas` dan
   `ringkas:452009427` dari readiness, metrics, dan alert. `warroom-pantau-tick.timer`
   dimatikan karena bergantung pada endpoint MT5 Tencent yang sudah mati; nyalakan lagi
