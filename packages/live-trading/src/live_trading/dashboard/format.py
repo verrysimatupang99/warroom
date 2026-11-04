@@ -33,7 +33,6 @@ def fharga(x) -> str:
     return f"{v:,.6f}"
 
 
-MODEL_POD = "mimo-v2.6-flash"
 
 
 def _wib() -> str:

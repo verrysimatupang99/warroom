@@ -730,7 +730,7 @@ def _blok(snap):
     ):
         try:
             lap = _mod.lead(snap)
-            blok[_nama] = _pod_card(lap, (snap.get("pod_llm") or {}).get(_nama[4:]))
+            blok[_nama] = _pod_card(lap)
         except Exception as ex:  # noqa: BLE001
             blok[_nama] = _card(f"Pod {_nama}", f"<p class='sub'>pod error: {e(str(ex))}</p>")
     blok["risiko"] = kartu_risiko

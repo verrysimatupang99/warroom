@@ -21,7 +21,7 @@ from typing import Any
 
 from sqlalchemy import delete, func, select
 
-from warroom_core.db import Alert, Event, Fact, LLMCall, Session
+from warroom_core.db import Alert, Event, Fact, Session
 
 __all__ = ["prune_orphan_refs", "rencana", "jalankan", "NOISY_EVENT_TYPES", "NOISY_EVENTS_HARI_DEFAULT"]
 
@@ -30,8 +30,6 @@ KEEP_VERSI_DEFAULT = 3
 # Untuk events: simpan N hari. Append-only tetap dihormati — ini retensi terencana,
 # bukan alur yang menulis ulang riwayat.
 EVENTS_HARI_DEFAULT = 90
-# llm_calls: rekaman biaya; berguna lebih lama dari event rutin.
-LLM_CALL_HARI_DEFAULT = 180
 # alerts: notifikasi operasional. Yang SUDAH di-ack adalah arsip — simpan N hari lalu buang;
 # yang BELUM di-ack TIDAK PERNAH dibuang oleh umur (itu tugas manusia, bukan retensi).
 # Temuan 7 Okt: 100 alert menumpuk (75 belum di-ack sejak 2 Okt) karena retensi tidak
@@ -86,7 +84,6 @@ def rencana(
     *,
     keep_versi: int = KEEP_VERSI_DEFAULT,
     events_hari: int = EVENTS_HARI_DEFAULT,
-    llm_call_hari: int = LLM_CALL_HARI_DEFAULT,
     alerts_hari: int = ALERTS_HARI_DEFAULT,
     noisy_events_hari: int = NOISY_EVENTS_HARI_DEFAULT,
 ) -> dict[str, int]:
@@ -140,11 +137,6 @@ def rencana(
         .where(Event.created_at < batas_noisy, Event.type.in_(NOISY_EVENT_TYPES))
     ) or 0
 
-    batas_llm = now - timedelta(days=llm_call_hari)
-    n_llm = s.scalar(
-        select(func.count()).select_from(LLMCall).where(LLMCall.created_at < batas_llm)
-    ) or 0
-
     batas_alert = now - timedelta(days=alerts_hari)
     n_alert = s.scalar(
         select(func.count())
@@ -161,14 +153,12 @@ def rencana(
     return {
         "facts": int(n_facts),
         "events": int(n_events),
-        "llm_calls": int(n_llm),
         "alerts": int(n_alert),
         "sessions": int(n_sessions),
         "keep_versi": keep_versi,
         "events_hari": events_hari,
         "noisy_events": int(n_noisy),
         "noisy_events_hari": noisy_events_hari,
-        "llm_call_hari": llm_call_hari,
         "alerts_hari": alerts_hari,
     }
 
@@ -178,10 +168,8 @@ def jalankan(
     *,
     keep_versi: int = KEEP_VERSI_DEFAULT,
     events_hari: int = EVENTS_HARI_DEFAULT,
-    llm_call_hari: int = LLM_CALL_HARI_DEFAULT,
     alerts_hari: int = ALERTS_HARI_DEFAULT,
     hapus_events: bool = True,
-    hapus_llm_calls: bool = True,
     noisy_events_hari: int = NOISY_EVENTS_HARI_DEFAULT,
     prune_refs: bool = False,
 ) -> dict[str, Any]:
@@ -192,14 +180,13 @@ def jalankan(
     """
     r = rencana(
         s, keep_versi=keep_versi, events_hari=events_hari,
-        llm_call_hari=llm_call_hari, alerts_hari=alerts_hari,
+        alerts_hari=alerts_hari,
         noisy_events_hari=noisy_events_hari,
     )
     dihapus: dict[str, int] = {
         "facts": 0,
         "events": 0,
         "noisy_events": 0,
-        "llm_calls": 0,
         "alerts": 0,
         "sessions": 0,
         "rujukan_yatim_dibersihkan": 0,
@@ -260,10 +247,6 @@ def jalankan(
         )
         dihapus["noisy_events"] = res.rowcount or 0
 
-    if hapus_llm_calls and r["llm_calls"]:
-        batas = datetime.now(UTC) - timedelta(days=llm_call_hari)
-        res = s.execute(delete(LLMCall).where(LLMCall.created_at < batas))
-        dihapus["llm_calls"] = res.rowcount or 0
 
     # Alerts: hanya yang SUDAH di-ack dan lebih tua dari batas. Yang belum di-ack adalah
     # pekerjaan manusia — retensi tidak berhak membuangnya.

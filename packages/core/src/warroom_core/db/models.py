@@ -38,7 +38,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 __all__ = ["Base", "Fact", "Event", "Verdict", "Trade", "Strategy", "Parameter", "Proposal",
-           "LLMCall", "Prompt", "Alert", "Service", "Heartbeat", "User", "Session", "AuditLog",
+           "Alert", "Service", "Heartbeat", "User", "Session", "AuditLog",
            "Dataset", "ResearchRun", "ResearchRecord", "FrozenSplit", "Job", "Grant"]
 
 Money = Numeric(20, 8)
@@ -213,51 +213,6 @@ class Proposal(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-
-
-class Prompt(Base):
-    """Registry prompt: perubahan = versi baru, tidak pernah menimpa."""
-
-    __tablename__ = "prompts"
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    role: Mapped[str] = mapped_column(String(40), nullable=False)
-    version: Mapped[str] = mapped_column(String(40), nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    schema_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
-    contoh_json: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
-    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-
-    __table_args__ = (UniqueConstraint("role", "version", name="uq_prompts_role_version"),)
-
-
-class LLMCall(Base):
-    """Setiap panggilan LLM wajib meninggalkan jejak (ADR-004)."""
-
-    __tablename__ = "llm_calls"
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    role: Mapped[str] = mapped_column(String(40), nullable=False)
-    provider: Mapped[str] = mapped_column(String(40), nullable=False)
-    model: Mapped[str] = mapped_column(String(80), nullable=False, default="")
-    prompt_version: Mapped[str] = mapped_column(String(40), nullable=False, default="")
-    tokens_in: Mapped[int | None] = mapped_column(Integer)
-    tokens_out: Mapped[int | None] = mapped_column(Integer)
-    cost_usd: Mapped[Decimal | None] = mapped_column(Money)
-    latency_ms: Mapped[int | None] = mapped_column(Integer)
-    ok: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    fallback_from: Mapped[str | None] = mapped_column(String(40))
-    error_code: Mapped[str | None] = mapped_column(String(60))
-    result_hash: Mapped[str | None] = mapped_column(String(64))
-    fact_ids: Mapped[Any] = mapped_column(JSONB, nullable=False, default=list)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
-
-    __table_args__ = (Index("ix_llm_calls_role_created", "role", "created_at"),)
 
 
 class Alert(Base):
