@@ -69,33 +69,6 @@ def test_dashboard_punya_kartu_pod() -> None:
         assert k in frag and f"Pod {k[4:]}" in frag[k], k
 
 
-def test_nilai_parse_json_berisik() -> None:
-    from live_trading.pods import nilai
-
-    asli = nilai.tanya
-    nilai.tanya = lambda *a, **k: 'nih bos {"setuju": false, "catatan": "kurang data"} sip'
-    try:
-        v = nilai.evaluate_pod("x", ["a"])
-        assert v == {"setuju": False, "catatan": "kurang data"}
-    finally:
-        nilai.tanya = asli
-
-
-def test_nilai_gagal_none() -> None:
-    from live_trading.pods import nilai
-
-    asli = nilai.tanya
-    nilai.tanya = lambda *a, **k: None
-    try:
-        assert nilai.evaluate_pod("x", ["a"]) is None
-    finally:
-        nilai.tanya = asli
-
-
-def test_kartu_tampilkan_penilaian() -> None:
-    from live_trading import dashboard
-
-    snap = _snap()
-    snap["pod_llm"] = {"kripto": {"setuju": True, "catatan": "oke"}}
-    html_out = dashboard.fragments(snap)["pod_kripto"]
-    assert "Penilaian" in html_out and "mimo" in html_out
+# Tes penilai LLM pod (parse JSON berisik, gagal=None, kartu "Penilaian")
+# dihapus 4 Nov 2026 bersama live_trading/pods/nilai.py: pod kini murni
+# deterministik, tidak ada penilai kedua.

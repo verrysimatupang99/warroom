@@ -36,7 +36,7 @@ def _source_state(rows: list[dict[str, Any]]) -> str:
 AREA_KEYS: dict[str, tuple[str, ...]] = {
     "crypto": (
         "bagian", "kandidat", "pengukuran", "backtest",
-        "equity", "ledger", "risiko", "posisi", "pod_llm",
+        "equity", "ledger", "risiko", "posisi",
         # sinyal+entry setup & akurasi per strategi (mesin pasar.py, 6 Okt)
         "crypto_sinyal", "pasar_akurasi", "dompet",
         # kind `signal` diterbitkan job `signal-sync` (bukan bagian snapshot).

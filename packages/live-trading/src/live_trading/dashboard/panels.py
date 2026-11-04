@@ -8,7 +8,7 @@ from typing import Any
 
 from ..config import Settings, get_settings
 from ..risk import RiskGate
-from .format import MODEL_POD, _wib, e, log
+from .format import _wib, e, log
 from .html_parts import _arti, _card, _lencana, _sumber
 
 
@@ -204,18 +204,16 @@ def _arti_lp(lp: dict) -> str:
 WARNA_POD = {"hijau": "ok", "kuning": "warn", "merah": "fail", "abu": "tua"}
 
 
-def _pod_card(lap, llm: dict | None = None) -> str:
-    """Kartu laporan lead pod: badge status + ringkasan analis + nilai LLM."""
+def _pod_card(lap) -> str:
+    """Kartu laporan lead pod: badge status + ringkasan analis.
+
+    Murni deterministik sejak penilai LLM pod dibuang 4 Nov 2026.
+    """
     baris = "".join(f"<li>{e(r)}</li>" for r in lap.ringkas)
-    extra = ""
-    if llm:
-        cap = "setuju" if llm.get("setuju") else "tidak setuju"
-        extra = f"<p class='sub'>Penilaian {MODEL_POD}: {cap} — {e(llm.get('catatan', ''))}</p>"
     return _card(
         f"Pod {e(lap.pod)} {_lencana(WARNA_POD.get(lap.status, 'tua'), lap.status)}",
         f"<ul>{baris}</ul>"
-        + extra
-        + _sumber("pod Fase 1: analis deterministik + nilai LLM, baca-saja")
+        + _sumber("pod Fase 1: analis deterministik, baca-saja")
         + _arti(
         f"laporan lead {lap.status}: tim pod pantau rutin, eskalasi ke kamu bila merah."
     ),
@@ -705,28 +703,6 @@ def build_snapshot(settings: Settings | None = None, *, use_network: bool = True
     except Exception:  # noqa: BLE001
         snap["backtest"] = None
 
-    # nilai LLM lead pod (nutaraline mimo; opsional — gagal = kartu jalan tanpa nilai)
-    try:
-        if use_network:
-            from live_trading.pods import gmgn as _pg
-            from live_trading.pods import idx as _pi
-            from live_trading.pods import kripto as _pk
-            from live_trading.pods import nilai as _nilai
-            from live_trading.pods import poly as _pp
-
-            snap["pod_llm"] = _nilai.evaluate_all(
-                {
-                    n: [r for r in m.lead(snap).ringkas]
-                    for n, m in (
-                        ("kripto", _pk),
-                        ("poly", _pp),
-                        ("gmgn", _pg),
-                        ("idx", _pi),
-                    )
-                }
-            )
-    except Exception:  # noqa: BLE001
-        snap["pod_llm"] = {}
 
     return snap
 

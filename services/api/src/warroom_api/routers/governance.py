@@ -14,7 +14,6 @@ from warroom_core import autonomy
 from warroom_core.db import User, session_scope
 
 from warroom_api import auth
-from warroom_api.providers import provider_summary
 
 router = APIRouter()
 
@@ -102,7 +101,11 @@ def proposal_rollback(
 
 @router.get("/api/v1/ai/status")
 def ai_status(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
-    from warroom_core.db import LLMCall, Proposal
+    """Status bounded-autonomy. Sisa LLM (tabel `llm_calls`, kesehatan provider)
+    dibuang 4 Nov 2026 — sinyal kini murni rumus, tidak ada panggilan LLM lagi.
+    Yang tetap dilaporkan: sakelar dan usulan yang menunggu manusia.
+    """
+    from warroom_core.db import Proposal
 
     with session_scope() as s:
         return {
@@ -111,9 +114,6 @@ def ai_status(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, An
                 select(func.count()).select_from(Proposal).where(Proposal.status == "butuh_manusia")
             )
             or 0,
-            "panggilan_llm": s.scalar(select(func.count()).select_from(LLMCall)) or 0,
-            # Kesehatan provider (W6): mana yang gagal dan dengan kode apa.
-            "provider": provider_summary(s),
         }
 
 

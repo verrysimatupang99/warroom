@@ -6,7 +6,6 @@ Re-export semua nama lama agar `from live_trading import dashboard` tetap sama.
 from __future__ import annotations
 
 from .format import (
-    MODEL_POD,  # noqa: F401
     _persen,  # noqa: F401
     _wib,  # noqa: F401
     e,  # noqa: F401
@@ -79,7 +78,6 @@ __all__ = [
     "e",
     "_persen",
     "fharga",
-    "MODEL_POD",
     "_wib",
     "_backtest_panel",
     "_RADAR_SEGAR_MNT",

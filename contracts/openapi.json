@@ -1304,6 +1304,7 @@
     },
     "/api/v1/ai/status": {
       "get": {
+        "description": "Status bounded-autonomy. Sisa LLM (tabel `llm_calls`, kesehatan provider)\ndibuang 4 Nov 2026 — sinyal kini murni rumus, tidak ada panggilan LLM lagi.\nYang tetap dilaporkan: sakelar dan usulan yang menunggu manusia.",
         "operationId": "ai_status_api_v1_ai_status_get",
         "parameters": [
           {
