@@ -3,7 +3,7 @@
 import asyncio
 
 import pytest
-from warroom_api import lokal
+from warroom_api import jurnal_crypto, lokal
 
 
 def test_cek_market_menerima_nilai_sah():
@@ -19,7 +19,9 @@ def test_cek_market_menolak_nilai_aneh():
     assert lokal._cek_market("CRYPTO") == "crypto"
 
 
-def test_trade_crypto_dibentuk_seperti_fill(monkeypatch):
+def test_trade_crypto_cadangan_momentum(monkeypatch):
+    """Bila ledger paper tidak ada, sumber cadangan `momentum_trades.csv` dipakai."""
+    monkeypatch.setattr(jurnal_crypto, "EQUITY_CRYPTO", lokal.Path("/nonexistent/equity.jsonl"))
     monkeypatch.setattr(
         lokal,
         "_baca_csv",
@@ -36,6 +38,46 @@ def test_trade_crypto_dibentuk_seperti_fill(monkeypatch):
     assert hasil[0]["side"] == "BUY"
     assert hasil[1]["side"] == "SELL"
     assert hasil[1]["iso"] == "2026-10-28 15:10:00"
+    assert hasil[0]["sumber"] == "momentum_trades"
+
+
+def test_trade_crypto_dari_ledger_paper(monkeypatch, tmp_path):
+    """Sumber utama: `crypto_equity.jsonl`. R dilaporkan apa adanya, pnl_pct kosong."""
+    import json
+
+    p = tmp_path / "crypto_equity.jsonl"
+    p.write_text(
+        json.dumps({
+            "signal_id": "#SIG1", "pair": "CRVUSDT", "direction": "SHORT",
+            "closed_at": "2026-11-04T17:30:08+07:00", "status": "closed_SL",
+            "r": -1.0, "note": "closed_SL @ 0.26714994", "source": "paper-crypto",
+            "strategi": "legacy-smc", "fee_usd": 0.06,
+        }) + "\n"
+        + json.dumps({
+            "signal_id": "#SIG2", "pair": "ENAUSDT", "direction": "LONG",
+            "closed_at": "2026-11-04T07:36:00+07:00", "status": "closed_TP",
+            "r": 1.0, "note": "closed_TP @ 1.23", "source": "paper-crypto",
+        }) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(jurnal_crypto, "EQUITY_CRYPTO", p)
+    hasil = lokal._trade_crypto()
+    assert len(hasil) == 2
+    assert hasil[0]["symbol"] == "CRVUSDT"
+    assert hasil[0]["side"] == "SELL"          # SHORT
+    assert hasil[1]["side"] == "BUY"           # LONG
+    assert hasil[0]["r"] == -1.0
+    assert hasil[0]["price_filled"] == "0.26714994"
+    assert hasil[0]["sumber"] == "paper-crypto"
+    # R bukan persen: jangan isi pnl_pct dengan R.
+    assert hasil[0]["pnl_pct"] == ""
+
+
+def test_r_dari_aman_untuk_nilai_kosong():
+    assert jurnal_crypto.r_dari({"r": -1.0}) == -1.0
+    assert jurnal_crypto.r_dari({"r": ""}) == 0.0
+    assert jurnal_crypto.r_dari({}) == 0.0
+    assert jurnal_crypto.r_dari({"r": "abc"}) == 0.0
 
 
 def test_ringkas_momentum_menghitung_ekuitas(monkeypatch):

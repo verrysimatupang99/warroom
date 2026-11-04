@@ -31,14 +31,62 @@ _FILTER = (
     "/forex/journal/scanlog",
 )
 
+# Padanan lokal untuk tiap endpoint. Jalur crypto TIDAK pernah ada di Tencent:
+# ledger paper crypto (`crypto_equity.jsonl`) ditulis di host ini oleh `paper-scan`,
+# jadi `market=crypto` harus dilayani fungsi lokal. Sebelum ini semua permintaan
+# diteruskan ke Tencent, sehingga 106 trade paper tidak pernah tampil di UI.
+_LOKAL = {
+    "/forex/journal/stats": lokal.journal_stats,
+    "/forex/journal/trades": lokal.journal_trades,
+    "/forex/journal/edge": lokal.journal_edge,
+    "/forex/journal/performance": lokal.journal_performance,
+    "/forex/journal/multipair": lokal.journal_multipair,
+    "/forex/journal/scanlog": lokal.journal_scanlog,
+}
+
+
+def _gabung_forex_crypto(forex: Any, crypto: Any) -> Any:
+    """Gabungkan hasil Tencent (forex) dengan lokal (crypto) untuk `market=all`.
+
+    Hanya daftar `closed`/`entries` yang digabung lalu diurutkan ulang; angka `n`
+    dihitung dari hasil gabungan supaya tidak ada dua kebenaran. Kalau bentuk salah
+    satu respons tidak seperti yang diharapkan, kembalikan apa adanya alih-alih
+    menebak — kehilangan data lebih buruk daripada daftar yang tidak tergabung.
+    """
+    if not isinstance(forex, dict) or not isinstance(crypto, dict):
+        return forex
+    if not isinstance(forex.get("closed"), list) or not isinstance(crypto.get("closed"), list):
+        return forex
+    hasil = dict(forex)
+    closed = list(forex.get("closed") or []) + list(crypto.get("closed") or [])
+    closed.sort(key=lambda r: str(r.get("iso", "")), reverse=True)
+    entries = list(forex.get("entries") or []) + list(crypto.get("entries") or [])
+    hasil["closed"] = closed[:200]
+    hasil["entries"] = entries[:200]
+    hasil["n"] = len(closed)
+    hasil["n_entry"] = len(entries)
+    hasil["sumber"] = f"{forex.get('sumber', 'tencent')} + {crypto.get('sumber', 'lokal')}"
+    return hasil
+
 
 async def _ambil(path: str, market: str | None = None, account: str | None = None) -> Any:
+    m = (market or "all").lower()
+    if m not in ("all", "forex", "crypto"):
+        m = "all"
+    fn = _LOKAL.get(path)
+    if fn is not None:
+        if m == "crypto":
+            return await fn("crypto")
+        if m == "all":
+            return _gabung_forex_crypto(
+                await _fetch_tencent(path), await fn("crypto")
+            )
+    params: dict[str, Any] = {}
     if market is not None and path in _FILTER:
-        params = {"market": market}
+        params["market"] = m
         if account:
             params["account"] = account
-        return await _fetch_tencent(path, params=params)
-    return await _fetch_tencent(path)
+    return await _fetch_tencent(path, params=params) if params else await _fetch_tencent(path)
 
 
 @router.get("/stats")

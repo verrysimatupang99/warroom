@@ -27,6 +27,8 @@ import httpx
 from warroom_core.deal_koreksi import KOREKSI_DEFAULT, baca_koreksi, terapkan
 from warroom_core.mt5_accounts import snapshot_key
 
+from warroom_api import jurnal_crypto
+
 UA = "Mozilla/5.0 (X11; Linux x86_64) WarRoom/2.0"
 MEXC = "https://api.mexc.com"
 OKX = "https://www.okx.com"
@@ -380,8 +382,15 @@ def _baca_csv(p: Path) -> list[dict[str, Any]]:
 
 
 def _trade_crypto() -> list[dict[str, Any]]:
-    """Trade paper crypto, dibentuk sama seperti baris fill forex."""
-    hasil = []
+    """Trade paper crypto: ledger `crypto_equity.jsonl`, cadangan momentum lama.
+
+    Ledger diutamakan karena itu yang benar-benar dijalankan `paper-scan`.
+    Cadangan hanya dipakai bila ledger tidak ada/kosong, supaya jurnal crypto
+    tidak tiba-tiba kosong saat ledger sedang ditulis ulang.
+    """
+    hasil = jurnal_crypto.dari_ledger()
+    if hasil:
+        return hasil
     for r in _baca_csv(MOMENTUM_TRADES):
         aksi = str(r.get("aksi", "")).upper()
         hasil.append(
@@ -389,12 +398,19 @@ def _trade_crypto() -> list[dict[str, Any]]:
                 "iso": str(r.get("waktu", ""))[:19].replace("T", " "),
                 "symbol": r.get("koin", ""),
                 "side": "BUY" if aksi.startswith("BELI") else "SELL",
+                "direction": "",
                 "volume": r.get("qty", ""),
                 "price_filled": r.get("harga", ""),
                 "slippage_pts": "",
                 "latency_ms": "",
                 "pnl_pct": r.get("pnl_pct", ""),
+                "r": "",
+                "status": "",
+                "strategi": r.get("alasan", ""),
+                "fee_usd": "",
+                "keterangan": "",
                 "market": "crypto",
+                "sumber": "momentum_trades",
             }
         )
     return hasil
@@ -531,6 +547,13 @@ async def journal_stats(market: str = "all") -> dict[str, Any]:
             "return_pct": mom.get("return_pct"),
             "posisi": mom.get("posisi"),
             "trade": len(crypto),
+            # Ringkasan dari ledger paper (R, bukan persen). Momentum di atas hanya
+            # mencakup 8 koin strategi lama; angka di bawah ini mencakup seluruh
+            # trade paper yang dijalankan `paper-scan`.
+            "trade_paper": len(crypto),
+            "menang_paper": sum(1 for t in crypto if jurnal_crypto.r_dari(t) > 0),
+            "kalah_paper": sum(1 for t in crypto if jurnal_crypto.r_dari(t) < 0),
+            "r_total_paper": round(sum(jurnal_crypto.r_dari(t) for t in crypto), 2),
         },
         "n_fill_tercatat": len(fills) + len(crypto),
         "n_fill_forex": len(fills),
@@ -553,7 +576,7 @@ async def journal_trades(market: str = "all") -> dict[str, Any]:
             entries.append(d)
     semua = sorted(forex + crypto, key=lambda r: str(r.get("iso", "")), reverse=True)
     return {
-        "sumber": "lokal:deals.csv + fills.csv + momentum_trades.csv",
+        "sumber": "lokal:deals.csv + fills.csv + crypto_equity.jsonl",
         "market": m,
         "closed": semua[:200],
         "open": [],
@@ -561,7 +584,8 @@ async def journal_trades(market: str = "all") -> dict[str, Any]:
         "n": len(semua),
         "n_entry": len(entries),
         "catatan": "Forex tertutup dari deals.csv (laporan deal EA). Entri order dan "
-                   "kualitas eksekusi dari fills.csv. Crypto dari catatan paper trader.",
+                   "kualitas eksekusi dari fills.csv. Crypto dari ledger paper "
+                   "crypto_equity.jsonl; hasilnya dalam R (kelipatan risiko), bukan persen.",
     }
 
 
