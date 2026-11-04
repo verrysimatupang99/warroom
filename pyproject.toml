@@ -18,6 +18,9 @@ package = false
 
 [tool.uv.workspace]
 members = ["packages/*", "services/*"]
+# tg-engine: app mandiri (flat *.py + venv sendiri, bukan paket Python).
+# Dilebur dari ~/tg-trading-engine 4 Nov 2026 — jangan dijadikan anggota workspace.
+exclude = ["services/tg-engine"]
 
 [tool.uv.sources]
 warroom-core = { workspace = true }
@@ -48,6 +51,10 @@ extend-exclude = [
     ".venv",
     ".venv-merge",
     "apps/web",
+    # tg-engine: app mandiri hasil lebur 4 Nov 2026. Kode trading yang sedang
+    # berjalan live — dirapikan terpisah, jangan diikutkan lint repo sampai
+    # 57 temuan gaya lama dibereskan dan perilakunya diuji ulang.
+    "services/tg-engine",
     "node_modules",
     "packages/live-trading/vendor",
     "packages/live-trading/crypto",
