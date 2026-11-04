@@ -59,3 +59,17 @@ data/hist/
 # Riwayat chat agent lokal & arsip patch hasil sesi (bukan sumber repo)
 .agent_chat_history.json
 artifacts/archives/*.patch
+
+# --- tg-engine (dilebur dari ~/tg-trading-engine, 4 Nov 2026) ---
+# Kode di-versioned; venv, sesi Telethon, dan DB sinyal = state runtime lokal.
+# trading_session.session adalah kredensial login — JANGAN pernah di-commit.
+services/tg-engine/venv/
+services/tg-engine/*.session
+services/tg-engine/*.session-journal
+services/tg-engine/*.db
+
+# --- worktree lokal agent (bukan sumber repo) ---
+tools/warroom-work/
+
+# Riwayat chat agent (93K, 57 sesi) — bukan sumber repo, hanya arsip lokal.
+docs/arsip/catatan-lama/hermes_war_sessions.json
