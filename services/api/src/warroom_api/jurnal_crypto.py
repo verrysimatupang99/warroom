@@ -89,6 +89,50 @@ def dari_ledger(jalur: Path | None = None) -> list[dict[str, Any]]:
     return hasil
 
 
+def dari_db(batas: int = 200) -> list[dict[str, Any]]:
+    """Trade crypto dari tabel `trades` (diisi `trades-crypto-sync`).
+
+    Bentuk baris sama dengan `dari_ledger` supaya pemaakai tidak tahu bedanya —
+    kalau DB kosong/belum terisi, pemanggil boleh jatuh ke ledger.
+    """
+    from sqlalchemy import text
+    from warroom_core.db import session_scope
+
+    hasil: list[dict[str, Any]] = []
+    with session_scope() as s:
+        rows = s.execute(
+            text(
+                "select ext_id, side, pnl_r, pnl_usd, price, opened_at, closed_at, "
+                "evidence_json from trades where venue='crypto' and mode='paper' "
+                "order by closed_at desc nulls last limit :n"
+            ),
+            {"n": batas},
+        ).fetchall()
+    for r in rows:
+        ev = r.evidence_json if isinstance(r.evidence_json, dict) else json.loads(r.evidence_json or "{}")
+        hasil.append(
+            {
+                "iso": str(r.closed_at or "")[:19].replace("T", " "),
+                "symbol": str(ev.get("pair") or ""),
+                "side": r.side or "",
+                "direction": "SHORT" if (r.side or "").upper() == "SELL" else "LONG",
+                "volume": "",
+                "price_filled": str(ev.get("exit_price") or ""),
+                "slippage_pts": "",
+                "latency_ms": "",
+                "pnl_pct": "",
+                "r": float(r.pnl_r) if r.pnl_r is not None else None,
+                "status": str(ev.get("status") or ""),
+                "strategi": str(ev.get("strategi") or ""),
+                "fee_usd": ev.get("fee_usd"),
+                "keterangan": str(ev.get("note") or ""),
+                "market": "crypto",
+                "sumber": str(ev.get("source") or "paper-crypto"),
+            }
+        )
+    return hasil
+
+
 def ringkas(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Ringkasan menang/kalah/total R dari baris trade crypto."""
     return {

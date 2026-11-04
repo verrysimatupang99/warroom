@@ -256,6 +256,16 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         note="evaluasi harga live bursa untuk posisi paper aktif; eksekusi TP/SL + alert Telegram instan.",
     ),
     JobSpec(
+        name="trades-crypto-sync",
+        interval_s=300,
+        enabled=True,
+        payload={},
+        note=(
+            "ingest ledger crypto_equity.jsonl → tabel trades (idempoten, kunci "
+            "venue+mode+ext_id). Baris sudah ada tidak disentuh; ledger rusak menahan ingest."
+        ),
+    ),
+    JobSpec(
         name="paper-scan",
         interval_s=180,
         enabled=True,
