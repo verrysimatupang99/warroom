@@ -9,22 +9,35 @@ Tidak ada angka yang dikira-kira.
 
 ---
 
-## 0. Ringkas untuk owner
+## 0. Ringkas — dan KOREKSI atas kesimpulan awal
 
-**War Room tidak "rusak". Sinyal memang diproduksi — 572 dari 1.014 verdict
-berstatus `allowed=true`.** Yang terjadi ialah **gate risiko `exposure`
-menolak kandidat dengan alasan yang salah**, dan itu berlangsung sejak
-**30 Oktober 2026**.
+> **Versi pertama dokumen ini salah.** Ia menyimpulkan "gate `exposure` menghitung
+> posisi salah". Setelah ditelusuri sampai ujung, kesimpulan itu **dibatalkan**.
+> Ringkasan yang benar ada di §0b di bawah; §1–§8 dipertahankan apa adanya sebagai
+> jejak penelusuran, dan §0b yang mengikat.
 
-Rantainya:
+**Sinyal memang diproduksi — 572 dari 1.014 verdict berstatus `allowed=true`.**
+Dalam 27 verdict enam jam terakhir, semuanya ditolak gate `exposure` dengan
+alasan `2/2 posisi searah SHORT`.
 
-```
-sumber data → sinyal → verdict ALLOWED=True  →  gate exposure: "2/2 searah"  →  SKIP
-                          (572 sinyal sah)        (padahal posisi cuma 1)
-```
+## 0b. Kesimpulan yang benar (menggantikan §0)
 
-Jadi bukan gate-nya terlalu ketat, dan bukan datanya mati. Gate menilai
-jumlah posisi terbuka lebih besar dari kenyataan.
+Tiga fakta yang membalik diagnosis awal:
+
+1. **Trade ADA dan berjalan.** `crypto_equity.jsonl` berisi **106 trade tertutup**
+   (+54 R), termasuk **5 trade pada 4 Nov** (ENA +1R; TIA, AAVE, WIF, CRV masing
+   −1R). Sistem tidak beku sejak 30 Okt.
+2. **Gate `exposure` benar.** Dijalankan dengan posisi nyata sekarang:
+   `ok=True, "1/3 posisi, 1/2 searah — aman"`. Saat verdict `2/2` ditulis
+   (05:00–10:16 UTC), memang **ada 2 posisi SHORT terbuka** — empat trade ditutup
+   12:46–17:30 WIB (05:46–10:30 UTC), persis jendela itu. Konfigurasi juga benar:
+   `maks_posisi_searah=2`, `max_concurrent_positions=3`.
+3. **Yang bermasalah: 106 trade di ledger tidak masuk DB.** `trades`=0,
+   `verdicts` DB=0, `fills.csv` hanya header sejak 24 Okt — sementara ledger
+   penuh. Karena itu War Room **tampak** belum pernah trading.
+
+**Jadi masalahnya pelaporan/ingest, bukan mesin gate.** Langkah berikut ada di §9.
+
 
 ---
 
@@ -139,14 +152,66 @@ Dibuktikan agar tidak diulang mencarinya:
   dievaluasi. Seluruh kerja platform tidak bisa dibuktikan berguna.
 - `fills.csv` hanya header sejak 24 Okt — konsisten dengan tidak ada eksekusi.
 
-## 8. Langkah berikut yang disarankan
+## 8. Langkah yang disarankan (versi pertama — digantikan §9)
 
-1. Telusuri jalur `paper-scan` sampai pemanggilan `assess()`/`evaluate()` untuk
-   menemukan dari mana entri posisi kedua berasal (hipotesis §5.1–5.2).
-2. Tambahkan uji regresi: bila `paper_positions.json` berisi N posisi,
-   `exposure` **wajib** melihat tepat N — bukan N+1.
-3. Setelah diperbaiki, jalankan satu siklus `paper-scan` dan pastikan ada
-   kandidat yang benar-benar dibuka, lalu periksa `trades` bertambah.
+1. ~~Telusuri jalur `paper-scan` sampai `assess()`~~ — **selesai**, lihat §9.
+2. ~~Uji regresi `exposure` melihat N bukan N+1~~ — **tidak diperlukan**, gate
+   sudah terbukti benar dengan N=1 → `1/2 searah — aman`.
+3. Pastikan kandidat dibuka & `trades` bertambah — **arah yang benar**, tapi
+   sebabnya bukan gate; lihat §9.
 
 **Jangan longgarkan `MAX_SAME_DIRECTION`** untuk "menghijaukan" hasil. Itu arah
 melonggarkan risiko, dan dilarang AGENTS.md §6.
+
+---
+
+## 9. Penelusuran lanjutan (4 Nov, sesi yang sama) — hasil akhir
+
+**Hipotesis §5.1–5.2 gugur semua.**
+
+| Yang diperiksa | Hasil |
+|---|---|
+| `scan()` mengakumulasi posisi? | **Tidak.** `posisi_paper = posisi_paper_crypto(settings)` dipanggil sekali di `engine.py:564`, di luar loop pair. |
+| Dua worker bentrok? | **Tidak.** `pgrep -f warroom_worker` → 1 proses (PID 47561). |
+| Gate menghitung salah? | **Tidak.** `assess(... open_positions=[SOLUSDT])` → `exposure ok=True "1/3 posisi, 1/2 searah — aman"`. |
+| Konfigurasi salah? | **Tidak.** `maks_posisi_searah=2`, `max_concurrent_positions=3`. |
+
+**Penjelasan yang benar untuk `2/2`:** saat 27 verdict itu ditulis
+(05:00–10:16 UTC), memang ada dua posisi SHORT terbuka. Ledger
+`crypto_equity.jsonl` mencatat empat trade ditutup **12:46–17:30 WIB
+(05:46–10:30 UTC)** — persis jendela tersebut. Setelah ditutup, posisi tinggal
+satu dan gate kembali meloloskan. Tidak ada bug.
+
+**Akar masalah sebenarnya:** `handler_paper_scan` mengambil kandidat dari
+`verdicts.jsonl`. Dijalankan pada data nyata:
+
+```
+_kandidat_terbaru_dari_ledger(stg, jam_terakhir=6) -> 0 kandidat
+_pair_sudah_dipakai(stg, jam=12) -> {SOLUSDT, CRVUSDT, AAVEUSDT, ENAUSDT, WIFUSDT, TIAUSDT}
+```
+
+Nol kandidat karena 6 jam terakhir tidak ada verdict `allowed=true` (sah: dua
+posisi penuh), dan enam pair terkunci jeda 12 jam. `paper-scan` melaporkan
+`kandidat=0` dengan benar — ia memang tidak punya pekerjaan saat itu.
+
+**Dan trading tetap jalan** lewat jalur lain: **106 trade** di ledger,
+**+54 R**, termasuk **5 trade hari ini**. Yang tidak jalan adalah **pencatatan
+ke DB/platform**:
+
+| Sumber | Jumlah |
+|---|---|
+| `crypto_equity.jsonl` (ledger) | **106 trade**, +54 R |
+| `trades` (PostgreSQL) | **0** |
+| `verdicts` (PostgreSQL) | **0** |
+| `fills.csv` | 1 baris (header), sejak 24 Okt |
+
+### Kesimpulan akhir
+
+**Mesin trading sehat; yang rusak adalah penyampaian hasilnya ke platform.**
+Selama 106 trade tidak masuk `trades`, dashboard akan selalu tampak "belum
+pernah trading", dan tidak ada satu pun hasil yang bisa dievaluasi — padahal
+datanya ada.
+
+**Langkah berikut yang benar:** telusuri kenapa `crypto_equity.jsonl` tidak
+di-ingest ke tabel `trades` (cek job `publish-facts`, dan apakah `trades` hanya
+diisi jalur live alih-alih paper). **Bukan** mengubah gate.
