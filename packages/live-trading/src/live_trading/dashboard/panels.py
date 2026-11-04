@@ -204,11 +204,10 @@ def _arti_lp(lp: dict) -> str:
 WARNA_POD = {"hijau": "ok", "kuning": "warn", "merah": "fail", "abu": "tua"}
 
 
-def _pod_card(lap, llm: dict | None = None) -> str:
+def _pod_card(lap) -> str:
     """Kartu laporan lead pod: badge status + ringkasan analis.
 
-    Parameter ``llm`` dipertahankan (diabaikan) hanya untuk kompatibilitas pemanggil
-    lama; penilai LLM dibuang 4 Nov 2026 — sinyal dan kartu murni deterministik.
+    Murni deterministik sejak penilai LLM pod dibuang 4 Nov 2026.
     """
     baris = "".join(f"<li>{e(r)}</li>" for r in lap.ringkas)
     return _card(
