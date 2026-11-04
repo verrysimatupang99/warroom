@@ -39,7 +39,7 @@ harus idempoten; 7 jalur berarti 7 fakta turunan minimum per snapshot.
 |---|---|---|
 | Ukuran state | **29.347.836 byte (≈28 MiB)**, 47 berkas | `du -sb state`, `find state -type f \| wc -l` |
 | Arsip backup | 14 berkas, **51.858.738 byte (≈49 MiB)**, rotasi 14 | `du -sb backups`, `ls backups \| wc -l` |
-| Irama backup | tiap 6 jam (`live-trading-backup.timer`) | `systemctl list-timers` |
+| Irama backup | job `backup` di worker (`live-trading-backup.timer` **disabled**) | `systemctl list-timers` |
 | Ledger | 5 trade, +3.844R (**warisan**, bukan hasil sistem ini) | keluaran `lt snapshot` |
 
 Implikasi untuk P1: uji restore (P0-T5) memakai arsip `state-*.tar.gz` yang sudah ada; tidak perlu
@@ -71,9 +71,9 @@ dari DB, pengambilan data tetap lewat worker berjadwal.
 | `live-trading-snapshot.timer` | 15 mnt | bangun `state/snapshot.json` |
 | `live-trading-collect.timer` | 30 mnt | `lt scan` — kumpulkan kandidat |
 | `live-trading-watchdog.timer` | 30 mnt | cek kesegaran berkas |
-| `live-trading-backup.timer` | 6 jam | arsip state lokal, rotasi 14 |
+| `live-trading-backup.timer` | **disabled** | arsip state kini dibuat job `backup` di worker |
 | `war-room-git-sync.timer` | 6 jam | sinkronisasi git |
-| `war-room-backup.timer` | 6 jam | backup GMGN + live-trading |
+| `war-room-backup.timer` | **disabled** | skrip target ke Tencent tidak ada di host |
 
 Catatan P1-T4: timer `snapshot`/`collect` akan dipindahkan ke jadwal worker; `dashboard`
 **tidak** dimatikan sampai dual-run P2-T8 hijau.
