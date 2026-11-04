@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-
-import pytest
 
 from warroom_core.trades_crypto import baca_ledger, ke_trade
 
-UTC = timezone.utc
+UTC = UTC
 
 
 def _baris(**tambahan):
