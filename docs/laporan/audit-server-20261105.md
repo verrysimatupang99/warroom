@@ -74,8 +74,9 @@ bukan menulis ulang jalur baca.
    atas host; sebaiknya dipindah ke systemd dengan `User=admin`.
 2. `/home/admin/.hermes` memakan **4,9 GiB** (toolchain + repositori agen) —
    kandidat pembersihan berikutnya, tapi bukan bagian War Room.
-3. `warroom-panel-sim.service` berstatus `activating start` dengan timer tiap
-   30 detik — perlu dicek apakah memang begitu desainnya atau unit-nya
-   berkedip gagal.
+3. `warroom-panel-sim.service` terlihat `activating start` saat pertama
+   diambil, tetapi itu transien: unit ini oneshot yang dipicu timer 30 detik
+   dan keluar dengan status 0 (`telemetri tidak tersedia; lewati`). Bukan
+   gangguan.
 4. Kredensial VPS/MySQL/FTP/SSH yang beredar di percakapan **wajib dirotasi**
    lewat panel Webdock. Ini tidak bisa dikerjakan dari dalam host.
