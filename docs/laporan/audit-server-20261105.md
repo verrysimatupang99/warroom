@@ -78,10 +78,10 @@ bukan menulis ulang jalur baca.
    diambil, tetapi itu transien: unit ini oneshot yang dipicu timer 30 detik
    dan keluar dengan status 0 (`telemetri tidak tersedia; lewati`). Bukan
    gangguan.
-4. **Backup Postgres sehat**: `warroom-backup-postgres` menulis dump custom +
-   sha256 tiap 00:40 UTC (108 MB pada 5 Nov), rotasi berjalan. Namun
-   `warroom-restore-drill.timer` belum pernah dieksekusi sekali pun (`LAST = -`,
-   jadwal berikutnya 1 Des 2026) — backup yang tidak pernah diuji restore adalah
-   asumsi, bukan jaminan.
+4. **Backup Postgres sehat dan sudah diverifikasi**: `warroom-backup-postgres`
+   menulis dump custom + sha256 tiap 00:40 UTC (108 MB pada 5 Nov), rotasi
+   berjalan. Drill restore dijalankan manual 5 Nov 2026 dan **lulus**: dump
+   terbaru → DB uji `warroom_restore_drill` → 110.985 facts, 542 alerts, 39
+   jobs, 35 detik, DB uji dihapus. Sebelumnya timer-nya belum pernah dieksekusi.
 5. Kredensial VPS/MySQL/FTP/SSH yang beredar di percakapan **wajib dirotasi**
    lewat panel Webdock. Ini tidak bisa dikerjakan dari dalam host.
