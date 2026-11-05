@@ -83,5 +83,12 @@ bukan menulis ulang jalur baca.
    berjalan. Drill restore dijalankan manual 5 Nov 2026 dan **lulus**: dump
    terbaru → DB uji `warroom_restore_drill` → 110.985 facts, 542 alerts, 39
    jobs, 35 detik, DB uji dihapus. Sebelumnya timer-nya belum pernah dieksekusi.
+4. **`tg-engine`**: `engine.py` kini di repo (kredensial lewat
+   `/etc/warroom/tg-engine.env`, mode 640, dimuat unit `trading-engine.service`).
+   **Temuan keamanan:** `services/tg-engine/README.md` sebelumnya memuat
+   `API_HASH` Telegram secara terbuka, dan nilai itu sudah masuk riwayat git —
+   README sudah dibersihkan 5 Nov 2026, tetapi hash tersebut harus dianggap
+   bocor. Mitigasi: daftarkan aplikasi baru di my.telegram.org, pakai
+   `api_id`/`api_hash` yang baru, lalu perbarui env file.
 5. Kredensial VPS/MySQL/FTP/SSH yang beredar di percakapan **wajib dirotasi**
    lewat panel Webdock. Ini tidak bisa dikerjakan dari dalam host.

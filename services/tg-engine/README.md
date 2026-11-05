@@ -8,10 +8,21 @@
 ## 1. 🔑 Kredensial & Autentikasi (PENTING)
 Akun Telegram (`Sasc / +6285754257413`) sudah diautentikasi resmi. **DILARANG MENGHAPUS / OVERWRITE** file sesi yang ada di direktori ini!
 
-* **Direktori:** `/home/admin/tg-trading-engine/`
-* **File Sesi:** `trading_session.session` *(sudah ada dan valid)*
-* **API ID:** `33505349`
-* **API HASH:** `ea452b7e3d112a9c3f418d5bf6fb4d71`
+* **Direktori:** `/home/admin/warroom/services/tg-engine/`
+* **File Sesi:** `trading_session.session` *(state runtime, tidak di-commit)*
+* **API ID & API HASH:** dari environment, **bukan** dari kode atau dokumen.
+  Di server: `/etc/warroom/tg-engine.env` (mode 640, root:admin), dimuat unit
+  `trading-engine.service` lewat `EnvironmentFile`.
+
+```bash
+# contoh isi /etc/warroom/tg-engine.env
+TG_API_ID=<angka dari my.telegram.org>
+TG_API_HASH=<hash dari my.telegram.org>
+```
+
+Modul menolak start bila keduanya kosong (pesan galat menyebut variabelnya).
+Nilai asli tidak boleh ditulis di README, kode, tiket, atau chat — sejak
+5 Nov 2026 nilainya pernah tercatat di dokumen ini dan harus dianggap bocor.
 
 ---
 
@@ -58,27 +69,28 @@ CREATE TABLE IF NOT EXISTS signals (
 
 ## 4. 🚀 Quickstart Command untuk Agent
 ```bash
-cd /home/admin/tg-trading-engine
+cd /home/admin/warroom/services/tg-engine
 
-# 1. Setup Virtualenv & Dependencies
+# 1. Setup Virtualenv & Dependencies (atau pakai venv yang sudah ada di server)
 python3 -m venv venv
 source venv/bin/activate
 pip install telethon fastapi uvicorn pydantic
 
 # 2. Verifikasi Koneksi Sesi (Tanpa Minta OTP)
+#    Kredensial dibaca dari environment — jangan pernah ditulis di perintah.
+set -a; . /etc/warroom/tg-engine.env; set +a
 python3 -c "
-import asyncio
+import asyncio, os
 from telethon import TelegramClient
 
 async def check():
-    client = TelegramClient('trading_session', 33505349, 'ea452b7e3d112a9c3f418d5bf6fb4d71')
+    client = TelegramClient('trading_session', int(os.environ['TG_API_ID']), os.environ['TG_API_HASH'])
     await client.connect()
     me = await client.get_me()
     print('SESI VALID:', me.first_name, f'(@{me.username}) ID: {me.id}')
     await client.disconnect()
 
 asyncio.run(check())
-"
 ```
 
 ---
