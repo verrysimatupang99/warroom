@@ -266,6 +266,28 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="trades-forex-sync",
+        interval_s=300,
+        enabled=True,
+        payload={},
+        note=(
+            "ingest deals.csv (deal tertutup dari EA) → tabel trades, kunci venue+ticket. "
+            "Berkas tidak ada = EA belum melapor (bukan nol trade); koreksi deal diterapkan "
+            "dan jejaknya disimpan di evidence."
+        ),
+    ),
+    JobSpec(
+        name="trades-idx-sync",
+        interval_s=300,
+        enabled=True,
+        payload={},
+        note=(
+            "ingest sinyal IDX TERTUTUP dari idx616_signal_ledger.db → tabel trades. "
+            "Baris berstatus CREATED bukan trade dan tidak pernah dimasukkan; "
+            "hasilnya melaporkan terbuka vs tertutup supaya 'belum ada' tidak terbaca 'nol'."
+        ),
+    ),
+    JobSpec(
         name="paper-scan",
         interval_s=180,
         enabled=True,

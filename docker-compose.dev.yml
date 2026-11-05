@@ -1,0 +1,103 @@
+# Lingkungan dev War Room — cukup `docker compose -f docker-compose.dev.yml up`.
+#
+# Tujuan: menghapus hambatan "butuh Postgres + uv + Node terpasang di host".
+# Bukan untuk produksi: produksi memakai systemd + nginx di host (lihat
+# docs/runbook.md), dan salinan ini tidak mengubah apa pun di sana.
+#
+# Yang TIDAK termasuk: sumber data (MT5, bursa, IDX, Telegram). Tanpa sumber,
+# worker akan menulis sedikit/tanpa fakta — itu perilaku yang benar, bukan bug.
+#
+# Nama variabel sengaja sama dengan `.env.example` supaya tidak ada dua daftar.
+
+name: warroom-dev
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: warroom
+      POSTGRES_PASSWORD: warroom
+      POSTGRES_DB: warroom
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` saja tidak cukup: ia lulus sebelum DB siap menerima koneksi
+      # dari user aplikasi. Migrasi menunggu healthcheck ini.
+      test: ['CMD-SHELL', 'pg_isready -U warroom -d warroom']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Migrasi dijalankan SEKALI sebagai langkah terpisah, bukan di dalam api:
+  # dua proses (api + worker) yang menjalankan `alembic upgrade` bersamaan bisa
+  # saling mengunci.
+  migrate:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /kerja
+    volumes:
+      - .:/kerja
+      - uv-cache:/root/.cache/uv
+    environment:
+      WARROOM_DB_URL: postgresql+psycopg://warroom:warroom@db:5432/warroom
+      CHECK_DB_HEAD_REQUIRED: '1'
+    command: >
+      sh -c "uv sync --frozen &&
+             uv run python ops/check-db-head.py --upgrade"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /kerja
+    volumes:
+      - .:/kerja
+      - uv-cache:/root/.cache/uv
+    environment:
+      WARROOM_DB_URL: postgresql+psycopg://warroom:warroom@db:5432/warroom
+      WARROOM_DOMAIN_HOME: /kerja/.dev-home
+      WARROOM_SERVICE_TOKEN: dev-token-lokal
+    command: uv run uvicorn warroom_api.app:app --host 0.0.0.0 --port 8800
+    ports:
+      - '8800:8800'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /kerja
+    volumes:
+      - .:/kerja
+      - uv-cache:/root/.cache/uv
+      - dev-home:/kerja/.dev-home
+    environment:
+      WARROOM_DB_URL: postgresql+psycopg://warroom:warroom@db:5432/warroom
+      WARROOM_DOMAIN_HOME: /kerja/.dev-home
+    command: uv run python -m warroom_worker.run --every 30
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    image: node:22-bookworm-slim
+    working_dir: /kerja/apps/web
+    volumes:
+      - .:/kerja
+      - npm-cache:/root/.npm
+    environment:
+      # Proxy dev vite meneruskan /api ke sini; cookie tetap same-origin.
+      WARROOM_API_TARGET: http://api:8800
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - '5173:5173'
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  uv-cache:
+  npm-cache:
+  dev-home:

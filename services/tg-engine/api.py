@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import HTMLResponse
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
-from db import init_db, get_signals, get_stats
-from parser import parse_forex_signal
-import risk_gate
 import gate_audit
+import risk_gate
+import uvicorn
+from db import get_signals, get_stats, init_db
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from parser import parse_forex_signal
 
 app = FastAPI(title="Telegram Trading Signals API & Dashboard", version="1.0.0")
 
@@ -17,15 +17,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def startup():
     init_db()
+
 
 @app.get("/api/signals")
 def read_signals(
     limit: int = Query(50, ge=1, le=500),
     category: str = Query(None, description="FOREX, SAHAM, CRYPTO, GENERAL, or ALL"),
-    search: str = Query(None, description="Search term in message or channel")
+    search: str = Query(None, description="Search term in message or channel"),
 ):
     """Mengembalikan daftar sinyal trading terbaru dalam format JSON."""
     raw_list = get_signals(limit, category, search)
@@ -36,11 +38,8 @@ def read_signals(
         item_copy["parsed"] = parsed
         enriched.append(item_copy)
 
-    return {
-        "status": "OK",
-        "count": len(enriched),
-        "data": enriched
-    }
+    return {"status": "OK", "count": len(enriched), "data": enriched}
+
 
 @app.get("/api/signals/laya-queue")
 def read_laya_queue(limit: int = Query(10, ge=1, le=50), balance: float = Query(500.0, gt=0)):
@@ -63,29 +62,37 @@ def read_laya_queue(limit: int = Query(10, ge=1, le=50), balance: float = Query(
             if _sesi:
                 verdict["decision"] = "REJECTED"
                 verdict["reasons"] = list(verdict["reasons"]) + [_sesi]
-            queue.append({
-                "id": item["id"],
-                "channel": item["channel_name"],
-                "timestamp": item["timestamp"],
-                "symbol": parsed["symbol"],
-                "action": parsed["action"],
-                "lot": verdict["lot"],  # sizing dari saldo, bukan hardcode
-                "entry_low": parsed["entry_low"],
-                "entry_high": parsed["entry_high"],
-                "sl": parsed["sl"],
-                "tp1": parsed["tp1"],
-                "rr": verdict["rr"],
-                "age_hours": verdict["age_h"],
-                "laya_gate": verdict["decision"],
-                "reject_reasons": verdict["reasons"],
-            })
+            queue.append(
+                {
+                    "id": item["id"],
+                    "channel": item["channel_name"],
+                    "timestamp": item["timestamp"],
+                    "symbol": parsed["symbol"],
+                    "action": parsed["action"],
+                    "lot": verdict["lot"],  # sizing dari saldo, bukan hardcode
+                    "entry_low": parsed["entry_low"],
+                    "entry_high": parsed["entry_high"],
+                    "sl": parsed["sl"],
+                    "tp1": parsed["tp1"],
+                    "rr": verdict["rr"],
+                    "age_hours": verdict["age_h"],
+                    "laya_gate": verdict["decision"],
+                    "reject_reasons": verdict["reasons"],
+                }
+            )
             if len(queue) >= limit:
                 break
 
     # --- Aturan portofolio lintas-sinyal (korelasi Gold-Nasdaq) ---
     approved = [x for x in queue if x["laya_gate"] == "APPROVED"]
     if len(approved) > 1:
-        pairs = [{"signal": x, "verdict": {"decision": x["laya_gate"], "reasons": x["reject_reasons"], "rr": x["rr"]}} for x in approved]
+        pairs = [
+            {
+                "signal": x,
+                "verdict": {"decision": x["laya_gate"], "reasons": x["reject_reasons"], "rr": x["rr"]},
+            }
+            for x in approved
+        ]
         risk_gate.apply_portfolio_rules(pairs)
         for pair in pairs:
             x = pair["signal"]
@@ -97,12 +104,23 @@ def read_laya_queue(limit: int = Query(10, ge=1, le=50), balance: float = Query(
     for x in queue:
         gate_audit.record(
             x["id"],
-            {"channel": x["channel"], "symbol": x["symbol"], "action": x["action"],
-             "entry_low": x["entry_low"], "entry_high": x["entry_high"],
-             "sl": x["sl"], "tp1": x["tp1"]},
-            {"decision": x["laya_gate"], "reasons": x["reject_reasons"],
-             "rr": x["rr"], "age_h": x["age_hours"], "lot": x["lot"],
-             "policy": {"min_rr": risk_gate.MIN_RR, "max_age_hours": risk_gate.MAX_AGE_HOURS}},
+            {
+                "channel": x["channel"],
+                "symbol": x["symbol"],
+                "action": x["action"],
+                "entry_low": x["entry_low"],
+                "entry_high": x["entry_high"],
+                "sl": x["sl"],
+                "tp1": x["tp1"],
+            },
+            {
+                "decision": x["laya_gate"],
+                "reasons": x["reject_reasons"],
+                "rr": x["rr"],
+                "age_h": x["age_hours"],
+                "lot": x["lot"],
+                "policy": {"min_rr": risk_gate.MIN_RR, "max_age_hours": risk_gate.MAX_AGE_HOURS},
+            },
             balance,
         )
 
@@ -112,8 +130,9 @@ def read_laya_queue(limit: int = Query(10, ge=1, le=50), balance: float = Query(
         "sizing": "dynamic_by_balance",
         "risk_policy": {"min_rr": risk_gate.MIN_RR, "max_age_hours": risk_gate.MAX_AGE_HOURS},
         "count": len(queue),
-        "queue": queue
+        "queue": queue,
     }
+
 
 @app.get("/api/signals/gate-audit")
 def read_gate_audit(limit: int = Query(20, ge=1, le=200)):
@@ -125,10 +144,8 @@ def read_gate_audit(limit: int = Query(20, ge=1, le=200)):
 @app.get("/api/stats")
 def read_stats():
     """Mengembalikan statistik jumlah sinyal per kategori."""
-    return {
-        "status": "OK",
-        "stats": get_stats()
-    }
+    return {"status": "OK", "stats": get_stats()}
+
 
 @app.get("/", response_class=HTMLResponse)
 def dashboard_html():
@@ -358,6 +375,7 @@ def dashboard_html():
 </body>
 </html>
 """
+
 
 if __name__ == "__main__":
     uvicorn.run("api:app", host="127.0.0.1", port=8088, reload=False)

@@ -46,6 +46,8 @@ memerlukan sesi. Kredensial **tidak pernah** dibagikan di repo ini.
 
 | Tujuan | Perintah |
 |---|---|
+| Dev: API + worker + web sekaligus | `scripts/dev.sh` |
+| Dev tanpa memasang apa pun (butuh Docker) | `docker compose -f docker-compose.dev.yml up` |
 | Sinkronisasi environment | `uv sync --frozen` |
 | Lint Python | `uv run ruff check .` |
 | Tes platform (butuh Postgres) | `uv run pytest -q` |

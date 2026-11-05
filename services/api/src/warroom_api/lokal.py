@@ -27,7 +27,7 @@ import httpx
 from warroom_core.deal_koreksi import KOREKSI_DEFAULT, baca_koreksi, terapkan
 from warroom_core.mt5_accounts import snapshot_key
 
-from warroom_api import jurnal_crypto
+from warroom_api import jurnal_crypto, jurnal_forex
 
 UA = "Mozilla/5.0 (X11; Linux x86_64) WarRoom/2.0"
 MEXC = "https://api.mexc.com"
@@ -421,7 +421,15 @@ def _trade_crypto() -> list[dict[str, Any]]:
 
 
 def _trade_forex() -> list[dict[str, Any]]:
-    """Trade forex tertutup dari deals.csv (bukan lagi dari fills entry)."""
+    """Trade forex tertutup: DB `trades` dulu, cadangan `deals.csv`.
+
+    DB diisi `trades-forex-sync` dari `deals.csv`. Bila DB kosong (EA belum
+    pernah melapor atau job belum jalan), baca berkasnya langsung supaya jurnal
+    tidak tiba-tiba kosong saat sinkronisasi tertunda.
+    """
+    hasil = jurnal_forex.dari_db()
+    if hasil:
+        return hasil
     hasil = []
     for r in _baca_deals():
         hasil.append(
