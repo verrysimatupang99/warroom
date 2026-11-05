@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 # --- Konstanta kebijakan (bisa dioverride lewat environment) ---
 MIN_RR = float(os.getenv("WARROOM_MIN_RR", "1.5"))
@@ -29,7 +29,7 @@ MIN_LOT = 0.01
 MAX_LOT = 0.10
 
 
-def _num(v: Any) -> Optional[float]:
+def _num(v: Any) -> float | None:
     """Konversi aman ke float; None bila bukan angka valid."""
     try:
         if v is None or isinstance(v, bool):
@@ -42,7 +42,7 @@ def _num(v: Any) -> Optional[float]:
         return None
 
 
-def compute_rr(signal: Dict[str, Any]) -> Optional[float]:
+def compute_rr(signal: dict[str, Any]) -> float | None:
     """
     Hitung risk-reward ratio terhadap TP1.
     Pakai sisi entry yang paling konservatif (terjauh dari SL) agar tidak optimistis.
@@ -63,7 +63,7 @@ def compute_rr(signal: Dict[str, Any]) -> Optional[float]:
     is_buy = action.startswith("BUY")
 
     # Pilih entry yang menghasilkan RR terkecil (paling jujur)
-    best: Optional[float] = None
+    best: float | None = None
     for entry in entries:
         if is_buy:
             risk = entry - sl
@@ -81,7 +81,7 @@ def compute_rr(signal: Dict[str, Any]) -> Optional[float]:
     return best
 
 
-def signal_age_hours(timestamp: Any) -> Optional[float]:
+def signal_age_hours(timestamp: Any) -> float | None:
     """Umur sinyal dalam jam. Menerima string SQLite datetime atau objek datetime."""
     if not timestamp:
         return None
@@ -99,7 +99,7 @@ def signal_age_hours(timestamp: Any) -> Optional[float]:
         return None
 
 
-def size_lot(balance: float, sl_points_from_entry: Optional[float], symbol: str = "XAUUSD") -> float:
+def size_lot(balance: float, sl_points_from_entry: float | None, symbol: str = "XAUUSD") -> float:
     """
     Hitung lot dari saldo. Risk per trade = RISK_PCT dari saldo (default 1%),
     dibatasi oleh jarak SL aktual (bukan angka bulat 0.10).
@@ -117,7 +117,6 @@ def size_lot(balance: float, sl_points_from_entry: Optional[float], symbol: str 
     risk_max_usd = bal * (risk_pct / 100.0)
 
     if symbol.upper() == "XAUUSD":
-        value_per_1usd_move_per_001lot = 1.0  # $1 per $1 harga per 0.01 lot
         raw_lot = risk_max_usd / (dist * 100.0)
     else:
         # USTEC/indeks: pendekatan konservatif, gunakan 0.01 lot minimum
@@ -127,7 +126,7 @@ def size_lot(balance: float, sl_points_from_entry: Optional[float], symbol: str 
     return max(MIN_LOT, min(MAX_LOT, round(stepped, 2)))
 
 
-def evaluate(signal: Dict[str, Any], balance: Optional[float] = None) -> Dict[str, Any]:
+def evaluate(signal: dict[str, Any], balance: float | None = None) -> dict[str, Any]:
     """
     Evaluasi satu sinyal. Mengembalikan dict:
       decision : 'APPROVED' | 'REJECTED'
@@ -200,7 +199,6 @@ def evaluate(signal: Dict[str, Any], balance: Optional[float] = None) -> Dict[st
     }
 
 
-
 # ============================================================================
 # Aturan portofolio: sesi Nasdaq + korelasi Gold-Nasdaq
 # ============================================================================
@@ -227,19 +225,21 @@ def apply_portfolio_rules(approved):
     bukan diversifikasi. Yang RR-nya lebih lemah ditolak.
     """
     for arah in ("BUY", "SELL"):
-        grup = [x for x in approved
-                if (x["signal"].get("action") or "").upper().startswith(arah)]
+        grup = [x for x in approved if (x["signal"].get("action") or "").upper().startswith(arah)]
         gold = [x for x in grup if x["signal"].get("symbol") == "XAUUSD"]
-        nas  = [x for x in grup if x["signal"].get("symbol") == "USTEC"]
+        nas = [x for x in grup if x["signal"].get("symbol") == "USTEC"]
         if gold and nas:
             kandidat = gold + nas
-            kandidat.sort(key=lambda x: (x["verdict"]["rr"] or 0), reverse=True)
+            kandidat.sort(key=lambda x: x["verdict"]["rr"] or 0, reverse=True)
             pemenang = kandidat[0]
             for x in kandidat[1:]:
                 x["verdict"]["decision"] = "REJECTED"
                 x["verdict"]["reasons"].append(
-                    "Korelasi: sudah ada " + pemenang["signal"].get("symbol", "?")
-                    + " " + arah + " dengan RR lebih baik"
+                    "Korelasi: sudah ada "
+                    + pemenang["signal"].get("symbol", "?")
+                    + " "
+                    + arah
+                    + " dengan RR lebih baik"
                 )
     return approved
 
