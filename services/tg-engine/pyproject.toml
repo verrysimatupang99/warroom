@@ -1,0 +1,16 @@
+[project]
+name = "tg-engine"
+version = "0.1.0"
+description = "Listener Telegram (Telethon) + dashboard sinyal — app mandiri, bukan paket Python"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "telethon>=1.34",
+]
+
+# Modul datar (api.py, db.py, engine.py, ...) — bukan paket yang bisa di-install.
+# Sebagai anggota workspace ia hanya berbagi lockfile dan ikut `lint`/`pytest`,
+# tanpa dipasang sebagai distribusi.
+[tool.uv]
+package = false

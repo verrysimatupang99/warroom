@@ -18,9 +18,9 @@ package = false
 
 [tool.uv.workspace]
 members = ["packages/*", "services/*"]
-# tg-engine: app mandiri (flat *.py + venv sendiri, bukan paket Python).
-# Dilebur dari ~/tg-trading-engine 4 Nov 2026 — jangan dijadikan anggota workspace.
-exclude = ["services/tg-engine"]
+# tg-engine ikut workspace sejak 5 Nov 2026: kredensial Telegram sudah dipindah ke
+# /etc/warroom/tg-engine.env, jadi sumbernya bisa di-commit dan diuji. Modulnya
+# datar (package = false), hanya berbagi lockfile + lint/test.
 
 [tool.uv.sources]
 warroom-core = { workspace = true }
