@@ -1,0 +1,74 @@
+[
+ {
+  "RuleID": "telegram-api-id",
+  "Description": "Telegram API ID berlabel (dipakai bersama API hash untuk membajak sesi)",
+  "StartLine": 13,
+  "EndLine": 13,
+  "StartColumn": 6,
+  "EndColumn": 24,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "services/tg-engine/README.md",
+  "SymlinkFile": "",
+  "Commit": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec",
+  "Link": "https://github.com/verrysimatupang99/warroom/blob/7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec/services/tg-engine/README.md?plain=1#L13",
+  "Entropy": 3.5766177,
+  "Author": "Verry",
+  "Email": "34811528+verrysimatupang99@users.noreply.github.com",
+  "Date": "2026-11-04T10:48:15Z",
+  "Message": "chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi (#93)\n\n* chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi\n\nMemindahkan yang benar-benar milik War Room ke struktur repo:\n- ~/wr_notes -\u003e docs/arsip/catatan-lama (40 .md; 43 M dump chat .txt dipisah\n  ke ~/backups/dump-chat-agent karena itu log mentah, bukan dokumentasi)\n- ~/warroom-backups -\u003e backups/arsip-repo (gitignored)\n- ~/warroom-work -\u003e tools/warroom-work (gitignored)\n- ~/tg-trading-engine -\u003e services/tg-engine (kode saja, venv baru 19 paket,\n  unit service diubah lalu direstart; sesi Telethon dan DB di-gitignore)\n\nTidak dilebur: /opt/polymarket (baca-saja per AGENTS.md), ~/live-trading\n(domain War Room, path hardcoded), maximalabs-studio, mariadb/redis.\n\nPenyesuaian build: tg-engine dikecualikan dari workspace uv dan ruff (app flat\n*.py, 57 temuan gaya lama, kode trading live); check-file-size melewati venv.\n\nBukti: ops/ci-local.sh 4/4 OK; trading-engine active; log Telethon\n\"Listening to incoming trading signals 24/7\"; tidak ada session/db di staging.\n\n* chore(repo): gitignore engine.py dan catatan arsip berpola rahasia\n\nengine.py memuat API_ID/API_HASH Telethon (rahasia asli) dan tetap ada di\ndisk karena service trading-engine menjalankannya, tetapi TIDAK boleh masuk\ngit. RINGKASAN_WARROOM.md menyebut pola secret=\u003c...\u003e sebagai contoh dokumentasi\n(gitleaks generic-api-key); dikecualikan juga supaya riwayat repo bebas dari\npola yang menyerupai kredensial.\n\nBukti: git check-ignore -v mengonfirmasi keduanya terabaikan.\n\n---------\n\nCo-authored-by: Hermes War Room \u003cwarroom@localhost\u003e",
+  "Tags": [
+   "telegram",
+   "credential"
+  ],
+  "Fingerprint": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec:services/tg-engine/README.md:telegram-api-id:13"
+ },
+ {
+  "RuleID": "telegram-api-hash",
+  "Description": "Telethon / Telegram API hash (32 hex) — kredensial sesi",
+  "StartLine": 14,
+  "EndLine": 14,
+  "StartColumn": 6,
+  "EndColumn": 50,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "services/tg-engine/README.md",
+  "SymlinkFile": "",
+  "Commit": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec",
+  "Link": "https://github.com/verrysimatupang99/warroom/blob/7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec/services/tg-engine/README.md?plain=1#L14",
+  "Entropy": 4.4469743,
+  "Author": "Verry",
+  "Email": "34811528+verrysimatupang99@users.noreply.github.com",
+  "Date": "2026-11-04T10:48:15Z",
+  "Message": "chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi (#93)\n\n* chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi\n\nMemindahkan yang benar-benar milik War Room ke struktur repo:\n- ~/wr_notes -\u003e docs/arsip/catatan-lama (40 .md; 43 M dump chat .txt dipisah\n  ke ~/backups/dump-chat-agent karena itu log mentah, bukan dokumentasi)\n- ~/warroom-backups -\u003e backups/arsip-repo (gitignored)\n- ~/warroom-work -\u003e tools/warroom-work (gitignored)\n- ~/tg-trading-engine -\u003e services/tg-engine (kode saja, venv baru 19 paket,\n  unit service diubah lalu direstart; sesi Telethon dan DB di-gitignore)\n\nTidak dilebur: /opt/polymarket (baca-saja per AGENTS.md), ~/live-trading\n(domain War Room, path hardcoded), maximalabs-studio, mariadb/redis.\n\nPenyesuaian build: tg-engine dikecualikan dari workspace uv dan ruff (app flat\n*.py, 57 temuan gaya lama, kode trading live); check-file-size melewati venv.\n\nBukti: ops/ci-local.sh 4/4 OK; trading-engine active; log Telethon\n\"Listening to incoming trading signals 24/7\"; tidak ada session/db di staging.\n\n* chore(repo): gitignore engine.py dan catatan arsip berpola rahasia\n\nengine.py memuat API_ID/API_HASH Telethon (rahasia asli) dan tetap ada di\ndisk karena service trading-engine menjalankannya, tetapi TIDAK boleh masuk\ngit. RINGKASAN_WARROOM.md menyebut pola secret=\u003c...\u003e sebagai contoh dokumentasi\n(gitleaks generic-api-key); dikecualikan juga supaya riwayat repo bebas dari\npola yang menyerupai kredensial.\n\nBukti: git check-ignore -v mengonfirmasi keduanya terabaikan.\n\n---------\n\nCo-authored-by: Hermes War Room \u003cwarroom@localhost\u003e",
+  "Tags": [
+   "telegram",
+   "credential"
+  ],
+  "Fingerprint": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec:services/tg-engine/README.md:telegram-api-hash:14"
+ },
+ {
+  "RuleID": "telegram-api-hash",
+  "Description": "Telethon / Telegram API hash (32 hex) — kredensial sesi",
+  "StartLine": 71,
+  "EndLine": 74,
+  "StartColumn": 23,
+  "EndColumn": 92,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "services/tg-engine/README.md",
+  "SymlinkFile": "",
+  "Commit": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec",
+  "Link": "https://github.com/verrysimatupang99/warroom/blob/7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec/services/tg-engine/README.md?plain=1#L71-L74",
+  "Entropy": 4.9429455,
+  "Author": "Verry",
+  "Email": "34811528+verrysimatupang99@users.noreply.github.com",
+  "Date": "2026-11-04T10:48:15Z",
+  "Message": "chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi (#93)\n\n* chore(repo): lebur proyek War Room ke repo + tg-engine pindah lokasi\n\nMemindahkan yang benar-benar milik War Room ke struktur repo:\n- ~/wr_notes -\u003e docs/arsip/catatan-lama (40 .md; 43 M dump chat .txt dipisah\n  ke ~/backups/dump-chat-agent karena itu log mentah, bukan dokumentasi)\n- ~/warroom-backups -\u003e backups/arsip-repo (gitignored)\n- ~/warroom-work -\u003e tools/warroom-work (gitignored)\n- ~/tg-trading-engine -\u003e services/tg-engine (kode saja, venv baru 19 paket,\n  unit service diubah lalu direstart; sesi Telethon dan DB di-gitignore)\n\nTidak dilebur: /opt/polymarket (baca-saja per AGENTS.md), ~/live-trading\n(domain War Room, path hardcoded), maximalabs-studio, mariadb/redis.\n\nPenyesuaian build: tg-engine dikecualikan dari workspace uv dan ruff (app flat\n*.py, 57 temuan gaya lama, kode trading live); check-file-size melewati venv.\n\nBukti: ops/ci-local.sh 4/4 OK; trading-engine active; log Telethon\n\"Listening to incoming trading signals 24/7\"; tidak ada session/db di staging.\n\n* chore(repo): gitignore engine.py dan catatan arsip berpola rahasia\n\nengine.py memuat API_ID/API_HASH Telethon (rahasia asli) dan tetap ada di\ndisk karena service trading-engine menjalankannya, tetapi TIDAK boleh masuk\ngit. RINGKASAN_WARROOM.md menyebut pola secret=\u003c...\u003e sebagai contoh dokumentasi\n(gitleaks generic-api-key); dikecualikan juga supaya riwayat repo bebas dari\npola yang menyerupai kredensial.\n\nBukti: git check-ignore -v mengonfirmasi keduanya terabaikan.\n\n---------\n\nCo-authored-by: Hermes War Room \u003cwarroom@localhost\u003e",
+  "Tags": [
+   "telegram",
+   "credential"
+  ],
+  "Fingerprint": "7cd6b09fd0bc9f22f8f9e34b5cfbe6a6747f1bec:services/tg-engine/README.md:telegram-api-hash:71"
+ }
+]

@@ -133,7 +133,15 @@ jobs:
           # SHA256 official (gitleaks checksums.txt) — binary tidak boleh ditukar MITM.
           echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
-          ./gitleaks git . --redact --no-banner --verbose
+          # --config: aktifkan rule kustom (.gitleaks.toml), termasuk telegram-api-hash/id
+          #           yang TIDAK dikenali gitleaks bawaan.
+          # --baseline-path: entri yang SUDAH diketahui & akan ditulis ulang dari history
+          #           (API ID lama di commit 7cd6b09, dihapus di HEAD oleh #101). Hanya
+          #           temuan yang identik dengan baseline yang diabaikan; temuan BARU di
+          #           file/commit lain tetap menggagalkan CI. Baseline ini DIHAPUS setelah
+          #           ops/rewrite-history-telegram.sh dijalankan (lihat catatan di file itu).
+          ./gitleaks git . --config .gitleaks.toml --baseline-path .gitleaks-baseline.json \
+            --redact --no-banner --verbose
 
   # "build web kosong" (P0-T2) — kerangka SvelteKit; UI penuh menyusul di P2.
   web:

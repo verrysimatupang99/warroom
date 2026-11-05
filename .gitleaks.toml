@@ -22,22 +22,23 @@ useDefault = true
 # butuh rotasi kredensial + rewrite history (lihat SECURITY-telegram-hash.md).
 
 [[rules]]
-# Label "API HASH"/"api_hash"/"API-HASH" apa pun pemisahnya — spasi, titik dua,
-# backtick, bold markdown (**), tanda kutip, atau `=` — lalu 32 hex. Diuji terhadap
-# format README nyata (*"API HASH: `ea452b7e…`"* dan *"client = TelegramClient(…, 'hash')"*).
+# Label "API HASH"/"api_hash"/"API-HASH" dengan dekorator bebas (spasi, titik dua,
+# backtick, bold markdown ***, tanda kutip, atau `=`) lalu 32 hex. Atau bentuk
+# `TelegramClient(..., '<32 hex>')`. Kuncinya: char class ditulis tanpa escape `\-`
+# (gagal di RE2) dan `[:=]` opsional agar bold `**API HASH:**` ikut tertangkap.
 id = "telegram-api-hash"
 description = "Telethon / Telegram API hash (32 hex) — kredensial sesi"
-regex = '''(?i)(api[\s_-]?hash)[\s:`*_="'\-]*[0-9a-f]{32}'''
+regex = '''(?i)(?:api[\s_-]?hash[\s:*_`"']{0,6}[:=]?[\s:*_`"']{0,6}[0-9a-f]{32}|telegramclient[\s\S]{0,80}?['"][0-9a-f]{32}['"])'''
 entropy = 2.5
 keywords = ["api_hash", "api-hash", "apihash", "API HASH"]
 tags = ["telegram", "credential"]
 
 [[rules]]
 # API ID Telegram berupa angka ±8 digit. Sendirian terlalu berisiko false positive,
-# jadi dituntut berlabel "API ID" dan berdampingan dengan hash di sesi yang sama.
+# jadi dituntut berlabel "API ID". Char class tanpa `\-`; `[:=]` opsional untuk bold.
 id = "telegram-api-id"
 description = "Telegram API ID berlabel (dipakai bersama API hash untuk membajak sesi)"
-regex = '''(?i)(api[\s_-]?id)[\s:`*_="'\-]*[0-9]{6,12}\b'''
+regex = '''(?i)api[\s_-]?id[\s:*_`"']{0,6}[:=]?[\s:*_`"']{0,4}[0-9]{6,12}\b'''
 keywords = ["api_id", "api-id", "apiid", "API ID"]
 tags = ["telegram", "credential"]
 
