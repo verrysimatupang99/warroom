@@ -8,10 +8,10 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 | Fase | Isi | Status |
 |---|---|---|
 | 0 | Hygiene server (web root, akses publik, cron) | **selesai** |
-| 1 | Data trade: forex/IDX belum masuk `trades` | **sebagian** — jalur ingest forex siap, menunggu data EA |
-| 2 | Kesegaran data di UI | **sebagian** — strip kesehatan Home selesai |
+| 1 | Data trade: forex/IDX belum masuk `trades` | **selesai di sisi kode** — ingest forex & IDX aktif; menunggu data sumber |
+| 2 | Kesegaran data di UI | **selesai** — strip kesehatan + badge segar/basi per kartu |
 | 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint bersih, uji belum |
-| 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh` |
+| 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh`, kecuali CI non-Linux |
 | 5 | Peningkatan produk | belum mulai |
 
 ## Fase 1 — data trade (penghalang utama)
@@ -37,7 +37,10 @@ Langkah berikutnya (butuh data nyata):
 1. Pastikan EA `WarRoom_AutoTrader` attach dan `deals.csv` bertambah.
 2. Setelah `deals.csv` terisi, jalankan job dan bandingkan jumlah baris DB dengan
    berkas (idempoten, aman diulang).
-3. IDX: `idx_ledger.db` (SQLite) → `trades` dengan `venue="idx"`.
+3. IDX: **selesai** — `warroom_core.trades_idx` membaca `idx616_signal_ledger.db`
+   (SQLite, baca-saja) dan hanya menerima baris dengan `closed_at`. Baris
+   `CREATED` adalah sinyal, bukan trade; job `trades-idx-sync` melaporkan
+   `terbuka=` dan `tertutup=` terpisah supaya "belum ada" tidak terbaca "nol".
 4. Unifikasi jangka panjang: satu model `trades` + kolom `market`, view
    kompatibilitas untuk pembaca lama.
 5. Tes regresi: setiap ledger yang masuk **wajib** muncul di jurnal Home.
@@ -52,8 +55,9 @@ terbuka ("status sistem tidak terbaca"), bukan hijau. 4 unit test mengunci nada.
 
 Belum:
 
-1. Umur snapshot + badge `STALE` per kartu pasar (badge komponen `FreshnessBadge`
-   sudah ada; belum dipasang di Home).
+1. ~~Umur snapshot + badge `STALE` per kartu~~ — **selesai**: `FreshnessBadge`
+   dipasang di kartu pasar, membandingkan umur sinyal dengan `ttl_s` yang
+   dilaporkan `/api/v1/freshness` (kind `signal`). Tanpa TTL → `n/a`.
 2. E2E Playwright: matikan worker → UI harus menampilkan stale, bukan kosong.
    Butuh kredensial e2e + API uji, jadi tidak dikerjakan di mesin tanpa DB.
 
