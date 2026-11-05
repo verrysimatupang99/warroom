@@ -10,7 +10,7 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 | 0 | Hygiene server (web root, akses publik, cron) | **selesai** |
 | 1 | Data trade: forex/IDX belum masuk `trades` | **selesai di sisi kode** — ingest forex & IDX aktif; menunggu data sumber |
 | 2 | Kesegaran data di UI | **selesai** — strip kesehatan + badge segar/basi per kartu |
-| 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint bersih, uji belum |
+| 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint 0, 14 tes gate; `engine.py` masih di-gitignore (rahasia) |
 | 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh`, kecuali CI non-Linux |
 | 5 | Peningkatan produk | belum mulai |
 
@@ -63,8 +63,21 @@ Belum:
 
 ## Fase 3 — `tg-engine`
 
-Sudah: 52 temuan lint → 0, unit kembali masuk cakupan `ruff check .`.
-Belum: unit uji untuk jalur eksekusi order, dan masuk uv workspace.
+Sudah: 52 temuan lint → 0, unit kembali masuk cakupan `ruff check .`, dan 14 tes
+`services/tg-engine/tests/test_risk_gate.py` mengunci kontrak gate (fail-closed,
+RR memakai entry terjauh dari SL, lot dibatasi `MAX_LOT`).
+
+**Penghalang yang ditemukan 5 Nov 2026 (belum bisa diselesaikan hari itu):**
+`services/tg-engine/engine.py` — inti listener Telethon — di-gitignore karena
+memuat `API_ID`/`API_HASH` langsung di dalam kode. Akibatnya unit ini **tidak
+bisa direproduksi dari repo**: clone segar tidak akan pernah bisa menjalankannya.
+Langkah yang benar, berurutan:
+
+1. Pindahkan `API_ID`/`API_HASH` ke `/etc/warroom/telegram.env` (mode 600),
+   baca lewat `os.environ`.
+2. Baru hapus baris `services/tg-engine/engine.py` dari `.gitignore` dan commit
+   sumbernya.
+3. Setelah itu unit bisa masuk uv workspace seperti anggota lain.
 
 Syarat sebelum deploy ulang: jalankan di mode paper, bandingkan keputusan gate
 sebelum/sesudah refactor gaya (perubahan hanya typing/format, tetapi kode ini
