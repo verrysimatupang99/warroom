@@ -10,7 +10,7 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict, getKesiapan } from '$lib/api/client';
+	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict, getKesiapan, getKesegaran } from '$lib/api/client';
 	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict, Readiness } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
@@ -20,6 +20,7 @@
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import TrackBar from '$lib/components/TrackBar.svelte';
 	import HealthStrip from '$lib/components/HealthStrip.svelte';
+	import FreshnessBadge from '$lib/components/FreshnessBadge.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -39,8 +40,11 @@
 	// terbaca, bukan "sehat"; `gagalKesiapan` membuat ketidak-tahuan itu terlihat.
 	let kesiapan = $state<Readiness | null>(null);
 	let gagalKesiapan = $state(false);
+	// TTL sinyal dilaporkan API (/api/v1/freshness, kind="signal"), bukan dikarang di UI.
+	// null = API tidak melaporkan TTL → badge tampil n/a, bukan "segar" palsu.
+	let ttlSinyal = $state<number | null>(null);
 async function muat() {
-	const [s, k, a, sm, m, sys, poly, siap] = await Promise.allSettled([
+	const [s, k, a, sm, m, sys, poly, siap, segar] = await Promise.allSettled([
 		getSinyalPerPasar(),
 		getArea('crypto'),
 		getPasarRingkas(),
@@ -48,7 +52,8 @@ async function muat() {
 		getLiveArming(),
 		getAreaFakta('sistem'),
 		getArea('polymarket'),
-		getKesiapan()
+		getKesiapan(),
+		getKesegaran()
 	]);
 	if (siap.status === 'fulfilled') {
 		kesiapan = siap.value;
@@ -56,6 +61,12 @@ async function muat() {
 	} else {
 		kesiapan = null;
 		gagalKesiapan = true;
+	}
+	if (segar.status === 'fulfilled') {
+		const baris = (segar.value.facts ?? []).find((f) => f.kind === 'signal' && f.ttl_s > 0);
+		ttlSinyal = baris ? baris.ttl_s : null;
+	} else {
+		ttlSinyal = null;
 	}
 	if (sm.status === 'fulfilled') sumber = sm.value.sumber;
 	try {
@@ -101,7 +112,11 @@ async function muat() {
 		const catatan = p.catatan_kejujuran || s?.catatan_kejujuran || '';
 		const umur_s = p.umur_sinyal_s ?? s?.umur_sinyal_s ?? p.sinyal[0]?.umur_s ?? null;
 		const dibuat = p.dibuat_pada ?? s?.dibuat_pada ?? null;
-		return { terverifikasi, catatan, umur_s, dibuat };
+		// Status kesegaran per kartu: dibandingkan dengan TTL yang DILAPORKAN API.
+		// Tanpa TTL, statusnya null → badge "n/a", bukan klaim segar.
+		const status_segar =
+			umur_s == null || ttlSinyal == null ? null : umur_s <= ttlSinyal ? 'segar' : 'basi';
+		return { terverifikasi, catatan, umur_s, dibuat, status_segar };
 	};
 	const ringkasCatatan = (t: string) => (t.length > 140 ? `${t.slice(0, 137).trimEnd()}…` : t);
 	const MAKS_PER_MARKET = 3;
@@ -551,6 +566,14 @@ async function muat() {
 								{/if}
 								<!-- honesty-tag motif baru: TERUKUR solid / BELUM TERVERIFIKASI dashed -->
 								<HonestyTag terverifikasi={jujur.terverifikasi} sumber={p.sumber} alasan={p.alasan_eksekusi ?? null} />
+								<!-- horizon kesegaran: segar/basi terhadap TTL signal yang dilaporkan API -->
+								<FreshnessBadge
+									status={jujur.status_segar}
+									age_s={jujur.umur_s}
+									ttl_s={ttlSinyal}
+									source={p.sumber ?? null}
+									ringkas
+								/>
 								{#if p.autotrade_verdict}
 									<span class="badge-autotrade {p.autotrade_verdict.toLowerCase()}">
 										{#if p.autotrade_verdict === 'OKE'}
