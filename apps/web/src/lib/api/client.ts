@@ -16,6 +16,7 @@ import type {
 	GateResult,
 	EventItem,
 	Health,
+	Readiness,
 	FreshnessPayload,
 	LiveArming,
 	GateInput,
@@ -103,6 +104,7 @@ async function minta<T>(jalur: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const getKesehatan = () => minta<Health>('/api/v1/health');
+export const getKesiapan = () => minta<Readiness>('/api/v1/ready');
 export const getKesegaran = () => minta<FreshnessPayload>('/api/v1/freshness');
 export const getAreas = () => minta<AreasPayload>('/api/v1/areas');
 export const getArea = (area: string) => minta<AreaPayload>(`/api/v1/${encodeURIComponent(area)}`);

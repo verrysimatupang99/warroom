@@ -10,8 +10,8 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict } from '$lib/api/client';
-	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict } from '$lib/api/types';
+	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict, getKesiapan } from '$lib/api/client';
+	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict, Readiness } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
@@ -19,6 +19,7 @@
 	// status verifikasi, track bar untuk skor ber-maksimum.
 	import HonestyTag from '$lib/components/HonestyTag.svelte';
 	import TrackBar from '$lib/components/TrackBar.svelte';
+	import HealthStrip from '$lib/components/HealthStrip.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -34,16 +35,28 @@
 	let dompetPoly = $state<number | null>(null);
 	// Mode eksekusi global dari API arming — SATU-SATUNYA sumber badge mode di header Home.
 	let arming = $state<LiveArming | null>(null);
+	// Kesiapan sistem (/api/v1/ready) — sumber strip kesehatan. `null` berarti belum
+	// terbaca, bukan "sehat"; `gagalKesiapan` membuat ketidak-tahuan itu terlihat.
+	let kesiapan = $state<Readiness | null>(null);
+	let gagalKesiapan = $state(false);
 async function muat() {
-	const [s, k, a, sm, m, sys, poly] = await Promise.allSettled([
+	const [s, k, a, sm, m, sys, poly, siap] = await Promise.allSettled([
 		getSinyalPerPasar(),
 		getArea('crypto'),
 		getPasarRingkas(),
 		getSumber(),
 		getLiveArming(),
 		getAreaFakta('sistem'),
-		getArea('polymarket')
+		getArea('polymarket'),
+		getKesiapan()
 	]);
+	if (siap.status === 'fulfilled') {
+		kesiapan = siap.value;
+		gagalKesiapan = false;
+	} else {
+		kesiapan = null;
+		gagalKesiapan = true;
+	}
 	if (sm.status === 'fulfilled') sumber = sm.value.sumber;
 	try {
 		verdictSemua = (await getVerdict()).verdict;
@@ -346,6 +359,9 @@ async function muat() {
 			sumber="pasar/ringkas + sinyal/per-pasar"
 			terverifikasi={true}
 		/>
+
+		<!-- Strip kesehatan: membedakan "pasar sepi" dari "worker mati". -->
+		<HealthStrip {kesiapan} gagal={gagalKesiapan} />
 
 		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
 		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:

@@ -120,6 +120,23 @@ export interface Health {
 	user: string;
 }
 
+/** Bentuk /api/v1/ready — hanya keadaan yang benar-benar dibuktikan baris DB. */
+export interface Readiness {
+	status: 'ready' | 'not_ready';
+	db: boolean;
+	checks: {
+		worker_heartbeats?: {
+			status?: string;
+			items?: { host: string; unit: string; age_s: number; status: string }[];
+		};
+		stale_facts?: { status?: string; count?: number };
+		[key: string]: unknown;
+	};
+	freshness: { status: string; count: number };
+	time: string;
+	user: string;
+}
+
 export interface Me {
 	username: string;
 	role: Peran;
