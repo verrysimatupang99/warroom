@@ -9,9 +9,9 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 |---|---|---|
 | 0 | Hygiene server (web root, akses publik, cron) | **selesai** |
 | 1 | Data trade: forex/IDX belum masuk `trades` | terhambat — sumbernya tidak ada |
-| 2 | Kesegaran data di UI | belum mulai |
+| 2 | Kesegaran data di UI | **sebagian** — strip kesehatan Home selesai |
 | 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint bersih, uji belum |
-| 4 | DX: `.env.example`, dev one-command | **sebagian** — `.env.example` ada |
+| 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh` |
 | 5 | Peningkatan produk | belum mulai |
 
 ## Fase 1 — data trade (penghalang utama)
@@ -32,12 +32,18 @@ berkas itu tidak ada. Langkah:
 
 ## Fase 2 — kesegaran data di UI
 
-Filosofi produk menuntut "kosong ≠ nol". Sekarang kosong dan "worker mati"
-tampil sama. Yang dibutuhkan:
+Filosofi produk menuntut "kosong ≠ nol".
 
-1. Umur snapshot per kartu + badge `STALE` bila melewati ambang.
-2. Health strip: API, worker, umur fakta terakhir.
-3. E2E Playwright: matikan worker → UI harus menampilkan stale, bukan kosong.
+Sudah (5 Nov 2026): strip kesehatan di Home (`HealthStrip`) — db, heartbeat
+worker, dan jumlah fakta basi dari `/api/v1/ready`; kegagalan baca dinyatakan
+terbuka ("status sistem tidak terbaca"), bukan hijau. 4 unit test mengunci nada.
+
+Belum:
+
+1. Umur snapshot + badge `STALE` per kartu pasar (badge komponen `FreshnessBadge`
+   sudah ada; belum dipasang di Home).
+2. E2E Playwright: matikan worker → UI harus menampilkan stale, bukan kosong.
+   Butuh kredensial e2e + API uji, jadi tidak dikerjakan di mesin tanpa DB.
 
 ## Fase 3 — `tg-engine`
 
@@ -50,9 +56,15 @@ mengeksekusi order — verifikasi bukan formalitas).
 
 ## Fase 4 — developer experience
 
-Sudah: `.env.example`.
-Berikutnya: `docker-compose.dev.yml` (Postgres 16 + API + worker + web),
-`scripts/dev.sh`, dan smoke test CI di luar Linux.
+Selesai 5 Nov 2026:
+
+- `.env.example` — semua variabel, nilai placeholder.
+- `docker-compose.dev.yml` — Postgres 16 + migrasi + API + worker + web; migrasi
+  dijalankan sekali sebagai langkah terpisah supaya dua proses tidak saling
+  mengunci.
+- `scripts/dev.sh` — satu perintah untuk API + worker + web.
+
+Berikutnya: smoke test CI di luar Linux (saat ini seluruh pipeline Linux).
 
 ## Fase 5 — produk
 
