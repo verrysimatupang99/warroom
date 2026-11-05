@@ -11,6 +11,37 @@
 [extend]
 useDefault = true
 
+# --- Telegram / Telethon (celah yang lolos dari gitleaks bawaan) ---
+# gitleaks default TIDAK mengenali API hash Telethon: 32 karakter hex polos tanpa
+# prefix `sk-`/`ghp_` dst. Karena itu `ea452b7e…` di services/tg-engine/README.md
+# lolos CI (masuk lewat commit 7cd6b09, ditemukan 5 Nov 2026). Dua aturan di bawah
+# menutup celah itu untuk commit & PR berikutnya.
+#
+# Batasan yang jujur dicatat: gitleaks hanya memindai perubahan BARU saat push/PR.
+# Hash yang sudah ada di HEAD/history TIDAK otomatis tertangkap aturan ini — itu
+# butuh rotasi kredensial + rewrite history (lihat SECURITY-telegram-hash.md).
+
+[[rules]]
+# Label "API HASH"/"api_hash"/"API-HASH" dengan dekorator bebas (spasi, titik dua,
+# backtick, bold markdown ***, tanda kutip, atau `=`) lalu 32 hex. Atau bentuk
+# `TelegramClient(..., '<32 hex>')`. Kuncinya: char class ditulis tanpa escape `\-`
+# (gagal di RE2) dan `[:=]` opsional agar bold `**API HASH:**` ikut tertangkap.
+id = "telegram-api-hash"
+description = "Telethon / Telegram API hash (32 hex) — kredensial sesi"
+regex = '''(?i)(?:api[\s_-]?hash[\s:*_`"']{0,6}[:=]?[\s:*_`"']{0,6}[0-9a-f]{32}|telegramclient[\s\S]{0,80}?['"][0-9a-f]{32}['"])'''
+entropy = 2.5
+keywords = ["api_hash", "api-hash", "apihash", "API HASH"]
+tags = ["telegram", "credential"]
+
+[[rules]]
+# API ID Telegram berupa angka ±8 digit. Sendirian terlalu berisiko false positive,
+# jadi dituntut berlabel "API ID". Char class tanpa `\-`; `[:=]` opsional untuk bold.
+id = "telegram-api-id"
+description = "Telegram API ID berlabel (dipakai bersama API hash untuk membajak sesi)"
+regex = '''(?i)api[\s_-]?id[\s:*_`"']{0,6}[:=]?[\s:*_`"']{0,4}[0-9]{6,12}\b'''
+keywords = ["api_id", "api-id", "apiid", "API ID"]
+tags = ["telegram", "credential"]
+
 [[allowlists]]
 description = "fixture sintetis uji scrub & golden set (bukan kredensial)"
 paths = [
@@ -24,3 +55,14 @@ description = "kunci fakta sintetis 'crypto/BTCUSDT' di uji ingest sinyal (bukan
 paths = [
   '''services/api/tests/test_sinyal\.py''',
 ]
+
+[[allowlists]]
+# Berkas token GitHub milik sesi agent (dipakai `gh auth login --with-token`). Bukan
+# bagian repo: tidak di-track (`git ls-files` bersih) dan ada di `.gitignore`. Dikecualikan
+# lewat PATH agar scan lokal tidak berisik; rahasia sungguhan di berkas lain tetap tertangkap.
+description = "token CLI GitHub lokal sesi agent (tidak ter-track, di .gitignore)"
+paths = [
+  '''^gh_token\.txt$''',
+  '''^\.gh-config/.*''',
+]
+

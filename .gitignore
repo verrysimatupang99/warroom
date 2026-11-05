@@ -80,3 +80,7 @@ docs/arsip/catatan-lama/hermes_war_sessions.json
 # Catatan arsip yang menyebut POLA secret=<...> — gitleaks false positive, tetap tidak di-commit
 # agar riwayat git bebas dari pola yang menyerupai kredensial.
 docs/arsip/catatan-lama/RINGKASAN_WARROOM.md
+
+# token GitHub (jangan pernah masuk repo)
+gh_token.txt
+.gh-config/
