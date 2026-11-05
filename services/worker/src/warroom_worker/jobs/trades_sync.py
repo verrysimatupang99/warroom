@@ -38,8 +38,7 @@ def handler_trades_crypto_sync(s: SASession, job: Job) -> str:
     closed: dict[str, Any] = {}
     for tipe, created, payload in s.execute(
         text(
-            "select type, created_at, payload_json from events "
-            "where type in ('trade.opened','trade.closed')"
+            "select type, created_at, payload_json from events where type in ('trade.opened','trade.closed')"
         )
     ):
         d = payload if isinstance(payload, dict) else json.loads(payload)
@@ -74,3 +73,33 @@ def handler_trades_crypto_sync(s: SASession, job: Job) -> str:
             )
         )
     return f"ledger={len(rows)} db={len(kunci_ada) + len(baru)} masuk={len(baru)} skip={skip or 'nihil'}"
+
+
+def handler_trades_forex_sync(s: SASession, job: Job) -> str:
+    """Job `trades-forex-sync`: deals.csv (deal tertutup EA) → tabel `trades`.
+
+    Beda dari jalur crypto: tidak ada ledger alternatif. Bila berkas belum ada,
+    hasilnya dilaporkan sebagai `sumber=belum-ada` — bukan `masuk=0` yang terbaca
+    seperti "EA jalan tapi tidak ada trade".
+    """
+    from warroom_core.trades_forex import DEALS_DEFAULT, baca_deals, jalur_hilang, ke_trade
+
+    if jalur_hilang(DEALS_DEFAULT):
+        return "sumber=belum-ada (deals.csv tidak ada — EA belum melapor)"
+
+    rows = baca_deals()
+    trades = [t for t in (ke_trade(r) for r in rows) if t is not None]
+    skip = len(rows) - len(trades)
+
+    kunci_ada = {ext for (ext,) in s.query(Trade.ext_id).filter(Trade.venue == "forex", Trade.mode == "live")}
+    baru = [t for t in trades if t.ext_id not in kunci_ada]
+    if baru:
+        s.add_all(baru)
+        s.add(
+            Event(
+                type="trade.ingest",
+                actor="trades-forex-sync",
+                payload_json={"masuk": len(baru), "total_db": len(kunci_ada) + len(baru)},
+            )
+        )
+    return f"deals={len(rows)} db={len(kunci_ada) + len(baru)} masuk={len(baru)} skip={skip or 'nihil'}"

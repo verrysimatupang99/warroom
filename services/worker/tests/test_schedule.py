@@ -40,6 +40,7 @@ _JOB_BERAT = (
     "verdict-sync",      # menjalankan alat Poly lewat sudo (baca-saja)
     "llm-brief",         # memanggil provider LLM sungguhan (biaya + jaringan)
     "trades-crypto-sync",  # baca ledger produksi + events besar
+    "trades-forex-sync",   # baca deals.csv produksi
     "reconcile-crypto",  # memanggil candle MEXC (jaringan)
     "llm-brief-crypto",  # idem (per market, 6 Okt)
     "llm-brief-forex",
@@ -88,9 +89,10 @@ def test_daftar_job_idempoten(db) -> None:
         "paper-scan", "strategi-alert", "retention", "source-health",
         "reconcile-crypto", "lpagent-sync", "polybtc-sync", "break-retest-scan",
         "okx-sync", "slo-check", "denyut", "konfluensi-feed", "trades-crypto-sync",
+        "trades-forex-sync",
     }
     assert kedua == [], "job yang sudah ada tidak boleh didaftarkan ulang"
-    assert total == 32
+    assert total == 33
 
 
 def test_spesifikasi_job_disinkronkan_dari_kode(db) -> None:

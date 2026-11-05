@@ -8,7 +8,7 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 | Fase | Isi | Status |
 |---|---|---|
 | 0 | Hygiene server (web root, akses publik, cron) | **selesai** |
-| 1 | Data trade: forex/IDX belum masuk `trades` | terhambat — sumbernya tidak ada |
+| 1 | Data trade: forex/IDX belum masuk `trades` | **sebagian** — jalur ingest forex siap, menunggu data EA |
 | 2 | Kesegaran data di UI | **sebagian** — strip kesehatan Home selesai |
 | 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint bersih, uji belum |
 | 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh` |
@@ -18,13 +18,25 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 
 Tabel `trades` hanya berisi crypto (111 baris). Forex kosong **bukan** karena
 jalur baca membuang data: `lokal.py` membaca `/var/lib/warroom/deals.csv`, dan
-berkas itu tidak ada. Langkah:
+berkas itu tidak ada.
 
-1. Pastikan EA `WarRoom_AutoTrader` attach dan mengirim deal (cek
-   `fills.csv`/`deals.csv` bertambah). Tanpa ini, tidak ada yang bisa di-ingest.
-2. Setelah ada data, tulis `warroom_core.trades_forex` mengikuti pola
-   `trades_crypto` (kunci `venue+mode+ext_id`, `pnl_usd` None bila bahan
-   kurang, jangan fabrikasi `strategy_id`).
+Selesai 5 Nov 2026 (siap menerima data):
+
+- `warroom_core.trades_forex` — `deals.csv` (+ koreksi append-only) → model
+  `Trade`; kunci `venue+mode+ext_id`, `pnl_r` None (deal tidak membawa R),
+  `strategy_id` None (versi EA disimpan di evidence, bukan difabrikasi).
+- `jalur_hilang()` membedakan "EA belum melapor" dari "nol trade".
+- Job `trades-forex-sync` (300 dtk) + laporan `sumber=belum-ada` bila berkas
+  tidak ada.
+- `jurnal_forex.dari_db()` — jurnal forex membaca DB, jatuh ke `deals.csv` bila
+  DB kosong.
+- 6 unit test (`packages/core/tests/test_trades_forex.py`).
+
+Langkah berikutnya (butuh data nyata):
+
+1. Pastikan EA `WarRoom_AutoTrader` attach dan `deals.csv` bertambah.
+2. Setelah `deals.csv` terisi, jalankan job dan bandingkan jumlah baris DB dengan
+   berkas (idempoten, aman diulang).
 3. IDX: `idx_ledger.db` (SQLite) → `trades` dengan `venue="idx"`.
 4. Unifikasi jangka panjang: satu model `trades` + kolom `market`, view
    kompatibilitas untuk pembaca lama.

@@ -266,6 +266,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="trades-forex-sync",
+        interval_s=300,
+        enabled=True,
+        payload={},
+        note=(
+            "ingest deals.csv (deal tertutup dari EA) → tabel trades, kunci venue+ticket. "
+            "Berkas tidak ada = EA belum melapor (bukan nol trade); koreksi deal diterapkan "
+            "dan jejaknya disimpan di evidence."
+        ),
+    ),
+    JobSpec(
         name="paper-scan",
         interval_s=180,
         enabled=True,
