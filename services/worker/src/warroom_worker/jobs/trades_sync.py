@@ -103,3 +103,36 @@ def handler_trades_forex_sync(s: SASession, job: Job) -> str:
             )
         )
     return f"deals={len(rows)} db={len(kunci_ada) + len(baru)} masuk={len(baru)} skip={skip or 'nihil'}"
+
+
+def handler_trades_idx_sync(s: SASession, job: Job) -> str:
+    """Job `trades-idx-sync`: sinyal IDX TERTUTUP → tabel `trades`.
+
+    Ledger IDX mencatat sinyal, bukan eksekusi. Hanya baris dengan `closed_at`
+    yang masuk; sisanya dilaporkan sebagai hitungan, bukan dianggap trade.
+    """
+    from warroom_core.trades_idx import LEDGER_DEFAULT, baca_tertutup, ke_trade, ringkas_sumber
+
+    r = ringkas_sumber(LEDGER_DEFAULT)
+    if r["berkas"] == 0:
+        return "sumber=belum-ada (idx616_signal_ledger.db tidak ada)"
+    if r["tertutup"] == 0:
+        return f"sumber=ada terbuka={r['terbuka']} tertutup=0 (belum ada trade tertutup)"
+
+    trades = [t for t in (ke_trade(x) for x in baca_tertutup()) if t is not None]
+    skip = r["tertutup"] - len(trades)
+
+    kunci_ada = {ext for (ext,) in s.query(Trade.ext_id).filter(Trade.venue == "idx", Trade.mode == "paper")}
+    baru = [t for t in trades if t.ext_id not in kunci_ada]
+    if baru:
+        s.add_all(baru)
+        s.add(
+            Event(
+                type="trade.ingest",
+                actor="trades-idx-sync",
+                payload_json={"masuk": len(baru), "total_db": len(kunci_ada) + len(baru)},
+            )
+        )
+    return (
+        f"tertutup={r['tertutup']} db={len(kunci_ada) + len(baru)} masuk={len(baru)} skip={skip or 'nihil'}"
+    )

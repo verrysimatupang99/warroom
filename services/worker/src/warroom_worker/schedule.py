@@ -277,6 +277,17 @@ DEFAULT_JOBS: tuple[JobSpec, ...] = (
         ),
     ),
     JobSpec(
+        name="trades-idx-sync",
+        interval_s=300,
+        enabled=True,
+        payload={},
+        note=(
+            "ingest sinyal IDX TERTUTUP dari idx616_signal_ledger.db → tabel trades. "
+            "Baris berstatus CREATED bukan trade dan tidak pernah dimasukkan; "
+            "hasilnya melaporkan terbuka vs tertutup supaya 'belum ada' tidak terbaca 'nol'."
+        ),
+    ),
+    JobSpec(
         name="paper-scan",
         interval_s=180,
         enabled=True,
