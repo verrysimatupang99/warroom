@@ -58,8 +58,11 @@ Belum:
 1. ~~Umur snapshot + badge `STALE` per kartu~~ — **selesai**: `FreshnessBadge`
    dipasang di kartu pasar, membandingkan umur sinyal dengan `ttl_s` yang
    dilaporkan `/api/v1/freshness` (kind `signal`). Tanpa TTL → `n/a`.
-2. E2E Playwright: matikan worker → UI harus menampilkan stale, bukan kosong.
-   Butuh kredensial e2e + API uji, jadi tidak dikerjakan di mesin tanpa DB.
+2. E2E Playwright: **selesai** — `apps/web/e2e/cek_kesegaran.spec.ts` (strip
+   kesehatan + horizon kesegaran per kartu), 2/2 lulus terhadap produksi
+   (HTTPS) dengan akun viewer.
+3. Ide berikutnya: indikator per-sumber (bukan per-pasar) bila sumber berbeda
+   punya TTL berbeda.
 
 ## Fase 3 — `tg-engine`
 
