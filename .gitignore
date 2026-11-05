@@ -74,8 +74,9 @@ tools/warroom-work/
 # Riwayat chat agent (93K, 57 sesi) — bukan sumber repo, hanya arsip lokal.
 docs/arsip/catatan-lama/hermes_war_sessions.json
 
-# engine.py memuat API_ID/API_HASH Telethon (rahasia). Kode lokal, JANGAN di-commit.
-services/tg-engine/engine.py
+# Sejak 5 Nov 2026 engine.py IKUT di-commit: kredensial Telegram sudah pindah ke
+# environment (TG_API_ID/TG_API_HASH di /etc/warroom/tg-engine.env). Sebelumnya baris
+# ini menyembunyikan inti listener sehingga unit tidak bisa direproduksi dari repo.
 # Catatan arsip yang menyebut POLA secret=<...> — gitleaks false positive, tetap tidak di-commit
 # agar riwayat git bebas dari pola yang menyerupai kredensial.
 docs/arsip/catatan-lama/RINGKASAN_WARROOM.md

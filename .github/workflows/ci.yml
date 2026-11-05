@@ -74,7 +74,10 @@ jobs:
         with:
           enable-cache: true
       - name: uv sync (workspace + domain editable)
-        run: uv sync --frozen
+        # --all-packages: anggota workspace non-paket (services/tg-engine) punya
+        # dependensi sendiri (telethon, fastapi). Tanpa flag ini tesnya gagal
+        # import walau lockfile sudah memuatnya (temuan CI 5 Nov 2026).
+        run: uv sync --frozen --all-packages
       - name: ruff
         run: uv run ruff check .
       - name: bukti domain bisa diimpor dari platform

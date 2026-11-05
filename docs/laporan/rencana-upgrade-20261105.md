@@ -10,7 +10,7 @@ Urutannya bukan selera: tiap fase menghapus penghalang fase berikutnya.
 | 0 | Hygiene server (web root, akses publik, cron) | **selesai** |
 | 1 | Data trade: forex/IDX belum masuk `trades` | **selesai di sisi kode** — ingest forex & IDX aktif; menunggu data sumber |
 | 2 | Kesegaran data di UI | **selesai** — strip kesehatan + badge segar/basi per kartu |
-| 3 | `tg-engine` masuk ruang terkendali | **sebagian** — lint 0, 14 tes gate; `engine.py` masih di-gitignore (rahasia) |
+| 3 | `tg-engine` masuk ruang terkendali | **selesai** — engine.py di repo (rahasia ke env), masuk workspace, 24 tes |
 | 4 | DX: `.env.example`, dev one-command | **selesai** — `.env.example`, `docker-compose.dev.yml`, `scripts/dev.sh`, kecuali CI non-Linux |
 | 5 | Peningkatan produk | belum mulai |
 
@@ -70,17 +70,16 @@ Sudah: 52 temuan lint → 0, unit kembali masuk cakupan `ruff check .`, dan 14 t
 `services/tg-engine/tests/test_risk_gate.py` mengunci kontrak gate (fail-closed,
 RR memakai entry terjauh dari SL, lot dibatasi `MAX_LOT`).
 
-**Penghalang yang ditemukan 5 Nov 2026 (belum bisa diselesaikan hari itu):**
-`services/tg-engine/engine.py` — inti listener Telethon — di-gitignore karena
-memuat `API_ID`/`API_HASH` langsung di dalam kode. Akibatnya unit ini **tidak
-bisa direproduksi dari repo**: clone segar tidak akan pernah bisa menjalankannya.
-Langkah yang benar, berurutan:
+**Selesai 5 Nov 2026 (lanjutan):** `engine.py` kini IKUT repo. Kredensial
+Telegram dipindah ke environment (`TG_API_ID`, `TG_API_HASH` di
+`/etc/warroom/tg-engine.env`, mode 600); modul menolak start bila kosong. Unit
+masuk workspace (`services/tg-engine/pyproject.toml`, `package = false`) sehingga
+ikut `uv lock`, `ruff`, dan `pytest`. 10 tes baru mengunci klasifikasi kanal,
+blacklist grup spam, dan penolakan start tanpa kredensial.
 
-1. Pindahkan `API_ID`/`API_HASH` ke `/etc/warroom/telegram.env` (mode 600),
-   baca lewat `os.environ`.
-2. Baru hapus baris `services/tg-engine/engine.py` dari `.gitignore` dan commit
-   sumbernya.
-3. Setelah itu unit bisa masuk uv workspace seperti anggota lain.
+Penghalang lama (dicatat untuk sejarah): baris `services/tg-engine/engine.py` di
+`.gitignore` menyembunyikan inti listener, sehingga clone segar tidak akan pernah
+bisa menjalankan unit ini.
 
 Syarat sebelum deploy ulang: jalankan di mode paper, bandingkan keputusan gate
 sebelum/sesudah refactor gaya (perubahan hanya typing/format, tetapi kode ini
