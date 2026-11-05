@@ -51,10 +51,10 @@ extend-exclude = [
     ".venv",
     ".venv-merge",
     "apps/web",
-    # tg-engine: app mandiri hasil lebur 4 Nov 2026. Kode trading yang sedang
-    # berjalan live — dirapikan terpisah, jangan diikutkan lint repo sampai
-    # 57 temuan gaya lama dibereskan dan perilakunya diuji ulang.
-    "services/tg-engine",
+    # tg-engine: app mandiri hasil lebur 4 Nov 2026. Sejak 5 Nov 2026 ikut lint
+    # (52 temuan gaya dibereskan; E501 dashboard HTML dikecualikan di
+    # per-file-ignores). Perilaku belum diuji ulang — jangan deploy tanpa uji.
+    # "services/tg-engine",
     "node_modules",
     "packages/live-trading/vendor",
     "packages/live-trading/crypto",
@@ -67,6 +67,9 @@ select = ["E", "F", "I", "UP", "B"]
 # Migrasi Alembic di-generate mesin: baris panjang & urutan impor tak terhindarkan.
 [tool.ruff.lint.per-file-ignores]
 "packages/core/alembic/versions/*.py" = ["E501", "I001", "UP007", "UP035"]
+# Dashboard HTML di-embed sebagai satu string panjang; membungkus atribut HTML
+# hanya menambah baris tanpa manfaat keterbacaan.
+"services/tg-engine/api.py" = ["E501"]
 
 [tool.pytest.ini_options]
 # F3: repo gabungan punya dua tests/ bernama sama (test_config.py). Mode importlib

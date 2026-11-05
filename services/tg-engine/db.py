@@ -47,7 +47,8 @@ def insert_signal(
     with conn:
         cursor = conn.execute(
             """
-            INSERT INTO signals (channel_id, channel_name, category, message_text, timestamp, views, forwards, raw_metadata)
+            INSERT INTO signals (channel_id, channel_name, category, message_text, timestamp,
+                                 views, forwards, raw_metadata)
             VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?)
         """,
             (str(channel_id), channel_name, category, message_text, views, forwards, raw_meta),

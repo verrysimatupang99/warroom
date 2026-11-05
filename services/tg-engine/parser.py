@@ -26,7 +26,8 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
         m = re.search(r"\b(EURUSD|GBPUSD|USDJPY)\b", clean_text, re.I)
         symbol = m.group(1).upper()
     else:
-        # Jika channel adalah channel Forex/Gold spesifik (misal Callisto / FXM), default ke XAUUSD jika ada setup Buy/Sell
+        # Jika channel adalah channel Forex/Gold spesifik (misal Callisto / FXM),
+        # default ke XAUUSD bila ada setup Buy/Sell.
         if any(k in channel_name.lower() for k in ["callisto", "gold", "fxm"]):
             if re.search(r"\b(BUY|SELL)\b", clean_text, re.I):
                 symbol = "XAUUSD"
@@ -56,7 +57,9 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
     entry_low = None
     entry_high = None
     entry_match = re.search(
-        r"(?:entry\s*price|entry|zone|zona|zona entry|at|@|limit|stop)[:\s]*([0-9]{3,6}(?:\.[0-9]+)?)(?:\s*[-–/]\s*([0-9]{3,6}(?:\.[0-9]+)?))?",
+        r"(?:entry\s*price|entry|zone|zona|zona entry|at|@|limit|stop)[:\s]*"
+        r"([0-9]{3,6}(?:\.[0-9]+)?)"
+        r"(?:\s*[-–/]\s*([0-9]{3,6}(?:\.[0-9]+)?))?",
         clean_text,
         re.I,
     )
