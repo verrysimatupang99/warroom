@@ -193,6 +193,25 @@ def is_blacklisted(channel_title: str) -> bool:
     return any(b in t for b in BLACKLIST_CHATS)
 
 
+# Default: DM & bot dibuang. Sumber sinyal adalah channel/grup; memproses DM
+# berarti pesan pribadi ikut diklasifikasi dan berpotensi tersimpan ke DB.
+# Set TG_IZINKAN_DM=1 untuk memulihkan perilaku lama.
+IZINKAN_DM = os.environ.get("TG_IZINKAN_DM", "").strip().lower() in {"1", "true", "ya"}
+
+
+def boleh_diproses(*, is_private: bool, is_bot: bool) -> bool:
+    """Gerbang pertama: apakah chat ini sumber sinyal yang sah?
+
+    Dipanggil sebelum query database atau klasifikasi, supaya pesan DM tidak
+    pernah menyentuh jalur penyimpanan.
+    """
+    if is_bot:
+        return False
+    if is_private and not IZINKAN_DM:
+        return False
+    return True
+
+
 def classify_message(text: str, channel_title: str = "") -> str:
     combined = f"{channel_title} {text}".lower()
 
@@ -257,6 +276,14 @@ async def main():
     @client.on(events.NewMessage)
     async def handler(event):
         try:
+            # FILTER 0: hanya channel/grup. DM & bot dibuang sebelum I/O apa pun,
+            # supaya pesan pribadi tidak pernah masuk klasifikasi/DB.
+            # `get_sender()` hanya dipanggil untuk DM — di channel/grup tidak perlu.
+            is_private = bool(getattr(event, "is_private", False))
+            is_bot = is_private and bool(getattr(await event.get_sender(), "bot", False))
+            if not boleh_diproses(is_private=is_private, is_bot=is_bot):
+                return
+
             chat = await event.get_chat()
             channel_id = str(event.chat_id)
             channel_name = (
