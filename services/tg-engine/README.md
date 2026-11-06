@@ -97,3 +97,48 @@ asyncio.run(check())
 
 ## 5. 🔔 Integrasi AI Signal Parser (Opsional / Tahap Lanjutan)
 Jika diperlukan rangkuman otomatis atau pemisahan sinyal (*Entry, TP, SL*), agent dapat menghubungkan handler ke endpoint AI internal lokal di `http://127.0.0.1:20129/v1` (Model: `overchat/claude-haiku-4-5-landing`) yang sudah terpasang di server ini.
+
+---
+
+## 6. Menyimpan daftar channel sebelum rotasi / ganti akun
+
+Listener tidak memakai daftar channel di kode: `@client.on(events.NewMessage)` menerima
+semua pesan, lalu disaring di sisi lokal (blacklist, whitelist, klasifikasi). Artinya
+**daftar sumber sinyal yang sebenarnya hidup di akun Telegram**, bukan di repo.
+
+Sebelum memutar kredensial (lihat `SECURITY-telegram-hash.md`) atau memindah akun,
+catat dulu daftar channel/grup yang sudah di-join — kalau tidak, daftar itu hilang
+bersama sesi lama dan harus disusun ulang dari ingatan.
+
+```bash
+cd services/tg-engine            # tempat trading_session.session berada
+set -a; . /etc/warroom/tg-engine.env; set +a
+python3 ekspor_dialog.py
+# → dialog-<YYYYmmdd-HHMM>.csv  (mode 600)
+```
+
+Skrip ini **read-only** terhadap Telegram: hanya `get_dialogs()`, tidak mengirim pesan
+dan tidak join/leave. Kredensial dibaca dari environment; skrip tidak pernah mencetak
+API ID/hash. Nama DM tidak dicatat (kolom `nama` diisi penanda), karena DM bukan sumber
+sinyal dan itu data pribadi.
+
+Kolom `arahan` menjadi lembar kerja: baris `join ulang` = channel/grup yang harus di-join
+kembali setelah akun/sesi berganti; `abaikan` = DM/bot.
+
+**Urutan yang benar:** ekspor daftar dulu → baru hapus aplikasi di my.telegram.org dan
+terminate sesi. Kalau dibalik, akses ke akun lama hilang lebih dulu.
+
+## 7. Cakupan pesan yang diproses
+
+Sejak patch `boleh_diproses()`, engine hanya memproses **channel dan grup**. DM dan bot
+dibuang di gerbang pertama, sebelum klasifikasi dan sebelum menyentuh database — supaya
+pesan pribadi tidak pernah ikut tersimpan meski kebetulan memuat kata kunci trading.
+
+Perilaku lama bisa dipulihkan sementara tanpa mengubah kode:
+
+```bash
+TG_IZINKAN_DM=1    # di /etc/warroom/tg-engine.env, lalu restart unit
+```
+
+Default `0`/kosong = DM dibuang. Filter blacklist/whitelist yang sudah ada tetap berlaku
+setelah gerbang ini.
