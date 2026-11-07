@@ -57,7 +57,7 @@ def _handler(nama: str, payload: dict) -> None:
     """Panggil handler worker yang SAMA dengan produksi (jalur tunggal)."""
     os.environ.update(ENV20)
     from warroom_core.db import Job, session_scope
-    from warroom_worker.jobs.llm import handler_paper_eval, handler_paper_scan
+    from warroom_worker.jobs.formula import handler_paper_eval, handler_paper_scan
 
     with session_scope() as s:
         job = Job(name=nama, payload_json=payload)
