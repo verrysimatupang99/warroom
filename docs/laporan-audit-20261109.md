@@ -19,6 +19,7 @@
 | 8 | `/9router/`, `/agent/` 502 permanen | Rendah | Dinonaktifkan |
 | 9 | Wine prefix 2,1 GB menganggur di dalam repo | Rendah | Dihapus |
 | 10 | 19 branch di remote (desain: 1) | Rendah | 12 dihapus, 6 dipertahankan |
+| 11 | 7 header keamanan hilang saat migrasi domain (HSTS, nosniff, X-Frame-Options, dll.) | Tinggi | Dipasang kembali |
 
 ---
 
@@ -110,6 +111,29 @@ Fakta yang ditemukan:
 kedua marker perubahan tetap utuh + `nginx -t` bersih.
 
 ---
+
+## 4b. Regresi yang saya timbulkan sendiri: header keamanan
+
+Vhost lama punya 7 header keamanan. Setelah migrasi ke domain bawaan, **tidak satu pun**
+ikut terbawa:
+
+```
+vhost lama   : 7 add_header keamanan
+vhost aktif  : 0
+response luar: HSTS/nosniff/X-Frame-Options/Referrer-Policy  -> tidak ada
+```
+
+Ini ketahuan saat membandingkan header respons, bukan dari asumsi bahwa "pasti aman".
+Perbaikan: `ops/pasang-header-keamanan.py` memasang kembali ketujuhnya di server block
+443 domain bawaan.
+
+Catatan nginx yang perlu diingat: `add_header` di dalam `location` **menggantikan**
+`add_header` level server, bukan menambah. Location `/api/v1/` punya `add_header
+Cache-Control` sendiri, jadi respons API sengaja tidak ikut header ini (memang `no-store`).
+
+Hasil: HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy`,
+`X-Frame-Options: DENY`, `Permissions-Policy`, COOP, CORP semuanya kembali;
+CSP tetap datang dari aplikasi.
 
 ## 5. Unit yang tadinya gagal
 
