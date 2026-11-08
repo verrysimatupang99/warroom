@@ -1,5 +1,10 @@
 # Runbook — trade pertama & buktinya
 
+> **Catatan 9 Nov 2026:** domain `0xgunsl1ng3r.xyz` dipensiunkan (langganan tetap
+> diperpanjang, tapi tidak dipakai). War Room kini dilayani
+> `https://polywarroom.vps.webdock.cloud` — app hidup `:3100` + API `/api/v1/`.
+> Basic auth proxy sudah tidak dipakai di root; login lewat halaman `/masuk`.
+
 **Berlaku:** War Room forex, EA `WarRoom_AutoTrader_v3.1`, akun demo `416510164`,
 XAUUSDm M5, sesi Reaper **08–09 jam server** (Senin–Jumat).
 **Tujuan:** setiap trade tertutup punya jejak yang bisa diaudit — bukan hanya "EA bilang profit".
@@ -32,7 +37,7 @@ sudo -u postgres psql -d warroom -c \
   where name='forwardtest-watchdog';"
 
 # 5. Status mesin Reaper terakhir (butuh cookie sesi; lihat §1.1)
-curl -sS -b /tmp/wr.cookie https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/status | jq \
+curl -sS -b /tmp/wr.cookie https://polywarroom.vps.webdock.cloud/api/v1/tencent/mt5/status | jq \
  '{connected, account, balance, eval_sesi, eval_alasan, eval_atr, eval_spread,
    eval_rsi, eval_ema_fast, eval_ema_slow, eval_tren, server_time, eval_at}'
 
@@ -57,7 +62,7 @@ Kredensial ada di `~/.config/warroom/e2e.env` (600). Jangan menempel isinya ke c
 
 ```bash
 set -a; . ~/.config/warroom/e2e.env; set +a
-curl -sS -c /tmp/wr.cookie -X POST https://0xgunsl1ng3r.xyz/api/v1/auth/login \
+curl -sS -c /tmp/wr.cookie -X POST https://polywarroom.vps.webdock.cloud/api/v1/auth/login \
   -H 'content-type: application/json' \
   -d "{\"username\":\"$WARROOM_E2E_USER\",\"password\":\"$WARROOM_E2E_PASS\"}" | jq
 ```
@@ -66,9 +71,9 @@ curl -sS -c /tmp/wr.cookie -X POST https://0xgunsl1ng3r.xyz/api/v1/auth/login \
 
 ## 2. Selama sesi
 
-1. Buka `https://0xgunsl1ng3r.xyz/forex` → tab **Sinyal** → panel **Status mesin Reaper**.
+1. Buka `https://polywarroom.vps.webdock.cloud/forex` → tab **Sinyal** → panel **Status mesin Reaper**.
    Yang dibaca: sesi, alasan evaluasi, ATR, spread, RSI, EMA21/55, tren M15, umur evaluasi.
-2. Buka `https://0xgunsl1ng3r.xyz/jurnal` → tab **Trade**.
+2. Buka `https://polywarroom.vps.webdock.cloud/jurnal` → tab **Trade**.
 3. **Jangan menambah posisi manual** saat uji. Satu variabel berubah = satu kesimpulan.
 4. Alert yang mungkin muncul (dari `forwardtest-watchdog`, interval 60 s):
 
@@ -105,9 +110,9 @@ PY
 ### 3.2 Jurnal & API
 
 ```bash
-curl -sS -b /tmp/wr.cookie 'https://0xgunsl1ng3r.xyz/api/v1/journal/trades?market=forex' | jq \
+curl -sS -b /tmp/wr.cookie 'https://polywarroom.vps.webdock.cloud/api/v1/journal/trades?market=forex' | jq \
  '.closed[-1], .entries[-1]'
-curl -sS -b /tmp/wr.cookie 'https://0xgunsl1ng3r.xyz/api/v1/journal/stats?market=forex' | jq
+curl -sS -b /tmp/wr.cookie 'https://polywarroom.vps.webdock.cloud/api/v1/journal/stats?market=forex' | jq
 ```
 
 Yang harus benar:
