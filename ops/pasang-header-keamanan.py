@@ -59,7 +59,7 @@ def main() -> None:
             i += 1
         block = text[m.start():i]
         if f"server_name {DOMAIN};" in block and "listen 443 ssl" in block:
-            start, end = m.start(), i
+            start = m.start()
             break
     else:
         fail(f"server block 443 {DOMAIN} tidak ditemukan")
