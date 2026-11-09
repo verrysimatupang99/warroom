@@ -4620,6 +4620,55 @@
         ]
       }
     },
+    "/api/v1/infra/health": {
+      "get": {
+        "description": "Status infra lintas mesin (cyber1, Memoh runtime, MT5 boxes, watchdog, bus).\n\nSnapshot didorong dari cyber1 tiap ~10 menit; War Room hanya membaca berkas\nsehingga tidak perlu akses masuk ke mesin lain. Umur snapshot ikut dikirim\nsupaya UI bisa menyatakan data basi, bukan menganggapnya segar.",
+        "operationId": "infra_health_api_v1_infra_health_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Infra Health Api V1 Infra Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Infra Health"
+      }
+    },
     "/api/v1/journal/charts": {
       "get": {
         "description": "Deret ekuitas untuk grafik.",
