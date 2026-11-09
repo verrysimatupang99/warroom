@@ -354,3 +354,40 @@
    padanya. Komponen yang benar-benar dipakai punya <style> sendiri atau memakai
    token global (--card-*, --rail-w, --grid-gap).
    ============================================================================ */
+
+
+/* ============================================================================
+   PENYEMPURNAAN AKSESIBILITAS & INTERAKSI (9 Nov 2026)
+   Berlaku untuk SEMUA halaman karena memakai elemen dasar.
+   - focus-visible: keyboard user dapat cincin fokus yang jelas (sebelumnya
+     tombol/tautan hanya bergantung pada hover).
+   - prefers-reduced-motion: matikan animasi bagi yang memintanya.
+   - angka tabular: metrik tidak "bergoyang" saat nilainya berubah.
+   ============================================================================ */
+:where(a, button, [role='button'], input, select, textarea, summary):focus-visible {
+	outline: 2px solid var(--color-accent, #f5b83d);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+.font-mono,
+[data-testid='metric-tile'],
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+::selection {
+	background: color-mix(in srgb, var(--color-accent, #f5b83d) 35%, transparent);
+	color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
+}

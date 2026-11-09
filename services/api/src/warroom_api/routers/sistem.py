@@ -6,6 +6,8 @@ auth dependency tidak berubah.
 
 from __future__ import annotations
 
+import json
+
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -69,6 +71,34 @@ def build() -> dict[str, Any]:
         "domain_version": core_domain_version(),
         "time": datetime.now(UTC).isoformat(),
     }
+
+
+_INFRA_SNAPSHOT = Path("/home/admin/warroom/var/infra-health.json")
+
+
+@router.get("/api/v1/infra/health")
+def infra_health(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
+    """Status infra lintas mesin (cyber1, Memoh runtime, MT5 boxes, watchdog, bus).
+
+    Snapshot didorong dari cyber1 tiap ~10 menit; War Room hanya membaca berkas
+    sehingga tidak perlu akses masuk ke mesin lain. Umur snapshot ikut dikirim
+    supaya UI bisa menyatakan data basi, bukan menganggapnya segar.
+    """
+    if not _INFRA_SNAPSHOT.is_file():
+        return {"tersedia": False, "alasan": "snapshot belum pernah diterima"}
+    try:
+        data = json.loads(_INFRA_SNAPSHOT.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=503, detail=f"snapshot tidak terbaca: {e}") from e
+
+    umur_s: int | None = None
+    try:
+        ts = datetime.fromisoformat(str(data.get("ts", "")).replace("Z", "+00:00"))
+        umur_s = int((datetime.now(UTC) - ts).total_seconds())
+    except ValueError:
+        pass
+
+    return {"tersedia": True, "umur_s": umur_s, **data}
 
 
 @router.get("/api/v1/health")
