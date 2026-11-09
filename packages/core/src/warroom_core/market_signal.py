@@ -29,7 +29,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SASession
 
-from warroom_core.db import Fact
+from warroom_core.db import Fact, Job
 
 __all__ = ["MarketSignalList", "MarketSignal", "signals_per_market", "best_signal_per_market", "PASAR"]
 
@@ -782,12 +782,22 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> MarketSignalList:
             alasan_eksekusi=terbaik.get("alasan_eksekusi", ""),
         )
     # Tidak ada kandidat aktif: bedakan mesin-hidup vs mesin-mati.
-    dari_verdict = _umur_iso(_verdict_terakhir(s))
-    if dari_verdict is not None and dari_verdict <= 6 * 3600:
+    #
+    # Sumber kebenaran liveness = job `collect` (yang menjalankan `lt scan`),
+    # BUKAN timestamp verdict terakhir. Sebab saat pasar sepi (0 pair lolos
+    # gate) TIDAK ada baris verdict baru ditulis, sehingga timestamp verdict
+    # bisa basi berjam-jam padahal scan sehat tiap interval. Yang menentukan
+    # "gagal" hanyalah job collect-nya sendiri mati/basi — failure asli tetap
+    # berbunyi (niat desain pemilik 7 Okt).
+    dari_collect, interval_collect = _umur_job_collect(s)
+    # Batas segar: 3x interval job (min 30 menit) — beri ruang jika satu run
+    # lebih lama dari biasanya, tanpa melonggarkan sampai menutupi job mati.
+    batas_collect = max(3 * interval_collect, 1800) if interval_collect else 1800
+    if dari_collect is not None and dari_collect <= batas_collect:
         return MarketSignalList(
             pasar="crypto", label="Crypto (SMC)", status_data="kosong", rute=_rute_pasar("crypto"),
             alasan=(
-                f"Pemindaian berjalan (verdict terakhir {int(dari_verdict / 60)} menit lalu) "
+                f"Pemindaian berjalan (job collect {int(dari_collect / 60)} menit lalu) "
                 "tetapi tidak ada setup yang cocok dengan strategi saat ini."
             ),
             autotrade_verdict="SKIP",
@@ -804,17 +814,22 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> MarketSignalList:
     )
 
 
-def _verdict_terakhir(s: SASession) -> str | None:
-    """Waktu verdict crypto terakhir dari fakta snapshot/kandidat (kalau ada)."""
-    f = s.scalars(
-        select(Fact)
-        .where(Fact.kind == "snapshot", Fact.key == "kandidat")
-        .order_by(Fact.observed_at.desc())
-        .limit(1)
-    ).first()
-    if f is None or not isinstance(f.value_json, list) or not f.value_json:
-        return None
-    return str((f.value_json[-1] or {}).get("ts") or "") or None
+def _umur_job_collect(s: SASession) -> tuple[float | None, int]:
+    """Umur (detik) sejak job `collect` terakhir jalan + intervalnya.
+
+    Ini sumber kebenaran liveness pemindaian crypto: job `collect` menjalankan
+    `lt scan` tiap interval, apa pun hasilnya. Bila ia segar, scan HIDUP —
+    meski 0 kandidat lolos gate (tak ada baris verdict baru ditulis ke ledger).
+    Mengembalikan (umur_detik|None, interval_s). None = job tak terlacak.
+    """
+    job = s.scalar(select(Job).where(Job.name == "collect"))
+    if job is None or job.last_run_at is None:
+        return None, 0
+    last = job.last_run_at
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=UTC)
+    umur = (datetime.now(UTC) - last).total_seconds()
+    return umur, int(job.interval_s or 0)
 
 
 def signals_per_market(

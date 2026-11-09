@@ -30,6 +30,24 @@ LOG = Path(os.environ.get("WARROOM_TICK_LOG", "/var/lib/warroom/pasar_log.csv"))
 WIB = timedelta(hours=7)
 
 
+def _service_token() -> str:
+    """Baca WARROOM_SERVICE_TOKEN dari env atau /etc/warroom/service_token.env.
+
+    Endpoint /mt5/status kini wajib auth (verify_mt5_or_admin). Service internal
+    mengirim token ini lewat header X-Warroom-Token, bukan cookie browser.
+    """
+    tok = os.environ.get("WARROOM_SERVICE_TOKEN", "")
+    if tok:
+        return tok
+    f = Path("/etc/warroom/service_token.env")
+    if f.exists():
+        for line in f.read_text().splitlines():
+            if line.startswith("WARROOM_SERVICE_TOKEN="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+
+
 def baca_state() -> dict:
     try:
         return json.loads(STATE.read_text(encoding="utf-8"))
@@ -56,7 +74,7 @@ def catat(baris: list[str]) -> None:
 def main() -> int:
     try:
         with httpx.Client(timeout=10.0) as c:
-            r = c.get(f"{API}/api/v1/tencent/mt5/status")
+            r = c.get(f"{API}/api/v1/tencent/mt5/status", headers={"X-Warroom-Token": _service_token()})
         r.raise_for_status()
         st = r.json()
     except Exception as exc:  # noqa: BLE001

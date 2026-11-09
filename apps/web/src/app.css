@@ -354,3 +354,98 @@
    padanya. Komponen yang benar-benar dipakai punya <style> sendiri atau memakai
    token global (--card-*, --rail-w, --grid-gap).
    ============================================================================ */
+
+
+/* ============================================================================
+   PENYEMPURNAAN AKSESIBILITAS & INTERAKSI (9 Nov 2026)
+   Berlaku untuk SEMUA halaman karena memakai elemen dasar.
+   - focus-visible: keyboard user dapat cincin fokus yang jelas (sebelumnya
+     tombol/tautan hanya bergantung pada hover).
+   - prefers-reduced-motion: matikan animasi bagi yang memintanya.
+   - angka tabular: metrik tidak "bergoyang" saat nilainya berubah.
+   ============================================================================ */
+:where(a, button, [role='button'], input, select, textarea, summary):focus-visible {
+	outline: 2px solid var(--color-accent, #f5b83d);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+.font-mono,
+[data-testid='metric-tile'],
+.tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+::selection {
+	background: color-mix(in srgb, var(--color-accent, #f5b83d) 35%, transparent);
+	color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+
+/* ============================================================================
+   SKIP-LINK, SCROLLBAR, ANCHOR (9 Nov 2026 — upgrade menyeluruh lapisan shell)
+
+   Kenapa di app.css: berlaku untuk SEMUA halaman sekaligus. Menaruhnya di
+   masing-masing halaman berarti 9 salinan yang cepat menyimpang.
+   ============================================================================ */
+
+/* Skip-link: pengguna keyboard bisa melompati rail navigasi. Tersembunyi
+   sampai difokuskan — bukan elemen dekoratif yang selalu mencolok. */
+.skip-link {
+	position: absolute;
+	left: 8px;
+	top: -48px;
+	z-index: 100;
+	padding: 10px 14px;
+	border-radius: 8px;
+	background: var(--color-accent);
+	color: var(--color-on-accent);
+	font-family: var(--font-mono, ui-monospace, monospace);
+	font-size: 12px;
+	font-weight: 700;
+	text-decoration: none;
+	transition: top 120ms ease-out;
+}
+.skip-link:focus-visible,
+.skip-link:focus {
+	top: 8px;
+}
+
+/* Scrollbar bertema: bawaan browser terang dan memotong tema gelap. */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-surface-3, #2f3337) transparent;
+}
+*::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+	background: var(--color-surface-3, #2f3337);
+	border-radius: 999px;
+	border: 2px solid transparent;
+	background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+	background: var(--color-text-3, #787d84);
+	background-clip: content-box;
+}
+
+/* Lompat ke anchor tidak berhenti di bawah header yang lengket. */
+html {
+	scroll-padding-top: 72px;
+}

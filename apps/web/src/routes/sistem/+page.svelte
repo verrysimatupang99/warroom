@@ -7,6 +7,8 @@
 	import ServerTencentView from '$lib/components/ServerTencentView.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
+	import InfraHealth from '$lib/components/InfraHealth.svelte';
+	import TradingPanel from '$lib/components/TradingPanel.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
 	const sub = $derived.by(() => {
@@ -21,6 +23,11 @@
 	let status = $state<Status | null>(null);
 	let galatStatus = $state<string | null>(null);
 	let memuat = $state(true);
+
+	// Status infra lintas mesin (snapshot dari cyber1)
+	let infra = $state<Record<string, unknown> | null>(null);
+	let galatInfra = $state<string | null>(null);
+	let memuatInfra = $state(true);
 
 	let kejadian = $state<Record<string, unknown>[]>([]);
 	let galatEvent = $state<string | null>(null);
@@ -81,6 +88,18 @@
 		}
 	}
 
+	async function ambilInfra() {
+		memuatInfra = true;
+		const d = await ambil<Record<string, unknown>>('/api/v1/infra/health');
+		if (d) {
+			infra = d;
+			galatInfra = null;
+		} else {
+			galatInfra = 'Endpoint infra tidak menjawab.';
+		}
+		memuatInfra = false;
+	}
+
 	onMount(async () => {
 		const s = await ambil<Status>('/api/v1/sistem/status');
 		if (s) status = s;
@@ -93,6 +112,7 @@
 		params = await ambil<Record<string, unknown>>('/api/v1/params');
 		laya = await ambil<LayaPengaturan>('/api/v1/pengaturan/laya');
 		void ukurLatensi();
+		void ambilInfra();
 		memuat = false;
 	});
 
@@ -149,6 +169,8 @@
 			<EmptyState judul="Status tidak tersedia" pesan={galatStatus ?? 'Tidak ada jawaban.'} />
 		{:else}
 			<div class="space-y-4">
+				<TradingPanel />
+				<InfraHealth data={infra} galat={galatInfra} memuat={memuatInfra} onreload={() => void ambilInfra()} />
 				<section class="grid gap-3 sm:grid-cols-3">
 					<div class="rounded-card border border-line bg-surface p-4">
 						<div class="label-mikro font-mono text-text-3">UNIT SEHAT</div>

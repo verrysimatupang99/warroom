@@ -8,6 +8,7 @@
 	import OyenzaSidebar from './OyenzaSidebar.svelte';
 	import KeyboardShortcutsModal from './KeyboardShortcutsModal.svelte';
 	import Ikon from './Ikon.svelte';
+	import InfraBanner from './InfraBanner.svelte';
 
 	let { children }: { children: Snippet } = $props();
 
@@ -28,6 +29,8 @@
 		return () => live.hentikan();
 	});
 </script>
+
+<a class="skip-link" href="#konten">Lompat ke konten</a>
 
 <svelte:window onkeydown={handleGlobalKeys} />
 
@@ -74,6 +77,7 @@
 
 	<!-- FLUID MAIN CANVAS -->
 	<main id="konten" class="main-canvas" data-app-siap tabindex="-1">
+		<InfraBanner />
 		{@render children()}
 	</main>
 

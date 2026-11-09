@@ -84,3 +84,6 @@ docs/arsip/catatan-lama/RINGKASAN_WARROOM.md
 # token GitHub (jangan pernah masuk repo)
 gh_token.txt
 .gh-config/
+
+# data runtime (snapshot antar-mesin) — jangan masuk repo
+var/
