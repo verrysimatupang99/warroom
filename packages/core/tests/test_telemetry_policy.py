@@ -7,7 +7,6 @@ mendukung wildcard '*' di key. Sensor nyata TIDAK boleh ikut tertutup.
 from __future__ import annotations
 
 import pytest
-
 from warroom_core.telemetry_policy import is_retired, retired_pairs
 
 
