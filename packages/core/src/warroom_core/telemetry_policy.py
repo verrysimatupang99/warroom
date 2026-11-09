@@ -18,9 +18,10 @@ __all__ = ["RETIRED_DEFAULT", "is_retired", "retired_pairs"]
 
 RETIRED_DEFAULT = (
     "mt5_snapshot:ringkas,mt5_snapshot:ringkas:452009427,"
-    # Pair crypto: historis per-pair; liveness crypto kini dari job collect.
-    "signal:*USDT,"
-    # Brief AI per-pasar: job llm-brief-* sengaja disabled pemilik.
+    # Brief AI per-pasar: job llm-brief-* sengaja disabled pemilik (3 Nov),
+    # jadi briefnya legitim tua, bukan failure. Pair crypto TIDAK diretire —
+    # test mekanisme stale memakai signal:BTCUSDT sebagai contoh yang HARUS
+    # dihitung, dan menghitungnya penting untuk kesiapan layanan.
     "ai.brief:*"
 )
 

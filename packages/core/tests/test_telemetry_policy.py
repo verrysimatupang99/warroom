@@ -16,11 +16,13 @@ def _polaka_default(monkeypatch):
     monkeypatch.delenv("WARROOM_RETIRED_FACTS", raising=False)
 
 
-def test_pair_crypto_usdt_retired():
-    # Pair crypto historis: liveness crypto kini dari job collect, bukan per-pair.
-    assert is_retired("signal", "BTCUSDT")
-    assert is_retired("signal", "1000PEPEUSDT")
-    assert is_retired("signal", "APTUSDT")
+def test_pair_crypto_usdt_tidak_retired():
+    # Pair crypto TIDAK diretire: test mekanisme stale (test_api.py,
+    # test_telemetry_retired.py) memakai signal:BTCUSDT sebagai contoh yang
+    # HARUS dihitung. Mereka tetap terlihat bila basi.
+    assert not is_retired("signal", "BTCUSDT")
+    assert not is_retired("signal", "1000PEPEUSDT")
+    assert not is_retired("signal", "APTUSDT")
 
 
 def test_brief_ai_semua_key_retired():
