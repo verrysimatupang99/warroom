@@ -790,7 +790,6 @@ def _kandidat_crypto(s: SASession, maks: int = 12) -> MarketSignalList:
     # "gagal" hanyalah job collect-nya sendiri mati/basi — failure asli tetap
     # berbunyi (niat desain pemilik 7 Okt).
     dari_collect, interval_collect = _umur_job_collect(s)
-    dari_verdict = _umur_iso(_verdict_terakhir(s))
     # Batas segar: 3x interval job (min 30 menit) — beri ruang jika satu run
     # lebih lama dari biasanya, tanpa melonggarkan sampai menutupi job mati.
     batas_collect = max(3 * interval_collect, 1800) if interval_collect else 1800
@@ -831,19 +830,6 @@ def _umur_job_collect(s: SASession) -> tuple[float | None, int]:
         last = last.replace(tzinfo=UTC)
     umur = (datetime.now(UTC) - last).total_seconds()
     return umur, int(job.interval_s or 0)
-
-
-def _verdict_terakhir(s: SASession) -> str | None:
-    """Waktu verdict crypto terakhir dari fakta snapshot/kandidat (kalau ada)."""
-    f = s.scalars(
-        select(Fact)
-        .where(Fact.kind == "snapshot", Fact.key == "kandidat")
-        .order_by(Fact.observed_at.desc())
-        .limit(1)
-    ).first()
-    if f is None or not isinstance(f.value_json, list) or not f.value_json:
-        return None
-    return str((f.value_json[-1] or {}).get("ts") or "") or None
 
 
 def signals_per_market(
