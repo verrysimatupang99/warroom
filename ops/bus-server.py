@@ -113,7 +113,7 @@ class H(BaseHTTPRequestHandler):
                 "WHERE topic=? AND seq>? ORDER BY seq LIMIT ?",
                 (topic, int(since or 0), limit),
             )
-            rows = [dict(zip(("seq", "ts", "topic", "agent", "host", "kind", "text", "refs"), r))
+            rows = [dict(zip(("seq", "ts", "topic", "agent", "host", "kind", "text", "refs"), r, strict=True))
                     for r in cur.fetchall()]
             out = {"topic": topic, "count": len(rows), "messages": rows}
             if agent:
