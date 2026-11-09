@@ -16,7 +16,14 @@ import os
 
 __all__ = ["RETIRED_DEFAULT", "is_retired", "retired_pairs"]
 
-RETIRED_DEFAULT = "mt5_snapshot:ringkas,mt5_snapshot:ringkas:452009427"
+RETIRED_DEFAULT = (
+    "mt5_snapshot:ringkas,mt5_snapshot:ringkas:452009427,"
+    # Brief AI per-pasar: job llm-brief-* sengaja disabled pemilik (3 Nov),
+    # jadi briefnya legitim tua, bukan failure. Pair crypto TIDAK diretire —
+    # test mekanisme stale memakai signal:BTCUSDT sebagai contoh yang HARUS
+    # dihitung, dan menghitungnya penting untuk kesiapan layanan.
+    "ai.brief:*"
+)
 
 
 def retired_pairs() -> frozenset[tuple[str, str]]:
@@ -32,5 +39,22 @@ def retired_pairs() -> frozenset[tuple[str, str]]:
     return frozenset(hasil)
 
 
+def _cocok_pola(kind: str, key: str, pola: str) -> bool:
+    """Cocokkan (kind, key) ke pola; '*' di key berarti wildcard.
+
+    `ai.brief:*`      -> semua key kind ai.brief.
+    `signal:*USDT`    -> key berakhiran USDT (suffix).
+    `signal:BTC*`     -> key berawalan BTC (prefix).
+    Tanpa '*'         -> cocok persis (perilaku lama).
+    """
+    k, pat = pola
+    if k != kind:
+        return False
+    if "*" not in pat:
+        return key == pat
+    awal, akhir = pat.split("*", 1)
+    return key.startswith(awal) and key.endswith(akhir)
+
+
 def is_retired(kind: str, key: str) -> bool:
-    return (kind, key) in retired_pairs()
+    return any(_cocok_pola(kind, key, pola) for pola in retired_pairs())
