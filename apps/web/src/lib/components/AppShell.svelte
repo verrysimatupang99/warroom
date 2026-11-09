@@ -30,6 +30,8 @@
 	});
 </script>
 
+<a class="skip-link" href="#konten">Lompat ke konten</a>
+
 <svelte:window onkeydown={handleGlobalKeys} />
 
 <div class="app-layout">
