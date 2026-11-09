@@ -8,6 +8,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import InfraHealth from '$lib/components/InfraHealth.svelte';
+	import TradingPanel from '$lib/components/TradingPanel.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
 	const sub = $derived.by(() => {
@@ -168,7 +169,7 @@
 			<EmptyState judul="Status tidak tersedia" pesan={galatStatus ?? 'Tidak ada jawaban.'} />
 		{:else}
 			<div class="space-y-4">
-t	<TradingPanel />
+				<TradingPanel />
 				<InfraHealth data={infra} galat={galatInfra} memuat={memuatInfra} onreload={() => void ambilInfra()} />
 				<section class="grid gap-3 sm:grid-cols-3">
 					<div class="rounded-card border border-line bg-surface p-4">
