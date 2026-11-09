@@ -14,7 +14,9 @@ export default defineConfig({
 			$lib: fileURLToPath(new URL('./src/lib', import.meta.url)),
 			// SvelteKit tidak dipasang di vitest; `$env/dynamic/public` dipakai client.ts.
 			// Stub netral supaya modul klien bisa diimpor di uji tanpa plugin SvelteKit.
-			'$env/dynamic/public': fileURLToPath(new URL('./src/tests/stub-env.ts', import.meta.url))
+			'$env/dynamic/public': fileURLToPath(new URL('./src/tests/stub-env.ts', import.meta.url)),
+			// Stub $app/navigation: MarketShell (shell semua halaman pasar) memakai goto().
+			'$app/navigation': fileURLToPath(new URL('./src/tests/stub-navigation.ts', import.meta.url))
 		}
 	},
 	test: {
