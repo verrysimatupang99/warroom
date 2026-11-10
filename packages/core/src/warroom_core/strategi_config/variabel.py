@@ -133,6 +133,22 @@ def lowest(candles: list[Candle], period: int) -> list[float | None]:
     return out
 
 
+def sma_volume(candles: list[Candle], period: int) -> list[float | None]:
+    """Simple Moving Average dari VOLUME (untuk filter minat pasar)."""
+    vols = [float(c.get("volume") or 0.0) for c in candles]
+    out: list[float | None] = [None] * len(vols)
+    if period <= 0:
+        return out
+    jumlah = 0.0
+    for i, v in enumerate(vols):
+        jumlah += v
+        if i >= period:
+            jumlah -= vols[i - period]
+        if i >= period - 1:
+            out[i] = jumlah / period
+    return out
+
+
 # Registry indikator yang boleh dirujuk formula (whitelist).
 INDIKATOR = {
     "SMA": sma,
@@ -141,6 +157,7 @@ INDIKATOR = {
     "ATR": atr,
     "HIGHEST": highest,
     "LOWEST": lowest,
+    "VOL_SMA": sma_volume,
 }
 
 # Alias publik untuk pemakaian langsung (test / provider).
