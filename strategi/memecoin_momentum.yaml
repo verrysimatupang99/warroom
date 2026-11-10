@@ -1,0 +1,31 @@
+id: memecoin_momentum
+nama: Memecoin Momentum (Binance)
+market: memecoin
+waktu: 1h
+simbol: [PEPEUSDT, WIFUSDT, BONKUSDT, FLOKIUSDT, 1000SATSUSDT]
+
+# Memecoin = volatil & tren kuat. Momentum breakout dengan stop lebih lebar.
+variabel:
+  ema_cepat: EMA(20)
+  ema_lambat: EMA(100)
+  atr: ATR(14)
+  vol_rata: VOL_SMA(20)
+
+filter:
+  - "atr > 0"
+  - "volume > vol_rata"          # hanya saat volume di atas rata-rata (minat nyata)
+
+# Momentum naik: EMA cepat menembus EMA lambat.
+entry_long:
+  - "ema_cepat > ema_lambat"
+  - "close > ema_cepat"
+
+# Memecoin sulit di-short (squeeze naik cepat) — hanya long.
+entry_short: []
+
+exit:
+  sl_atr: 2.5                    # stop lebar (memecoin volatil)
+  tp_rrr: 3.0
+
+risiko:
+  risiko_per_trade_pct: 0.5      # risiko lebih kecil (memecoin berisiko tinggi)
