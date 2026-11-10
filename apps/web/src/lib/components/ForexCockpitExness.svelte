@@ -90,30 +90,28 @@
 	<!-- HEADER COCKPIT: EXNESS MT5 & LAYA AI SENTINEL STATUS -->
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 		<!-- KARTU 1: EXNESS MT5 REAL-TIME TELEMETRY -->
-		<div class="lg:col-span-2 rounded-xl border border-line bg-surface/90 p-5 shadow-2xl backdrop-blur relative overflow-hidden">
-			<div class="absolute -right-10 -bottom-10 w-44 h-44 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+		<div class="lg:col-span-2 rounded-card border border-line bg-surface p-5">
 			
 			<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-4 mb-4">
 				<div class="flex items-center gap-3">
 					<div class="relative flex h-3.5 w-3.5">
 						{#if mt5?.connected}
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+							<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-pos"></span>
 						{:else}
-							<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-zinc-500"></span>
+							<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-text-3"></span>
 						{/if}
 					</div>
 					<div>
 						<div class="flex items-center gap-2">
-							<h2 class="font-mono text-base font-bold tracking-wider text-white">EXNESS MT5 ALGO COCKPIT</h2>
-							<span class="rounded bg-emerald-500/10 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/20">
-								#{mt5?.account ?? '416510164'}
+							<h2 class="font-mono text-base font-bold tracking-wider text-text">EXNESS MT5 ALGO COCKPIT</h2>
+							<span class="rounded bg-pos/10 px-2.5 py-0.5 text-xs font-mono font-bold text-pos border border-pos/20">
+								#{mt5?.account ?? '—'}
 							</span>
-							<span class="rounded bg-white/5 px-2 py-0.5 text-[11px] font-mono text-zinc-300 border border-white/10">
-								{mt5?.broker ?? 'Exness Technologies Ltd'}
+							<span class="rounded bg-surface-2 px-2 py-0.5 text-[11px] font-mono text-text-3 border border-line">
+								{mt5?.broker ?? '—'}
 							</span>
 						</div>
-						<p class="text-xs text-zinc-400 mt-0.5 font-sans">
+						<p class="text-xs text-text-3 mt-0.5 font-sans">
 							Live Telemetry Outbound Azure VM (138.91.35.65) • Detak: {mt5?.seconds_ago ?? 0}s yang lalu
 						</p>
 					</div>
@@ -123,7 +121,7 @@
 					<a
 						href="/api/v1/tencent/mt5/source.raw"
 						target="_blank"
-						class="rounded bg-emerald-500/15 hover:bg-emerald-500/25 transition px-3 py-1.5 text-xs font-mono font-semibold text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5"
+						class="rounded bg-pos/15 hover:bg-pos/25 transition px-3 py-1.5 text-xs font-mono font-semibold text-pos border border-pos/30 flex items-center gap-1.5"
 					>
 						<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -135,13 +133,13 @@
 
 			<!-- METRIK KEUANGAN AKUN EXNESS (HAPUS-ANGKA-PALSU) -->
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
-					<span class="text-[11px] text-zinc-400 block mb-0.5">MODAL AWAL</span>
-					<span class="text-lg font-bold text-white">${MODAL_AWAL.toFixed(2)}</span>
-					<span class="text-[10px] text-zinc-400 block mt-0.5">Baseline Demo</span>
+				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
+					<span class="text-[11px] text-text-3 block mb-0.5">MODAL AWAL</span>
+					<span class="text-lg font-bold text-text">${MODAL_AWAL.toFixed(2)}</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">Baseline Demo</span>
 				</div>
-				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
-					<span class="text-[11px] text-zinc-400 block mb-0.5">EKUITAS BERJALAN</span>
+				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
+					<span class="text-[11px] text-text-3 block mb-0.5">EKUITAS BERJALAN</span>
 					<span class="text-lg font-bold {retPct == null ? 'text-text' : retPct >= 0 ? 'text-pos' : 'text-neg'}">
 						${mt5?.equity != null ? `$${mt5.equity.toFixed(2)}` : '—'}
 					</span>
@@ -149,54 +147,54 @@
 						{retPct == null ? '—' : `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`}
 					</span>
 				</div>
-				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
-					<span class="text-[11px] text-zinc-400 block mb-0.5">NET REALIZED PNL</span>
-					<span class="text-lg font-bold {mt5?.net_pnl_usd && mt5.net_pnl_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
+					<span class="text-[11px] text-text-3 block mb-0.5">NET REALIZED PNL</span>
+					<span class="text-lg font-bold {mt5?.net_pnl_usd && mt5.net_pnl_usd >= 0 ? 'text-pos' : 'text-neg'}">
 						{mt5?.net_pnl_usd != null ? `${mt5.net_pnl_usd >= 0 ? '+' : ''}$${mt5.net_pnl_usd.toFixed(2)}` : '—'}
 					</span>
-					<span class="text-[10px] text-zinc-400 block mt-0.5">Deal Audit Exness</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">Deal Audit Exness</span>
 				</div>
-				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
-					<span class="text-[11px] text-zinc-400 block mb-0.5">WIN RATE & DEALS</span>
-					<span class="text-lg font-bold text-white">{mt5?.win_rate_pct != null ? `${mt5.win_rate_pct}%` : '—'}</span>
-					<span class="text-[10px] text-zinc-400 block mt-0.5">
+				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
+					<span class="text-[11px] text-text-3 block mb-0.5">WIN RATE & DEALS</span>
+					<span class="text-lg font-bold text-text">{mt5?.win_rate_pct != null ? `${mt5.win_rate_pct}%` : '—'}</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">
 						{mt5?.wins != null ? `${mt5.wins}W / ${mt5.losses ?? 0}L` : '—'} · {mt5?.total_trades_today ?? 0} trade
 					</span>
 				</div>
 			</div>
 
 			<!-- STATUS POSISI LIVE DI MT5 -->
-			<div class="mt-4 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+			<div class="mt-4 rounded-lg bg-white/[0.02] border border-line-soft p-3">
 				<div class="flex flex-wrap items-center justify-between gap-2">
 					<div class="flex items-center gap-2">
-						<span class="w-2.5 h-2.5 rounded-full {mt5?.positions && mt5.positions.length > 0 ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}"></span>
-						<span class="text-xs font-mono text-zinc-300">
+						<span class="w-2.5 h-2.5 rounded-full {mt5?.positions && mt5.positions.length > 0 ? 'bg-warn' : 'bg-pos'}"></span>
+						<span class="text-xs font-mono text-text-3">
 							Posisi Terbuka (Open Deals): 
-							<strong class="{mt5?.positions && mt5.positions.length > 0 ? 'text-amber-400' : 'text-emerald-400'}">
+							<strong class="{mt5?.positions && mt5.positions.length > 0 ? 'text-warn' : 'text-pos'}">
 								{mt5?.positions?.length ?? 0} Aktif di Terminal MT5
 							</strong>
 						</span>
 					</div>
-					<div class="text-xs font-mono text-zinc-300 flex items-center gap-3">
-						<span>Floating PnL: <strong class="{mt5?.floating_pnl && mt5.floating_pnl < 0 ? 'text-rose-400' : mt5?.floating_pnl && mt5.floating_pnl > 0 ? 'text-emerald-400' : 'text-white'}">${mt5?.floating_pnl?.toFixed(2) ?? '0.00'} USD</strong></span>
-						<span class="rounded bg-white/5 px-2 py-0.5 text-[11px] text-zinc-400 border border-white/10">Status: {mt5?.positions && mt5.positions.length > 0 ? 'IN TRADE' : 'FLAT (Menunggu Trigger)'}</span>
+					<div class="text-xs font-mono text-text-3 flex items-center gap-3">
+						<span>Floating PnL: <strong class="{mt5?.floating_pnl && mt5.floating_pnl < 0 ? 'text-neg' : mt5?.floating_pnl && mt5.floating_pnl > 0 ? 'text-pos' : 'text-text'}">${mt5?.floating_pnl?.toFixed(2) ?? '0.00'} USD</strong></span>
+						<span class="rounded bg-surface-2 px-2 py-0.5 text-[11px] text-text-3 border border-line">Status: {mt5?.positions && mt5.positions.length > 0 ? 'IN TRADE' : 'FLAT (Menunggu Trigger)'}</span>
 					</div>
 				</div>
 
 				{#if mt5?.positions && mt5.positions.length > 0}
-					<div class="mt-3 pt-3 border-t border-white/5 space-y-2">
+					<div class="mt-3 pt-3 border-t border-line-soft space-y-2">
 						{#each mt5.positions as pos}
-							<div class="flex flex-wrap items-center justify-between gap-2 bg-black/40 rounded p-2 text-xs font-mono border border-white/5">
+							<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-2 rounded p-2 text-xs font-mono border border-line-soft">
 								<div class="flex items-center gap-2">
-									<span class="rounded px-1.5 py-0.5 font-bold {pos.type === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">{pos.type}</span>
-									<span class="text-white font-bold">{pos.symbol}</span>
-									<span class="text-zinc-400">#{pos.ticket}</span>
-									<span class="text-zinc-300">Vol: {pos.volume} Lot</span>
+									<span class="rounded px-1.5 py-0.5 font-bold {pos.type === 'BUY' ? 'bg-pos/20 text-pos' : 'bg-neg/20 text-neg'}">{pos.type}</span>
+									<span class="text-text font-bold">{pos.symbol}</span>
+									<span class="text-text-3">#{pos.ticket}</span>
+									<span class="text-text-3">Vol: {pos.volume} Lot</span>
 								</div>
 								<div class="flex items-center gap-3">
-									<span class="text-zinc-400">Open: ${pos.open_price}</span>
-									<span class="text-zinc-400">Current: ${pos.current_price}</span>
-									<span class="font-bold {pos.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">{pos.pnl >= 0 ? '+' : ''}${pos.pnl} USD</span>
+									<span class="text-text-3">Open: ${pos.open_price}</span>
+									<span class="text-text-3">Current: ${pos.current_price}</span>
+									<span class="font-bold {pos.pnl >= 0 ? 'text-pos' : 'text-neg'}">{pos.pnl >= 0 ? '+' : ''}${pos.pnl} USD</span>
 								</div>
 							</div>
 						{/each}
@@ -206,44 +204,42 @@
 		</div>
 
 		<!-- KARTU 2: LAYA AI 24/7 SENTINEL & SECURITY GUARD -->
-		<div class="rounded-xl border border-line bg-surface/90 p-5 shadow-2xl backdrop-blur relative overflow-hidden flex flex-col justify-between">
-			<div class="absolute -left-10 -top-10 w-36 h-36 bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+		<div class="rounded-card border border-line bg-surface p-5">
 
 			<div>
 				<div class="flex items-center justify-between border-b border-line-soft pb-3 mb-3">
 					<div class="flex items-center gap-2">
 						<span class="relative flex h-3 w-3">
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+							<span class="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
 						</span>
-						<h3 class="font-mono text-sm font-bold text-white">LAYA AI SENTINEL 24/7</h3>
+						<h3 class="font-mono text-sm font-bold text-text">LAYA AI SENTINEL 24/7</h3>
 					</div>
-					<span class="rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-mono text-blue-400 border border-blue-500/20">
+					<span class="rounded bg-accent/10 px-2 py-0.5 text-[10px] font-mono text-accent border border-accent/20">
 						System-1 Model
 					</span>
 				</div>
 
 				<div class="space-y-3 font-mono text-xs">
-					<div class="flex justify-between items-center py-1 border-b border-white/5">
-						<span class="text-zinc-400">Daemon Status:</span>
-						<span class="text-emerald-400 font-bold flex items-center gap-1">
+					<div class="flex justify-between items-center py-1 border-b border-line-soft">
+						<span class="text-text-3">Daemon Status:</span>
+						<span class="text-pos font-bold flex items-center gap-1">
 							● {sentinel?.active ? 'ONLINE (ACTIVE)' : 'STANDBY'}
 						</span>
 					</div>
-					<div class="flex justify-between items-center py-1 border-b border-white/5">
-						<span class="text-zinc-400">Security Shield:</span>
-						<span class="text-emerald-400 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+					<div class="flex justify-between items-center py-1 border-b border-line-soft">
+						<span class="text-text-3">Security Shield:</span>
+						<span class="text-pos font-semibold bg-pos/10 px-1.5 py-0.5 rounded border border-pos/20">
 							{sentinel?.security ?? 'PHP_DISABLED_SECURE'}
 						</span>
 					</div>
-					<div class="flex justify-between items-center py-1 border-b border-white/5">
-						<span class="text-zinc-400">Keyakinan aturan:</span>
-						<span class="text-white font-bold">
+					<div class="flex justify-between items-center py-1 border-b border-line-soft">
+						<span class="text-text-3">Keyakinan aturan:</span>
+						<span class="text-text font-bold">
 							{sentinel?.confidence == null ? '—' : `${(sentinel.confidence * 100).toFixed(0)}% Terkalibrasi`}
 						</span>
 					</div>
-					<div class="flex justify-between items-center py-1 border-b border-white/5">
-						<span class="text-zinc-400">Strategi PNP Aktif:</span>
+					<div class="flex justify-between items-center py-1 border-b border-line-soft">
+						<span class="text-text-3">Strategi PNP Aktif:</span>
 						<span class="text-accent font-bold truncate max-w-[150px]">
 							{sentinel?.active_strategy ?? 'Multi-Session EMA+RSI (formula)'}
 						</span>
@@ -251,85 +247,85 @@
 				</div>
 			</div>
 
-			<div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-sans text-zinc-400 leading-relaxed">
+			<div class="mt-4 pt-3 border-t border-line-soft text-[11px] font-sans text-text-3 leading-relaxed">
 				Aturan EMA+RSI memvalidasi setiap micro-breakout M5 sebelum order 0.10 lot ditembakkan ke Exness, melindungi dari jebakan false sweep. Laya AI sedang dinonaktifkan.
 			</div>
 		</div>
 	</div>
 
 	<!-- KARTU 3: RADAR SINYAL QUANTITATIVE (SETUP PROYEKSI PRE-FLIGHT) -->
-	<div class="rounded-xl border border-line bg-surface/90 p-5 shadow-2xl backdrop-blur">
+	<div class="rounded-card border border-line bg-surface p-5">
 		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-4 mb-4">
 			<div>
 				<div class="flex items-center gap-2">
-					<h3 class="font-mono text-base font-bold text-white flex items-center gap-2">
-						<svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<h3 class="font-mono text-base font-bold text-text flex items-center gap-2">
+						<svg class="w-4 h-4 text-warn" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
 						</svg>
 						RADAR SINYAL & SETUP PROYEKSI (PRE-FLIGHT)
 					</h3>
-					<span class="rounded bg-amber-500/10 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 border border-amber-500/20">
+					<span class="rounded bg-warn/10 px-2 py-0.5 text-xs font-mono font-bold text-warn border border-warn/20">
 						PRE-FLIGHT RADAR
 					</span>
-					<span class="rounded bg-blue-500/10 px-2 py-0.5 text-xs font-mono font-bold text-blue-400 border border-blue-500/20">
+					<span class="rounded bg-accent/10 px-2 py-0.5 text-xs font-mono font-bold text-accent border border-accent/20">
 						LOT: 0.10 FIXED
 					</span>
 				</div>
-				<p class="text-xs text-zinc-400 mt-0.5">
+				<p class="text-xs text-text-3 mt-0.5">
 					Kandidat level setup M5 dari mesin analisa kuantitatif — order baru akan dikirim ke MT5 saat level ter-trigger & dikonfirmasi Laya AI
 				</p>
 			</div>
 
 			<div class="flex items-center gap-2 font-mono text-xs">
-				<span class="rounded bg-white/5 px-2.5 py-1 text-zinc-300 border border-white/10">
-					RRR Gate: <strong class="text-emerald-400">≥ 1.6 : 1</strong>
+				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
+					RRR Gate: <strong class="text-pos">≥ 1.6 : 1</strong>
 				</span>
-				<span class="rounded bg-white/5 px-2.5 py-1 text-zinc-300 border border-white/10">
-					Buffered BE: <strong class="text-emerald-400">ON (+1.2R)</strong>
+				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
+					Buffered BE: <strong class="text-pos">ON (+1.2R)</strong>
 				</span>
-				<span class="rounded bg-white/5 px-2.5 py-1 text-zinc-300 border border-white/10">
-					Trailing: <strong class="text-emerald-400">ON (+1.5R)</strong>
+				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
+					Trailing: <strong class="text-pos">ON (+1.5R)</strong>
 				</span>
 			</div>
 		</div>
 
 		{#if signal && signal.status === 'OK'}
 			<div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
-				<div class="rounded-xl bg-black/40 border border-white/10 p-4">
+				<div class="rounded-xl bg-surface-2 border border-line p-4">
 					<div class="flex items-center justify-between mb-2">
-						<span class="text-xs text-zinc-400">PROYEKSI SETUP</span>
-						<span class="rounded px-2 py-0.5 text-xs font-bold {signal.side === 'LONG' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+						<span class="text-xs text-text-3">PROYEKSI SETUP</span>
+						<span class="rounded px-2 py-0.5 text-xs font-bold {signal.side === 'LONG' ? 'bg-pos/20 text-pos border border-pos/30' : 'bg-neg/20 text-neg border border-neg/30'}">
 							{signal.side} XAUUSD
 						</span>
 					</div>
-					<div class="text-2xl font-bold text-white mb-1">${signal.price?.toFixed(2)}</div>
-					<div class="text-[11px] text-zinc-400 font-sans">
+					<div class="text-2xl font-bold text-text mb-1">${signal.price?.toFixed(2)}</div>
+					<div class="text-[11px] text-text-3 font-sans">
 						Trigger Entry: ${signal.levels?.entry?.toFixed(2)}
 					</div>
 				</div>
 
-				<div class="rounded-xl bg-black/40 border border-white/10 p-4">
-					<div class="text-xs text-zinc-400 mb-1">PROYEKSI STOP LOSS</div>
-					<div class="text-xl font-bold text-rose-400">${signal.levels?.sl?.toFixed(2)}</div>
-					<div class="text-[11px] text-zinc-400 mt-1">
+				<div class="rounded-xl bg-surface-2 border border-line p-4">
+					<div class="text-xs text-text-3 mb-1">PROYEKSI STOP LOSS</div>
+					<div class="text-xl font-bold text-neg">${signal.levels?.sl?.toFixed(2)}</div>
+					<div class="text-[11px] text-text-3 mt-1">
 						Risk: -${signal.levels?.risk?.toFixed(2)} (Maks: -$30.00 pada 0.10 lot)
 					</div>
 				</div>
 
-				<div class="rounded-xl bg-black/40 border border-white/10 p-4">
-					<div class="text-xs text-zinc-400 mb-1">PROYEKSI TAKE PROFIT</div>
-					<div class="text-xl font-bold text-emerald-400">${signal.levels?.tp1?.toFixed(2)}</div>
-					<div class="text-[11px] text-zinc-400 mt-1">
+				<div class="rounded-xl bg-surface-2 border border-line p-4">
+					<div class="text-xs text-text-3 mb-1">PROYEKSI TAKE PROFIT</div>
+					<div class="text-xl font-bold text-pos">${signal.levels?.tp1?.toFixed(2)}</div>
+					<div class="text-[11px] text-text-3 mt-1">
 						Target 1: +${signal.levels?.reward?.toFixed(2)} (TP2: ${signal.levels?.tp2?.toFixed(2)})
 					</div>
 				</div>
 
-				<div class="rounded-xl bg-black/40 border border-white/10 p-4 flex flex-col justify-between">
+				<div class="rounded-xl bg-surface-2 border border-line p-4 flex flex-col justify-between">
 					<div>
-						<div class="text-xs text-zinc-400 mb-1">RRR & STATUS KEPUTUSAN</div>
-						<div class="text-xl font-bold text-white">{signal.rrr} : 1.0</div>
+						<div class="text-xs text-text-3 mb-1">RRR & STATUS KEPUTUSAN</div>
+						<div class="text-xl font-bold text-text">{signal.rrr} : 1.0</div>
 					</div>
-					<div class="text-[11px] text-emerald-400 font-semibold mt-2 flex items-center gap-1">
+					<div class="text-[11px] text-pos font-semibold mt-2 flex items-center gap-1">
 						<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 						</svg>
@@ -338,7 +334,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="py-8 text-center text-zinc-400 font-mono text-xs bg-black/20 rounded-xl border border-white/5">
+			<div class="py-8 text-center text-text-3 font-mono text-xs bg-surface-2 rounded-xl border border-line-soft">
 				Menunggu pembentukan formasi M5 yang terkonfirmasi oleh Laya AI Sentinel...
 			</div>
 		{/if}

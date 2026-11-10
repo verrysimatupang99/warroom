@@ -20,6 +20,7 @@ Jalankan lewat systemd timer (paper20-cycle.timer, tiap 15 menit) ATAU manual:
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import subprocess
 import sys
@@ -90,6 +91,24 @@ def _publikasikan_fakta() -> None:
     os.environ.update(ENV20)
     stg = get_settings()
     b = PaperBroker(stg, venue="crypto")
+
+    # Ekuitas berjalan dari ledger R (bukan konstanta config). risk/trade = 1% modal
+    # tetap (sizing broker memakai config equity), PnL = r x risk - fee.
+    modal = float(stg.equity_usd)
+    risk_usd = modal * 0.01
+    _ledger = HOME20 + "/state/crypto_equity.jsonl"
+    ekuitas = modal
+    if os.path.isfile(_ledger):
+        for _baris in open(_ledger, encoding="utf-8"):
+            try:
+                _t = json.loads(_baris)
+            except json.JSONDecodeError:
+                continue
+            _r = _t.get("r")
+            if _r is None:
+                continue
+            ekuitas += float(_r) * risk_usd - float(_t.get("fee_usd") or 0.0)
+    ekuitas = round(ekuitas, 2)
     pos = [
         {"pair": p.pair, "arah": p.direction, "entry": p.entry, "sl": p.stop,
          "size_usd": p.size_usd, "status": p.status}
@@ -98,7 +117,7 @@ def _publikasikan_fakta() -> None:
     ver = HOME20 + "/state/verdicts.jsonl"
     n_verdict = sum(1 for _ in open(ver, encoding="utf-8")) if os.path.isfile(ver) else 0
     value = {
-        "equity_usd": stg.equity_usd,
+        "equity_usd": ekuitas,  # ekuitas_berjalan dari ledger
         "n_posisi": len(pos),
         "posisi": pos,
         "jumlah_verdict": n_verdict,

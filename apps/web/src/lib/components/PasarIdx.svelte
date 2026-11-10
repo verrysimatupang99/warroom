@@ -7,15 +7,15 @@
 	let { sub }: Props = $props();
 </script>
 
-<div class="mb-4 bg-gradient-to-r from-emerald-950/40 via-surface to-surface border border-emerald-800/40 rounded-xl p-3.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+<div class="mb-4 bg-gradient-to-r from-surface-2 via-surface to-surface border border-pos/40 rounded-xl p-3.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
 	<div class="flex items-center gap-3">
-		<div class="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-base">
+		<div class="w-8 h-8 rounded-lg bg-pos/20 text-pos border border-pos/30 flex items-center justify-center font-bold text-base">
 			📊
 		</div>
 		<div>
 			<div class="flex items-center gap-2">
 				<h3 class="text-xs sm:text-sm font-bold text-white tracking-wide">IDX EQUITY & BANDARMOLOGI REPLICATOR</h3>
-				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-surface-2 text-pos border border-pos/60">
 					KRAKEN FLOW ATS • NO SELL
 				</span>
 				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/60">
@@ -31,7 +31,7 @@
 	<div class="flex items-center gap-3 text-xs font-mono">
 		<div class="text-right">
 			<div class="text-[9px] text-muted uppercase">Arjum Quota Guard:</div>
-			<div class="text-emerald-400 font-bold">Anti-Freeze Active</div>
+			<div class="text-pos font-bold">Anti-Freeze Active</div>
 		</div>
 		<div class="h-6 w-px bg-border"></div>
 		<div class="text-right">

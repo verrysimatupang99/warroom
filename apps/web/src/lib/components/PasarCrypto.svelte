@@ -7,18 +7,18 @@
 	let { sub }: Props = $props();
 </script>
 
-<div class="mb-4 bg-gradient-to-r from-sky-950/40 via-surface to-surface border border-sky-800/40 rounded-xl p-3.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+<div class="mb-4 bg-gradient-to-r from-surface-2 via-surface to-surface border border-line rounded-xl p-3.5 shadow-sm flex flex-wrap items-center justify-between gap-3">
 	<div class="flex items-center gap-3">
-		<div class="w-8 h-8 rounded-lg bg-sky-600/20 text-sky-400 border border-sky-500/30 flex items-center justify-center font-bold text-base">
+		<div class="w-8 h-8 rounded-lg bg-accent/20 text-accent border border-accent/30 flex items-center justify-center font-bold text-base">
 			🚀
 		</div>
 		<div>
 			<div class="flex items-center gap-2">
 				<h3 class="text-xs sm:text-sm font-bold text-white tracking-wide">CRYPTO DERIVATIVES & DEX RADAR</h3>
-				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-sky-950 text-sky-400 border border-sky-800/60">
+				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-surface-2 text-accent border border-line">
 					BTC • SOL • SUI
 				</span>
-				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-surface-2 text-pos border border-pos/60">
 					LIVE VENUE FAIL-CLOSED 🛡️
 				</span>
 			</div>
@@ -31,12 +31,12 @@
 	<div class="flex items-center gap-3 text-xs font-mono">
 		<div class="text-right">
 			<div class="text-[9px] text-muted uppercase">Funding Rate BTC:</div>
-			<div class="text-emerald-400 font-bold">+0.0068% / 8h</div>
+			<div class="text-pos font-bold">+0.0068% / 8h</div>
 		</div>
 		<div class="h-6 w-px bg-border"></div>
 		<div class="text-right">
 			<div class="text-[9px] text-muted uppercase">Short Squeeze Alert:</div>
-			<div class="text-amber-400 font-bold">SUI (-0.0025%)</div>
+			<div class="text-warn font-bold">SUI (-0.0025%)</div>
 		</div>
 	</div>
 </div>
