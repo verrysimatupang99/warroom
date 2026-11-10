@@ -60,7 +60,7 @@
 	let loading = $state(true);
 
 	const MODAL_AWAL = 500.0;
-	let retPct = $derived(mt5?.equity !== undefined ? ((mt5.equity - MODAL_AWAL) / MODAL_AWAL) * 100 : 0);
+	let retPct = $derived(mt5?.equity != null ? ((mt5.equity - MODAL_AWAL) / MODAL_AWAL) * 100 : null);
 
 	async function fetchData() {
 		try {
@@ -133,7 +133,7 @@
 				</div>
 			</div>
 
-			<!-- METRIK KEUANGAN AKUN EXNESS -->
+			<!-- METRIK KEUANGAN AKUN EXNESS (HAPUS-ANGKA-PALSU) -->
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
 				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
 					<span class="text-[11px] text-zinc-400 block mb-0.5">MODAL AWAL</span>
@@ -142,25 +142,25 @@
 				</div>
 				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
 					<span class="text-[11px] text-zinc-400 block mb-0.5">EKUITAS BERJALAN</span>
-					<span class="text-lg font-bold {retPct >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-						${mt5?.equity?.toFixed(2) ?? '456.98'}
+					<span class="text-lg font-bold {retPct == null ? 'text-text' : retPct >= 0 ? 'text-pos' : 'text-neg'}">
+						${mt5?.equity != null ? `$${mt5.equity.toFixed(2)}` : '—'}
 					</span>
-					<span class="text-[10px] {retPct >= 0 ? 'text-emerald-400' : 'text-rose-400'} block mt-0.5">
-						{retPct >= 0 ? '+' : ''}{retPct.toFixed(1)}%
+					<span class="text-[10px] {retPct == null ? 'text-text-3' : retPct >= 0 ? 'text-pos' : 'text-neg'} block mt-0.5">
+						{retPct == null ? '—' : `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`}
 					</span>
 				</div>
 				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
 					<span class="text-[11px] text-zinc-400 block mb-0.5">NET REALIZED PNL</span>
 					<span class="text-lg font-bold {mt5?.net_pnl_usd && mt5.net_pnl_usd >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-						{mt5?.net_pnl_usd && mt5.net_pnl_usd >= 0 ? '+' : ''}${mt5?.net_pnl_usd?.toFixed(2) ?? '-43.02'}
+						{mt5?.net_pnl_usd != null ? `${mt5.net_pnl_usd >= 0 ? '+' : ''}$${mt5.net_pnl_usd.toFixed(2)}` : '—'}
 					</span>
 					<span class="text-[10px] text-zinc-400 block mt-0.5">Deal Audit Exness</span>
 				</div>
 				<div class="rounded-lg bg-black/30 p-3 border border-white/5">
 					<span class="text-[11px] text-zinc-400 block mb-0.5">WIN RATE & DEALS</span>
-					<span class="text-lg font-bold text-white">{mt5?.win_rate_pct ?? 66.7}%</span>
+					<span class="text-lg font-bold text-white">{mt5?.win_rate_pct != null ? `${mt5.win_rate_pct}%` : '—'}</span>
 					<span class="text-[10px] text-zinc-400 block mt-0.5">
-						{mt5?.wins ?? 4}W / {mt5?.losses ?? 2}L ({mt5?.total_trades_today ?? 6} Trades)
+						{mt5?.wins != null ? `${mt5.wins}W / ${mt5.losses ?? 0}L` : '—'} · {mt5?.total_trades_today ?? 0} trade
 					</span>
 				</div>
 			</div>

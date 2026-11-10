@@ -45,6 +45,8 @@
 		</div>
 	{:else if sub === 'eksekusi'}
 		<JournalPanel market="forex" />
+	{:else if sub === 'paper'}
+		<JournalPanel market="forex" />
 	{:else if sub === 'alat'}
 		<div class="space-y-4">
 			<KalkulatorPosisi />

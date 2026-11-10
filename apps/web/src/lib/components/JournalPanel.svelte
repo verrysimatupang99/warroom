@@ -29,7 +29,7 @@
 	interface Trade {
 		iso?: string; symbol?: string; side?: string; volume?: string;
 		price_filled?: string; slippage_pts?: string; latency_ms?: string;
-		market?: string; pnl_pct?: string;
+		market?: string; pnl_pct?: string; r?: Angka;
 	}
 	interface Edge {
 		per_jam?: Record<string, { n: number; slip_rata_pts: number }>;
@@ -93,6 +93,21 @@
 	function alasan(jalur: string, cadangan: string) {
 		return galat[jalur] ?? cadangan;
 	}
+
+	// Pendekkan waktu ke DD MMM HH:MM agar tabel tak melebar (was: ISO panjang).
+	function fmtWaktu(iso: string | undefined) {
+		if (!iso) return '—';
+		const d = new Date(iso);
+		if (isNaN(d.getTime())) return iso;
+		const bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+		const pad = (x: number) => String(x).padStart(2, '0');
+		return `${pad(d.getDate())} ${bulan[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	}
+	// Pilih hasil: crypto pakai R, forex pakai P/L %.
+	function hasil(t: Trade) {
+		if (t.market === 'crypto') return t.r != null ? `${t.r > 0 ? '+' : ''}${t.r}R` : '—';
+		return t.pnl_pct || '—';
+	}
 </script>
 
 {#if memuat}
@@ -148,20 +163,20 @@
 								<th class="px-2 py-1.5">Simbol</th>
 								<th class="px-2 py-1.5">Sisi</th>
 								<th class="px-2 py-1.5 text-right">Harga</th>
-								<th class="px-2 py-1.5 text-right">P/L %</th>
-								<th class="px-2 py-1.5 text-right">Slip</th>
+								<th class="px-2 py-1.5 text-right">{market === 'crypto' ? 'Hasil' : 'P/L %'}</th>
+								{#if market !== 'crypto'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-line-soft">
 							{#each trades.slice(0, ringkas ? 8 : 60) as t}
 								<tr class="hover:bg-surface-2/60">
-									<td class="px-2 py-1.5 font-mono text-text-3">{t.iso ?? '—'}</td>
+									<td class="px-2 py-1.5 font-mono text-text-3 whitespace-nowrap">{fmtWaktu(t.iso)}</td>
 									<td class="px-2 py-1.5 uppercase text-text-3">{t.market ?? '—'}</td>
 									<td class="px-2 py-1.5 font-mono text-text">{t.symbol ?? '—'}</td>
 									<td class="px-2 py-1.5 text-text">{t.side ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text">{t.price_filled ?? '—'}</td>
-									<td class="px-2 py-1.5 text-right font-mono text-text">{t.pnl_pct || '—'}</td>
-									<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>
+									<td class="px-2 py-1.5 text-right font-mono text-text">{hasil(t)}</td>
+									{#if market !== 'crypto'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
 								</tr>
 							{/each}
 						</tbody>

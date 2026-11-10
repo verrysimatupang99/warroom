@@ -93,6 +93,12 @@ export const AREAS: Area[] = [
 				label: 'Alat',
 				kunci: ['risiko'],
 				catatan: 'Lot sizer, risiko per trade, dan batas harian'
+			},
+			{
+				slug: 'paper',
+				label: 'Paper',
+				kunci: ['ledger', 'equity'],
+				catatan: 'Catatan eksekusi kertas forex (terpisah dari MT5 live)'
 			}
 		]
 	},
@@ -131,6 +137,14 @@ export const AREAS: Area[] = [
 		rute: '/jurnal',
 		ikon: 'forex',
 		kategori: 'pasar',
+		anak: []
+	},
+	{
+		kunci: 'ledger',
+		label: 'Ledger',
+		rute: '/ledger',
+		ikon: 'forex',
+		kategori: 'riset',
 		anak: []
 	},
 	{
