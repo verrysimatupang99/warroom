@@ -328,27 +328,6 @@ async function muat() {
 
 	<div class="isi">
 		{#if sumber.length}
-			<section class="dompet20-strip" aria-label="Dompet paper per market (modal awal $20)">
-				<span class="sumber-judul">Dompet paper (modal awal $20)</span>
-				<div class="dompet-grid">
-					<div class="dompet-chip">
-						<span class="sumber-pasar">Crypto</span>
-						<span class="angka sumber-nama">
-							{dompetCrypto ? `$${dompetCrypto.equity_usd} · ${dompetCrypto.n_posisi} posisi` : 'menunggu siklus'}
-						</span>
-					</div>
-					<div class="dompet-chip">
-						<span class="sumber-pasar">Poly arm D</span>
-						<span class="angka sumber-nama">{dompetPoly !== null ? `$${dompetPoly.toFixed(2)}` : '—'}</span>
-					</div>
-					<div class="dompet-chip">
-						<span class="sumber-pasar">Memecoin GMGN</span>
-						<span class="angka sumber-nama">standby · <a href="/gmgn/" class="text-accent">/gmgn</a></span>
-					</div>
-				</div>
-			</section>
-		{/if}
-		{#if sumber.length}
 			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto OKX, IDX Stock Arjum,
 			     Forex TVC, Polymarket Dokumentasi PM, Meme GMGN/FOMO, LP Meteora & Uniswap) —
 			     sekarang tertulis di halaman, bukan tersembunyi di kepala orang. -->
@@ -539,169 +518,39 @@ async function muat() {
 		       - 3 Poin Konfluensi Pemicu
 		       - Bento 4 Metrik Inti
 		       - Alasan Eksekusi / Catatan Keputusan -->
-		<section class="pasar" aria-label="Sinyal per market">
+		<section class="pasar" aria-label="Status pasar">
 			<div class="judul-bagian">
-				<h2>Sinyal per Market</h2>
-				<p class="dim">
-					Format seragam DEX Confluence Alert: verdikt autotrade seketika, konfluensi pemicu,
-					dan metrik terukur per pasar.
-				</p>
+				<h2>Status Pasar</h2>
+				<p class="dim">Ringkasan tiap market. Detail sinyal lengkap ada di halaman masing-masing.</p>
 			</div>
-			<div class="sinyal-grid">
+			<div class="market-grid">
 				{#each pasarDaftar as p (p.pasar)}
-					{@const jujur = kartuJujur(p)}
-					<article class="sinyal-kartu {p.status_data}">
-						<header class="sinyal-kepala">
-							<div class="sinyal-baris-atas">
-								<h3>{p.label}</h3>
-								{#if p.jumlah > MAKS_PER_MARKET}
-									<a class="lihat-semua" href={p.rute}>Lihat semua ({p.jumlah}) →</a>
-								{:else if p.status_data === 'ada'}
-									<a class="lihat-semua" href={p.rute}>Buka {p.label.split(' (')[0]} →</a>
-								{/if}
+					<a class="market-kartu {p.status_data}" href={p.rute}>
+						<div class="mk-head">
+							<h3>{p.label}</h3>
+							{#if p.mode}<span class="mode-badge mode-{p.mode.toLowerCase()}">{p.mode}</span>{/if}
 							</div>
-							<div class="sinyal-badges">
-								{#if p.mode}
-									<span class="mode-badge mode-{p.mode.toLowerCase()}" title={p.catatan_mode ?? ''}>{p.mode}</span>
-								{/if}
-								<!-- honesty-tag motif baru: TERUKUR solid / BELUM TERVERIFIKASI dashed -->
-								<HonestyTag terverifikasi={jujur.terverifikasi} sumber={p.sumber} alasan={p.alasan_eksekusi ?? null} />
-								<!-- horizon kesegaran: segar/basi terhadap TTL signal yang dilaporkan API -->
-								<FreshnessBadge
-									status={jujur.status_segar}
-									age_s={jujur.umur_s}
-									ttl_s={ttlSinyal}
-									source={p.sumber ?? null}
-									ringkas
-								/>
-								{#if p.autotrade_verdict}
-									<span class="badge-autotrade {p.autotrade_verdict.toLowerCase()}">
-										{#if p.autotrade_verdict === 'OKE'}
-											● OKE AUTOTRADE
-										{:else if p.autotrade_verdict === 'PANTAU'}
-											● PANTAU / KANDIDAT
-										{:else}
-											● SKIP / TOLAK
-										{/if}
-									</span>
-								{/if}
-							</div>
-						</header>
-
-						{#if p.sumber}
-							<p class="sinyal-sumber">
-								sumber: {p.sumber}{#if jujur.umur_s != null} · sinyal {umurDetik(jujur.umur_s)} lalu{/if}
-							</p>
-						{:else if jujur.umur_s != null}
-							<p class="sinyal-sumber">
-								sinyal {umurDetik(jujur.umur_s)} lalu
-							</p>
-						{/if}
-						{#if jujur.dibuat}
-							<p class="sinyal-waktu angka">dibuat {waktuWIB(jujur.dibuat)}</p>
-						{/if}
-
-						{#if p.status_data === 'ada'}
-							{#if p.sinyal[0]?.pair}
-								<div class="lead-pair-baris">
-									<span class="lead-pair angka">{p.sinyal[0].pair}</span>
-									{#if p.sinyal[0].arah}
-										<span class="lead-arah {p.sinyal[0].arah === 'LONG' || p.sinyal[0].arah === 'BELI' ? 'pos' : 'neg'}">{p.sinyal[0].arah}</span>
-									{/if}
-									{#if p.sinyal[0].tier}
-										<span class="lead-tier">{p.sinyal[0].tier}</span>
-									{/if}
-									{#if p.sinyal[0].skor != null}
-										<span class="lead-skor angka">{p.sinyal[0].skor}<span class="dari">/100</span></span>
-									{/if}
-								</div>
-							{/if}
-
-							<!-- Track bar (pola warisan .bar, kini komponen): skor vs 100. -->
-							{#if p.sinyal[0]?.skor != null}
-								<TrackBar
-									label="SKOR VALIDASI"
-									nilai={p.sinyal[0].skor}
-									ambang={75}
-									nada={p.sinyal[0].skor >= 75 ? 'terkukur' : 'netral'}
-									teksAmbang={p.sinyal[0].skor >= 75 ? `AMBANG: 75` : 'AMBANG: 75 (DI BAWAH)'}
-								/>
-							{/if}
-
-							<!-- 3 Poin Konfluensi Pemicu -->
-							{#if p.confluence && p.confluence.length}
-								<div class="card-confluence">
-									<span class="section-label">Konfluensi Pemicu</span>
-									<div class="confluence-items">
-										{#each p.confluence as item}
-											<div class="confluence-pill">{item}</div>
-										{/each}
+							{#if p.status_data === 'ada' && p.sinyal[0]}
+								<div class="mk-lead">
+									<span class="mk-pair angka">{p.sinyal[0].pair}</span>
+									{#if p.sinyal[0].arah}<span class="mk-arah {p.sinyal[0].arah === 'LONG' || p.sinyal[0].arah === 'BELI' ? 'pos' : 'neg'}">{p.sinyal[0].arah}</span>{/if}
+									{#if p.sinyal[0].skor != null}<span class="mk-skor angka">{p.sinyal[0].skor}<span class="dari">/100</span></span>{/if}
 									</div>
-								</div>
+								<div class="mk-foot">
+									{#if p.autotrade_verdict}<span class="mk-verdict">{p.autotrade_verdict}</span>{/if}
+									{#if p.jumlah > 1}<span class="mk-more angka">{p.jumlah} sinyal</span>{/if}
+									</div>
+							{:else if p.status_data === 'kosong'}
+								<p class="mk-dim">Belum ada sinyal</p>
+							{:else if p.status_data === 'gagal'}
+								<p class="mk-dim mk-neg">Gagal memuat</p>
 							{/if}
-
-							<!-- Bento 4 Metrik Inti -->
-							{#if p.metrics && Object.keys(p.metrics).length}
-								<div class="card-bento">
-									{#each Object.entries(p.metrics) as [label, val]}
-										<div class="bento-cell">
-											<span class="bento-lbl">{label}</span>
-											<span class="bento-val angka">{val}</span>
-										</div>
-									{/each}
-								</div>
-							{/if}
-
-							<!-- Alasan Eksekusi -->
-							{#if p.alasan_eksekusi}
-								<p class="card-alasan">
-									<span class="dim">Eksekusi:</span> <b>{p.alasan_eksekusi}</b>
-								</p>
-							{/if}
-
-							<!-- Catatan kejujuran ringkas — selalu di kartu (bukan hanya <details> audit).
-							     Teks penuh tetap ada di lipatan "Catatan & skor per pasar". -->
-							{#if jujur.catatan}
-								<p class="card-jujur" title={jujur.catatan}>{ringkasCatatan(jujur.catatan)}</p>
-							{/if}
-
-							<!-- Kandidat lain bila ada lebih dari 1 -->
-							{#if p.sinyal.length > 1}
-								<div class="kandidat-sekunder">
-									<span class="section-label">Kandidat Lain ({p.sinyal.length - 1})</span>
-									{#each p.sinyal.slice(1, MAKS_PER_MARKET) as s, idx (s.pair ?? idx)}
-										<div class="sinyal-baris-mini">
-											<div class="sinyal-kiri">
-												<span class="sinyal-pair angka">{s.pair ?? '—'}</span>
-												{#if s.arah}<span class="sinyal-arah {s.arah === 'LONG' || s.arah === 'BELI' ? 'pos' : 'neg'}">{s.arah}</span>{/if}
-												{#if s.tier}<span class="sinyal-tier">{s.tier}</span>{/if}
-											</div>
-											<div class="sinyal-kanan angka dim">
-												{#if s.entry != null}<span>e {formatHarga(typeof s.entry === 'number' ? s.entry : Number(s.entry))}</span>{/if}
-												{#if s.sl != null}<span>s {formatHarga(typeof s.sl === 'number' ? s.sl : Number(s.sl))}</span>{/if}
-												{#if s.tp1 != null}<span>t {formatHarga(typeof s.tp1 === 'number' ? s.tp1 : Number(s.tp1))}</span>{/if}
-												{#if s.autotrade_verdict}
-													<span class="badge-mini {s.autotrade_verdict === 'OKE' ? 'pos' : 'warn'}">{s.autotrade_verdict}</span>
-												{/if}
-											</div>
-										</div>
-									{/each}
-								</div>
-							{/if}
-						{:else if p.status_data === 'kosong'}
-							<p class="sinyal-kosong">Tidak ada sinyal. {p.alasan}</p>
-							{#if p.alasan_eksekusi}
-								<p class="card-alasan dim">{p.alasan_eksekusi}</p>
-							{/if}
-						{:else}
-							<p class="sinyal-gagal">⚠ {p.alasan}</p>
-						{/if}
-					</article>
-				{/each}
-				{#if pasarDaftar.length === 0}
-					<p class="dim">Daftar sinyal per market belum tersedia{galat ? `: ${galat}` : '.'}</p>
-				{/if}
-			</div>
+						</a>
+					{/each}
+					{#if pasarDaftar.length === 0}
+						<p class="dim">Status pasar belum tersedia{galat ? `: ${galat}` : '.'}</p>
+					{/if}
+				</div>
 		</section>
 
 		<!-- 4. STATUS per pasar — LAPISAN AUDIT (audit QA putaran 4, prioritas 4:
@@ -907,6 +756,33 @@ async function muat() {
 	.mode-badge.mode-paper { color: var(--kuning); border-color: var(--kuning); background: color-mix(in srgb, var(--kuning) 8%, transparent); }
 	.mode-badge.mode-historis { color: var(--redup); border-style: dashed; }
 	.mode-badge.mode-live { color: var(--mint); border-color: var(--mint); background: color-mix(in srgb, var(--mint) 8%, transparent); }
+
+	/* Grid status pasar ringkas (beranda) — 1 kartu/market, link ke halaman market. */
+	.market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.75rem; }
+	.market-kartu {
+		display: flex; flex-direction: column; gap: 0.4rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-card);
+		background: var(--permukaan); padding: 0.75rem 0.85rem;
+		color: inherit; text-decoration: none;
+		transition: border-color 160ms var(--ease-out);
+		cursor: pointer; min-height: 44px;
+	}
+	.market-kartu:hover { border-color: color-mix(in srgb, var(--amber) 35%, var(--garis)); }
+	.market-kartu.gagal { border-color: var(--merah); }
+	.mk-head { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+	.mk-head h3 { font-size: 0.82rem; font-weight: 700; margin: 0; letter-spacing: 0.01em; color: var(--teks); }
+	.mk-lead { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap; }
+	.mk-pair { font-size: 0.8rem; font-weight: 700; color: var(--teks); }
+	.mk-arah { font-size: 0.7rem; font-weight: 700; }
+	.mk-arah.pos { color: var(--mint); }
+	.mk-arah.neg { color: var(--merah); }
+	.mk-skor { font-size: 0.72rem; color: var(--teks-2); }
+	.mk-skor .dari { color: var(--redup); }
+	.mk-foot { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+	.mk-verdict { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.04em; color: var(--teks-2); }
+	.mk-more { font-size: 0.64rem; color: var(--redup); }
+	.mk-dim { font-size: 0.72rem; color: var(--redup); margin: 0; }
+	.mk-dim.mk-neg { color: var(--merah); }
 	.verif-badge {
 		font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em;
 		border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0.05rem 0.3rem;
@@ -983,25 +859,6 @@ async function muat() {
 	.sumber-nama { font-weight: 600; color: var(--tinta); }
 	/* Dompet paper $20 (15 Okt) — strip dengan chip yang lebih besar dari sumber data
 	   supaya hierarki jelas: dompet = angka yang owner pantau, sumber = metadata. */
-	.dompet20-strip {
-		display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
-		border: 1px solid color-mix(in srgb, var(--mint) 28%, var(--garis));
-		border-radius: var(--radius-card);
-		padding: 0.45rem 0.7rem; background: var(--permukaan);
-	}
-	.dompet-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1; }
-	.dompet-chip {
-		display: inline-flex; flex-direction: column; gap: 0.1rem;
-		border: 1px solid var(--garis); border-radius: var(--radius-card); padding: 0.3rem 0.65rem;
-		background: var(--latar);
-		transition: border-color 160ms var(--ease-out), background 160ms var(--ease-out);
-	}
-	.dompet-chip:hover {
-		border-color: color-mix(in srgb, var(--mint) 40%, var(--garis));
-		/* FLAT */
-	}
-	.dompet-chip .angka { font-size: 0.8rem; font-family: var(--font-mono); color: var(--mint); }
-	.dompet-chip a { color: var(--accent); }
 	.sumber-chip {
 		transition: border-color 160ms var(--ease-out);
 	}
