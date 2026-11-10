@@ -1,7 +1,6 @@
 """Test layer konfigurasi strategy (formula aman, indikator, config, backtest)."""
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 import pytest
@@ -154,8 +153,8 @@ def test_config_tanpa_entry_ditolak(tmp_path):
 
 # ---------- backtest ----------
 
-def _candle(o, h, l, c):
-    return {"open": o, "high": h, "low": l, "close": c, "volume": 1.0}
+def _candle(o, h, lo, c):
+    return {"open": o, "high": h, "low": lo, "close": c, "volume": 1.0}
 
 
 def test_baca_candles_kosong_jika_file_tak_ada(tmp_path):
