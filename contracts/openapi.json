@@ -5295,6 +5295,90 @@
         ]
       }
     },
+    "/api/v1/journal/trades/{ticket}": {
+      "delete": {
+        "description": "Hapus satu baris trade (owner-only) — bersihkan baris uji/keliru.\n\nKunci = (venue, mode, ext_id) mengikuti unique constraint `trades`, supaya\ntidak menghapus baris yang salah. Mengembalikan ringkasan baris yang dihapus.",
+        "operationId": "hapus_trade_api_v1_journal_trades__ticket__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket",
+            "required": true,
+            "schema": {
+              "title": "Ticket",
+              "type": "string"
+            }
+          },
+          {
+            "description": "venue trade (mis. forex)",
+            "in": "query",
+            "name": "venue",
+            "required": true,
+            "schema": {
+              "description": "venue trade (mis. forex)",
+              "title": "Venue",
+              "type": "string"
+            }
+          },
+          {
+            "description": "mode trade (live|paper|warisan)",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "live",
+              "description": "mode trade (live|paper|warisan)",
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Hapus Trade Api V1 Journal Trades  Ticket  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hapus Trade",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
     "/api/v1/journal/watchlist": {
       "get": {
         "description": "Posisi dan pending order yang sedang terbuka di terminal MT5.",

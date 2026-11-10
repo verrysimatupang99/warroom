@@ -8,9 +8,10 @@ Lima endpoint menerima `market=all|forex|crypto`; sisanya khusus forex karena
 hanya forex yang punya antrean order nyata (slippage, latensi, sesi).
 """
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from warroom_core.db.models import User
 
 from warroom_api import auth, lokal
 from warroom_api.routers.tencent import _fetch_tencent
@@ -178,3 +179,32 @@ async def journal_symbol(symbol: str) -> dict[str, Any]:
         if str(nama).upper() == symbol.upper():
             return {"pair": symbol.upper(), "found": True, **row}
     return {"pair": symbol.upper(), "found": False}
+
+
+@router.delete("/trades/{ticket}")
+def hapus_trade(
+    ticket: str,
+    user: Annotated[User, Depends(auth.require_role("owner"))],
+    venue: str = Query(..., description="venue trade (mis. forex)"),
+    mode: str = Query("live", description="mode trade (live|paper|warisan)"),
+) -> dict[str, Any]:
+    """Hapus satu baris trade (owner-only) — bersihkan baris uji/keliru.
+
+    Kunci = (venue, mode, ext_id) mengikuti unique constraint `trades`, supaya
+    tidak menghapus baris yang salah. Mengembalikan ringkasan baris yang dihapus.
+    """
+    from sqlalchemy import select
+    from warroom_core.db import session_scope
+    from warroom_core.db.models import Trade
+
+    with session_scope() as ses:
+        row = ses.execute(
+            select(Trade).where(
+                Trade.venue == venue, Trade.mode == mode, Trade.ext_id == ticket
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            raise HTTPException(404, "Trade tidak ditemukan")
+        info = {"id": row.id, "venue": row.venue, "mode": row.mode, "ext_id": row.ext_id}
+        ses.delete(row)
+    return {"status": "deleted", **info}
