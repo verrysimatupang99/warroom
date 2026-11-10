@@ -648,6 +648,50 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
     return {"status": "OK", "ticket": payload.ticket, "net": round(net, 2)}
 
 
+@router.get("/mt5/deals", dependencies=[Depends(verify_mt5_or_admin)])
+async def list_mt5_deals(limit: int = 20) -> dict[str, Any]:
+    """Daftar deal tertutup terakhir (untuk post-mortem otomatis).
+
+    Membaca deals.csv (ditulis oleh POST /mt5/deal). Mengembalikan deal terbaru
+    dulu. Dipakai watcher cyber1 untuk mendeteksi deal baru dan mengirim
+    ringkasan post-mortem ke Telegram HQ.
+    """
+    limit = max(1, min(limit, 200))
+    if not DEAL_LOG.exists():
+        return {"deals": [], "total": 0}
+    try:
+        with DEAL_LOG.open(newline="") as f:
+            rows = list(csv.DictReader(f))
+    except OSError as exc:
+        log.warning("gagal baca deals.csv: %s", exc)
+        raise HTTPException(status_code=500, detail="gagal membaca log deal") from exc
+    # Baris terbaru ada di akhir file; balik urutan agar terbaru dulu.
+    rows.reverse()
+    out: list[dict[str, Any]] = []
+    for row in rows[:limit]:
+        try:
+            net = float(row.get("net") or 0.0)
+        except (TypeError, ValueError):
+            net = 0.0
+        out.append({
+            "ticket": int(row.get("ticket") or 0),
+            "position": int(row.get("position") or 0),
+            "symbol": row.get("symbol") or "",
+            "side": row.get("side") or "",
+            "volume": row.get("volume") or "",
+            "open_time": row.get("open_time") or "",
+            "close_time": row.get("close_time") or "",
+            "open_price": row.get("open_price") or "",
+            "close_price": row.get("close_price") or "",
+            "profit": row.get("profit") or "",
+            "net": net,
+            "magic": row.get("magic") or "",
+            "comment": row.get("comment") or "",
+            "strategy_version": row.get("strategy_version") or "",
+        })
+    return {"deals": out, "total": len(rows)}
+
+
 PANEL_STATE = Path("/var/lib/warroom/panels.json")
 MOMENTUM_STATE = Path("/var/lib/warroom/momentum_paper.json")
 MOMENTUM_TRADES = Path("/var/lib/warroom/momentum_trades.csv")

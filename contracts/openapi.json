@@ -8027,6 +8027,68 @@
         ]
       }
     },
+    "/api/v1/tencent/mt5/deals": {
+      "get": {
+        "description": "Daftar deal tertutup terakhir (untuk post-mortem otomatis).\n\nMembaca deals.csv (ditulis oleh POST /mt5/deal). Mengembalikan deal terbaru\ndulu. Dipakai watcher cyber1 untuk mendeteksi deal baru dan mengirim\nringkasan post-mortem ke Telegram HQ.",
+        "operationId": "list_mt5_deals_api_v1_tencent_mt5_deals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Mt5 Deals Api V1 Tencent Mt5 Deals Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Mt5 Deals",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/mt5/fill": {
       "post": {
         "description": "Catat kualitas eksekusi: harga diminta vs harga didapat + latensi.\n\nDipakai untuk mengukur slippage nyata per jam dan per kondisi pasar.\nTidak mengubah perilaku EA.",
