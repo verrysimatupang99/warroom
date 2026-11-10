@@ -40,45 +40,26 @@ test('home: akurasi per market + narasi tetap ada', async ({ page }) => {
  * sinyalnya digenerate + umurnya, dan tiap baris pasar punya waktu mini. Kelas bug yang
  * dicegah: pembaca tidak bisa menilai apakah sinyal masih segar atau sisa kemarin.
  */
-test('home: timestamp kapan sinyal digenerate', async ({ page }) => {
-  // Sesi sudah dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
-  await page.goto('/');
-  await expect(page.getByText(/Sinyal per Market|STATUS HARI INI/).first()).toBeVisible({ timeout: 25000 });
-  // Tunggu DATA (bukan hanya judul) — jadi tidak flaky saat API lebih lambat dari DOM.
-  // Bentuk nyata di UI: "sumber: OKX· sinyal 1j lalu" lalu "dibuat 16 Okt 2026, 17.05 WIB".
-  await expect(page.getByText(/sinyal \d+[jhm] lalu|\d{2}\.\d{2} WIB/).first()).toBeVisible({ timeout: 25000 });
-  await bukaSemuaLipatan(page);
-  const t = await page.locator('body').innerText();
-  // Revisi pemilik 7 Okt: sinyal per market MENGGANTIKAN blok "Sinyal digenerate" di card
-  // status (card itu sekarang gabungan status+akurasi). Yang tetap WAJIB: pembaca bisa
-  // menilai kesegaran — umur tiap kandidat + baris pasar membawa waktu "dibuat".
-  const i = t.indexOf('Sinyal per Market');
-  console.log('--- TIMESTAMP ---');
-  console.log(t.slice(i, i + 260));
-  expect(t).toMatch(/lalu/);
-  expect(t).toMatch(/dibuat \d{2} \w+ \d{4}|e \S+ · s \S+/);
 
-  // dan pasar yang mengirim waktu harus menyebutkannya apa adanya — DIBATASI ke bagian
-  // "Sinyal per Market" saja; labelnya juga muncul di teks verdikt di atas.
-  //
-  // Pasar TANPA sinyal tidak bisa menyebut waktu, dan itu benar: kartunya berbunyi
-  // "Tidak ada sinyal". Menuntut timestamp di sana berarti menuntut data yang tidak
-  // ada. Yang dijaga tetap utuh: setiap pasar yang PUNYA sinyal wajib menyebut
-  // kesegarannya. (DB tes kosong untuk sebagian pasar — perilaku yang sama terjadi
-  // di produksi saat sebuah pasar belum mengirim.)
-  const bagian = t.slice(i);
-  const TANPA_SINYAL = /Tidak ada sinyal|Belum ada sinyal/i;
-  for (const label of ['Crypto (SMC)', 'Polymarket']) {
-    const j = bagian.indexOf(label);
-    if (j < 0) continue;
-    const seg = bagian.slice(j, j + 400);
-    // Punya waktu → wajib lolos tanpa syarat (jangan sampai "Tidak ada sinyal" milik
-    // kartu sebelah membuat pasar yang PUNYA sinyal ikut dilewati).
-    if (/lalu|dibuat/.test(seg)) continue;
-    if (TANPA_SINYAL.test(seg)) {
-      console.log(`  ${label}: tanpa sinyal — kesegaran tidak berlaku`);
-      continue;
-    }
-    expect(seg, `${label} punya sinyal, jadi wajib menyebut waktu`).toMatch(/lalu|dibuat/);
-  }
+test('home: status pasar per market tampil (ringkasan + link ke detail)', async ({ page }) => {
+	// Sesi dibuat global-setup (login sekali per suite) — lihat playwright.config.ts.
+	await page.goto('/');
+	await expect(page.getByText('Status Pasar').first()).toBeVisible({ timeout: 25000 });
+	const kartu = page.locator('.market-kartu');
+	await expect(kartu.first()).toBeVisible({ timeout: 25000 });
+
+	// Ringkasan beranda: tiap market punya kartu status (ada/kosong/gagal) + link ke
+	// halaman detail (tempat timestamp & kesegaran sinyal lengkap ditampilkan).
+	const status = await kartu.evaluateAll((els) =>
+		els.map((e) =>
+			['ada', 'kosong', 'gagal'].find((c) => e.classList.contains(c)) ?? 'tanpa-status'
+		)
+	);
+	expect(status.length).toBeGreaterThan(0);
+	expect(status.every((s) => s !== 'tanpa-status')).toBe(true);
+
+	// Setiap kartu pasar menautkan ke halaman detailnya — kesegaran sinyal bisa
+	// dinilai di sana (bukan hilang, hanya dipindah dari beranda).
+	const tautan = await kartu.evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href')));
+	expect(tautan.every((h) => h && h.startsWith('/'))).toBe(true);
 });

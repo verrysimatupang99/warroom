@@ -16,7 +16,7 @@ test('home: strip kesehatan sistem tampil', async ({ page }) => {
 	const teks = (await strip.innerText()).toLowerCase();
 	expect(teks).toContain('db');
 	expect(teks).toContain('worker');
-	expect(teks).toContain('fakta basi');
+	expect(teks).toContain('data basi');
 
 	// Tanpa laporan API, nada harus "tak" (abu-abu) — bukan hijau yang mengklaim sehat.
 	const nada = await strip.locator('[data-nada]').evaluateAll((els) =>
@@ -25,17 +25,19 @@ test('home: strip kesehatan sistem tampil', async ({ page }) => {
 	expect(nada.every((n) => ['ok', 'gagal', 'tak'].includes(n ?? ''))).toBe(true);
 });
 
-test('home: kartu pasar membawa horizon kesegaran, bukan hanya angka umur', async ({ page }) => {
+test('home: tiap kartu pasar membawa status data (ada/kosong/gagal)', async ({ page }) => {
 	await page.goto('/');
-	const kartu = page.locator('.sinyal-kartu').first();
-	await expect(kartu).toBeVisible({ timeout: 25000 });
+	const kartu = page.locator('.market-kartu');
+	await expect(kartu.first()).toBeVisible({ timeout: 25000 });
 
-	// Badge kesegaran memakai data-testid="freshness" (komponen FreshnessBadge).
-	const badge = kartu.getByTestId('freshness').first();
-	await expect(badge).toBeVisible();
-
-	// Nada hanya boleh salah satu dari nilai yang didefinisikan; "n/a" sah bila TTL
-	// sinyal tidak dilaporkan API.
-	const nada = await badge.getAttribute('data-nada');
-	expect(['segar', 'basi', 'cache', 'n/a']).toContain(nada);
+	// Setiap kartu pasar WAJIB membawa status data — pembaca tahu mana yang mati
+	// ('gagal') vs sepi ('kosong') vs ada sinyal ('ada'). Ini pengganti badge
+	// freshness per-sinyal (kini di halaman masing-masing market).
+	const status = await kartu.evaluateAll((els) =>
+		els.map((e) =>
+			['ada', 'kosong', 'gagal'].find((c) => e.classList.contains(c)) ?? 'tanpa-status'
+		)
+	);
+	expect(status.length).toBeGreaterThan(0);
+	expect(status.every((s) => s !== 'tanpa-status')).toBe(true);
 });

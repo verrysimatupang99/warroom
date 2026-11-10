@@ -163,8 +163,8 @@
 								<th class="px-2 py-1.5">Simbol</th>
 								<th class="px-2 py-1.5">Sisi</th>
 								<th class="px-2 py-1.5 text-right">Harga</th>
-								<th class="px-2 py-1.5 text-right">{market === 'crypto' ? 'Hasil' : 'P/L %'}</th>
-								{#if market !== 'crypto'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
+								<th class="px-2 py-1.5 text-right">{market === 'forex' ? 'P/L %' : 'Hasil'}</th>
+								{#if market === 'forex'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-line-soft">
@@ -176,7 +176,7 @@
 									<td class="px-2 py-1.5 text-text">{t.side ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text">{t.price_filled ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text">{hasil(t)}</td>
-									{#if market !== 'crypto'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
+									{#if market === 'forex'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
 								</tr>
 							{/each}
 						</tbody>

@@ -34,7 +34,7 @@ describe('InfraHealth', () => {
 	it('ada data → tampilkan tiap MT5 dan statusnya', () => {
 		render(InfraHealth, { props: { data: snapshotSehat, galat: null, memuat: false } });
 		const el = screen.getByTestId('infra-health');
-		expect(el.textContent).toContain('MEMOH RUNTIME');
+		expect(el.textContent).toContain('DAEMON MEMOH');
 		expect(el.textContent).toContain('active');
 		expect(el.textContent).toContain('box-2aacb3');
 		expect(el.textContent).toContain('up');

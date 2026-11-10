@@ -25,6 +25,23 @@
 
 	const terfilter = $derived(filter === 'all' ? trades : trades.filter((t) => t.market === filter));
 
+	// Paginasi: 25 baris per halaman supaya halaman tak terlalu panjang.
+	const PER_HALAMAN = 25;
+	let halaman = $state(0);
+	const totalHalaman = $derived(Math.max(1, Math.ceil(terfilter.length / PER_HALAMAN)));
+	const terpaginasi = $derived(terfilter.slice(halaman * PER_HALAMAN, (halaman + 1) * PER_HALAMAN));
+	// Ringkasan dari seluruh baris terfilter (bukan cuma halaman aktif).
+	const ringkasan = $derived.by(() => {
+		const menang = terfilter.filter((t) => (t.market === 'crypto' ? (t.r ?? 0) > 0 : parseFloat(t.pnl_pct ?? '') > 0)).length;
+		const rugi = terfilter.filter((t) => (t.market === 'crypto' ? (t.r ?? 0) < 0 : parseFloat(t.pnl_pct ?? '') < 0)).length;
+		const totalR = terfilter.reduce((a, t) => a + (t.market === 'crypto' && t.r != null ? t.r : 0), 0);
+		const tuntas = menang + rugi;
+		const wr = tuntas > 0 ? (menang / tuntas) * 100 : null;
+		return { total: terfilter.length, menang, rugi, totalR, wr };
+	});
+	// Reset ke halaman 0 saat filter berubah.
+	$effect(() => { void filter; halaman = 0; });
+
 	async function muat() {
 		memuat = true;
 		galat = null;
@@ -103,10 +120,29 @@
 			onulang={() => void muat()}
 		/>
 	{:else}
+		<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+			<div class="rounded-card border border-line bg-surface p-3">
+				<span class="text-11 text-text-3 block mb-0.5">Total eksekusi</span>
+				<span class="text-lg font-bold text-text font-mono">{ringkasan.total}</span>
+			</div>
+			<div class="rounded-card border border-line bg-surface p-3">
+				<span class="text-11 text-text-3 block mb-0.5">Menang / Rugi</span>
+				<span class="text-lg font-bold font-mono"><span class="text-pos">{ringkasan.menang}</span> / <span class="text-neg">{ringkasan.rugi}</span></span>
+			</div>
+			<div class="rounded-card border border-line bg-surface p-3">
+				<span class="text-11 text-text-3 block mb-0.5">Win rate</span>
+				<span class="text-lg font-bold text-text font-mono">{ringkasan.wr != null ? `${ringkasan.wr.toFixed(0)}%` : '—'}</span>
+			</div>
+			<div class="rounded-card border border-line bg-surface p-3">
+				<span class="text-11 text-text-3 block mb-0.5">Total R (crypto)</span>
+				<span class="text-lg font-bold font-mono {ringkasan.totalR >= 0 ? 'text-pos' : 'text-neg'}">{ringkasan.totalR > 0 ? '+' : ''}{ringkasan.totalR.toFixed(1)}R</span>
+			</div>
+		</div>
+
 		<section class="rounded-card border border-line bg-surface p-4">
 			<div class="flex items-center justify-between mb-2">
 				<h2 class="text-13 font-bold text-text">Catatan eksekusi</h2>
-				<span class="font-mono text-11 text-text-3">{terfilter.length} baris</span>
+				<span class="font-mono text-11 text-text-3">Halaman {halaman + 1} / {totalHalaman} · {terfilter.length} baris</span>
 			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-11 text-left">
@@ -118,11 +154,11 @@
 							<th class="px-2 py-1.5">Sisi</th>
 							<th class="px-2 py-1.5 text-right">Harga</th>
 							<th class="px-2 py-1.5 text-right">Hasil</th>
-							{#if filter !== 'crypto'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
+							{#if filter === 'forex'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-line-soft">
-						{#each terfilter as t, i (i)}
+						{#each terpaginasi as t, i (i)}
 							<tr class="hover:bg-surface-2/60">
 								<td class="px-2 py-1.5 font-mono text-text-3 whitespace-nowrap">{fmtWaktu(t.iso)}</td>
 								<td class="px-2 py-1.5 uppercase text-text-3">{t.market ?? '—'}</td>
@@ -130,12 +166,19 @@
 								<td class="px-2 py-1.5 text-text">{t.side ?? '—'}</td>
 								<td class="px-2 py-1.5 text-right font-mono text-text">{t.price_filled ?? '—'}</td>
 								<td class="px-2 py-1.5 text-right font-mono text-text">{hasil(t)}</td>
-								{#if filter !== 'crypto'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
+								{#if filter === 'forex'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
+			{#if totalHalaman > 1}
+				<div class="flex items-center justify-between mt-3 pt-3 border-t border-line-soft">
+					<button type="button" class="min-h-[36px] rounded-control border border-line px-3 py-1.5 text-12 font-mono cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed {halaman === 0 ? 'text-text-3' : 'text-text hover:text-accent'}" disabled={halaman === 0} onclick={() => (halaman = Math.max(0, halaman - 1))}>← Sebelumnya</button>
+					<span class="font-mono text-11 text-text-3">{halaman * PER_HALAMAN + 1}–{Math.min((halaman + 1) * PER_HALAMAN, terfilter.length)} dari {terfilter.length}</span>
+					<button type="button" class="min-h-[36px] rounded-control border border-line px-3 py-1.5 text-12 font-mono cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed {halaman >= totalHalaman - 1 ? 'text-text-3' : 'text-text hover:text-accent'}" disabled={halaman >= totalHalaman - 1} onclick={() => (halaman = Math.min(totalHalaman - 1, halaman + 1))}>Berikutnya →</button>
+				</div>
+			{/if}
 		</section>
 	{/if}
 </div>
