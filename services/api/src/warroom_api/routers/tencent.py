@@ -664,7 +664,7 @@ async def list_mt5_deals(limit: int = 20) -> dict[str, Any]:
             rows = list(csv.DictReader(f))
     except OSError as exc:
         log.warning("gagal baca deals.csv: %s", exc)
-        raise HTTPException(status_code=500, detail="gagal membaca log deal")
+        raise HTTPException(status_code=500, detail="gagal membaca log deal") from exc
     # Baris terbaru ada di akhir file; balik urutan agar terbaru dulu.
     rows.reverse()
     out: list[dict[str, Any]] = []
