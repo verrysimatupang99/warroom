@@ -328,8 +328,8 @@ async function muat() {
 
 	<div class="isi">
 		{#if sumber.length}
-			<section class="dompet20-strip" aria-label="Dompet paper $20 per market">
-				<span class="sumber-judul">Dompet paper $20</span>
+			<section class="dompet20-strip" aria-label="Dompet paper per market (modal awal $20)">
+				<span class="sumber-judul">Dompet paper (modal awal $20)</span>
 				<div class="dompet-grid">
 					<div class="dompet-chip">
 						<span class="sumber-pasar">Crypto</span>
@@ -343,7 +343,7 @@ async function muat() {
 					</div>
 					<div class="dompet-chip">
 						<span class="sumber-pasar">Memecoin GMGN</span>
-						<span class="angka sumber-nama">$20 · <a href="/gmgn/" class="text-accent">/gmgn</a></span>
+						<span class="angka sumber-nama">standby · <a href="/gmgn/" class="text-accent">/gmgn</a></span>
 					</div>
 				</div>
 			</section>
