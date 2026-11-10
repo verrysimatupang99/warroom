@@ -59,8 +59,6 @@
 	let signal = $state<ForexSignal | null>(null);
 	let loading = $state(true);
 
-	const MODAL_AWAL = 500.0;
-	let retPct = $derived(mt5?.equity != null ? ((mt5.equity - MODAL_AWAL) / MODAL_AWAL) * 100 : null);
 
 	async function fetchData() {
 		try {
@@ -134,17 +132,17 @@
 			<!-- METRIK KEUANGAN AKUN EXNESS (HAPUS-ANGKA-PALSU) -->
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
-					<span class="text-[11px] text-text-3 block mb-0.5">MODAL AWAL</span>
-					<span class="text-lg font-bold text-text">${MODAL_AWAL.toFixed(2)}</span>
-					<span class="text-[10px] text-text-3 block mt-0.5">Baseline Demo</span>
+					<span class="text-[11px] text-text-3 block mb-0.5">BALANCE</span>
+					<span class="text-lg font-bold text-text">{mt5?.balance != null ? `$${mt5.balance.toFixed(2)}` : "—"}</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">Saldo akun</span>
 				</div>
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
 					<span class="text-[11px] text-text-3 block mb-0.5">EKUITAS BERJALAN</span>
-					<span class="text-lg font-bold {retPct == null ? 'text-text' : retPct >= 0 ? 'text-pos' : 'text-neg'}">
-						${mt5?.equity != null ? `$${mt5.equity.toFixed(2)}` : '—'}
+					<span class="text-lg font-bold text-text">
+						{mt5?.equity != null ? `$${mt5.equity.toFixed(2)}` : '—'}
 					</span>
-					<span class="text-[10px] {retPct == null ? 'text-text-3' : retPct >= 0 ? 'text-pos' : 'text-neg'} block mt-0.5">
-						{retPct == null ? '—' : `${retPct >= 0 ? '+' : ''}${retPct.toFixed(1)}%`}
+					<span class="text-[10px] text-text-3 block mt-0.5">
+						Ekuitas akun real-time
 					</span>
 				</div>
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
@@ -158,7 +156,7 @@
 					<span class="text-[11px] text-text-3 block mb-0.5">WIN RATE & DEALS</span>
 					<span class="text-lg font-bold text-text">{mt5?.win_rate_pct != null ? `${mt5.win_rate_pct}%` : '—'}</span>
 					<span class="text-[10px] text-text-3 block mt-0.5">
-						{mt5?.wins != null ? `${mt5.wins}W / ${mt5.losses ?? 0}L` : '—'} · {mt5?.total_trades_today ?? 0} trade
+						{mt5?.wins != null ? `${mt5.wins}W / ${mt5.losses ?? 0}L` : '—'} total · {mt5?.total_trades_today ?? 0} hari ini
 					</span>
 				</div>
 			</div>

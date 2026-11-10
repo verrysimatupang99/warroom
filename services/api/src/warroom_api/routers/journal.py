@@ -59,6 +59,17 @@ def _gabung_forex_crypto(forex: Any, crypto: Any) -> Any:
         return forex
     hasil = dict(forex)
     closed = list(forex.get("closed") or []) + list(crypto.get("closed") or [])
+    # Deduplikasi: trade yang sama (waktu+simbol+harga) bisa muncul dobel saat
+    # gabungan sumber. Pertahankan kemunculan pertama.
+    _terlihat: set[tuple] = set()
+    _unik: list[Any] = []
+    for _t in closed:
+        _k = (str(_t.get("iso", "")), str(_t.get("symbol", "")), str(_t.get("price_filled", "")))
+        if _k in _terlihat:
+            continue
+        _terlihat.add(_k)
+        _unik.append(_t)
+    closed = _unik
     closed.sort(key=lambda r: str(r.get("iso", "")), reverse=True)
     entries = list(forex.get("entries") or []) + list(crypto.get("entries") or [])
     hasil["closed"] = closed[:200]

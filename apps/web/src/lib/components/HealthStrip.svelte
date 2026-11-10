@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Strip kesehatan sistem: DB, worker, dan jumlah fakta basi dalam satu baris.
+	// Strip kesehatan sistem: DB, worker, dan jumlah data basi dalam satu baris.
 	//
 	// Kenapa ada: tanpa ini, Home menampilkan "tidak ada sinyal" untuk DUA keadaan
 	// yang sangat berbeda — pasar memang sepi, atau worker mati. Angka yang tidak
@@ -65,7 +65,7 @@
 		title="fakta yang melewati TTL-nya (dari /api/v1/ready)"
 		data-nada={nadaBasi}
 	>
-		{basi == null ? 'fakta basi n/a' : `${basi} fakta basi`}
+		{basi == null ? 'data basi n/a' : `${basi} data basi`}
 	</span>
 	{#if gagal}
 		<span class="text-neg">status sistem tidak terbaca</span>

@@ -27,19 +27,19 @@ const basi = {
 } as const;
 
 describe('HealthStrip', () => {
-	it('semua sehat → db ok, worker ok, 0 fakta basi', () => {
+	it('semua sehat → db ok, worker ok, 0 data basi', () => {
 		render(HealthStrip, { props: { kesiapan: sehat } });
 		const el = screen.getByTestId('health-strip');
 		expect(el.textContent).toContain('db ok');
 		expect(el.textContent).toContain('worker ok');
-		expect(el.textContent).toContain('0 fakta basi');
+		expect(el.textContent).toContain('0 data basi');
 	});
 
-	it('worker basi & ada fakta basi → dua penanda gagal', () => {
+	it('worker basi & ada data basi → dua penanda gagal', () => {
 		render(HealthStrip, { props: { kesiapan: basi } });
 		const el = screen.getByTestId('health-strip');
 		expect(el.textContent).toContain('worker basi');
-		expect(el.textContent).toContain('25 fakta basi');
+		expect(el.textContent).toContain('25 data basi');
 		const nada = Array.from(el.querySelectorAll('[data-nada]')).map((n) => n.getAttribute('data-nada'));
 		expect(nada.filter((n) => n === 'gagal').length).toBeGreaterThanOrEqual(2);
 	});
@@ -49,13 +49,13 @@ describe('HealthStrip', () => {
 		const el = screen.getByTestId('health-strip');
 		expect(el.textContent).toContain('db n/a');
 		expect(el.textContent).toContain('worker n/a');
-		expect(el.textContent).toContain('fakta basi n/a');
+		expect(el.textContent).toContain('data basi n/a');
 	});
 
 	it('permintaan gagal → dinyatakan terbuka, bukan hijau', () => {
 		render(HealthStrip, { props: { gagal: true } });
 		const el = screen.getByTestId('health-strip');
 		expect(el.textContent).toContain('status sistem tidak terbaca');
-		expect(el.textContent).toContain('fakta basi n/a');
+		expect(el.textContent).toContain('data basi n/a');
 	});
 });

@@ -8,8 +8,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import InfraHealth from '$lib/components/InfraHealth.svelte';
-	import TradingPanel from '$lib/components/TradingPanel.svelte';
-
+	
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
 	const sub = $derived.by(() => {
 		const s = page.url.searchParams.get('sub') ?? 'layanan';
@@ -21,6 +20,16 @@
 	interface Status { unit_total?: number; unit_sehat?: number; unit?: Unit[]; berkas?: Berkas[]; waktu?: string }
 
 	let status = $state<Status | null>(null);
+
+	// `waktu` dari API bisa epoch (detik/ms) atau string; format agar terbaca.
+	function fmtWaktuSistem(t: string | undefined): string {
+		if (!t) return '—';
+		const num = Number(t);
+		const d = isFinite(num) ? new Date(num < 1e12 ? num * 1000 : num) : new Date(t);
+		if (isNaN(d.getTime())) return t;
+		const pad = (x: number) => String(x).padStart(2, '0');
+		return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	}
 	let galatStatus = $state<string | null>(null);
 	let memuat = $state(true);
 
@@ -169,17 +178,16 @@
 			<EmptyState judul="Status tidak tersedia" pesan={galatStatus ?? 'Tidak ada jawaban.'} />
 		{:else}
 			<div class="space-y-4">
-				<TradingPanel />
 				<InfraHealth data={infra} galat={galatInfra} memuat={memuatInfra} onreload={() => void ambilInfra()} />
 				<section class="grid gap-3 sm:grid-cols-3">
 					<div class="rounded-card border border-line bg-surface p-4">
-						<div class="label-mikro font-mono text-text-3">UNIT SEHAT</div>
+						<div class="label-mikro font-mono text-text-3">LAYANAN SEHAT</div>
 						<div class="mt-1 font-mono text-17 font-bold text-text">
 							{status.unit_sehat ?? 0}<span class="text-13 text-text-3">/{status.unit_total ?? 0}</span>
 						</div>
 					</div>
 					<div class="rounded-card border border-line bg-surface p-4">
-						<div class="label-mikro font-mono text-text-3">BERKAS BASI</div>
+						<div class="label-mikro font-mono text-text-3">FILE TERTUNDA</div>
 						<div class="mt-1 font-mono text-17 font-bold text-text">
 							{(status.berkas ?? []).filter((b) => b.basi).length}
 							<span class="text-13 text-text-3">/{(status.berkas ?? []).length}</span>
@@ -187,7 +195,7 @@
 					</div>
 					<div class="rounded-card border border-line bg-surface p-4">
 						<div class="label-mikro font-mono text-text-3">DIPERBARUI</div>
-						<div class="mt-1 font-mono text-12 text-text">{status.waktu ?? '—'}</div>
+						<div class="mt-1 font-mono text-12 text-text">{status.waktu ? fmtWaktuSistem(status.waktu) : '—'}</div>
 					</div>
 				</section>
 

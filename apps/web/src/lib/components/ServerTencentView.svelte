@@ -39,6 +39,17 @@
 	let levelResult = $state<LevelData | null>(null);
 	let tickerResult = $state<any>(null);
 	let klinesResult = $state<any[]>([]);
+
+	// Epoch (detik/ms) -> waktu lokal ringkas; epoch mentah tak terbaca manusia.
+	function fmtEpoch(t: unknown): string {
+		if (t == null) return '—';
+		const num = Number(t);
+		if (!isFinite(num)) return String(t);
+		const d = new Date(num < 1e12 ? num * 1000 : num);
+		if (isNaN(d.getTime())) return String(t);
+		const pad = (x: number) => String(x).padStart(2, '0');
+		return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+	}
 	let loadingData = $state(false);
 
 	async function loadHealthAndDxy() {
@@ -309,7 +320,7 @@
 				<table class="w-full text-11 text-left">
 					<thead class="text-10 text-text-3 border-b border-line">
 						<tr>
-							<th class="py-1.5 px-2">Waktu (Epoch)</th>
+							<th class="py-1.5 px-2">Waktu</th>
 							<th class="py-1.5 px-2">Open</th>
 							<th class="py-1.5 px-2">High</th>
 							<th class="py-1.5 px-2">Low</th>
@@ -320,7 +331,7 @@
 					<tbody class="divide-y divide-line-soft">
 						{#each klinesResult as c}
 							<tr class="hover:bg-surface-2/60">
-								<td class="py-1.5 px-2 text-text-3">{c.t}</td>
+								<td class="py-1.5 px-2 text-text-3 whitespace-nowrap">{fmtEpoch(c.t)}</td>
 								<td class="py-1.5 px-2 text-text">{c.o}</td>
 								<td class="py-1.5 px-2 text-pos">{c.h}</td>
 								<td class="py-1.5 px-2 text-neg">{c.l}</td>

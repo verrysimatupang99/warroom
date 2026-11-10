@@ -388,11 +388,12 @@ def _trade_crypto() -> list[dict[str, Any]]:
     Cadangan hanya dipakai bila ledger tidak ada/kosong, supaya jurnal crypto
     tidak tiba-tiba kosong saat ledger sedang ditulis ulang.
     """
-    hasil = jurnal_crypto.dari_db()
+    # Ledger diutamakan: itu sumber asli paper-scan & punya `pair` (simbol) terisi.
+    # DB (`dari_db`) jadi cadangan — evidence_json-nya belum selalu punya `pair`.
+    hasil = jurnal_crypto.dari_ledger()
     if hasil:
         return hasil
-    # DB belum terisi (job sync belum jalan) → baca ledger langsung, jangan kosong.
-    hasil = jurnal_crypto.dari_ledger()
+    hasil = jurnal_crypto.dari_db()
     if hasil:
         return hasil
     for r in _baca_csv(MOMENTUM_TRADES):

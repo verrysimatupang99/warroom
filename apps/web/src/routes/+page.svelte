@@ -350,7 +350,7 @@ async function muat() {
 			title="Ringkasan hari ini"
 			tag={arming ? (arming.armed ? 'LIVE' : 'PAPER') : null}
 			description={`Multi-market · ${daftar.length} pasar · data terakhir ${umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu`}
-			sumber="pasar/ringkas + sinyal/per-pasar"
+			sumber="ringkasan pasar + sinyal per pasar"
 			terverifikasi={true}
 		/>
 
@@ -848,20 +848,16 @@ async function muat() {
 		gap: 1.25rem;
 	}
 
-	.sumber-strip { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-	.sumber-judul { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--redup); }
+	.sumber-strip { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+	.sumber-judul { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--redup); }
 	.sumber-chip {
-		display: inline-flex; align-items: baseline; gap: 0.35rem;
-		border: 1px solid var(--garis); border-radius: var(--radius-track); padding: 0.15rem 0.6rem;
-		font-size: 0.7rem; background: var(--permukaan);
+		display: inline-flex; align-items: baseline; gap: 0.3rem;
+		border: 1px solid var(--garis); border-radius: var(--radius-track); padding: 0.1rem 0.5rem;
+		font-size: 0.65rem; background: var(--permukaan);
 	}
 	.sumber-pasar { color: var(--redup); }
 	.sumber-nama { font-weight: 600; color: var(--tinta); }
-	/* Dompet paper $20 (15 Okt) — strip dengan chip yang lebih besar dari sumber data
-	   supaya hierarki jelas: dompet = angka yang owner pantau, sumber = metadata. */
-	.sumber-chip {
-		transition: border-color 160ms var(--ease-out);
-	}
+	.sumber-chip { transition: border-color 160ms var(--ease-out); }
 	.sumber-chip:hover { border-color: color-mix(in srgb, var(--mint) 30%, var(--garis)); }
 	
 	.kepala {

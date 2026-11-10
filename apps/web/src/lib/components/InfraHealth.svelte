@@ -48,7 +48,14 @@
 				? 'ok'
 				: 'gagal'
 	);
-	const nadaWr: Nada = $derived(!data ? 'tak' : wr.root_http === '200' ? 'ok' : 'gagal');
+	// WAR ROOM sehat bila web 200 DAN api bukan 5xx (401 = probe tanpa auth, wajar).
+	const nadaWr: Nada = $derived(
+		!data
+			? 'tak'
+			: wr.root_http === '200' && !String(wr.api_health_http ?? '').startsWith('5')
+				? 'ok'
+				: 'gagal'
+	);
 
 	function umurTeks(s: number | null): string {
 		if (s == null) return 'tidak diketahui';
@@ -89,7 +96,7 @@
 	{:else}
 		<div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
 			<div class="rounded-control border px-3 py-2 {kelasNada[nadaMemoh]}">
-				<div class="label-mikro font-mono">MEMOH RUNTIME</div>
+				<div class="label-mikro font-mono">DAEMON MEMOH</div>
 				<div class="mt-0.5 font-mono text-12">
 					{memoh.active ?? '—'} · {memoh.outbound_conn ?? 0} koneksi
 				</div>
@@ -111,13 +118,13 @@
 			</div>
 
 			<div class="rounded-control border px-3 py-2 {kelasNada[nadaWd]}">
-				<div class="label-mikro font-mono">WATCHDOG INSTABOX</div>
+				<div class="label-mikro font-mono">PENGAWAS INSTABOX</div>
 				<div class="mt-0.5 font-mono text-12">{wd.timer ?? '—'}</div>
 				<div class="text-10 opacity-80">exit terakhir: {wd.last_status ?? '—'}</div>
 			</div>
 
 			<div class="rounded-control border px-3 py-2 {kelasNada[nadaBus]}">
-				<div class="label-mikro font-mono">BUS AGENT</div>
+				<div class="label-mikro font-mono">BUS PESAN</div>
 				<div class="mt-0.5 font-mono text-12">
 					{typeof bus.last_message_age_sec === 'number' ? umurTeks(bus.last_message_age_sec as number) : '—'}
 				</div>
@@ -127,17 +134,18 @@
 
 		<div class="mt-2 grid gap-2 sm:grid-cols-3">
 			<div class="rounded-control border border-line bg-surface-2 px-3 py-2">
-				<div class="label-mikro font-mono text-text-3">CYBER1 DISK</div>
+				<div class="label-mikro font-mono text-text-3">DISK MESIN UTAMA</div>
 				<div class="mt-0.5 font-mono text-12 text-text">{c1.disk_pct ?? '—'}%</div>
 			</div>
 			<div class="rounded-control border border-line bg-surface-2 px-3 py-2">
-				<div class="label-mikro font-mono text-text-3">CYBER1 RAM</div>
+				<div class="label-mikro font-mono text-text-3">RAM MESIN UTAMA</div>
 				<div class="mt-0.5 font-mono text-12 text-text">{c1.mem_available_mb ?? '—'} MB bebas</div>
 			</div>
 			<div class="rounded-control border px-3 py-2 {kelasNada[nadaWr]}">
 				<div class="label-mikro font-mono">WAR ROOM</div>
 				<div class="mt-0.5 font-mono text-12">
-					root {wr.root_http ?? '—'} · api {wr.api_health_http ?? '—'}
+					{nadaWr === 'ok' ? 'Normal' : nadaWr === 'tak' ? '—' : 'Masalah'}
+					<div class="text-10 opacity-80">web {wr.root_http ?? '—'} · api {wr.api_health_http ?? '—'}</div>
 				</div>
 			</div>
 		</div>
