@@ -4,17 +4,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from warroom_core.strategi_config import (
     ConfigError,
-    evaluasi,
-    muat_config,
     baca_candles,
+    evaluasi,
     jalankan_backtest,
+    muat_config,
 )
 from warroom_core.strategi_config.formula import FormulaError
-from warroom_core.strategi_config.variabel import ema, rsi, atr, highest, lowest
-
+from warroom_core.strategi_config.variabel import atr, ema, highest, lowest, rsi
 
 # ---------- formula aman ----------
 
