@@ -69,6 +69,13 @@ def _catat_trade(ledger: Path, baris: dict[str, Any]) -> None:
         f.write(json.dumps(baris) + "\n")
 
 
+def _catat_event(events: Path, event: dict[str, Any]) -> None:
+    """Catat event buka/tutup ke events.jsonl (dipakai watcher alert Telegram)."""
+    events.parent.mkdir(parents=True, exist_ok=True)
+    with open(events, "a", encoding="utf-8") as f:
+        f.write(json.dumps(event) + "\n")
+
+
 def _variabel(cfg: StrategyConfig, candles: list[dict]) -> dict[str, list[Any]]:
     ctx = {"__candles__": candles}
     return {nama: evaluasi(eks, ctx) for nama, eks in cfg.variabel.items()}
@@ -96,6 +103,7 @@ def jalankan_paper_bot(cfg: StrategyConfig, provider: DataProvider, state_dir: P
     simbol_terpakai = {p.simbol for p in posisi_aktif}
     ditutup: list[dict] = []
     dibuka: list[str] = []
+    events = state_dir / "events.jsonl"
 
     simbol_scan = list(dict.fromkeys(cfg.simbol + [p.simbol for p in posisi_aktif]))
     for simbol in simbol_scan:
@@ -121,6 +129,13 @@ def jalankan_paper_bot(cfg: StrategyConfig, provider: DataProvider, state_dir: P
                 baris["waktu_exit"] = datetime.now(UTC).isoformat()
                 baris["config_id"] = cfg.id
                 _catat_trade(ledger, baris)
+                _catat_event(events, {
+                    "tipe": "tutup", "config": cfg.id, "simbol": p.simbol,
+                    "arah": p.arah, "entry": p.entry, "exit": hasil["exit"],
+                    "alasan": hasil["alasan_exit"], "hasil_r": hasil["hasil_r"],
+                    "pnl_usd": hasil["pnl_usd"],
+                    "waktu": baris["waktu_exit"],
+                })
                 ditutup.append(baris)
 
         # --- 2. cari entry baru (butuh sejarah utk indikator; skip jika terlalu tipis) ---
@@ -145,6 +160,12 @@ def jalankan_paper_bot(cfg: StrategyConfig, provider: DataProvider, state_dir: P
             posisi_aktif.append(posisi_baru)
             simbol_terpakai.add(simbol)
             dibuka.append(f"{simbol} {posisi_baru.arah} @{posisi_baru.entry:.4g}")
+            _catat_event(events, {
+                "tipe": "buka", "config": cfg.id, "simbol": simbol,
+                "arah": posisi_baru.arah, "entry": posisi_baru.entry,
+                "sl": posisi_baru.sl, "tp": posisi_baru.tp,
+                "waktu": posisi_baru.waktu_entry,
+            })
 
     _simpan_posisi(path_posisi, posisi_aktif)
     return {
