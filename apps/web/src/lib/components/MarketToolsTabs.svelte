@@ -171,7 +171,7 @@
 		<div class="standdown-box mt-4 font-mono">
 			<div class="flex items-center justify-between pb-2 border-b border-line">
 				<span class="text-12 font-bold text-pos flex items-center gap-2">
-					<span class="w-2.5 h-2.5 rounded-full bg-pos animate-pulse"></span>
+					<span class="w-2.5 h-2.5 rounded-full bg-pos"></span>
 					ECONOMIC STAND-DOWN GUARD (XAUUSD)
 				</span>
 				<span class="text-10 text-text-3">AUTO-PAUSE 15M SEBELUM HIGH-IMPACT NEWS</span>

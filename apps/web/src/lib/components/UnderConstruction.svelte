@@ -21,7 +21,7 @@
 		<!-- Header status strip -->
 		<div class="status-strip font-mono">
 			<div class="flex items-center gap-2">
-				<span class="w-2 h-2 rounded-full bg-warn animate-pulse"></span>
+				<span class="w-2 h-2 rounded-full bg-warn"></span>
 				<span class="text-11 font-bold text-warn tracking-wider">UNDER CONSTRUCTION // {category}</span>
 			</div>
 			<span class="text-11 text-text-3 font-mono">FASE: FOREX CONVERGENCE</span>
