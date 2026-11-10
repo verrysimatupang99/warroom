@@ -18,7 +18,7 @@
 				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-purple-950 text-purple-400 border border-purple-800/60">
 					ARM B FAVORITE (0.70 - 0.95)
 				</span>
-				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+				<span class="px-2 py-0.2 rounded text-[9px] font-mono font-bold bg-surface-2 text-pos border border-pos/60">
 					EV EDGE +2.07% 🔥
 				</span>
 			</div>
@@ -31,7 +31,7 @@
 	<div class="flex items-center gap-3 text-xs font-mono">
 		<div class="text-right">
 			<div class="text-[9px] text-muted uppercase">Sample Size:</div>
-			<div class="text-slate-200 font-bold">n = 4,133 (78.25% Win)</div>
+			<div class="text-text-3 font-bold">n = 4,133 (78.25% Win)</div>
 		</div>
 		<div class="h-6 w-px bg-border"></div>
 		<div class="text-right">

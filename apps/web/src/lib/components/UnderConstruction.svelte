@@ -21,8 +21,8 @@
 		<!-- Header status strip -->
 		<div class="status-strip font-mono">
 			<div class="flex items-center gap-2">
-				<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-				<span class="text-11 font-bold text-amber-400 tracking-wider">UNDER CONSTRUCTION // {category}</span>
+				<span class="w-2 h-2 rounded-full bg-warn animate-pulse"></span>
+				<span class="text-11 font-bold text-warn tracking-wider">UNDER CONSTRUCTION // {category}</span>
 			</div>
 			<span class="text-11 text-text-3 font-mono">FASE: FOREX CONVERGENCE</span>
 		</div>
@@ -34,7 +34,7 @@
 			</div>
 
 			<div class="text-center max-w-xl mx-auto space-y-3">
-				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono text-11">
+				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-warn/30 bg-warn/10 text-warn font-mono text-11">
 					<span>🚧</span>
 					<span>Fokus Saat Ini: Live Forex &amp; Gold Execution</span>
 				</div>
@@ -75,7 +75,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-line/60">
 				<div class="milestone-card">
 					<div class="text-10 font-mono text-text-3 uppercase tracking-wider">Status Modul</div>
-					<div class="text-13 font-bold text-amber-400 mt-1 font-mono">Standby / Paused</div>
+					<div class="text-13 font-bold text-warn mt-1 font-mono">Standby / Paused</div>
 				</div>
 				<div class="milestone-card">
 					<div class="text-10 font-mono text-text-3 uppercase tracking-wider">Prioritas Eksekusi</div>
