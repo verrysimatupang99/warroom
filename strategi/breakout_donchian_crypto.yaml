@@ -1,0 +1,31 @@
+id: breakout_donchian_crypto
+nama: Breakout Donchian Crypto
+market: crypto
+waktu: 1h
+simbol: [BTCUSDT, ETHUSDT, SOLUSDT]
+
+variabel:
+  ema_tren: EMA(200)
+  atr: ATR(14)
+  breakout_atas: HIGHEST(48)     # tertinggi 48 jam (2 hari)
+  breakout_bawah: LOWEST(48)
+
+filter:
+  - "atr > 0"
+
+# Breakout ke atas di atas tren naik.
+entry_long:
+  - "close > breakout_atas"
+  - "close > ema_tren"
+
+# Breakout ke bawah di bawah tren turun.
+entry_short:
+  - "close < breakout_bawah"
+  - "close < ema_tren"
+
+exit:
+  sl_atr: 2.0
+  tp_rrr: 3.0
+
+risiko:
+  risiko_per_trade_pct: 1.0
