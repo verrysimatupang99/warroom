@@ -1,0 +1,34 @@
+id: rsi_meanrevert_crypto
+nama: RSI Mean-Reversion Crypto
+market: crypto
+waktu: 1h
+simbol: [BTCUSDT, ETHUSDT, SOLUSDT]
+
+# Variabel (kayak variabel screener Stockbit) — didefinisikan sekali, dipakai formula.
+variabel:
+  rsi: RSI(14)
+  ema_cepat: EMA(50)
+  ema_lambat: EMA(200)
+  atr: ATR(14)
+
+# Filter: kondisi WAJIB (gagal -> skip bar). Contoh: skip saat volatilitas nol.
+filter:
+  - "atr > 0"
+
+# Entry LONG: oversold dalam tren naik.
+entry_long:
+  - "rsi < 32"
+  - "ema_cepat > ema_lambat"
+
+# Entry SHORT: overbought dalam tren turun.
+entry_short:
+  - "rsi > 68"
+  - "ema_cepat < ema_lambat"
+
+# Manajemen exit (dalam satuan ATR / R).
+exit:
+  sl_atr: 1.5
+  tp_rrr: 2.0
+
+risiko:
+  risiko_per_trade_pct: 1.0
