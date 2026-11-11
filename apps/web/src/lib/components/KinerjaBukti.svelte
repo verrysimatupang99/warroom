@@ -12,7 +12,7 @@
 	 *   closed trades · win rate · total R · PnL · drawdown · biaya · periode + denominator.
 	 *
 	 * Aturan yang dipatuhi: angka hanya dari fakta; yang tidak diketahui ditulis "—",
-	 * bukan 0. Populasi (denominator) WAJIB disebut di tiap baris — pelajaran dari
+	 * bukan 0. Populasi (denominator) WAJIB disebut di tiap baris, pelajaran dari
 	 * temuan "n=12 vs n=16" pada audit sebelumnya.
 	 */
 	import type { MarketSummaryPayload, ResearchRunDetail, ResearchRunSummary } from '$lib/api/types';
@@ -94,7 +94,7 @@
 		<h1>Kinerja &amp; Bukti</h1>
 		<p class="dim">
 			Semua pasar, satu tabel: berapa trade tuntas, seberapa akurat, berapa hasilnya, dan
-			<b>apakah biayanya sudah dihitung</b>. Populasi (denominator) disebut di tiap baris —
+			<b>apakah biayanya sudah dihitung</b>. Populasi (denominator) disebut di tiap baris,
 			angka dari trade tuntas tidak boleh dibandingkan dengan angka dari kandidat.
 		</p>
 	</div>
@@ -171,7 +171,7 @@
 
 	<div class="riset-contracts">
 		<h2>Research registrations</h2>
-		<p class="dim">Contract fingerprint, status, dan provenance. Ini registrasi riset—bukan bukti profit atau signal live.</p>
+		<p class="dim">Contract fingerprint, status, dan provenance. Ini registrasi riset, bukan bukti profit atau signal live.</p>
 		{#if risetRuns.length}
 			{#each risetRuns as run (run.id)}
 				<article class="riset-run">
@@ -196,7 +196,7 @@
 					<span>execution <code>{detail.execution_hash}</code></span>
 				</div>
 				<p class:blocked={detail.evidence_status === 'blocked'}>
-					Evidence: <b>{detail.evidence_status}</b>{#if detail.blocked_reason} — {detail.blocked_reason}{/if}
+					Evidence: <b>{detail.evidence_status}</b>{#if detail.blocked_reason} · {detail.blocked_reason}{/if}
 				</p>
 				<p class="dim">Provenance run: <code>{JSON.stringify(detail.provenance)}</code></p>
 				{#if detail.artifacts.length}

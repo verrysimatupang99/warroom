@@ -61,7 +61,7 @@
 <div class="permukaan-2 rounded-card border border-line p-3">
 	<div class="mb-3 flex items-center justify-between border-b border-line-soft pb-2">
 		<div>
-			<h3 class="text-14 font-medium text-text">Kalender Ekonomi — Dampak &amp; Hitung Mundur</h3>
+			<h3 class="text-14 font-medium text-text">Kalender Ekonomi: Dampak &amp; Hitung Mundur</h3>
 			<p class="text-11 text-text-3">
 				Event berdampak tinggi = zona bahaya: sinyal baru sebaiknya ditahan ±60 menit
 			</p>
@@ -90,7 +90,7 @@
 			{/each}
 		</div>
 		{#if daftar.some((m) => typeof m.ts === 'number' && m.ts - sekarang / 1000 > 0 && m.ts - sekarang / 1000 < 3600 && m.impact === 'High')}
-			<p class="mt-2 text-11 text-neg font-bold">⚠ Ada event dampak tinggi dalam 60 menit — tahan sinyal baru.</p>
+			<p class="mt-2 text-11 text-neg font-bold">⚠ Ada event dampak tinggi dalam 60 menit, tahan sinyal baru.</p>
 		{/if}
 	{/if}
 </div>

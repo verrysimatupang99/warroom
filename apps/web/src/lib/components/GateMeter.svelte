@@ -118,7 +118,7 @@
 			</div>
 			{#if tercapai && hasil.verdict !== 'lolos'}
 				<p class="mt-1 text-11 text-warn">
-					n tercapai, tapi gate belum lolos — lihat alasan di bawah (bukan kurang sampel).
+					n tercapai, tapi gate belum lolos, lihat alasan di bawah (bukan kurang sampel).
 				</p>
 			{/if}
 		</div>

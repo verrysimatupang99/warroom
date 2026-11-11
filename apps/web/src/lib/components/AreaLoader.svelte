@@ -58,7 +58,7 @@
 {:else if data}
 	{#if galat}
 		<p class="mb-2 text-12 text-warn" role="status">
-			refresh terakhir gagal: {galat} — menampilkan data terakhir.
+			refresh terakhir gagal: {galat}, menampilkan data terakhir.
 		</p>
 	{/if}
 	{@render children(data)}

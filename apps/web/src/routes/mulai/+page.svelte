@@ -38,7 +38,7 @@
 </script>
 
 <svelte:head>
-	<title>War Room — satu jalur, tiga gerbang</title>
+	<title>War Room, satu jalur, tiga gerbang</title>
 	<meta name="description" content="War Room adalah ruang kerja trading yang memutuskan apakah ada setup layak dieksekusi, atau diam." />
 </svelte:head>
 
@@ -55,7 +55,7 @@
 		<h1 class="mt-2 text-24 font-bold leading-tight sm:text-32">Satu jalur, tiga gerbang.</h1>
 		<p class="mt-3 max-w-2xl text-14 leading-relaxed text-text-2">
 			War Room tidak menjanjikan sinyal. Ia memutuskan apakah ada setup yang layak dieksekusi
-			hari ini. Kalau tidak ada yang lolos gerbang, ia diam — dan diam itu tercatat.
+			hari ini. Kalau tidak ada yang lolos gerbang, ia diam, dan diam itu tercatat.
 		</p>
 
 		<div class="mt-8 grid gap-3 sm:grid-cols-3">

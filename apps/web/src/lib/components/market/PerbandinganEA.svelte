@@ -88,7 +88,7 @@
 		</div>
 		<p class="mt-2 text-11 leading-relaxed text-text-3">
 			Titik putus: Galaxius baru rugi pada slippage 2,02 harga per fill, GoldenBall 5,56,
-			<strong class="text-text-2">GOLD Reaper hanya 0,11</strong>. Spread terukur 0,24 — dua kali
+			<strong class="text-text-2">GOLD Reaper hanya 0,11</strong>. Spread terukur 0,24, dua kali
 			titik putus Reaper. Jadi yang paling rentan terhadap biaya adalah EA sendiri, bukan EA vendor.
 			Pengukuran 3.685/684/1.017 deal dari laporan apa adanya.
 		</p>

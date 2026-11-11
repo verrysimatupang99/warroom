@@ -23,7 +23,7 @@
 		</div>
 		{#if narasi.status !== 'ok'}
 			<p class="px-3 py-2 text-11 text-warn">
-				Narasi tidak tersedia ({narasi.status ?? '—'}{narasi.error_code ? ` · ${narasi.error_code}` : ''}) —
+				Narasi tidak tersedia ({narasi.status ?? '—'}{narasi.error_code ? ` · ${narasi.error_code}` : ''}),
 				angka di halaman ini tetap sah karena berasal dari fakta, bukan dari narasi.
 				Status penyedia LLM ada di halaman <b>Sistem → AI</b>.
 			</p>
@@ -43,7 +43,7 @@
 				</p>
 			</div>
 		{:else}
-			<p class="px-3 py-2 text-11 text-text-3">Narasi kosong — fakta tetap sah.</p>
+			<p class="px-3 py-2 text-11 text-text-3">Narasi kosong, fakta tetap sah.</p>
 		{/if}
 	</div>
 {/if}

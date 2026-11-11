@@ -53,7 +53,7 @@
 
 <div class="permukaan-2 rounded-card border border-line p-3">
 	<div class="mb-3 border-b border-line-soft pb-2">
-		<h3 class="text-14 font-medium text-text">Dompet Paper Lintas Market — Rp 10.000.000 masing-masing</h3>
+		<h3 class="text-14 font-medium text-text">Dompet Paper Lintas Market: Rp 10.000.000 masing-masing</h3>
 		<p class="text-11 text-text-3">
 			Satu ukuran untuk semua market. R tidak bisa dibandingkan antar-market; rupiah dengan risiko yang sama bisa.
 			{#if dompet?.kurs_usd_idr}Kurs: Rp {Math.round(dompet.kurs_usd_idr).toLocaleString('id-ID')}/USD.{/if}

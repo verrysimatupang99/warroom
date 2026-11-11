@@ -12,12 +12,12 @@
 		},
 		{
 			q: 'Apa arti "BELUM TERVERIFIKASI" di kartu sinyal?',
-			a: 'Artinya angka itu belum lolos split beku — jadi ia klaim eksplorasi, bukan edge terbukti. Sistem menolak menampilkan skor sebagai "terbukti" selama belum dihitung ulang di repo ini.',
+			a: 'Artinya angka itu belum lolos split beku, jadi ia klaim eksplorasi, bukan edge terbukti. Sistem menolak menampilkan skor sebagai "terbukti" selama belum dihitung ulang di repo ini.',
 			status: 'ada'
 		},
 		{
 			q: 'Di mana saya lihat harga masuk, stop, dan target?',
-			a: 'Di Home: verdikt besar menampilkan "Setup entry" (masuk/stop/target/risiko) untuk pasar teratas, dan tiap baris pasar punya setup ringkasnya sendiri. Yang belum punya sinyal tidak menampilkan setup — karena memang tidak ada.',
+			a: 'Di Home: verdikt besar menampilkan "Setup entry" (masuk/stop/target/risiko) untuk pasar teratas, dan tiap baris pasar punya setup ringkasnya sendiri. Yang belum punya sinyal tidak menampilkan setup, karena memang tidak ada.',
 			status: 'ada'
 		},
 		{
@@ -32,7 +32,7 @@
 		},
 		{
 			q: 'Dari mana asal berita dan kalender?',
-			a: 'Berita dari RSS publik (Cointelegraph, Decrypt) — hanya judul + tautan, ringkasan tidak disalin. Kalender dari ForexFactory (JSON publik). Keduanya tanpa API key, jadi tidak menambah kuota.',
+			a: 'Berita dari RSS publik (Cointelegraph, Decrypt), hanya judul + tautan, ringkasan tidak disalin. Kalender dari ForexFactory (JSON publik). Keduanya tanpa API key, jadi tidak menambah kuota.',
 			status: 'ada'
 		},
 		{
@@ -42,7 +42,7 @@
 		},
 		{
 			q: 'Apakah saya bisa ekspor data?',
-			a: 'Ya — tabel di halaman Sistem dan Riset punya tombol Ekspor CSV.',
+			a: 'Ya, tabel di halaman Sistem dan Riset punya tombol Ekspor CSV.',
 			status: 'ada'
 		},
 		{
@@ -60,7 +60,7 @@
 	let buka = $state<number | null>(0);
 </script>
 
-<svelte:head><title>Bantuan — War Room</title></svelte:head>
+<svelte:head><title>Bantuan, War Room</title></svelte:head>
 
 <div class="space-y-4">
 	<PageHeader
@@ -91,7 +91,7 @@
 					<p class="jawab">
 						{t.a}
 						{#if t.status === 'belum'}
-							<span class="belum">Belum tersedia — bukan sesuatu yang bisa dilakukan sekarang.</span>
+							<span class="belum">Belum tersedia, bukan sesuatu yang bisa dilakukan sekarang.</span>
 						{/if}
 					</p>
 				{/if}

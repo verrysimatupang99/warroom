@@ -67,10 +67,10 @@
 <div class="permukaan-2 rounded-card border border-line p-3">
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
 		<div>
-			<h3 class="text-14 font-medium text-text">Ringkasan Crypto — Uang, Risiko, Sinyal</h3>
+			<h3 class="text-14 font-medium text-text">Ringkasan Crypto: Uang, Risiko, Sinyal</h3>
 			<p class="text-11 text-text-3">
 				Keadaan hari ini dalam satu pandangan. Angka dari fakta
-				<span class="font-mono">crypto_sinyal</span> + <span class="font-mono">risiko</span> — bukan angka bursa.
+				<span class="font-mono">crypto_sinyal</span> + <span class="font-mono">risiko</span>, bukan angka bursa.
 			</p>
 		</div>
 		<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono border border-line text-accent">
@@ -177,7 +177,7 @@
 
 		<p class="mt-2 text-10 text-text-3">
 			<b>Populasi:</b> sinyal aktif = baris mesin yang belum ditutup. Kolom <span class="font-mono">r</span> =
-			hasil berjalan (bisa minus sebelum ditutup). Panel bursa (saldo/posisi OKX) sengaja tidak ada —
+			hasil berjalan (bisa minus sebelum ditutup). Panel bursa (saldo/posisi OKX) sengaja tidak ada,
 			butuh kredensial yang tidak diambil dari Tencent.
 		</p>
 		{#if sinyal.suplai?.mesin}

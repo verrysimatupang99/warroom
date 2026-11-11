@@ -108,7 +108,7 @@
 			<div class="mb-2 flex items-center justify-between border-b border-line-soft pb-2">
 				<div>
 					<h3 class="text-14 font-medium text-text">Strategi {pasar.toUpperCase()}</h3>
-					<p class="text-11 text-text-3">Yang benar-benar dipakai vs yang masih rencana — dibedakan, tidak disamarkan</p>
+					<p class="text-11 text-text-3">Yang benar-benar dipakai vs yang masih rencana, dibedakan, tidak disamarkan</p>
 				</div>
 			</div>
 			<ul class="space-y-1.5">
@@ -292,7 +292,7 @@
 		<div class="permukaan-2 rounded-card border border-line p-3">
 			<div class="mb-2 border-b border-line-soft pb-2">
 				<h3 class="text-14 font-medium text-text">Dimensi Gerbang (aturan lolos)</h3>
-				<p class="text-11 text-text-3">Diurut dari yang paling sering menggagalkan setup — ini yang harus diperbaiki, bukan ditambal</p>
+				<p class="text-11 text-text-3">Diurut dari yang paling sering menggagalkan setup, ini yang harus diperbaiki, bukan ditambal</p>
 			</div>
 			<div class="space-y-1.5">
 				{#each data.dimensi as d}

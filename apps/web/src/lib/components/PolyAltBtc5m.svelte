@@ -67,7 +67,7 @@
 	<div class="rounded-card border border-line bg-surface p-3">
 		<p class="text-12 text-warn">
 			Skill PolyBTC Momentum tidak ditemukan di box ini
-			{nilai?.alasan ? `(${nilai.alasan})` : ''} — tidak ada angka yang ditampilkan.
+			{nilai?.alasan ? `(${nilai.alasan})` : ''}, tidak ada angka yang ditampilkan.
 		</p>
 	</div>
 {:else}
@@ -144,7 +144,7 @@
 				{/if}
 			{:else}
 				<p class="mt-2 text-12 text-text-3">
-					{obs.alasan ?? 'Belum ada snapshot — skill belum pernah dijalankan di sini.'}
+					{obs.alasan ?? 'Belum ada snapshot, skill belum pernah dijalankan di sini.'}
 				</p>
 			{/if}
 		</div>
@@ -153,11 +153,11 @@
 		<div class="rounded-card border border-line-soft bg-surface-2 p-3">
 			<p class="text-11 text-text-2">
 				<b>Apa ini:</b> strategi BTC 5 menit up/down (momentum ke penutupan) dari skill
-				<b>PolyBTC Momentum</b> — dijalankan sebagai alternatif, terpisah dari arm D favorit.
+				<b>PolyBTC Momentum</b>, dijalankan sebagai alternatif, terpisah dari arm D favorit.
 			</p>
 			<p class="mt-1 text-11 text-text-3">
 				<b>Yang tidak boleh disimpulkan:</b> belum ada bukti uang nyata. Jalur ini masih
-				dry-run — order sungguhan butuh engine eksekusi eksternal yang belum dipasang.
+				dry-run, order sungguhan butuh engine eksekusi eksternal yang belum dipasang.
 				Angka di atas menggambarkan perilaku mesin, bukan hasil.
 			</p>
 		</div>

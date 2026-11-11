@@ -91,7 +91,7 @@
 		<div>
 			<h2 class="text-13 font-bold text-text">Jurnal sinyal terkirim</h2>
 			<p class="mt-0.5 text-11 text-text-3">
-				Hasil dihitung ulang dari candle Binance sejak jam setelah pesan dikirim — bukan
+				Hasil dihitung ulang dari candle Binance sejak jam setelah pesan dikirim, bukan
 				dari waktu verdict. Ini yang dialami penerima sinyal.
 			</p>
 		</div>

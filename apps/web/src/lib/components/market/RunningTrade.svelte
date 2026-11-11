@@ -81,7 +81,7 @@
 		<p class="mt-2 text-11 leading-relaxed text-text-3">
 			{snap?.tersedia === false
 				? `Belum ada data: ${snap.alasan ?? 'pendengar belum menerima pesan.'}`
-				: 'Tidak ada transaksi pada snapshot terakhir. Saat pasar tutup, stream memang kosong — bukan berarti fitur ini mati.'}
+				: 'Tidak ada transaksi pada snapshot terakhir. Saat pasar tutup, stream memang kosong, bukan berarti fitur ini mati.'}
 		</p>
 	{:else}
 		<div class="mt-2 overflow-x-auto">

@@ -73,7 +73,7 @@
 				<!-- Hari yang PROFIT tidak memakai kuota batas rugi. Dulu angkanya ditampilkan
 				     sebagai "risiko terpakai 4R / 3R" — pembaca menyimpulkan pelanggaran. -->
 				<div class="mt-0.5 text-10 text-pos">
-					+{angka(profitHariIni)} R profit hari ini — tidak memakai kuota batas rugi
+					+{angka(profitHariIni)} R profit hari ini, tidak memakai kuota batas rugi
 				</div>
 			{/if}
 			<div class="mt-1 flex justify-between text-10 text-text-3">

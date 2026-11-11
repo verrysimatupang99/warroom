@@ -42,7 +42,7 @@
 </div>
 
 {#if sub === 'cockpit' || !sub}
-	<JudulBagian nomor="1" judul="Ringkasan Likuidasi & Momentum" tujuan="Uang, risiko, dan sinyal teratas — keadaan pasar derivatif hari ini dalam satu pandangan" ikon="◎" />
+	<JudulBagian nomor="1" judul="Ringkasan Likuidasi & Momentum" tujuan="Uang, risiko, dan sinyal teratas, keadaan pasar derivatif hari ini dalam satu pandangan" ikon="◎" />
 {:else if sub === 'setup'}
 	<JudulBagian nomor="2" judul="Setup Kandidat & Liquidity Sweep" tujuan="Daftar lengkap kandidat + alasan lolos/gagal per aturan (kolom 'skor gate')" ikon="◈" />
 {:else if sub === 'ukur'}

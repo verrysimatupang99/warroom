@@ -14,13 +14,13 @@
 		{
 			n: 2,
 			judul: 'Worker menerbitkan fakta',
-			isi: 'Job runner menulis hasil ke tabel `facts` — append-only, tiap baris membawa sumber, waktu, dan TTL. Bila sebuah sub-bagian hilang, snapshot ditandai "separuh" dan alert dikirim, bukan diterbitkan sebagai "ok".',
+			isi: 'Job runner menulis hasil ke tabel `facts`, append-only, tiap baris membawa sumber, waktu, dan TTL. Bila sebuah sub-bagian hilang, snapshot ditandai "separuh" dan alert dikirim, bukan diterbitkan sebagai "ok".',
 			label: 'services/worker'
 		},
 		{
 			n: 3,
 			judul: 'API membaca fakta',
-			isi: 'FastAPI menyajikan fakta lewat REST + SSE. Auth cookie + peran (owner/operator/viewer). API tidak menghitung ulang domain — ia membaca apa yang sudah dihitung.',
+			isi: 'FastAPI menyajikan fakta lewat REST + SSE. Auth cookie + peran (owner/operator/viewer). API tidak menghitung ulang domain, ia membaca apa yang sudah dihitung.',
 			label: 'services/api'
 		},
 		{
@@ -49,14 +49,14 @@
 		{
 			pasar: 'LP Solana',
 			sumber: 'Meteora (DLMM / DAMM v2)',
-			strategi: 'LP terukur — fee vs IL',
+			strategi: 'LP terukur: fee vs IL',
 			isi: 'Pilih pool, catat V/L awal, tandai fee/hari, lalu nilai ulang tiap siklus: bila IL tumbuh lebih dalam daripada fee → verdict KELUAR (contoh nyata: IL -5,94% pada V/L 4,83 → 0,76).',
-			bukti: 'Mark lokal per alamat pool (DexScreener) + verifikasi 3 sumber. Rekonsiliasi on-chain BELUM ada — dinyatakan apa adanya.'
+			bukti: 'Mark lokal per alamat pool (DexScreener) + verifikasi 3 sumber. Rekonsiliasi on-chain BELUM ada, dinyatakan apa adanya.'
 		},
 		{
 			pasar: 'LP Robinhood Chain',
 			sumber: 'Uniswap v2/v3/v4 (L2, chain 4663)',
-			strategi: 'Pantau — belum ada posisi',
+			strategi: 'Pantau, belum ada posisi',
 			isi: 'Kumpulkan pool Stock Token + pool aktif, verifikasi harga, siapkan tempat bila kandidat layak. Belum ada posisi paper.',
 			bukti: 'lp_verifikasi (contoh TSLA/WETH: baru 1 sumber, status SEBAGIAN).'
 		},
@@ -72,14 +72,14 @@
 			sumber: 'TVC (TradingView)',
 			strategi: 'Bias struktur + sesi',
 			isi: 'Bias arah dari EMA/ATR pada seri TradingView, dikaitkan dengan sesi (Asia/London/NY) dan kalender dampak. Entry/SL/TP dari jurnal mesin.',
-			bukti: 'Ledger forex (4 trade) — sampel masih INSUFFICIENT, jadi belum boleh diklaim.'
+			bukti: 'Ledger forex (4 trade), sampel masih INSUFFICIENT, jadi belum boleh diklaim.'
 		},
 		{
 			pasar: 'Polymarket',
 			sumber: 'Dokumentasi PM',
-			strategi: 'Arm B — favorit 0,70–0,95',
+			strategi: 'Arm B, favorit 0,70–0,95',
 			isi: 'Beli outcome favorit berharga 0,70–0,95 (menang kecil tapi sering benar). Arm A/C/D dibekukan; bukti tetap disimpan.',
-			bukti: 'Win-rate 81,56% dari 179 kandidat vs break-even 77,0% — TINGKAT TUNING, tetapi split beku belum ada sehingga belum "edge terbukti".'
+			bukti: 'Win-rate 81,56% dari 179 kandidat vs break-even 77,0%, TINGKAT TUNING, tetapi split beku belum ada sehingga belum "edge terbukti".'
 		}
 	];
 
@@ -92,7 +92,7 @@
 	];
 </script>
 
-<svelte:head><title>Cara kerja — War Room</title></svelte:head>
+<svelte:head><title>Cara kerja, War Room</title></svelte:head>
 
 <div class="space-y-4">
 	<PageHeader
@@ -139,7 +139,7 @@
 		<h2 class="judul">Metode &amp; strategi per pasar</h2>
 		<p class="catatan">
 			Ini jawaban atas "strategi atau metode yang sudah gw sebutkan": semuanya ditulis dari
-			kode yang benar-benar jalan — bukan daftar cita-cita. Hasilnya ada di halaman tiap pasar.
+			kode yang benar-benar jalan, bukan daftar cita-cita. Hasilnya ada di halaman tiap pasar.
 		</p>
 		<div class="metode">
 			{#each metode as m (m.pasar)}

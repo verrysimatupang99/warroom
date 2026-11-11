@@ -86,7 +86,7 @@
 	<div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2.5">
 		<div>
 			<h3 class="text-13 font-medium text-text">Perkembangan Hasil (satuan risiko)</h3>
-			<p class="text-11 text-text-3">Naik-turunnya hasil bot dari waktu ke waktu — tiap titik = satu transaksi selesai</p>
+			<p class="text-11 text-text-3">Naik-turunnya hasil bot dari waktu ke waktu, tiap titik = satu transaksi selesai</p>
 		</div>
 
 		{#if stats}

@@ -37,7 +37,7 @@
 		judul?: string;
 	}
 
-	let { blok, judul = 'Gate live-trading — centang otomatis' }: Props = $props();
+	let { blok, judul = 'Gate live-trading, centang otomatis' }: Props = $props();
 
 	/** Ambang "sampai bisa dinilai" — SAMA dengan pakem bukti backend (gate.py):
 	 *  INSUFFICIENT <10 · DIRECTIONAL 10–29 · PRELIMINARY ≥30 · TUNING ≥100 (pada n hari efektif).
@@ -87,7 +87,7 @@
 		<div>
 			<h3 class="text-14 font-medium text-text">{judul}</h3>
 			<p class="text-11 text-text-3">
-				Empat syarat dinilai otomatis dari fakta <span class="font-mono">idx_akurasi</span> —
+				Empat syarat dinilai otomatis dari fakta <span class="font-mono">idx_akurasi</span>,
 				semua harus ✓ sebelum sebuah aturan boleh disebut "layak dijalankan serius".
 				<span class="text-warn">Ini bukan izin live</span>; promosi live tetap NO-GO sampai owner memutuskan.
 			</p>
@@ -109,7 +109,7 @@
 							{#if b.s.dikarantina}
 								<span
 									class="ml-1 rounded border border-neg/40 bg-neg/10 px-1.5 py-0.5 text-10 font-bold text-neg align-middle whitespace-nowrap"
-									title={b.s.alasan_karantina ?? 'Rugi dalam data uji — diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
+									title={b.s.alasan_karantina ?? 'Rugi dalam data uji, diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
 								>DIARSIPKAN</span>
 							{/if}
 						</h4>
@@ -118,7 +118,7 @@
 								? 'border-pos/40 bg-pos/10 text-pos'
 								: 'border-neg/40 bg-neg/10 text-neg'}"
 						>
-							{b.semua ? 'LAYAK DINILAI' : 'BELUM CUKUP — kumpulkan sampel'}
+							{b.semua ? 'LAYAK DINILAI' : 'BELUM CUKUP, kumpulkan sampel'}
 						</span>
 					</div>
 
@@ -147,7 +147,7 @@
 		<p class="mt-2 text-10 text-text-3">
 			<b>Populasi:</b> kolom <span class="font-mono">n</span> = trade TUNTAS di ledger
 			{blok?.tuntas != null ? `(${blok.tuntas} tuntas · ${blok.belum_tuntas ?? 0} jalan)` : ''}.
-			Ambang (n≥30, hari≥10, pakem ≥ PRELIMINARY) adalah aturan bukti yang sudah ada —
+			Ambang (n≥30, hari≥10, pakem ≥ PRELIMINARY) adalah aturan bukti yang sudah ada,
 			bukan ambang baru yang dihitung komponen ini.
 		</p>
 		{#if blok?.sumber}

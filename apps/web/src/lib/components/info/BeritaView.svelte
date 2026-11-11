@@ -44,7 +44,7 @@
 	const items = $derived(news?.items ?? []);
 </script>
 
-<svelte:head><title>Berita — War Room</title></svelte:head>
+<svelte:head><title>Berita, War Room</title></svelte:head>
 
 <div class="space-y-4">
 	<PageHeader
@@ -54,7 +54,7 @@
 		terverifikasi={Boolean(news?.tersedia && items.length > 0)}
 		sumber={news?.sumber_data ?? 'RSS publik'}
 		alasan="feed publik belum merespons"
-		description="Judul + tautan dari feed publik. Ringkasan tidak disalin — klik untuk baca di sumbernya."
+		description="Judul + tautan dari feed publik. Ringkasan tidak disalin, klik untuk baca di sumbernya."
 	/>
 
 	<NavInfo />

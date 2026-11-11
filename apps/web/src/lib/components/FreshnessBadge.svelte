@@ -28,7 +28,7 @@
 	const umur = $derived(umurDetik(age_s));
 	const label = $derived(nada === 'n/a' ? 'n/a' : `${nada} ${umur}`);
 	const judul = $derived.by(() => {
-		const bagian: string[] = [nada === 'n/a' ? 'kesegaran tidak diketahui' : `${nada} — umur ${umur}`];
+		const bagian: string[] = [nada === 'n/a' ? 'kesegaran tidak diketahui' : `${nada}, umur ${umur}`];
 		if (source) bagian.push(`sumber: ${source}`);
 		if (ttl_s != null) bagian.push(`TTL ${umurDetik(ttl_s)}`);
 		if (age_s != null && status && status !== nada) bagian.push(`status API: ${status}`);
