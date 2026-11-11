@@ -6576,6 +6576,58 @@
         ]
       }
     },
+    "/api/v1/openmarket/cakupan": {
+      "get": {
+        "description": "Cakupan OpenMarket (statis) + status aktivasi (ada OPENMARKET_API_KEY).",
+        "operationId": "cakupan_api_v1_openmarket_cakupan_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cakupan Api V1 Openmarket Cakupan Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cakupan",
+        "tags": [
+          "openmarket"
+        ]
+      }
+    },
     "/api/v1/params": {
       "get": {
         "operationId": "params_api_v1_params_get",

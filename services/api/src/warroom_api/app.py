@@ -41,6 +41,7 @@ from warroom_api.routers import leaderboard as leaderboard_router
 from warroom_api.routers import live as live_router
 from warroom_api.routers import mt5_vault as mt5_vault_router
 from warroom_api.routers import observability as observability_router
+from warroom_api.routers import openmarket as openmarket_router
 from warroom_api.routers import pasar as pasar_router
 from warroom_api.routers import pengaturan as pengaturan_router
 from warroom_api.routers import sinyal as sinyal_router
@@ -131,6 +132,7 @@ def create_app() -> FastAPI:
 
     # --- pasar (gate, sinyal, verdict, ringkas) ---
     app.include_router(pasar_router.router)
+    app.include_router(openmarket_router.router)
     app.include_router(sinyal_router.router)
     app.include_router(pengaturan_router.router)
     app.include_router(tencent_router.router)
