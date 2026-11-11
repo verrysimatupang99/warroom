@@ -222,6 +222,35 @@ def check_fresh():
     return stale, targets
 
 
+# Telemetri EA MT5 push tiap 5 dtk. Bila fact `mt5_snapshot` basi melewati
+# ambang ini, push EA berhenti — hampir selalu karena allowlist WebRequest
+# terhapus saat restart MT5 (error 4014). Lihat skill mt5-ea-monitoring.
+MT5_TELEMETRY_LOG = "/var/lib/warroom/telemetry_log.csv"
+MT5_FRESH_S = 120
+
+
+def check_mt5_fresh() -> tuple[list[str], dict]:
+    """Freshness telemetri EA MT5 via mtime `telemetry_log.csv`.
+
+    API menulis satu baris ke berkas ini setiap kali menerima push telemetri
+    (tiap ~5 dtk). Berkas admin-readable (tak perlu sudo/DB, yang gagal utk
+    admin). Basi > MT5_FRESH_S = push EA berhenti — biasanya allowlist
+    WebRequest terhapus saat restart MT5 (error 4014). Lihat skill
+    mt5-ea-monitoring.
+    """
+    targets: dict = {}
+    try:
+        age = mtime_of(MT5_TELEMETRY_LOG)
+    except Exception as e:  # noqa: BLE001
+        targets["mt5-telemetri"] = f"tak-terbaca: {type(e).__name__}"
+        return [f"mt5-telemetri tak-terbaca: {type(e).__name__}"], targets
+    targets["mt5-telemetri"] = round(age)
+    if age > MT5_FRESH_S:
+        return [f"mt5-telemetri basi {int(age // 60)} mnt "
+                f"(push EA berhenti — cek allowlist WebRequest / restart MT5)"], targets
+    return [], targets
+
+
 def main():
     now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     units_down = check_units()
@@ -229,6 +258,9 @@ def main():
     disk_pct, disk_warn = check_disk()
     gate_armed, _ = check_gate()
     stale, fresh = check_fresh()
+    mt5_stale, mt5_fresh = check_mt5_fresh()
+    stale += mt5_stale
+    fresh.update(mt5_fresh)
     alerts = []
     for u in units_down:
         alerts.append(f"ALERT unit down: {u}")
