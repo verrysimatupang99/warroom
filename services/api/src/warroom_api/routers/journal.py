@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from warroom_core.db.models import User
 
 from warroom_api import auth, lokal
+from warroom_api.jam_terbaik import agregat_jam_hari
 from warroom_api.routers.tencent import _fetch_tencent
 
 router = APIRouter(
@@ -111,6 +112,31 @@ async def journal_stats(market: str = MarketQ) -> dict[str, Any]:
 async def journal_trades(market: str = MarketQ) -> dict[str, Any]:
     """Trade tercatat dari kedua market, terbaru lebih dulu."""
     return await _ambil("/forex/journal/trades", market)
+
+
+@router.get("/best-hours")
+async def journal_best_hours(
+    user: Annotated[User, Depends(auth.current_user)],
+    market: str = Query("forex", pattern="^(forex|crypto)$", description="forex|crypto"),
+) -> dict[str, Any]:
+    """Jam & hari terbaik: win-rate dan total PnL per jam 0-23 dan per hari.
+
+    `iso` pada sumber adalah waktu TUTUP trade (UTC); analisis jam/hari memakai itu.
+    Penentu menang/rugi adalah `pnl_usd` untuk forex dan `r` untuk crypto paper,
+    karena `pnl_pct`/`close_price` kosong untuk forex. Fungsi agregatnya murni
+    (`jam_terbaik.agregat_jam_hari`) supaya bisa diuji tanpa DB.
+    """
+    data = await lokal.journal_trades(market)
+    trades = data.get("closed") if isinstance(data, dict) else None
+    hasil = agregat_jam_hari(trades if isinstance(trades, list) else [], market=market)
+    hasil["sumber"] = str((data or {}).get("sumber") or "lokal")
+    hasil["catatan"] = (
+        "iso = waktu TUTUP trade (UTC; waktu tanpa zona dianggap UTC). Menang/rugi dari "
+        "pnl_usd (forex) atau r (crypto) karena pnl_pct kosong untuk forex. "
+        "winrate_pct = menang/(menang+rugi); seri tidak dihitung. jam_terbaik/hari_terbaik "
+        f"butuh n >= {hasil['min_n']}: n kecil belum signifikan, jadi angka kosong dikirim null."
+    )
+    return hasil
 
 
 @router.get("/watchlist")

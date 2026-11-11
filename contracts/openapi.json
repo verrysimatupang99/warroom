@@ -4751,6 +4751,71 @@
         "summary": "Infra Health"
       }
     },
+    "/api/v1/journal/best-hours": {
+      "get": {
+        "description": "Jam & hari terbaik: win-rate dan total PnL per jam 0-23 dan per hari.\n\n`iso` pada sumber adalah waktu TUTUP trade (UTC); analisis jam/hari memakai itu.\nPenentu menang/rugi adalah `pnl_usd` untuk forex dan `r` untuk crypto paper,\nkarena `pnl_pct`/`close_price` kosong untuk forex. Fungsi agregatnya murni\n(`jam_terbaik.agregat_jam_hari`) supaya bisa diuji tanpa DB.",
+        "operationId": "journal_best_hours_api_v1_journal_best_hours_get",
+        "parameters": [
+          {
+            "description": "forex|crypto",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "default": "forex",
+              "description": "forex|crypto",
+              "pattern": "^(forex|crypto)$",
+              "title": "Market",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wr_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wr Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Journal Best Hours Api V1 Journal Best Hours Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Journal Best Hours",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
     "/api/v1/journal/charts": {
       "get": {
         "description": "Deret ekuitas untuk grafik.",

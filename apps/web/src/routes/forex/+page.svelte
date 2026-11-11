@@ -11,6 +11,7 @@
 	import PerbandinganEA from '$lib/components/market/PerbandinganEA.svelte';
 	import KalkulatorPosisi from '$lib/components/market/KalkulatorPosisi.svelte';
 	import AkunMT5 from '$lib/components/market/AkunMT5.svelte';
+	import JamTerbaikCard from '$lib/components/market/JamTerbaikCard.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'forex')!;
 	const sub = $derived.by(() => {
@@ -34,6 +35,7 @@
 		<div class="space-y-4">
 			<ForexCockpitExness />
 			<AkunMT5 />
+			<JamTerbaikCard />
 			<BatasPasar market="forex" />
 		</div>
 	{:else if sub === 'sinyal'}
