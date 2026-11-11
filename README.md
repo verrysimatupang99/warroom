@@ -21,18 +21,40 @@ Pembeda yang dipegang sistem ini:
 
 Detail produk: [`PRODUCT.md`](PRODUCT.md) · Diagram sistem: [`docs/arsitektur.md`](docs/arsitektur.md)
 
+## Tampilan
+
+**Beranda — satu layar, semua pasar**
+
+![Beranda](docs/images/beranda.png)
+
+**Forex & Gold — kokpit MT5 live**
+
+![Forex](docs/images/forex.png)
+
+**IDX — IHSG, penggerak, blue chip**
+
+![IDX](docs/images/idx.png)
+
+**Jurnal — trade tercatat, bisa diaudit**
+
+![Jurnal](docs/images/jurnal.png)
+
+**Sistem — watchdog infrastruktur & telemetri**
+
+![Sistem](docs/images/sistem.png)
+
 ---
 
 ## Cara buka demo
 
-**https://0xgunsl1ng3r.xyz** — buka di peramban, lalu masuk di `/masuk`.
+**https://polywarroom.vps.webdock.cloud** — buka di peramban, lalu masuk di `/masuk`.
 
 Halaman utama bisa dilihat sebagian tanpa login; area yang butuh data (dan semua `/api/*`)
 memerlukan sesi. Kredensial **tidak pernah** dibagikan di repo ini.
 
 ## Pakai dalam 4 langkah
 
-1. **Buka** https://0xgunsl1ng3r.xyz dan **masuk** di `/masuk`.
+1. **Buka** https://polywarroom.vps.webdock.cloud dan **masuk** di `/masuk`.
 2. **Mulai dari Home** — lihat mana pasar yang punya sinyal paling layak saat ini.
 3. **Telusuri satu pasar** (crypto / IDX / forex / Polymarket / GMGN / Sistem) untuk melihat
    **kenapa**: angka, status kesegaran data, dan `catatan_kejujuran` di tiap angka.
