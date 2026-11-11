@@ -119,8 +119,10 @@ export const AREAS: Area[] = [
 		kategori: 'pasar',
 		// 29 Okt: IHSG kini punya sumber lokal, jadi bukan lagi standby penuh.
 		// 29 Okt: idx-edge terpasang (harga emiten, penggerak, broker). Bukan standby lagi.
+		// Tab standar disamakan dgn crypto/forex. IDX halaman data (belum ada sinyal/eksekusi),
+		// jadi tab Sinyal/Uji/Eksekusi tampil dgn EmptyState jujur, bukan disembunyikan.
 		status: 'AKTIF',
-		anak: []
+		anak: TAB_DASAR([], [])
 	},
 	{
 		kunci: 'gmgn',
