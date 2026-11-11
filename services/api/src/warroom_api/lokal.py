@@ -449,9 +449,21 @@ def _trade_forex() -> list[dict[str, Any]]:
                 "account": r.get("account") or "unknown",
                 "strategy_version": r.get("strategy_version") or "unknown",
                 "market": "forex",
+                # Forex = deal NYATA dari EA MT5; dibedakan dari paper crypto.
+                "status": "closed_deal",
+                "sumber": "mt5-forwardtest",
             }
         )
     return hasil
+
+
+def trades_terpisah() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(forex nyata, crypto paper) dalam satu panggilan — untuk laporan banding.
+
+    Fungsi ini tidak menggabungkan apa pun: pemanggil butuh dua keranjang terpisah
+    supaya win-rate paper tidak pernah tercampur dengan hasil uang nyata.
+    """
+    return _trade_forex(), _trade_crypto()
 
 
 def _baca(kueri: str, param: dict[str, Any] | None = None) -> list[dict[str, Any]]:

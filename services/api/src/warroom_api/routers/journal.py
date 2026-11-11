@@ -8,12 +8,13 @@ Lima endpoint menerima `market=all|forex|crypto`; sisanya khusus forex karena
 hanya forex yang punya antrean order nyata (slippage, latensi, sesi).
 """
 
+import asyncio
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from warroom_core.db.models import User
 
-from warroom_api import auth, lokal
+from warroom_api import auth, lokal, paper_real
 from warroom_api.jam_terbaik import agregat_jam_hari
 from warroom_api.routers.tencent import _fetch_tencent
 
@@ -112,6 +113,22 @@ async def journal_stats(market: str = MarketQ) -> dict[str, Any]:
 async def journal_trades(market: str = MarketQ) -> dict[str, Any]:
     """Trade tercatat dari kedua market, terbaru lebih dulu."""
     return await _ambil("/forex/journal/trades", market)
+
+
+@router.get("/paper-vs-real")
+async def journal_paper_vs_real(
+    user: Annotated[User, Depends(auth.current_user)],
+) -> dict[str, Any]:
+    """Bandingkan trade NYATA (forex) dengan PAPER (crypto) berdampingan.
+
+    Ledger mencampur dua jenis catatan: forex = deal tertutup EA MT5 di akun
+    nyata, crypto = simulasi paper bot. Win-rate paper jauh lebih tinggi, jadi
+    angkanya dipisah di sini supaya tidak terbaca sebagai hasil uang nyata.
+    Menang/rugi real dari `pnl_usd`, paper dari `r`; seri tidak dihitung di
+    winrate. Data kosong dikirim `null`, bukan 0.
+    """
+    forex, crypto = await asyncio.to_thread(lokal.trades_terpisah)
+    return paper_real.banding(forex, crypto)
 
 
 @router.get("/best-hours")
