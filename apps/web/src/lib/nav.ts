@@ -189,6 +189,14 @@ export const AREAS: Area[] = [
 			{ slug: 'cara-kerja', label: 'Cara kerja', kunci: [], catatan: 'Aliran domain → worker → API → web' },
 			{ slug: 'bantuan', label: 'Bantuan', kunci: [], catatan: 'Tanya-jawab dari perilaku nyata' }
 		]
+	},
+	{
+		kunci: 'openmarket',
+		label: 'OpenMarket',
+		rute: '/openmarket',
+		ikon: 'riset',
+		kategori: 'riset',
+		anak: []
 	}
 ];
 
