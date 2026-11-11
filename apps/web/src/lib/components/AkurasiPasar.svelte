@@ -92,7 +92,7 @@
 				<!-- QA 7 Okt: angka bruto tidak boleh berdiri setara dengan angka net. -->
 				<span
 					class="rounded border border-warn/50 bg-warn/10 px-1.5 py-0.5 text-10 font-bold text-warn"
-					title="Spread/komisi broker belum ada di jurnal — semua angka di kartu ini bruto"
+					title="Spread/komisi broker belum ada di jurnal, semua angka di kartu ini bruto"
 				>
 					⚠ {data.biaya_label ?? 'NOT COST-ADJUSTED'}
 				</span>
@@ -118,7 +118,7 @@
 						<!-- QA 7 Okt: "n" tanpa nama populasi menyesatkan (halaman lain menulis
 						     n=16 untuk "semua sinyal dinilai", di sini n=12 untuk "trade TUNTAS").
 						     Kolom ini SELALU trade tuntas dari ledger; namanya ditulis utuh. -->
-						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right" title="Jumlah trade TUNTAS (sudah ditutup) di ledger — bukan jumlah sinyal, bukan kandidat aktif">Tuntas<br /><span class="text-9 normal-case">(n)</span></th>
+						<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right" title="Jumlah trade TUNTAS (sudah ditutup) di ledger, bukan jumlah sinyal, bukan kandidat aktif">Tuntas<br /><span class="text-9 normal-case">(n)</span></th>
 						{#if !ringkas}
 							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Hari</th>
 							<th class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right">Menang%</th>
@@ -148,7 +148,7 @@
 								{#if s.dikarantina}
 									<span
 										class="ml-1.5 rounded border border-neg/40 bg-neg/10 px-1.5 py-0.5 text-10 font-bold text-neg align-middle whitespace-nowrap"
-										title={s.alasan_karantina ?? 'Rugi dalam data uji — diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
+										title={s.alasan_karantina ?? 'Rugi dalam data uji, diarsipkan dari wajah pasar, tetap ditampilkan untuk audit'}
 									>DIARSIPKAN</span>
 								{/if}
 							</td>
@@ -177,7 +177,7 @@
 								<!-- WR vs impas: gunakan satu sel ekspresi tanpa @const (batasan Svelte di dlm <if>). -->
 								<td
 									class="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-right font-bold {s.lolos_be === true ? 'text-pos' : s.lolos_be === false ? 'text-neg' : 'text-text-3'}"
-									title={s.winrate_pct != null && s.be_wr_pct != null ? `Menang ${angka(s.winrate_pct, 2)}% vs impas ${angka(s.be_wr_pct, 2)}% — selisih ${(s.winrate_pct - s.be_wr_pct) > 0 ? '+' : ''}${angka(s.winrate_pct - s.be_wr_pct, 2)} poin` : 'BE-WR tidak tersedia'}
+									title={s.winrate_pct != null && s.be_wr_pct != null ? `Menang ${angka(s.winrate_pct, 2)}% vs impas ${angka(s.be_wr_pct, 2)}%, selisih ${(s.winrate_pct - s.be_wr_pct) > 0 ? '+' : ''}${angka(s.winrate_pct - s.be_wr_pct, 2)} poin` : 'BE-WR tidak tersedia'}
 								>
 									{s.be_wr_pct != null ? `${angka(s.be_wr_pct, 1)}%` : '—'}
 									{#if s.lolos_be === false}
@@ -197,7 +197,7 @@
 		</div>
 		<p class="mt-2 text-10 text-text-3">
 			<b>Populasi:</b> kolom <span class="font-mono">Tuntas (n)</span> = trade yang sudah DITUTUP di ledger
-			{market ? `(${market})` : ''} — bukan sinyal yang dinilai, bukan kandidat aktif, bukan posisi berjalan.
+			{market ? `(${market})` : ''}, bukan sinyal yang dinilai, bukan kandidat aktif, bukan posisi berjalan.
 			Angka di kartu lain (mis. narasi "n=16") bisa berasal dari populasi BERBEDA: sinyal yang dievaluasi
 			versus trade yang tuntas. Bandingkan hanya populasi yang sama.
 		</p>

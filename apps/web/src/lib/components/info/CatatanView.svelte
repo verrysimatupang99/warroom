@@ -114,7 +114,7 @@
 	});
 </script>
 
-<svelte:head><title>Catatan — War Room</title></svelte:head>
+<svelte:head><title>Catatan, War Room</title></svelte:head>
 
 <div class="space-y-4">
 	<PageHeader

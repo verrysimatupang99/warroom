@@ -114,13 +114,13 @@
 					ATR belum tersedia, jadi ukuran posisi belum bisa dihitung.
 				{:else if lewatBatas}
 					Hasil hitung hanya {rp(lotMentah, 3)} lot, di bawah minimum 0,01. Kalau tetap dipasang
-					0,01 lot, risikonya ${rp(risikoMinimum)} atau {rp(porsiMinimum, 1)}% ekuitas — bukan
+					0,01 lot, risikonya ${rp(risikoMinimum)} atau {rp(porsiMinimum, 1)}% ekuitas, bukan
 					{risikoPct}% yang diminta. Dengan akun sebesar ${rp(ekuitas)}, stop selebar {rp(hargaStop, 2)}
 					harga terlalu jauh untuk risiko sekecil itu.
 				{:else if layak}
 					Spread memakan {rp(porsiSpread, 1)}% dari risiko. Masih di bawah batas 25%.
 				{:else}
-					Spread memakan {rp(porsiSpread, 1)}% dari risiko — di atas batas 25%. Pada jarak stop
+					Spread memakan {rp(porsiSpread, 1)}% dari risiko, di atas batas 25%. Pada jarak stop
 					sependek ini, biaya eksekusi ikut menentukan hasil, bukan cuma arah harga.
 				{/if}
 			</p>
@@ -137,7 +137,7 @@
 		</ol>
 		<p class="mt-2 text-11 text-text-3">
 			Pembulatan selalu ke bawah. Lebih baik risiko sedikit di bawah batas daripada lewat.
-			Angka ini tidak memperhitungkan komisi, swap, atau slippage — untuk itu lihat uji biaya di tab Uji.
+			Angka ini tidak memperhitungkan komisi, swap, atau slippage, untuk itu lihat uji biaya di tab Uji.
 		</p>
 	</section>
 </div>

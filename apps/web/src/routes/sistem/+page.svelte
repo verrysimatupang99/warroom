@@ -148,12 +148,12 @@
 			});
 			const isi = await r.json().catch(() => null);
 			if (!r.ok) {
-				layaPesan = (isi?.detail as string) ?? `HTTP ${r.status} — hanya owner yang boleh mengubah.`;
+				layaPesan = (isi?.detail as string) ?? `HTTP ${r.status}, hanya owner yang boleh mengubah.`;
 			} else {
 				laya = { aktif: !!isi?.aktif, systemd_timer: !!isi?.systemd_timer, catatan: laya?.catatan };
 				layaPesan = isi?.systemd_ok
 					? 'Tersimpan + timer systemd diperbarui.'
-					: `Tersimpan, tetapi timer systemd gagal: ${isi?.systemd_detail ?? '?'} — hubungi operator.`;
+					: `Tersimpan, tetapi timer systemd gagal: ${isi?.systemd_detail ?? '?'}, hubungi operator.`;
 			}
 		} catch (e) {
 			layaPesan = e instanceof Error ? e.message : 'gagal menghubungi API';
@@ -351,7 +351,7 @@
 				<h2 class="text-13 font-bold text-text">Laya AI</h2>
 				<p class="mt-2 text-12 text-text-2">
 					Penilai AI untuk forex (verdict + timer tiap 60 detik). Saat ini
-					<strong class="text-text">nonaktif</strong> — angka forex dihitung murni dari
+					<strong class="text-text">nonaktif</strong>, angka forex dihitung murni dari
 					telemetri MT5 + rumus lokal. Menyalakannya mengaktifkan kembali endpoint
 					verdict dan timer verdict.
 				</p>
@@ -387,7 +387,7 @@
 			<h2 class="text-13 font-bold text-text">Vault Kredensial</h2>
 			<p class="mt-2 text-12 text-text-2">
 				Simpan endpoint + API key platform manapun (Binance, Bybit, OKX, dan lainnya).
-				Vault hanya menyimpan — salin-tempel manual, tidak ada auto-login.
+				Vault hanya menyimpan, salin-tempel manual, tidak ada auto-login.
 				Polymarket tidak didukung.
 			</p>
 			<p class="mt-3">

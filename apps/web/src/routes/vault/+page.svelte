@@ -109,20 +109,20 @@
       .filter(Boolean)
       .join("\n");
     await navigator.clipboard.writeText(teks).catch(() => {});
-    pesan = "Rahasia disalin ke clipboard — tempel manual, jangan dibagikan.";
+    pesan = "Rahasia disalin ke clipboard, tempel manual, jangan dibagikan.";
   }
 
   onMount(muat);
 </script>
 
 <svelte:head>
-  <title>Vault Kredensial — War Room</title>
+  <title>Vault Kredensial, War Room</title>
 </svelte:head>
 
 <section class="wrap">
   <h1>Vault Kredensial</h1>
   <p class="sub">
-    Simpan endpoint + API key platform manapun. Vault hanya menyimpan —
+    Simpan endpoint + API key platform manapun. Vault hanya menyimpan,
     <strong>salin-tempel manual</strong>, tidak ada auto-login. Polymarket tidak didukung.
   </p>
 

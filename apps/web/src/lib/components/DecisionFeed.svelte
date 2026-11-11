@@ -125,7 +125,7 @@
 				<p class="text-12 font-medium text-text-2">Belum ada keputusan tercatat di kategori ini.</p>
 				<p class="text-11 text-text-3">
 					Feed ini hanya menampilkan keputusan nyata dari ledger (paper/live). Kosong berarti
-					belum ada eksekusi, veto, atau alert yang tercatat — bukan diisi contoh.
+					belum ada eksekusi, veto, atau alert yang tercatat, bukan diisi contoh.
 				</p>
 			</div>
 		{:else}

@@ -54,9 +54,9 @@
 	const alasanBelum = $derived(
 		canonical?.blocked_reason ||
 			(!canonical
-				? 'kesimpulan resmi bot belum tersedia — hasil belum boleh dipercaya'
+				? 'kesimpulan resmi bot belum tersedia, hasil belum boleh dipercaya'
 				: !splitBeku
-					? 'data uji belum dibekukan — hasil belum boleh dipercaya'
+					? 'data uji belum dibekukan, hasil belum boleh dipercaya'
 					: !ciLolos
 						? 'batas bawah keyakinan masih di bawah titik impas'
 						: !cukupSampel
@@ -71,7 +71,7 @@
 	<div class="mb-2.5 flex items-center justify-between border-b border-line-soft pb-2">
 		<div>
 			<h3 class="text-13 font-medium text-text">{judul}</h3>
-			<p class="text-11 text-text-3">Perbandingan tingkat menang bot vs titik impas — sudah lulus pemeriksaan wajib atau belum</p>
+			<p class="text-11 text-text-3">Perbandingan tingkat menang bot vs titik impas, sudah lulus pemeriksaan wajib atau belum</p>
 		</div>
 
 		{#if n > 0}
@@ -156,7 +156,7 @@
 					{:else}
 						<span class="text-warn font-medium">⚠ Belum boleh dipercaya:</span> {alasanBelum}.
 						{#if ciLolos}
-							Angkanya memang sudah di atas titik impas, tapi <b>pemeriksaan wajib belum lulus</b> — halaman ini
+							Angkanya memang sudah di atas titik impas, tapi <b>pemeriksaan wajib belum lulus</b>, halaman ini
 							menampilkannya sebagai bukti berjalan, bukan kesimpulan.
 						{/if}
 					{/if}

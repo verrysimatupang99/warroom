@@ -97,14 +97,14 @@
   <h2>MT5 Login Vault</h2>
   <p class="hint">
     Gudang detail akun MT5 biar tinggal salin-tempel saat login manual di MT5 Webtop.
-    Sandi tersimpan terenkripsi di server dan tidak pernah tampil otomatis — buka manual satu akun saja.
+    Sandi tersimpan terenkripsi di server dan tidak pernah tampil otomatis, buka manual satu akun saja.
     <strong>Sarankan pakai Investor Password</strong> (read-only), bukan master.
   </p>
 
   {#if error}<p class="err">{error}</p>{/if}
   {#if pesan}<p class="ok">{pesan}</p>{/if}
   {#if !kunciVaultAda && !loading}
-    <p class="err">Kunci vault belum terpasang di server — simpan akun dinonaktifkan sementara.</p>
+    <p class="err">Kunci vault belum terpasang di server, simpan akun dinonaktifkan sementara.</p>
   {/if}
 
   <form

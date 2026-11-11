@@ -70,7 +70,7 @@
 		<FreshnessBadge {status} {age_s} source={sumber} {cache} />
 	</header>
 	{#if lipat && !terbuka}
-		{#if children}<p class="text-11 text-text-3">Terkunci rapat — klik judul untuk membuka.</p>{/if}
+		{#if children}<p class="text-11 text-text-3">Terkunci rapat, klik judul untuk membuka.</p>{/if}
 	{:else if memuat}
 		<Skeleton baris={4} />
 	{:else if galat}

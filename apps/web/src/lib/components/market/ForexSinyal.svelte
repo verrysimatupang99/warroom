@@ -261,7 +261,7 @@
 			</dl>
 			{#if bias?.dinilai === false}
 				<p class="mt-2 text-11 leading-relaxed text-text-3">
-					Bias berita belum dinilai karena belum ada berita masuk. Itu bukan berarti pasar netral —
+					Bias berita belum dinilai karena belum ada berita masuk. Itu bukan berarti pasar netral,
 					hanya berarti penilai belum punya bahan.
 				</p>
 			{/if}

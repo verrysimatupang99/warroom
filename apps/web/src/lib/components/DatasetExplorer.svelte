@@ -136,7 +136,7 @@
 		{/if}
 
 		<p class="mt-3 text-11 text-text-3">
-			Unduh sampel belum diekspos — butuh allowlist baca di sisi host (lihat checklist go/no-go C4).
+			Unduh sampel belum diekspos, butuh allowlist baca di sisi host (lihat checklist go/no-go C4).
 			{recorder
 				? `Diperbarui ${new Date(recorder.observed_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB.`
 				: ''}

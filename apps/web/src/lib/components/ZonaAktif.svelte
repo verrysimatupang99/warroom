@@ -80,7 +80,7 @@
 			<h3 class="text-14 font-medium text-text">{judul}</h3>
 			<p class="text-11 text-text-3">
 				{mode === 'hidup'
-					? 'Zona SMC yang sedang dipantau mesin — titik masuk, batas rugi, dan target. Belum posisi.'
+					? 'Zona SMC yang sedang dipantau mesin: titik masuk, batas rugi, dan target. Belum posisi.'
 					: 'Belum ada zona aktif; ini catatan transaksi mesin terakhir (riwayat).'}
 			</p>
 		</div>
@@ -144,7 +144,7 @@
 
 		{#if (mode === 'hidup' ? hidup.length : riwayat.length) > maks}
 			<p class="mt-2 text-10 text-text-3">
-				Menampilkan {maks} dari {mode === 'hidup' ? hidup.length : riwayat.length} baris — sisanya di tab Sinyal.
+				Menampilkan {maks} dari {mode === 'hidup' ? hidup.length : riwayat.length} baris, sisanya di tab Sinyal.
 			</p>
 		{/if}
 		<p class="mt-2 text-10 text-text-3">

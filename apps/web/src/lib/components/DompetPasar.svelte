@@ -161,7 +161,7 @@
 				<div class="flex flex-wrap items-center gap-2">
 					<span class="rounded border border-neg/60 bg-neg/20 px-1.5 py-0.5 text-10 font-bold text-neg">SALDO NEGATIF</span>
 					<span class="text-11 text-text-2">
-						Dompet paper ini <b>habis melewati nol</b> — akibat langsung dari trade yang rugi
+						Dompet paper ini <b>habis melewati nol</b>, akibat langsung dari trade yang rugi
 						melebihi 1R (lihat MODEL BREACH). Dengan uang nyata, posisi seperti ini sudah
 						<b>tidak bisa dibuka lagi</b>: tidak ada sisa modal untuk mempertaruhkan 1% berikutnya.
 					</span>
@@ -182,7 +182,7 @@
 				<div class="text-13 font-bold {(d.pnl_pct ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
 					{rupiah(d.saldo_akhir_idr ?? (d.saldo_akhir_usd ?? 0) * (d.kurs_usd_idr ?? 0))}
 					{#if saldoMinus}
-						<div class="text-10 font-normal text-neg">modal habis — bukan sekadar rugi</div>
+						<div class="text-10 font-normal text-neg">modal habis, bukan sekadar rugi</div>
 					{/if}
 				</div>
 				{#if d.mata_uang !== 'IDR' && d.saldo_akhir_usd != null}
@@ -219,7 +219,7 @@
 
 		{#if !ringkas && d.per_setup && Object.keys(d.per_setup).length > 0}
 			<div class="mb-3">
-				<div class="mb-1.5 text-11 font-bold text-text-2">Per setup — siapa yang menghasilkan, siapa yang menghabiskan</div>
+				<div class="mb-1.5 text-11 font-bold text-text-2">Per setup: siapa yang menghasilkan, siapa yang menghabiskan</div>
 				<div class="overflow-x-auto">
 					<table class="w-full text-left text-12 font-mono">
 						<thead class="border-b border-line text-text-3 text-10 uppercase">
@@ -290,7 +290,7 @@
 				<p class="mt-1 text-10 text-text-3">
 					Penyebab: posisi ditahan sampai <b>open sesi berikutnya</b> (BSJP/ARA_HUNTER), sehingga gap
 					pembukaan bisa jauh melewati stop yang direncanakan. Kalau setup ini dipakai dengan uang
-					nyata, "rugi maksimal 1R" <b>tidak berlaku</b> — ukuran posisi wajib diperkecil atau setup
+					nyata, "rugi maksimal 1R" <b>tidak berlaku</b>, ukuran posisi wajib diperkecil atau setup
 					diperlakukan sebagai berisiko tak terbatas.
 				</p>
 			</div>
@@ -301,13 +301,13 @@
 		{#if (d.sinyal_yatim?.jumlah ?? 0) > 0}
 			<p class="mt-1.5 text-11 text-text-3">
 				⏳ <b>{d.sinyal_yatim?.jumlah}</b> sinyal berstatus <span class="font-mono">CREATED</span> tidak pernah tuntas
-				(tertua {d.sinyal_yatim?.tertua?.slice(0, 10) ?? '—'}) — mesin dibekukan, jadi ini <b>bukan</b> posisi berjalan.
+				(tertua {d.sinyal_yatim?.tertua?.slice(0, 10) ?? '—'}), mesin dibekukan, jadi ini <b>bukan</b> posisi berjalan.
 			</p>
 		{/if}
 
 		{#if !ringkas}
 			{#if d.biaya_tercatat === false}
-				<p class="text-11 text-warn">⚠ Biaya (fee/slippage) belum tercatat di ledger market ini — PnL masih bruto.</p>
+				<p class="text-11 text-warn">⚠ Biaya (fee/slippage) belum tercatat di ledger market ini, PnL masih bruto.</p>
 			{/if}
 			{#if d.catatan?.length}
 				<ul class="mt-1.5 space-y-0.5">

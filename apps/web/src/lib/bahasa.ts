@@ -34,7 +34,7 @@ export const KAMUS: Record<string, Istilah> = {
 	gate: {
 		manusia: 'pemeriksaan wajib',
 		artinya:
-			'Sebelum bot membeli, hasilnya harus lulus beberapa pemeriksaan (jumlah contoh cukup, untung di atas titik impas, data dibekukan). Kalau belum lulus, bot TIDAK beli — itu normal, bukan error.',
+			'Sebelum bot membeli, hasilnya harus lulus beberapa pemeriksaan (jumlah contoh cukup, untung di atas titik impas, data dibekukan). Kalau belum lulus, bot TIDAK beli, itu normal, bukan error.',
 		teknis: 'gate: n≥30, Wilson 90%, ci_low > BE, split beku (ADR-003)'
 	},
 	'LOLOS GATE': {
@@ -44,7 +44,7 @@ export const KAMUS: Record<string, Istilah> = {
 	},
 	promotable: {
 		manusia: 'layak dibeli',
-		artinya: 'Sudah lulus semua pemeriksaan. Angka ini biasanya 0, dan itu jujur — lebih baik menunggu daripada memaksa beli.',
+		artinya: 'Sudah lulus semua pemeriksaan. Angka ini biasanya 0, dan itu jujur, lebih baik menunggu daripada memaksa beli.',
 		teknis: 'promotable_edge = true'
 	},
 	kandidat: {
@@ -127,7 +127,7 @@ export const KAMUS: Record<string, Istilah> = {
 	},
 	ledger: {
 		manusia: 'catatan transaksi',
-		artinya: 'Buku besar berisi SEMUA transaksi yang pernah terjadi — termasuk yang rugi. Tidak ada yang disembunyikan.',
+		artinya: 'Buku besar berisi SEMUA transaksi yang pernah terjadi, termasuk yang rugi. Tidak ada yang disembunyikan.',
 		teknis: 'ledger'
 	},
 	paper: {

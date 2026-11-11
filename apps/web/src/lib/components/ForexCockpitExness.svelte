@@ -270,7 +270,7 @@
 					</span>
 				</div>
 				<p class="text-xs text-text-3 mt-0.5">
-					Kandidat level setup M5 dari mesin analisa kuantitatif — order baru akan dikirim ke MT5 saat level ter-trigger & dikonfirmasi Laya AI
+					Kandidat level setup M5 dari mesin analisa kuantitatif, order baru akan dikirim ke MT5 saat level ter-trigger & dikonfirmasi Laya AI
 				</p>
 			</div>
 

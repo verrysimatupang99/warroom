@@ -161,7 +161,7 @@ async function muat() {
 				waktu: null,
 				alasan:
 					`${pasarGagal.length} pasar tidak bisa dibaca: ${pasarGagal.map((p) => p.label).join(', ')}. ` +
-					'Ini bukan "tidak ada sinyal" — periksa job pengumpul di halaman Sistem.'
+					'Ini bukan "tidak ada sinyal", periksa job pengumpul di halaman Sistem.'
 			};
 		}
 		if (pasarAda.length === 0) {
@@ -171,7 +171,7 @@ async function muat() {
 				waktu: null,
 				alasan:
 					`Mesin berjalan (${pasarKosong.length} pasar dipindai) tetapi tidak ada setup yang ` +
-					'lolos strategi saat ini. Itu hasil kerja sistem, bukan kegagalan — menunggu lebih baik daripada memaksa.'
+					'lolos strategi saat ini. Itu hasil kerja sistem, bukan kegagalan, menunggu lebih baik daripada memaksa.'
 			};
 		}
 		const sisaKosong = pasarKosong.length ? ` ${pasarKosong.length} pasar lain tanpa setup cocok.` : '';
@@ -291,7 +291,7 @@ async function muat() {
 	);
 </script>
 
-<svelte:head><title>War Room — satu layar, semua pasar</title></svelte:head>
+<svelte:head><title>War Room, satu layar, semua pasar</title></svelte:head>
 
 <div class="pratinjau">
 	<!-- 1. TICKER — DENYUT PASAR, BERJALAN (revisi pemilik 7 Okt: "kalo bisa jalan
@@ -450,7 +450,7 @@ async function muat() {
 						<thead>
 							<tr>
 								<!-- QA 7 Okt: "n" harus menyebut populasi. Di sini = trade TUNTAS per market. -->
-								<th>Market</th><th>Setup terbesar</th><th class="ka" title="Trade TUNTAS (sudah ditutup) — bukan sinyal dinilai, bukan kandidat aktif">Tuntas (n)</th><th class="ka">Hari</th>
+								<th>Market</th><th>Setup terbesar</th><th class="ka" title="Trade TUNTAS (sudah ditutup), bukan sinyal dinilai, bukan kandidat aktif">Tuntas (n)</th><th class="ka">Hari</th>
 								<th class="ka">WR</th><th class="ka">Mean R</th><th class="ka">P&amp;L</th><th>Pakem</th>
 							</tr>
 						</thead>
@@ -462,7 +462,7 @@ async function muat() {
 										<!-- QA 7 Okt: Forex belum cost-adjusted (spread/komisi broker tak ada
 										     di jurnal). Ditandai agar tidak dibandingkan langsung dengan yang net. -->
 										{#if r.pasar === 'forex' || r.pasar === 'lp'}
-											<span class="tanda-biaya" title="Angka bruto — biaya broker/on-chain belum tercatat">BRUTO</span>
+											<span class="tanda-biaya" title="Angka bruto, biaya broker/on-chain belum tercatat">BRUTO</span>
 										{/if}
 									</td>
 									<td class="dim">{r.setup ?? '—'} <span class="dim">({r.jumlah_setup} setup)</span></td>
@@ -489,20 +489,20 @@ async function muat() {
 					</table>
 				</div>
 				<div class="pakem-legend">
-					<span class="pakem pakem-INSUFFICIENT">INSUFFICIENT</span> <span class="dim">&lt;10 hari — belum boleh diklaim apa pun</span>
+					<span class="pakem pakem-INSUFFICIENT">INSUFFICIENT</span> <span class="dim">&lt;10 hari, belum boleh diklaim apa pun</span>
 					<span class="pisah">·</span>
-					<span class="pakem pakem-DIRECTIONAL">DIRECTIONAL</span> <span class="dim">&lt;30 hari — arah saja, dilarang klaim profit</span>
+					<span class="pakem pakem-DIRECTIONAL">DIRECTIONAL</span> <span class="dim">&lt;30 hari, arah saja, dilarang klaim profit</span>
 					<span class="pisah">·</span>
-					<span class="pakem pakem-PRELIMINARY">PRELIMINARY</span> <span class="dim">&lt;100 hari — evaluasi awal</span>
+					<span class="pakem pakem-PRELIMINARY">PRELIMINARY</span> <span class="dim">&lt;100 hari, evaluasi awal</span>
 					<span class="pisah">·</span>
-					<span class="pakem pakem-TUNING">TUNING</span> <span class="dim">≥100 hari — baru boleh tuning</span>
+					<span class="pakem pakem-TUNING">TUNING</span> <span class="dim">≥100 hari, baru boleh tuning</span>
 				</div>
 				<p class="dim kaki-tabel">
-					<b>Populasi:</b> semua kolom di tabel ini dihitung dari <b>trade TUNTAS</b> (sudah ditutup) —
+					<b>Populasi:</b> semua kolom di tabel ini dihitung dari <b>trade TUNTAS</b> (sudah ditutup),
 					bukan sinyal yang dinilai, bukan kandidat aktif, bukan posisi berjalan. Angka "n" di narasi
 					atau halaman lain bisa berasal dari populasi berbeda; bandingkan hanya yang sama.<br />
 					Kolom <b>Setup terbesar</b> = setup dengan trade tuntas terbanyak di market itu (yang lain ada di halaman market).
-					<b>Mean R</b> dirata-rata per trade; <b>R</b> tidak bisa dibandingkan antar-market — pakai dompet Rp 10 juta di halaman Riset.
+					<b>Mean R</b> dirata-rata per trade; <b>R</b> tidak bisa dibandingkan antar-market, pakai dompet Rp 10 juta di halaman Riset.
 				</p>
 			{:else}
 				<p class="dim">Ringkasan akurasi belum tersedia.</p>

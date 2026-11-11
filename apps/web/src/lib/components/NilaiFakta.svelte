@@ -69,7 +69,7 @@
 
 	{#if kosong}
 		<p class="text-13 text-text-2">
-			Nilai ada tetapi tidak berbentuk angka atau tabel — bukan nol, hanya bentuk lain:
+			Nilai ada tetapi tidak berbentuk angka atau tabel, bukan nol, hanya bentuk lain:
 		</p>
 		<pre class="angka mt-1 max-h-40 overflow-auto rounded-control border border-line bg-surface-2 p-2 text-12 whitespace-pre-wrap">{ringkasNilai(
 				fakta.value
