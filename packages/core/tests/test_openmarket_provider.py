@@ -4,7 +4,6 @@ import os
 import urllib.request
 
 import pytest
-
 from warroom_core.strategi_config.provider import OpenMarketProvider, provider_untuk
 
 
