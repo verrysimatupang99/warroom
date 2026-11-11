@@ -5,7 +5,7 @@
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12+-informational" alt="Python 3.12+"></a>
   <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-16-blue" alt="PostgreSQL 16"></a>
   <a href="https://kit.svelte.dev/"><img src="https://img.shields.io/badge/SvelteKit-2-ff3e00" alt="SvelteKit 2"></a>
-  <img src="https://img.shields.io/badge/license-proprietary-red" alt="License: proprietary">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT">
 </p>
 
 **Satu layar untuk melihat dan mengoperasikan seluruh sistem trading**: crypto, IDX, forex,
