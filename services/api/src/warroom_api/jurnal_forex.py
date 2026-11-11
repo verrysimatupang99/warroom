@@ -61,6 +61,9 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
                 "account": str(ev.get("account") or "unknown"),
                 "strategy_version": str(ev.get("strategy_version") or "unknown"),
                 "market": "forex",
+                # Forex = deal NYATA dari EA MT5; dibedakan dari paper crypto.
+                "status": "closed_deal",
+                "sumber": "mt5-forwardtest",
             }
         )
     return hasil

@@ -6,6 +6,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ExportLedgerCsv from '$lib/components/ExportLedgerCsv.svelte';
+import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 
 	type Angka = number | null;
 	interface Trade {
@@ -96,6 +97,11 @@
 		<ExportLedgerCsv pasar={filter} entries={entriesCsv} />
 	{/snippet}
 </PageHeader>
+
+<!-- Paling atas: penjaga agar win-rate paper tidak dikira hasil uang nyata. -->
+<div class="mb-4">
+	<PaperVsRealCard />
+</div>
 
 <div class="space-y-4">
 	<div class="flex flex-wrap gap-1" role="tablist" aria-label="Filter market">
