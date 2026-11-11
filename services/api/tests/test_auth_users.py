@@ -1,6 +1,20 @@
 """Tes buat akun login (owner-only) via POST /api/v1/auth/users."""
 from __future__ import annotations
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _reset_limiter():
+    """Pembatas laju login singleton modul — reset antar tes supaya tak 429."""
+    from warroom_api import app as app_mod
+
+    for lim in (app_mod.LOGIN_LIMITER, app_mod.VERIFIER_LIMITER, app_mod.NARRATE_LIMITER):
+        lim.reset()
+    yield
+    for lim in (app_mod.LOGIN_LIMITER, app_mod.VERIFIER_LIMITER, app_mod.NARRATE_LIMITER):
+        lim.reset()
+
 
 def _cookie(sid: str) -> dict[str, str]:
     return {"Cookie": f"wr_session={sid}"}
