@@ -3,6 +3,7 @@
 	// yang benar-benar tersedia: IHSG publik, ringkasan pasar (penggerak + blue chip),
 	// dan pencarian saham. Yang belum ada tetap dinyatakan, bukan disembunyikan.
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { AREAS } from '$lib/nav';
 	import { urlApi } from '$lib/api/client';
 	import MarketShell from '$lib/components/MarketShell.svelte';
@@ -40,6 +41,8 @@
 	let memuatCari = $state(false);
 
 	const area = AREAS.find((a) => a.kunci === 'idx')!;
+	// Sub-nav standar (Ringkas/Sinyal/Uji/Eksekusi) — samakan ritme dgn crypto/forex.
+	const sub = $derived(page.url.searchParams.get('sub') ?? 'ringkas');
 
 	onMount(async () => {
 		const [p, r] = await Promise.allSettled([
@@ -104,7 +107,7 @@
 
 <svelte:head><title>IDX | War Room</title></svelte:head>
 
-<MarketShell {area} aktif="ringkas" tanpaKepala>
+<MarketShell {area} aktif={sub} tanpaKepala>
 <div class="space-y-4">
 	<PageHeader
 		eyebrow="War Room · IDX"
@@ -115,6 +118,7 @@
 		sumber="yahoo:jkse + idx-edge:stock.arjum.com"
 	/>
 
+	{#if sub === 'ringkas'}
 	{#if memuat}
 		<Skeleton baris={5} tinggi={44} />
 	{:else}
@@ -334,6 +338,23 @@
 				<li>· Scanner otomatis dan bandarmologi harian belum dijadwalkan; data broker masih dibuka manual per emiten.</li>
 			</ul>
 		</section>
+	{/if}
+
+	{:else if sub === 'sinyal'}
+		<EmptyState
+			judul="IDX belum punya sinyal"
+			pesan="Halaman IDX saat ini hanya menampilkan data pasar (IHSG, emiten, penggerak, blue chip). Belum ada sinyal IDX yang dihasilkan atau dikirim ke mana pun."
+		/>
+	{:else if sub === 'uji'}
+		<EmptyState
+			judul="IDX belum punya pengujian"
+			pesan="Belum ada backtest atau pengukuran akurasi untuk IDX. Halaman ini hanya menampilkan data pasar."
+		/>
+	{:else if sub === 'eksekusi'}
+		<EmptyState
+			judul="IDX belum punya eksekusi"
+			pesan="Belum ada eksekusi atau jurnal trade untuk IDX. Halaman ini hanya menampilkan data pasar, bukan trading."
+		/>
 	{/if}
 </div>
 </MarketShell>
