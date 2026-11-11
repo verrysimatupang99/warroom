@@ -60,3 +60,37 @@ def logout(
 @router.get("/api/v1/auth/me")
 def me(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
     return {"username": user.username, "role": user.role}
+
+
+class UserBaru(BaseModel):
+    username: str
+    password: str
+    role: str = "viewer"
+
+
+@router.post("/api/v1/auth/users", status_code=201)
+def buat_user(
+    body: UserBaru, user: Annotated[User, Depends(auth.require_role("owner"))]
+) -> dict[str, Any]:
+    """Buat akun login baru (owner-only).
+
+    Supaya pembuatan akun (mis. akun demo) tak perlu akses DB/sudo langsung.
+    Role: viewer | operator | owner.
+    """
+    if body.role not in ("viewer", "operator", "owner"):
+        raise HTTPException(400, "role harus viewer|operator|owner")
+    if len(body.password) < 8:
+        raise HTTPException(400, "password minimal 8 karakter")
+    with session_scope() as ses:
+        ada = ses.query(User).filter(User.username == body.username).one_or_none()
+        if ada is not None:
+            raise HTTPException(409, "username sudah dipakai")
+        u = User(
+            username=body.username,
+            role=body.role,
+            pass_hash=auth.hash_password(body.password),
+            active=True,
+        )
+        ses.add(u)
+        ses.flush()
+        return {"status": "created", "username": u.username, "role": u.role}
