@@ -35,8 +35,8 @@
 <svelte:window onkeydown={handleGlobalKeys} />
 
 <div class="app-layout">
-	<!-- DESKTOP SIDEBAR: Fixed 272px -->
-	<div class="hidden md:block">
+	<!-- DESKTOP SIDEBAR: Sticky 272px -->
+	<div class="desktop-sidebar-slot hidden md:block">
 		<OyenzaSidebar />
 	</div>
 
@@ -88,9 +88,17 @@
 <style>
 	.app-layout {
 		display: flex;
+		align-items: flex-start;
 		min-height: 100vh;
 		background: var(--color-bg);
 		color: var(--color-text);
+	}
+	.desktop-sidebar-slot {
+		position: sticky;
+		top: 0;
+		height: 100dvh;
+		flex-shrink: 0;
+		z-index: 50;
 	}
 	.mobile-header {
 		position: fixed;

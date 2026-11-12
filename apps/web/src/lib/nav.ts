@@ -96,13 +96,13 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
-		kunci: 'crypto',
-		label: 'Crypto',
-		rute: '/crypto',
-		ikon: 'crypto',
+		kunci: 'polymarket',
+		label: 'Polymarket',
+		rute: '/polymarket',
+		ikon: 'polymarket',
 		kategori: 'floor',
 		status: 'PAPER',
-		anak: TAB_DASAR(['crypto_sinyal', 'kandidat'], ['ledger', 'posisi'])
+		anak: TAB_DASAR(['poly_sinyal', 'verdict'], ['poly_ledger', 'poly_posisi'])
 	},
 	{
 		kunci: 'idx',
@@ -114,13 +114,13 @@ export const AREAS: Area[] = [
 		anak: TAB_DASAR([], [])
 	},
 	{
-		kunci: 'polymarket',
-		label: 'Polymarket',
-		rute: '/polymarket',
-		ikon: 'polymarket',
+		kunci: 'crypto',
+		label: 'Crypto',
+		rute: '/crypto',
+		ikon: 'crypto',
 		kategori: 'floor',
 		status: 'PAPER',
-		anak: TAB_DASAR(['poly_sinyal', 'verdict'], ['poly_ledger', 'poly_posisi'])
+		anak: TAB_DASAR(['crypto_sinyal', 'kandidat'], ['ledger', 'posisi'])
 	},
 	{
 		kunci: 'gmgn',
@@ -128,8 +128,8 @@ export const AREAS: Area[] = [
 		rute: '/gmgn',
 		ikon: 'gmgn',
 		kategori: 'floor',
-		status: 'PAPER',
-		anak: TAB_DASAR(['radar', 'gmgn'], ['lp_paper', 'gmgn_ledger'])
+		status: 'STANDBY',
+		anak: []
 	},
 	{
 		kunci: 'signals',
@@ -153,14 +153,6 @@ export const AREAS: Area[] = [
 			{ slug: 'leaderboard', label: 'Leaderboard', kunci: ['equity', 'ledger'], catatan: 'Peringkat strategi menurut PF setelah biaya' },
 			{ slug: 'kalender', label: 'Kalender', kunci: ['bagian'], catatan: 'Agenda makro: CPI, NFP, FOMC' }
 		]
-	},
-	{
-		kunci: 'openmarket',
-		label: 'OpenMarket',
-		rute: '/openmarket',
-		ikon: 'riset',
-		kategori: 'intel',
-		anak: []
 	},
 	{
 		kunci: 'info',

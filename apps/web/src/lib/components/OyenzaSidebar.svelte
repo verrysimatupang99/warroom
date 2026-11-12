@@ -87,7 +87,7 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}"></span>
 			<span class="text-11 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">CENT REAL · CRYPTO PAPER</span>
+		<span class="tag-status">FOREX LIVE · POLY PAPER</span>
 	</div>
 
 	<!-- Pilar 1: TRADING FLOOR -->
@@ -104,10 +104,10 @@
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -129,10 +129,10 @@
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -154,10 +154,10 @@
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -179,10 +179,10 @@
 					rel={s.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={s.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={s.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{s.label}</span>
 					{#if s.tag}
-						<span class="prop-tag font-mono">{s.tag}</span>
+						<span class="prop-tag tag-{s.tag.toLowerCase()} font-mono">{s.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{s.num}</kbd>
 				</a>
@@ -191,29 +191,26 @@
 	</div>
 
 	<!-- Sidebar Footer / Provenance Transparency Note -->
-	<div class="sidebar-foot font-mono text-11">
+	<div class="sidebar-foot font-mono text-10">
 		<div class="flex items-center justify-between text-text-3">
 			<span>PROVENANCE</span>
 			<span class="text-pos">1001STARTUP OK</span>
 		</div>
-		<p class="foot-desc font-sans text-text-3 mt-1">
-			Setiap sinyal tertaut ke sumbernya sendiri: OKX, Yahoo Finance, dan telemetri MT5.
-		</p>
 	</div>
 </aside>
 
 <style>
 	.oy-sidebar {
 		width: 272px;
-		height: 100vh;
+		height: 100dvh;
 		position: sticky;
 		top: 0;
 		background: var(--color-surface);
 		border-right: 1px solid var(--color-line);
-		padding: 1.25rem 0.85rem;
+		padding: 0.65rem 0.75rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 0.5rem;
 		overflow-y: auto;
 		scrollbar-width: none;
 		z-index: 50;
@@ -225,17 +222,17 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 0.4rem 0.5rem;
+		padding: 0 0.35rem 0.15rem;
 	}
 	.brand-link {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
+		gap: 0.55rem;
 		text-decoration: none;
 	}
 	.logo-box {
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		background: var(--color-surface-2);
 		border: 1px solid var(--color-line);
 		border-radius: 6px;
@@ -245,7 +242,7 @@
 	.logo-char {
 		font-family: var(--font-display);
 		font-weight: 700;
-		font-size: 16px;
+		font-size: 15px;
 		color: var(--color-accent);
 	}
 	.brand-text {
@@ -253,10 +250,10 @@
 		flex-direction: column;
 	}
 	.brand-title {
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 700;
 		color: var(--color-text);
-		line-height: 1.2;
+		line-height: 1.15;
 	}
 	.brand-title small {
 		font-size: 10px;
@@ -264,7 +261,7 @@
 		font-weight: 500;
 	}
 	.brand-sub {
-		font-size: 9.5px;
+		font-size: 9px;
 		color: var(--color-text-3);
 		letter-spacing: 0.08em;
 	}
@@ -282,7 +279,7 @@
 		background: var(--color-surface-2);
 		border: 1px solid var(--color-line);
 		border-radius: 6px;
-		padding: 0.45rem 0.65rem;
+		padding: 0.3rem 0.55rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -309,34 +306,34 @@
 	.nav-group {
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.15rem;
 	}
 	.grp-label {
-		font-size: 10px;
+		font-size: 9.5px;
 		font-weight: 700;
 		color: var(--color-text-3);
 		letter-spacing: 0.08em;
-		padding-inline: 0.5rem;
-		margin-bottom: 0.2rem;
+		padding-inline: 0.45rem;
+		margin-bottom: 0.05rem;
 	}
 	.nav-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
+		gap: 1px;
 	}
 	.nav-item {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.45rem 0.6rem;
-		border-radius: 6px;
+		gap: 0.5rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 5px;
 		color: var(--color-text-3);
 		text-decoration: none;
-		font-size: 13px;
+		font-size: 12.5px;
 		font-weight: 500;
 		border: 1px solid transparent;
 		transition: all 120ms ease-out;
-		min-height: 38px;
+		min-height: 29px;
 	}
 	.nav-item:hover {
 		background: var(--color-surface-2);
@@ -362,32 +359,44 @@
 		flex: 1;
 	}
 	.prop-tag {
-		font-size: 9px;
+		font-size: 8.5px;
 		font-weight: 700;
 		color: var(--color-pos);
 		background: color-mix(in srgb, var(--color-pos) 12%, transparent);
 		border: 1px solid color-mix(in srgb, var(--color-pos) 30%, transparent);
 		border-radius: 3px;
 		padding: 0 4px;
+		line-height: 1.4;
+	}
+	.prop-tag.tag-paper {
+		color: var(--color-warn);
+		background: color-mix(in srgb, var(--color-warn) 12%, transparent);
+		border-color: color-mix(in srgb, var(--color-warn) 30%, transparent);
+	}
+	.prop-tag.tag-standby {
+		color: var(--color-text-3);
+		background: var(--color-surface-2);
+		border-color: var(--color-line);
+	}
+	.prop-tag.tag-ops {
+		color: var(--color-text-2);
+		background: var(--color-surface-2);
+		border-color: var(--color-line);
 	}
 	.nav-kbd {
-		font-size: 10.5px;
+		font-size: 10px;
 		color: var(--color-text-3);
 		background: var(--color-bg);
 		border: 1px solid var(--color-line);
 		border-radius: 4px;
-		min-width: 20px;
-		height: 20px;
+		min-width: 18px;
+		height: 18px;
 		display: grid;
 		place-items: center;
 	}
 	.sidebar-foot {
 		margin-top: auto;
-		padding-top: 0.85rem;
+		padding-top: 0.45rem;
 		border-top: 1px solid var(--color-line);
-	}
-	.foot-desc {
-		line-height: 1.4;
-		font-size: 11px;
 	}
 </style>
