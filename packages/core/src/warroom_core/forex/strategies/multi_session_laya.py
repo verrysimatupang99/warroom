@@ -14,7 +14,8 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-from ..laya_verdict import ambil as ambil_verdict_laya, is_laya_enabled
+from ..laya_verdict import ambil as ambil_verdict_laya
+from ..laya_verdict import is_laya_enabled
 from .base import BaseStrategy
 
 log = logging.getLogger("warroom_core.forex.strategies.multi_session_laya")
@@ -84,9 +85,12 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         2. RRR minimal >= 1.6 (memenuhi syarat scalping asimetris).
         3. Toleransi jarak SL <= max_sl_points (dan > 0).
         """
-        session = str(market_state.get("session") or self.get_current_session()).upper()
+        session = str(market_state.get("session") or self.get_current_session()).strip().upper()
         if session not in ("ASIA", "LONDON", "NEW_YORK"):
-            alasan = f"Mode teknis murni ditolak: sesi {session} di luar jam trading (ASIA/LONDON/NEW_YORK) — sinyal DIBLOKIR"
+            alasan = (
+                f"Mode teknis murni ditolak: sesi {session} di luar jam trading "
+                "(ASIA/LONDON/NEW_YORK) — sinyal DIBLOKIR"
+            )
             log.warning(alasan)
             return False, 0.0, alasan
 
@@ -95,8 +99,11 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         if rrr is not None:
             try:
                 rrr_f = float(rrr)
-                if rrr_f < 1.6:
-                    alasan = f"Mode teknis murni ditolak: RRR {rrr_f:.2f} di bawah batas minimal 1.60 — sinyal DIBLOKIR"
+                if round(rrr_f, 2) < 1.60:
+                    alasan = (
+                        f"Mode teknis murni ditolak: RRR {rrr_f:.2f} di bawah batas minimal 1.60 "
+                        "— sinyal DIBLOKIR"
+                    )
                     log.warning(alasan)
                     return False, 0.0, alasan
             except (TypeError, ValueError):
@@ -104,12 +111,16 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
                 log.warning(alasan)
                 return False, 0.0, alasan
         elif self.rrr_min < 1.6:
-            alasan = f"Mode teknis murni ditolak: strategi rrr_min {self.rrr_min:.2f} di bawah batas 1.60 — sinyal DIBLOKIR"
+            alasan = (
+                f"Mode teknis murni ditolak: strategi rrr_min {self.rrr_min:.2f} "
+                "di bawah batas 1.60 — sinyal DIBLOKIR"
+            )
             log.warning(alasan)
             return False, 0.0, alasan
 
         # Evaluasi jarak Stop-Loss
-        risk = market_state.get("risk") or market_state.get("sl_points")
+        raw_risk = market_state.get("risk")
+        risk = raw_risk if raw_risk is not None else market_state.get("sl_points")
         if risk is not None:
             try:
                 risk_f = float(risk)

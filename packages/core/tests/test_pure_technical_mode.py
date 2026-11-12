@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
+
 import pytest
 from warroom_core.forex import laya_verdict
 from warroom_core.forex.strategies.multi_session_laya import MultiSessionLayaScalperStrategy
@@ -93,3 +93,97 @@ def test_fallback_when_verdict_cache_not_written_yet(tmp_path: Path, monkeypatch
     assert layak is True
     assert conf == 1.0
     assert "Mode teknis murni" in alasan
+
+
+def test_pure_technical_mode_rejects_zero_or_negative_risk(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifikasi bahwa risk 0.0 atau negatif diblokir demi keamanan modal."""
+    monkeypatch.setenv("WARROOM_LAYA_INFERENSI", "0")
+    s = MultiSessionLayaScalperStrategy(enable_laya=True, min_rrr=1.6)
+
+    # 1. risk = 0.0
+    layak_zero, conf_zero, alasan_zero = s.evaluate_laya({
+        "side": "LONG",
+        "session": "LONDON",
+        "rrr": 2.0,
+        "risk": 0.0,
+    })
+    assert layak_zero is False
+    assert conf_zero == 0.0
+    assert "DIBLOKIR" in alasan_zero
+    assert "jarak SL 0.00 tidak valid" in alasan_zero
+
+    # 2. sl_points = 0.0 (fallback saat risk tidak diset)
+    layak_sl_zero, conf_sl_zero, alasan_sl_zero = s.evaluate_laya({
+        "side": "LONG",
+        "session": "LONDON",
+        "rrr": 2.0,
+        "sl_points": 0.0,
+    })
+    assert layak_sl_zero is False
+    assert conf_sl_zero == 0.0
+    assert "DIBLOKIR" in alasan_sl_zero
+    assert "jarak SL 0.00 tidak valid" in alasan_sl_zero
+
+    # 3. negative risk
+    layak_neg, conf_neg, alasan_neg = s.evaluate_laya({
+        "side": "LONG",
+        "session": "LONDON",
+        "rrr": 2.0,
+        "risk": -1.5,
+    })
+    assert layak_neg is False
+    assert conf_neg == 0.0
+    assert "DIBLOKIR" in alasan_neg
+
+
+def test_pure_technical_mode_strips_session_whitespace(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifikasi bahwa string sesi dengan whitespace di awal/akhir dibersihkan dan disetujui."""
+    monkeypatch.setenv("WARROOM_LAYA_INFERENSI", "0")
+    s = MultiSessionLayaScalperStrategy(enable_laya=True, min_rrr=1.6)
+
+    layak, conf, alasan = s.evaluate_laya({
+        "side": "LONG",
+        "session": " LONDON ",
+        "rrr": 2.0,
+        "risk": 2.0,
+    })
+    assert layak is True
+    assert conf == 1.0
+    assert "lolos filter teknis" in alasan
+
+
+def test_pure_technical_mode_floating_point_rrr_precision(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifikasi bahwa RRR 1.60 dari setup realistis (ATR 2.0, risk 2.2, reward 3.52)
+    tidak gugur oleh presisi float.
+    """
+    monkeypatch.setenv("WARROOM_LAYA_INFERENSI", "0")
+    s = MultiSessionLayaScalperStrategy(enable_laya=True, min_rrr=1.6)
+
+    # 3.52 / 2.2 = 1.5999999999999999
+    rasio = 3.52 / 2.2
+    layak, conf, alasan = s.evaluate_laya({
+        "side": "LONG",
+        "session": "LONDON",
+        "rrr": rasio,
+        "risk": 2.2,
+    })
+    assert layak is True
+    assert conf == 1.0
+    assert "lolos filter teknis" in alasan
+
+    # Verifikasi end-to-end melalui evaluate()
+    s_e2e = MultiSessionLayaScalperStrategy(enable_laya=False, min_rrr=1.6)
+    s_e2e.get_current_session = lambda: "LONDON"
+    market_data = {
+        "price": 2650.0,
+        "ema9": 2645.0,
+        "ema21": 2640.0,
+        "atr14": 2.0,
+        "recent_high": 2655.0,
+        "recent_low": 2635.0,
+    }
+    sig = s_e2e.evaluate(market_data)
+    assert sig is not None
+    assert sig["risk"] == 2.2
+    assert sig["reward"] == 3.52
+    assert sig["session"] == "LONDON"
