@@ -57,7 +57,7 @@
 						</div>
 						<div>
 							<div class="text-13 font-bold text-text font-display">Pasar Aktif: Gold &amp; Forex (XAUUSD)</div>
-							<div class="text-11 text-text-3 font-mono">Exness Demo #416510164 • Modal: $456.98 USD • Mode formula (Laya nonaktif)</div>
+							<div class="text-11 text-text-3 font-mono">Exness Real Cent #452009427 • 1 074.81 USC ($10.75) • M5 Scalp Active</div>
 						</div>
 					</div>
 

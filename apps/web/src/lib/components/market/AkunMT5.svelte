@@ -8,6 +8,8 @@
 	interface Akun {
 		account: string;
 		broker?: string;
+		currency?: string;
+		cent_factor?: number;
 		primary?: boolean;
 		connected?: boolean;
 		seconds_ago?: number;
@@ -27,6 +29,9 @@
 	}
 	interface Status {
 		account?: string;
+		broker?: string;
+		currency?: string;
+		cent_factor?: number;
 		balance?: number | null;
 		equity?: number | null;
 		floating_pnl?: number | null;
@@ -95,8 +100,22 @@
 		memuat = false;
 	});
 
-	function rp(v?: number | null) {
-		return v == null ? '—' : `$${v.toFixed(2)}`;
+	function rp(v?: number | null, curr?: string) {
+		if (v == null) return '—';
+		if (curr === 'USC') {
+			const usd = (v / 100).toFixed(2);
+			return `${v.toFixed(2)} USC ($${usd})`;
+		}
+		return `$${v.toFixed(2)}`;
+	}
+	function rpPnl(v?: number | null, curr?: string) {
+		if (v == null) return '—';
+		const sign = v > 0 ? '+' : '';
+		if (curr === 'USC') {
+			const usd = (v / 100).toFixed(2);
+			return `${sign}${v.toFixed(2)} USC (${sign}$${usd})`;
+		}
+		return `${sign}$${v.toFixed(2)}`;
 	}
 	function umur(detik?: number) {
 		if (detik == null) return '—';
@@ -147,13 +166,18 @@
 				>
 					<div class="flex items-center gap-2 font-mono text-11 text-text">
 						#{a.account}
-						{#if a.primary}<span class="text-10 text-accent">UTAMA</span>{/if}
+						{#if a.primary}<span class="text-10 text-accent font-bold">UTAMA</span>{/if}
+						{#if a.currency === 'USC'}
+							<span class="rounded bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-bold text-amber-400 border border-amber-500/30">
+								CENT
+							</span>
+						{/if}
 						<span class:text-pos={a.connected} class:text-text-3={!a.connected} class="text-10">
 							{a.connected ? 'live' : 'offline'}
 						</span>
 					</div>
 					<div class="mt-0.5 font-mono text-10 text-text-3">
-						{rp(a.balance)} · {a.positions ?? 0} posisi · {umur(a.seconds_ago)}
+						{rp(a.balance, a.currency)} · {a.positions ?? 0} posisi · {umur(a.seconds_ago)}
 					</div>
 				</button>
 			{/each}
@@ -163,16 +187,16 @@
 			<dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				<div>
 					<dt class="label-mikro font-mono text-text-3">BALANCE</dt>
-					<dd class="mt-0.5 font-mono text-14 font-bold text-text">{rp(status.balance)}</dd>
+					<dd class="mt-0.5 font-mono text-14 font-bold text-text">{rp(status.balance, status.currency)}</dd>
 				</div>
 				<div>
 					<dt class="label-mikro font-mono text-text-3">EQUITY</dt>
-					<dd class="mt-0.5 font-mono text-14 font-bold text-text">{rp(status.equity)}</dd>
+					<dd class="mt-0.5 font-mono text-14 font-bold text-text">{rp(status.equity, status.currency)}</dd>
 				</div>
 				<div>
 					<dt class="label-mikro font-mono text-text-3">FLOATING</dt>
 					<dd class="mt-0.5 font-mono text-14 font-bold" class:text-pos={(status.floating_pnl ?? 0) > 0} class:text-neg={(status.floating_pnl ?? 0) < 0}>
-						{rp(status.floating_pnl)}
+						{rpPnl(status.floating_pnl, status.currency)}
 					</dd>
 				</div>
 				<div>
@@ -208,7 +232,7 @@
 									<td class="px-2 py-1.5 text-right font-mono text-text-2">{p.volume ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text-2">{p.open_price ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text-2">{p.current_price ?? '—'}</td>
-									<td class="px-2 py-1.5 text-right font-mono" class:text-pos={(p.pnl_usd ?? 0) > 0} class:text-neg={(p.pnl_usd ?? 0) < 0}>{rp(p.pnl_usd)}</td>
+									<td class="px-2 py-1.5 text-right font-mono" class:text-pos={(p.pnl_usd ?? 0) > 0} class:text-neg={(p.pnl_usd ?? 0) < 0}>{rpPnl(p.pnl_usd, status.currency)}</td>
 								</tr>
 							{/each}
 						</tbody>
@@ -230,7 +254,7 @@
 			{:else}
 				<div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-10 text-text-3">
 					{#each dealAkun as d, i (i)}
-						<span>{d.iso ?? '—'} · {d.symbol ?? '—'} {d.side ?? ''} · {rp(Number(d.pnl_usd))}</span>
+						<span>{d.iso ?? '—'} · {d.symbol ?? '—'} {d.side ?? ''} · {rpPnl(Number(d.pnl_usd), status?.currency)}</span>
 					{/each}
 				</div>
 			{/if}

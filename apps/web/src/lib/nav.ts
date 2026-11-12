@@ -27,9 +27,11 @@ export interface Area {
 	/** Nama ikon SVG (lihat Ikon.svelte) — bukan glyph unicode: glyph tampil beda
 	 *  di tiap platform dan tidak bisa diwarnai konsisten (audit QA 7 Okt). */
 	ikon: string;
-	kategori: 'pasar' | 'riset' | 'sistem';
+	kategori: 'floor' | 'intel' | 'audit' | 'system' | 'pasar' | 'riset' | 'sistem';
 	/** Label kecil di rail: apa yang bisa diharapkan sebelum diklik. */
-	status?: 'AKTIF' | 'PAPER' | 'STANDBY' | 'SEBAGIAN';
+	status?: 'AKTIF' | 'PAPER' | 'STANDBY' | 'SEBAGIAN' | 'OPS';
+	/** Tautan eksternal / proxy server (misal /signals/) agar tidak di-intercept SPA SvelteKit */
+	eksternal?: boolean;
 	anak: Anak[];
 }
 
@@ -67,24 +69,15 @@ export const AREAS: Area[] = [
 		label: 'Beranda',
 		rute: '/',
 		ikon: 'home',
-		kategori: 'pasar',
+		kategori: 'floor',
 		anak: []
 	},
 	{
-		kunci: 'crypto',
-		label: 'Crypto',
-		rute: '/crypto',
-		ikon: 'crypto',
-		kategori: 'pasar',
-		status: 'PAPER',
-		anak: TAB_DASAR(['crypto_sinyal', 'kandidat'], ['ledger', 'posisi'])
-	},
-	{
 		kunci: 'forex',
-		label: 'Forex',
+		label: 'Forex (Cent MT5)',
 		rute: '/forex',
 		ikon: 'forex',
-		kategori: 'pasar',
+		kategori: 'floor',
 		status: 'AKTIF',
 		anak: [
 			...TAB_DASAR(['forex_sinyal', 'bagian'], ['ledger', 'equity']),
@@ -103,58 +96,57 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'crypto',
+		label: 'Crypto',
+		rute: '/crypto',
+		ikon: 'crypto',
+		kategori: 'floor',
+		status: 'PAPER',
+		anak: TAB_DASAR(['crypto_sinyal', 'kandidat'], ['ledger', 'posisi'])
+	},
+	{
+		kunci: 'idx',
+		label: 'Saham IDX',
+		rute: '/idx',
+		ikon: 'idx',
+		kategori: 'floor',
+		status: 'AKTIF',
+		anak: TAB_DASAR([], [])
+	},
+	{
 		kunci: 'polymarket',
 		label: 'Polymarket',
 		rute: '/polymarket',
 		ikon: 'polymarket',
-		kategori: 'pasar',
+		kategori: 'floor',
 		status: 'STANDBY',
 		anak: []
-	},
-	{
-		kunci: 'idx',
-		label: 'IDX',
-		rute: '/idx',
-		ikon: 'idx',
-		kategori: 'pasar',
-		// 29 Okt: IHSG kini punya sumber lokal, jadi bukan lagi standby penuh.
-		// 29 Okt: idx-edge terpasang (harga emiten, penggerak, broker). Bukan standby lagi.
-		// Tab standar disamakan dgn crypto/forex. IDX halaman data (belum ada sinyal/eksekusi),
-		// jadi tab Sinyal/Uji/Eksekusi tampil dgn EmptyState jujur, bukan disembunyikan.
-		status: 'AKTIF',
-		anak: TAB_DASAR([], [])
 	},
 	{
 		kunci: 'gmgn',
 		label: 'GMGN',
 		rute: '/gmgn',
 		ikon: 'gmgn',
-		kategori: 'pasar',
+		kategori: 'floor',
 		status: 'STANDBY',
 		anak: []
 	},
 	{
-		kunci: 'jurnal',
-		label: 'Jurnal',
-		rute: '/jurnal',
-		ikon: 'forex',
-		kategori: 'pasar',
-		anak: []
-	},
-	{
-		kunci: 'ledger',
-		label: 'Ledger',
-		rute: '/ledger',
-		ikon: 'forex',
-		kategori: 'riset',
+		kunci: 'signals',
+		label: 'Sinyal Telegram',
+		rute: '/signals/',
+		ikon: 'lonceng',
+		kategori: 'intel',
+		status: 'AKTIF',
+		eksternal: true,
 		anak: []
 	},
 	{
 		kunci: 'riset',
-		label: 'Riset',
+		label: 'Riset & Bukti',
 		rute: '/riset',
 		ikon: 'riset',
-		kategori: 'riset',
+		kategori: 'intel',
 		anak: [
 			{ slug: 'kinerja', label: 'Kinerja', kunci: ['equity', 'ledger'], catatan: 'Statistik, trade terakhir, PnL per pair' },
 			{ slug: 'bukti', label: 'Bukti', kunci: [], catatan: 'Laporan backtest: periode, sampel, dan tautan unduh' },
@@ -163,11 +155,51 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
+		kunci: 'openmarket',
+		label: 'OpenMarket',
+		rute: '/openmarket',
+		ikon: 'riset',
+		kategori: 'intel',
+		anak: []
+	},
+	{
+		kunci: 'info',
+		label: 'Info & Docs',
+		rute: '/info',
+		ikon: 'info',
+		kategori: 'intel',
+		anak: [
+			{ slug: 'catatan', label: 'Catatan', kunci: [], catatan: 'Dokumentasi proyek dari repo' },
+			{ slug: 'berita', label: 'Berita', kunci: ['bagian'], catatan: 'RSS publik: Cointelegraph, Decrypt' },
+			{ slug: 'cara-kerja', label: 'Cara kerja', kunci: [], catatan: 'Aliran domain → worker → API → web' },
+			{ slug: 'bantuan', label: 'Bantuan', kunci: [], catatan: 'Tanya-jawab dari perilaku nyata' }
+		]
+	},
+	{
+		kunci: 'jurnal',
+		label: 'Jurnal Forex',
+		rute: '/jurnal',
+		ikon: 'forex',
+		kategori: 'audit',
+		status: 'AKTIF',
+		anak: []
+	},
+	{
+		kunci: 'ledger',
+		label: 'Ledger Audit',
+		rute: '/ledger',
+		ikon: 'forex',
+		kategori: 'audit',
+		status: 'AKTIF',
+		anak: []
+	},
+	{
 		kunci: 'sistem',
-		label: 'Sistem',
+		label: 'Sistem & Ops',
 		rute: '/sistem',
 		ikon: 'sistem',
-		kategori: 'sistem',
+		kategori: 'system',
+		status: 'OPS',
 		anak: [
 			{ slug: 'layanan', label: 'Layanan', kunci: [], catatan: 'Status unit, uptime, memori, dan CPU' },
 			{ slug: 'data', label: 'Data & Kesegaran', kunci: [], catatan: 'Sumber data, endpoint, umur data, dan mode lokal/upstream' },
@@ -178,24 +210,19 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
-		kunci: 'info',
-		label: 'Info',
-		rute: '/info',
-		ikon: 'info',
-		kategori: 'riset',
-		anak: [
-			{ slug: 'catatan', label: 'Catatan', kunci: [], catatan: 'Dokumentasi proyek dari repo' },
-			{ slug: 'berita', label: 'Berita', kunci: ['bagian'], catatan: 'RSS publik: Cointelegraph, Decrypt' },
-			{ slug: 'cara-kerja', label: 'Cara kerja', kunci: [], catatan: 'Aliran domain → worker → API → web' },
-			{ slug: 'bantuan', label: 'Bantuan', kunci: [], catatan: 'Tanya-jawab dari perilaku nyata' }
-		]
+		kunci: 'vault',
+		label: 'Vault API',
+		rute: '/vault',
+		ikon: 'sistem',
+		kategori: 'system',
+		anak: []
 	},
 	{
-		kunci: 'openmarket',
-		label: 'OpenMarket',
-		rute: '/openmarket',
-		ikon: 'riset',
-		kategori: 'riset',
+		kunci: 'mt5-vault',
+		label: 'MT5 Vault',
+		rute: '/mt5-vault',
+		ikon: 'forex',
+		kategori: 'system',
 		anak: []
 	}
 ];

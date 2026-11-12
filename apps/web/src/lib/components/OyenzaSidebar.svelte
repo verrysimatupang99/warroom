@@ -43,11 +43,14 @@
 		label: a.label,
 		num: NUM[a.rute] ?? '·',
 		ikon: a.ikon,
-		tag: TAG[a.rute]
+		tag: TAG[a.rute],
+		eksternal: a.eksternal ?? false
 	});
 
-	const markets = AREAS.filter((a) => a.kategori === 'pasar').map(keItem);
-	const system = AREAS.filter((a) => a.kategori !== 'pasar').map(keItem);
+	const floor = AREAS.filter((a) => a.kategori === 'floor' || a.kategori === 'pasar').map(keItem);
+	const intel = AREAS.filter((a) => a.kategori === 'intel').map(keItem);
+	const audit = AREAS.filter((a) => a.kategori === 'audit').map(keItem);
+	const system = AREAS.filter((a) => a.kategori === 'system' || a.kategori === 'sistem').map(keItem);
 
 	function isAktif(rute: string): boolean {
 		if (rute === '/') return jalur === '/';
@@ -84,19 +87,21 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}"></span>
 			<span class="text-11 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">DEMO · TANPA UANG NYATA</span>
+		<span class="tag-status">CENT REAL · CRYPTO PAPER</span>
 	</div>
 
-	<!-- Navigation Group: MARKETS -->
+	<!-- Pilar 1: TRADING FLOOR -->
 	<div class="nav-group">
-		<span class="grp-label font-mono">PASAR &amp; RADAR</span>
+		<span class="grp-label font-mono">TRADING FLOOR</span>
 		<nav class="nav-list font-sans">
-			{#each markets as m}
+			{#each floor as m}
 				{@const active = isAktif(m.rute)}
 				<a 
 					href={m.rute} 
 					class="nav-item {active ? 'active' : ''}" 
 					aria-current={active ? 'page' : undefined}
+					data-sveltekit-reload={m.eksternal ? '' : undefined}
+					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
 					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
@@ -110,9 +115,59 @@
 		</nav>
 	</div>
 
-	<!-- Navigation Group: AUDIT & PROVENANCE (1001Startup style) -->
+	<!-- Pilar 2: INTELLIGENCE -->
 	<div class="nav-group">
-		<span class="grp-label font-mono">LEDGER &amp; SISTEM</span>
+		<span class="grp-label font-mono">INTELLIGENCE</span>
+		<nav class="nav-list font-sans">
+			{#each intel as m}
+				{@const active = isAktif(m.rute)}
+				<a 
+					href={m.rute} 
+					class="nav-item {active ? 'active' : ''}" 
+					aria-current={active ? 'page' : undefined}
+					data-sveltekit-reload={m.eksternal ? '' : undefined}
+					rel={m.eksternal ? 'external' : undefined}
+					onclick={() => onclose?.()}
+				>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-title truncate">{m.label}</span>
+					{#if m.tag}
+						<span class="prop-tag font-mono">{m.tag}</span>
+					{/if}
+					<kbd class="nav-kbd font-mono">{m.num}</kbd>
+				</a>
+			{/each}
+		</nav>
+	</div>
+
+	<!-- Pilar 3: AUDIT & LEDGER -->
+	<div class="nav-group">
+		<span class="grp-label font-mono">AUDIT &amp; LEDGER</span>
+		<nav class="nav-list font-sans">
+			{#each audit as m}
+				{@const active = isAktif(m.rute)}
+				<a 
+					href={m.rute} 
+					class="nav-item {active ? 'active' : ''}" 
+					aria-current={active ? 'page' : undefined}
+					data-sveltekit-reload={m.eksternal ? '' : undefined}
+					rel={m.eksternal ? 'external' : undefined}
+					onclick={() => onclose?.()}
+				>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-title truncate">{m.label}</span>
+					{#if m.tag}
+						<span class="prop-tag font-mono">{m.tag}</span>
+					{/if}
+					<kbd class="nav-kbd font-mono">{m.num}</kbd>
+				</a>
+			{/each}
+		</nav>
+	</div>
+
+	<!-- Pilar 4: KONTROL SISTEM -->
+	<div class="nav-group">
+		<span class="grp-label font-mono">KONTROL SISTEM</span>
 		<nav class="nav-list font-sans">
 			{#each system as s}
 				{@const active = isAktif(s.rute)}
@@ -120,10 +175,15 @@
 					href={s.rute} 
 					class="nav-item {active ? 'active' : ''}" 
 					aria-current={active ? 'page' : undefined}
+					data-sveltekit-reload={s.eksternal ? '' : undefined}
+					rel={s.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
 					<span class="nav-icon"><Ikon nama={s.ikon} ukuran={15} /></span>
 					<span class="nav-title truncate">{s.label}</span>
+					{#if s.tag}
+						<span class="prop-tag font-mono">{s.tag}</span>
+					{/if}
 					<kbd class="nav-kbd font-mono">{s.num}</kbd>
 				</a>
 			{/each}

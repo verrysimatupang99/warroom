@@ -64,6 +64,27 @@ describe('ForexCockpitExness', () => {
 		});
 	});
 
+	it('tampilkan badge CENT dan format USC untuk akun cent', async () => {
+		const centMt5 = {
+			...mt5,
+			account: '452009427',
+			currency: 'USC',
+			balance: 1074.81,
+			equity: 1074.81,
+			floating_pnl: 0,
+			seconds_ago: 2
+		};
+		vi.stubGlobal('fetch', vi.fn((url: string) => {
+			const body = url.includes('mt5/status') ? centMt5 : url.includes('sentinel') ? sentinel : signal;
+			return Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as Response);
+		}));
+
+		render(ForexCockpitExness);
+		expect(await screen.findByText('CENT')).toBeTruthy();
+		expect(await screen.findByText('#452009427')).toBeTruthy();
+		expect(await screen.findByText(/1074.81 USC/)).toBeTruthy();
+	});
+
 	it('fetch gagal → tetap render tanpa crash', async () => {
 		vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
 		render(ForexCockpitExness);

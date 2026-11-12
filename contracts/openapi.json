@@ -8143,6 +8143,70 @@
         ]
       }
     },
+    "/api/v1/tencent/forex/stream": {
+      "get": {
+        "description": "Server-Sent Events (SSE) stream realtime untuk telemetri MT5 Cent & Exness live.\n\nMengirimkan update status saldo, equity, posisi terbuka, dan spread\nsecara instan setiap kali MT5 runner mengirimkan telemetri baru.",
+        "operationId": "stream_forex_telemetry_api_v1_tencent_forex_stream_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "account",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Warroom-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Warroom-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream Forex Telemetry",
+        "tags": [
+          "tencent"
+        ]
+      }
+    },
     "/api/v1/tencent/health": {
       "get": {
         "description": "Cek koneksi Tailscale WireGuard ke daemon Tencent.",

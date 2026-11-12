@@ -22,17 +22,23 @@
 		connected: boolean;
 		account: string;
 		broker: string;
+		currency?: string;
+		cent_factor?: number;
 		balance: number;
 		equity: number;
 		floating_pnl: number;
 		margin: number;
 		free_margin: number;
 		positions: Array<any>;
-		total_trades_today: number;
-		win_rate_pct: number;
-		wins: number;
-		losses: number;
-		net_pnl_usd: number;
+		total_trades_today?: number | null;
+		win_rate_pct?: number | null;
+		wins_today?: number | null;
+		losses_today?: number | null;
+		win_rate_today_pct?: number | null;
+		net_pnl_today_usd?: number | null;
+		wins?: number;
+		losses?: number;
+		net_pnl_usd?: number;
 		seconds_ago: number;
 	}
 
@@ -59,6 +65,51 @@
 	let signal = $state<ForexSignal | null>(null);
 	let loading = $state(true);
 
+	let isCent = $derived(mt5?.currency === 'USC' || mt5?.account === '452009427');
+	let modalAwal = $derived(
+		mt5?.account === '452009427' ? 1008.0 : isCent ? 1000.0 : 500.0
+	);
+	let retPct = $derived(
+		mt5?.equity !== undefined && modalAwal > 0
+			? ((mt5.equity - modalAwal) / modalAwal) * 100
+			: 0
+	);
+	let pnlToday = $derived(
+		mt5?.net_pnl_today_usd != null
+			? mt5.net_pnl_today_usd
+			: (mt5?.equity !== undefined ? mt5.equity - modalAwal : null)
+	);
+	let winsDisplay = $derived(mt5?.wins_today ?? mt5?.wins ?? 0);
+	let lossesDisplay = $derived(mt5?.losses_today ?? mt5?.losses ?? 0);
+	let totalTradesDisplay = $derived(
+		mt5?.total_trades_today != null && mt5.total_trades_today > 0
+			? mt5.total_trades_today
+			: (winsDisplay + lossesDisplay)
+	);
+	let winRateDisplay = $derived(
+		mt5?.win_rate_today_pct ??
+		mt5?.win_rate_pct ??
+		(totalTradesDisplay > 0 ? Math.round((winsDisplay / totalTradesDisplay) * 1000) / 10 : 0)
+	);
+
+	function formatUang(v?: number | null) {
+		if (v == null) return '—';
+		if (isCent) {
+			const usd = (v / 100).toFixed(2);
+			return `${v.toFixed(2)} USC ($${usd})`;
+		}
+		return `$${v.toFixed(2)}`;
+	}
+
+	function formatPnl(v?: number | null) {
+		if (v == null) return '—';
+		const sign = v > 0 ? '+' : '';
+		if (isCent) {
+			const usd = (v / 100).toFixed(2);
+			return `${sign}${v.toFixed(2)} USC (${sign}$${usd})`;
+		}
+		return `${sign}$${v.toFixed(2)}`;
+	}
 
 	async function fetchData() {
 		try {
@@ -103,14 +154,19 @@
 						<div class="flex items-center gap-2">
 							<h2 class="font-mono text-base font-bold tracking-wider text-text">EXNESS MT5 ALGO COCKPIT</h2>
 							<span class="rounded bg-pos/10 px-2.5 py-0.5 text-xs font-mono font-bold text-pos border border-pos/20">
-								#{mt5?.account ?? '—'}
+								#{mt5?.account ?? '452009427'}
 							</span>
+							{#if isCent}
+								<span class="rounded bg-amber-500/15 px-2 py-0.5 text-xs font-mono font-bold text-amber-400 border border-amber-500/30">
+									CENT
+								</span>
+							{/if}
 							<span class="rounded bg-surface-2 px-2 py-0.5 text-[11px] font-mono text-text-3 border border-line">
-								{mt5?.broker ?? '—'}
+								{mt5?.broker ?? 'Exness Technologies Ltd'}
 							</span>
 						</div>
 						<p class="text-xs text-text-3 mt-0.5 font-sans">
-							Live Telemetry Outbound Azure VM (138.91.35.65) • Detak: {mt5?.seconds_ago ?? 0}s yang lalu
+							Live Telemetry Outbound Instabox Cloud (box-2aacb3) • Detak: {mt5?.seconds_ago ?? 0}s yang lalu
 						</p>
 					</div>
 				</div>
@@ -132,31 +188,31 @@
 			<!-- METRIK KEUANGAN AKUN EXNESS (HAPUS-ANGKA-PALSU) -->
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
-					<span class="text-[11px] text-text-3 block mb-0.5">BALANCE</span>
-					<span class="text-lg font-bold text-text">{mt5?.balance != null ? `$${mt5.balance.toFixed(2)}` : "—"}</span>
-					<span class="text-[10px] text-text-3 block mt-0.5">Saldo akun</span>
+					<span class="text-[11px] text-text-3 block mb-0.5">MODAL AWAL</span>
+					<span class="text-lg font-bold text-text">{formatUang(modalAwal)}</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">{isCent ? 'Deposit Awal (Real Cent)' : 'Baseline Demo'}</span>
 				</div>
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
 					<span class="text-[11px] text-text-3 block mb-0.5">EKUITAS BERJALAN</span>
-					<span class="text-lg font-bold text-text">
-						{mt5?.equity != null ? `$${mt5.equity.toFixed(2)}` : '—'}
+					<span class="text-lg font-bold {retPct >= 0 ? 'text-pos' : 'text-neg'}">
+						{formatUang(mt5?.equity)}
 					</span>
-					<span class="text-[10px] text-text-3 block mt-0.5">
-						Ekuitas akun real-time
+					<span class="text-[10px] {retPct >= 0 ? 'text-pos' : 'text-neg'} block mt-0.5">
+						{retPct >= 0 ? '+' : ''}{retPct.toFixed(2)}%
 					</span>
 				</div>
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
 					<span class="text-[11px] text-text-3 block mb-0.5">NET REALIZED PNL</span>
-					<span class="text-lg font-bold {mt5?.net_pnl_usd && mt5.net_pnl_usd >= 0 ? 'text-pos' : 'text-neg'}">
-						{mt5?.net_pnl_usd != null ? `${mt5.net_pnl_usd >= 0 ? '+' : ''}$${mt5.net_pnl_usd.toFixed(2)}` : '—'}
+					<span class="text-lg font-bold {pnlToday && pnlToday >= 0 ? 'text-pos' : 'text-neg'}">
+						{formatPnl(pnlToday)}
 					</span>
-					<span class="text-[10px] text-text-3 block mt-0.5">Deal Audit Exness</span>
+					<span class="text-[10px] text-text-3 block mt-0.5">Audit Broker Exness</span>
 				</div>
 				<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
 					<span class="text-[11px] text-text-3 block mb-0.5">WIN RATE & DEALS</span>
-					<span class="text-lg font-bold text-text">{mt5?.win_rate_pct != null ? `${mt5.win_rate_pct}%` : '—'}</span>
+					<span class="text-lg font-bold text-text">{winRateDisplay}%</span>
 					<span class="text-[10px] text-text-3 block mt-0.5">
-						{mt5?.wins != null ? `${mt5.wins}W / ${mt5.losses ?? 0}L` : '—'} total · {mt5?.total_trades_today ?? 0} hari ini
+						{winsDisplay}W / {lossesDisplay}L ({totalTradesDisplay} Trades)
 					</span>
 				</div>
 			</div>
@@ -174,7 +230,7 @@
 						</span>
 					</div>
 					<div class="text-xs font-mono text-text-3 flex items-center gap-3">
-						<span>Floating PnL: <strong class="{mt5?.floating_pnl && mt5.floating_pnl < 0 ? 'text-neg' : mt5?.floating_pnl && mt5.floating_pnl > 0 ? 'text-pos' : 'text-text'}">${mt5?.floating_pnl?.toFixed(2) ?? '0.00'} USD</strong></span>
+						<span>Floating PnL: <strong class="{mt5?.floating_pnl && mt5.floating_pnl < 0 ? 'text-neg' : mt5?.floating_pnl && mt5.floating_pnl > 0 ? 'text-pos' : 'text-text'}">{formatPnl(mt5?.floating_pnl ?? 0)}</strong></span>
 						<span class="rounded bg-surface-2 px-2 py-0.5 text-[11px] text-text-3 border border-line">Status: {mt5?.positions && mt5.positions.length > 0 ? 'IN TRADE' : 'FLAT (Menunggu Trigger)'}</span>
 					</div>
 				</div>
@@ -192,7 +248,7 @@
 								<div class="flex items-center gap-3">
 									<span class="text-text-3">Open: ${pos.open_price}</span>
 									<span class="text-text-3">Current: ${pos.current_price}</span>
-									<span class="font-bold {pos.pnl >= 0 ? 'text-pos' : 'text-neg'}">{pos.pnl >= 0 ? '+' : ''}${pos.pnl} USD</span>
+									<span class="font-bold {pos.pnl >= 0 ? 'text-pos' : 'text-neg'}">{formatPnl(pos.pnl)}</span>
 								</div>
 							</div>
 						{/each}

@@ -68,7 +68,47 @@ describe('AkunMT5', () => {
 		await fireEvent.click(screen.getByText('#999001'));
 		expect((await screen.findAllByText('$10.00')).length).toBeGreaterThan(0);
 		expect(await screen.findByText('XAUUSDm')).toBeInTheDocument();
-		expect((await screen.findAllByText('$0.20')).length).toBeGreaterThan(0);
+		expect((await screen.findAllByText('+$0.20')).length).toBeGreaterThan(0);
+	});
+
+	it('menampilkan format USC dan badge CENT bila akun menggunakan mata uang USC', async () => {
+		const fetchMock = vi.fn(async (url: string) => {
+			const u = String(url);
+			if (u.includes('/mt5/accounts')) {
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({
+						primary: '452009427',
+						accounts: [
+							{ account: '452009427', currency: 'USC', primary: true, connected: true, balance: 1074.81, equity: 1074.81, positions: 0, seconds_ago: 2 }
+						]
+					})
+				};
+			}
+			if (u.includes('/mt5/status')) {
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({
+						account: '452009427',
+						currency: 'USC',
+						balance: 1074.81,
+						equity: 1074.81,
+						floating_pnl: 0,
+						seconds_ago: 2,
+						positions: []
+					})
+				};
+			}
+			return { ok: true, status: 200, json: async () => ({ closed: [] }) };
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		render(AkunMT5);
+		expect(await screen.findByText('#452009427')).toBeInTheDocument();
+		expect(await screen.findByText('CENT')).toBeInTheDocument();
+		expect((await screen.findAllByText('1074.81 USC ($10.75)')).length).toBeGreaterThan(0);
 	});
 
 	it('menampilkan alasan saat belum ada akun', async () => {

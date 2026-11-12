@@ -6,6 +6,7 @@ secara aman tanpa membuka port ke internet publik.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import json
 import logging
@@ -17,6 +18,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from warroom_core.mt5_accounts import PRIMARY_ACCOUNT, snapshot_key
 
@@ -25,6 +27,17 @@ from warroom_api.auth_ea import verify_mt5_or_admin
 
 router = APIRouter(prefix="/api/v1/tencent", tags=["tencent"])
 log = logging.getLogger("warroom_api.tencent")
+
+_telemetry_subscribers: list[asyncio.Queue] = []
+
+
+def _broadcast_sse_telemetry(snapshot: dict[str, Any]) -> None:
+    """Kirim pembaruan telemetri ke semua klien yang berlangganan SSE realtime."""
+    for q in list(_telemetry_subscribers):
+        try:
+            q.put_nowait(snapshot)
+        except (asyncio.QueueFull, Exception):
+            pass
 
 TENCENT_BASE = os.environ.get("WARROOM_TENCENT_BASE", "").rstrip("/")
 TIMEOUT_S = 6.0
@@ -467,6 +480,9 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     if akun == PRIMARY_ACCOUNT:
         _catat_telemetri(snapshot)
 
+    # Broadcast perubahan ke seluruh client web yang tersambung via SSE
+    _broadcast_sse_telemetry(snapshot)
+
     # Instruksi otomatis untuk loop telemetry di Azure VM:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
     update_cmd = (
@@ -645,6 +661,44 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
         except OSError as exc:
             log.warning("gagal tulis deals.csv: %s", exc)
             raise HTTPException(status_code=500, detail="gagal menulis log deal") from exc
+
+    # Sinkronkan langsung ke tabel `trades` di database PostgreSQL (zero-delay)
+    try:
+        from warroom_core.db import Trade, session_scope
+        from warroom_core.trades_forex import ke_trade
+
+        baris_deal = {
+            "ticket": str(payload.ticket),
+            "position": payload.position,
+            "symbol": payload.symbol,
+            "side": payload.side,
+            "volume": payload.volume,
+            "open_time": payload.open_time,
+            "open_price": payload.open_price,
+            "close_time": payload.close_time,
+            "close_price": payload.close_price,
+            "profit": payload.profit,
+            "swap": payload.swap,
+            "commission": payload.commission,
+            "net": round(net, 2),
+            "magic": payload.magic,
+            "comment": payload.comment,
+            "account": payload.account,
+            "strategy_version": payload.strategy_version,
+        }
+        trade_obj = ke_trade(baris_deal)
+        if trade_obj is not None:
+            with session_scope() as s:
+                ada = (
+                    s.query(Trade.id)
+                    .filter(Trade.venue == "forex", Trade.mode == "live", Trade.ext_id == str(payload.ticket))
+                    .first()
+                )
+                if not ada:
+                    s.add(trade_obj)
+    except Exception as exc:
+        log.warning("Gagal ingest deal ke tabel trades DB: %s", exc)
+
     return {"status": "OK", "ticket": payload.ticket, "net": round(net, 2)}
 
 
@@ -832,6 +886,46 @@ async def get_mt5_accounts() -> dict[str, Any]:
     # Akun utama lebih dulu; sisanya urut nama.
     hasil.sort(key=lambda x: (not x["primary"], x["account"]))
     return {"primary": PRIMARY_ACCOUNT, "n": len(hasil), "accounts": hasil}
+
+
+@router.get("/forex/stream", dependencies=[Depends(verify_mt5_or_admin)])
+async def stream_forex_telemetry(account: str | None = Query(None)):
+    """Server-Sent Events (SSE) stream realtime untuk telemetri MT5 Cent & Exness live.
+
+    Mengirimkan update status saldo, equity, posisi terbuka, dan spread
+    secara instan setiap kali MT5 runner mengirimkan telemetri baru.
+    """
+    queue: asyncio.Queue = asyncio.Queue(maxsize=20)
+    _telemetry_subscribers.append(queue)
+    target_account = (account or PRIMARY_ACCOUNT).strip()
+
+    async def event_generator():
+        try:
+            # Kirim snapshot terkini saat koneksi pertama kali tersambung
+            awal = dict(latest_mt5_by_account.get(target_account, latest_mt5_telemetry))
+            yield f"data: {json.dumps(awal)}\n\n"
+            while True:
+                try:
+                    data = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    if not target_account or data.get("account") == target_account:
+                        yield f"data: {json.dumps(data)}\n\n"
+                except TimeoutError:
+                    yield ": ping\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if queue in _telemetry_subscribers:
+                _telemetry_subscribers.remove(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/mt5/status", dependencies=[Depends(verify_mt5_or_admin)])
