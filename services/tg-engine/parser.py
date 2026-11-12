@@ -70,7 +70,9 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
     action = None
     # Jika pesan adalah milestone/update status profit, jangan interpretasikan kata "BUY/SELL"
     # sebagai order entry baru kecuali ada parameter entry/sl eksplisit
-    is_pure_milestone = is_milestone and not re.search(r"\b(?:entry|zone|zona|limit|stop)\b", clean_text, re.I)
+    is_pure_milestone = is_milestone and not re.search(
+        r"\b(?:entry|zone|zona|limit|stop)\b", clean_text, re.I
+    )
 
     if not is_pure_milestone:
         if re.search(r"\bBUY\s*LIMIT\b", clean_text, re.I):

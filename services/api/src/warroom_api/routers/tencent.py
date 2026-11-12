@@ -6,6 +6,7 @@ secara aman tanpa membuka port ke internet publik.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import json
 import logging
@@ -14,7 +15,6 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
-import asyncio
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -909,7 +909,7 @@ async def stream_forex_telemetry(account: str | None = Query(None)):
                     data = await asyncio.wait_for(queue.get(), timeout=15.0)
                     if not target_account or data.get("account") == target_account:
                         yield f"data: {json.dumps(data)}\n\n"
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     yield ": ping\n\n"
         except asyncio.CancelledError:
             pass

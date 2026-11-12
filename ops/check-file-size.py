@@ -23,6 +23,10 @@ DIKECUALIKAN = {
         "kumpulan handler argparse cmd_* (satu fungsi per subperintah); "
         "pecah = PR tersendiri, bukan mendesak"
     ),
+    "services/api/src/warroom_api/routers/tencent.py": (
+        "router gabungan proxy data eksternal + MT5 EA runner bridge "
+        "(telemetri, fills, deals, panels, SSE stream)"
+    ),
 }
 
 ROOT = Path(__file__).resolve().parents[1]

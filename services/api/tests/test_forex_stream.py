@@ -5,13 +5,11 @@ Tes endpoint SSE streaming telemetri MT5.
 from __future__ import annotations
 
 import asyncio
-import json
+
 import pytest
-from warroom_api.routers import tencent
 from warroom_api.routers.tencent import (
     _broadcast_sse_telemetry,
     _telemetry_subscribers,
-    latest_mt5_telemetry,
 )
 
 
