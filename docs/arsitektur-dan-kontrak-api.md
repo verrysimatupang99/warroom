@@ -83,13 +83,14 @@ graph TD
 
 ## 2. Skema Autentikasi & Otorisasi
 
-API War Room mendukung 3 mekanisme autentikasi:
+API War Room mendukung 2 mekanisme autentikasi resmi:
 
 | Skema Autentikasi | Lokasi Pengiriman | Deskripsi & Kegunaan |
 |---|---|---|
-| **Sesi Cookie Admin (`wr_session`)** | Cookie: `wr_session=<hash>` | Digunakan oleh antarmuka Web SvelteKit untuk navigasi pengguna terautentikasi. Diterbitkan oleh endpoint `/api/v1/auth/login`. |
-| **Header Token Layanan (`X-Warroom-Token`)** | Header: `X-Warroom-Token: <token>` | Digunakan oleh EA MetaTrader 5 di Instabox untuk telemetri dan pelaporan transaksi deal. Nilai token disimpan di `/etc/warroom/service_token.env`. |
-| **Bearer Token (`Authorization`)** | Header: `Authorization: Bearer <token>` | Digunakan untuk integrasi sistem otomatis dan REST client eksternal tepercaya. |
+| **Sesi Cookie Pengguna (`wr_session`)** | Cookie: `wr_session=<hash>` | Digunakan oleh antarmuka Web SvelteKit untuk navigasi pengguna terautentikasi. Diterbitkan melalui endpoint `/api/v1/auth/login`. |
+| **Header Token Layanan (`X-Warroom-Token`)** | Header: `X-Warroom-Token: <token>` | Digunakan oleh EA MetaTrader 5 di Instabox dan skrip otomatisasi untuk telemetri serta pelaporan transaksi deal. Nilai token dikonfigurasi melalui `WARROOM_SERVICE_TOKEN` / `/etc/warroom/service_token.env`. |
+
+*Catatan*: Header `Authorization: Bearer <token>` tidak didukung oleh backend War Room API (CORS dan auth dependencies hanya menerima cookie `wr_session` dan header `X-Warroom-Token`).
 
 ---
 
@@ -137,12 +138,11 @@ Mencatat tiket deal trading yang sudah ditutup secara permanen ke dalam tabel Po
     "status": "OK",
     "ticket": 12849502,
     "net": 54.50,
-    "pnl_usd": 0.545,
     "currency": "USC",
-    "cent_factor": 100.0,
-    "db_synced": true
+    "cent_factor": 100.0
   }
   ```
+  *Catatan*: Nilai `pnl_usd` dihitung dan disimpan langsung ke dalam tabel `Trade` PostgreSQL (`trades.pnl_usd`) via `ke_trade()`, dan tidak dikembalikan pada payload respons HTTP API (`services/api/src/warroom_api/routers/tencent.py:744-750`).
 - **Error Responses**:
   - `400 Bad Request`: Ticket $\le 0$ atau format waktu tidak valid.
   - `403 Forbidden`: Token invalid atau IP tidak diizinkan.
@@ -203,9 +203,10 @@ Menerima snapshot status live akun, metrik broker, posisi terbuka, dan pending o
     "status": "OK",
     "received_at": 1794398100,
     "account": "452009427",
-    "active_subscribers": 3
+    "action": "OK"
   }
   ```
+  *Catatan*: Bidang `active_subscribers` tidak ada dalam schema backend (`services/api/src/warroom_api/routers/tencent.py:494-526`). Respons standar mengembalikan `action: "OK"`. Bila sinkronisasi kode EA versi baru dipicu untuk akun primer, respons dapat mengembalikan `action: "SYNC_EA_V2"` disertai perintah eksekusi `exec_powershell`.
 
 ---
 
@@ -315,7 +316,9 @@ Menyajikan peringkat performa strategi lintas pasar (Forex, Crypto, Saham) berda
 Menyajikan status kesehatan unit-unit systemd dan kesegaran berkas data operasional.
 
 - **Metode**: `GET`
-- **Path**: `/api/v1/sistem/status` (Tersedia juga alias `/api/v1/system/status`)
+- **Path**: `/api/v1/sistem/status`
+- **Autentikasi**: Wajib sesi aktif (`dependencies=[Depends(current_user)]` via cookie `wr_session`).
+- **Catatan Rute**: Rute resmi adalah `/api/v1/sistem/status`. Alias `/api/v1/system/status` tidak tersedia (menghasilkan HTTP 404).
 - **Respons Sukses (200 OK)**:
   ```json
   {
@@ -346,16 +349,17 @@ Menyajikan status kesehatan unit-unit systemd dan kesegaran berkas data operasio
 ### 3.7. Endpoint Autentikasi Pengguna
 
 #### Login Pengguna (`POST /api/v1/auth/login`)
-- **Body**: `{"username": "admin", "password": "<plain_password>"}`
-- **Respons (200 OK)**: `{"status": "ok", "user": {"id": 1, "username": "admin", "role": "admin"}}`
-- **Header Set-Cookie**: `wr_session=<hash>; Path=/; HttpOnly; SameSite=Lax; Secure`
+- **Body**: `{"username": "admin", "password": "<plain_password>", "totp": null}`
+- **Respons (200 OK)**: `{"ok": true}`
+- **Header Set-Cookie**: `wr_session=<hash>; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=43200`
 
 #### Logout Pengguna (`POST /api/v1/auth/logout`)
-- **Respons (200 OK)**: `{"status": "ok", "message": "sesi diakhiri"}`
-- **Header Set-Cookie**: `wr_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`
+- **Autentikasi**: Wajib sesi aktif (cookie `wr_session`).
+- **Respons (200 OK)**: `{"ok": true}`
 
 #### Profil Pengguna Terautentikasi (`GET /api/v1/auth/me`)
-- **Respons (200 OK)**: `{"id": 1, "username": "admin", "role": "admin", "created_at": "..."}`
+- **Autentikasi**: Wajib sesi aktif (cookie `wr_session`).
+- **Respons (200 OK)**: `{"username": "admin", "role": "admin"}`
 
 ---
 
@@ -365,13 +369,15 @@ Disediakan oleh modul `trading-engine` untuk pilar Intelligence War Room.
 
 #### Mengambil Sinyal Terbaru (`GET /api/signals`)
 - **Query Parameter**:
-  - `limit` (integer, default 50): Jumlah maksimum sinyal yang dikembalikan.
-  - `category` (string, opsional): Filter kategori (`FOREX`, `SAHAM`, `CRYPTO`).
+  - `limit` (integer, default 50): Jumlah maksimum sinyal yang dikembalikan (1-500).
+  - `category` (string, opsional): Filter kategori (`FOREX`, `SAHAM`, `CRYPTO`, `GENERAL`, atau `ALL`).
+  - `search` (string, opsional): Kata kunci pencarian dalam teks pesan atau nama channel.
 - **Respons (200 OK)**:
   ```json
   {
-    "total": 50,
-    "signals": [
+    "status": "OK",
+    "count": 50,
+    "data": [
       {
         "id": 1420,
         "channel_id": "-100158492019",
@@ -398,9 +404,13 @@ Disediakan oleh modul `trading-engine` untuk pilar Intelligence War Room.
 - **Respons (200 OK)**:
   ```json
   {
-    "uptime_seconds": 864000,
-    "total_signals_recorded": 12450,
-    "channels_monitored": 18,
-    "last_signal_timestamp": "2026-11-12 10:14:22"
+    "status": "OK",
+    "stats": {
+      "total": 120,
+      "forex": 80,
+      "saham": 10,
+      "crypto": 20,
+      "general": 10
+    }
   }
   ```
