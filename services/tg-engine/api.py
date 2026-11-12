@@ -1,13 +1,21 @@
+import re
 import gate_audit
 import risk_gate
 import uvicorn
 from db import get_signals, get_stats, init_db
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from parser import parse_forex_signal
 
 app = FastAPI(title="Telegram Trading Signals API & Dashboard", version="1.0.0")
+
+@app.middleware("http")
+async def clean_path_middleware(request: Request, call_next):
+    path = request.scope.get("path", "")
+    if "//" in path:
+        request.scope["path"] = re.sub(r"/+", "/", path)
+    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,
@@ -251,6 +259,7 @@ def dashboard_html():
     </footer>
 
     <script>
+        const apiBase = (window.location.pathname.replace(/\/+$/, '') || '') + '/api';
         let currentCategory = 'ALL';
         let searchTimeout = null;
 
@@ -270,7 +279,7 @@ def dashboard_html():
 
         async function fetchStats() {
             try {
-                const res = await fetch('/api/stats');
+                const res = await fetch(`${apiBase}/stats`);
                 const data = await res.json();
                 if (data.status === 'OK') {
                     document.getElementById('statTotal').innerText = data.stats.total;
@@ -289,7 +298,7 @@ def dashboard_html():
             icon.classList.add('fa-spin');
             const searchVal = document.getElementById('searchInput').value.trim();
 
-            let url = `/api/signals?limit=50&category=${currentCategory}`;
+            let url = `${apiBase}/signals?limit=50&category=${currentCategory}`;
             if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
 
             try {

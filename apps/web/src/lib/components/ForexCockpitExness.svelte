@@ -255,10 +255,6 @@
 					</div>
 				{/if}
 			</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
 		</div>
 
 		<!-- KARTU 2: LAYA AI 24/7 SENTINEL & SECURITY GUARD -->

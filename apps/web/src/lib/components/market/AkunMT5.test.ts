@@ -68,7 +68,7 @@ describe('AkunMT5', () => {
 		await fireEvent.click(screen.getByText('#999001'));
 		expect((await screen.findAllByText('$10.00')).length).toBeGreaterThan(0);
 		expect(await screen.findByText('XAUUSDm')).toBeInTheDocument();
-		expect((await screen.findAllByText('$0.20')).length).toBeGreaterThan(0);
+		expect((await screen.findAllByText('+$0.20')).length).toBeGreaterThan(0);
 	});
 
 	it('menampilkan format USC dan badge CENT bila akun menggunakan mata uang USC', async () => {
