@@ -80,7 +80,7 @@
 	onMount(async () => {
 		[level, mt5, bias] = await Promise.all([
 			j<Level>('/api/v1/tencent/forex/levels?symbol=XAUUSD'),
-			j<Mt5>('/api/v1/tencent/mt5/status'),
+			j<Mt5>('/api/v1/tencent/mt5/status?account=452009427'),
 			j<Bias>('/api/v1/tencent/forex/bias')
 		]);
 		memuat = false;
@@ -193,7 +193,7 @@
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h2 class="text-13 font-bold text-text">Status mesin Reaper</h2>
 				<span class="font-mono text-11" class:text-pos={mt5?.eval_sesi} class:text-text-3={!mt5?.eval_sesi}>
-					{mt5?.eval_sesi ? 'sesi 08–09 aktif' : 'di luar sesi 08–09'}
+					{mt5?.eval_sesi ? 'sesi London/NY aktif' : 'di luar sesi London (08–09) / NY (13:15–15:59)'}
 				</span>
 			</div>
 			<div class="mt-2 rounded border border-line bg-surface-2 p-3">
@@ -230,8 +230,8 @@
 				</div>
 			</dl>
 			<p class="mt-2 text-11 text-text-3">
-				EA hanya mengevaluasi entry di sesi 08–09 jam server. "Di luar sesi" berarti mesin
-				sengaja menunggu, bukan mati.
+				GOLD_Reaper_Hexa mengevaluasi entry di Sesi London (08:00–09:59 server / 15:00–16:59 WIB) dan
+				Sesi New York (13:15–15:59 server / 20:15–22:59 WIB). "Di luar sesi" berarti mesin sengaja menunggu, bukan mati.
 			</p>
 		</section>
 

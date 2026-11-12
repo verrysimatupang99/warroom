@@ -376,17 +376,21 @@
 					{#if mt5?.positions && mt5.positions.length > 0}
 						<div class="mt-3 pt-3 border-t border-line-soft space-y-2">
 							{#each mt5.positions as pos}
+								{@const arah = pos.side ?? pos.type ?? 'BUY'}
+								{@const nilaiPnl = pos.pnl_usd ?? pos.pnl ?? 0}
 								<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-2 rounded p-2 text-xs font-mono border border-line-soft">
 									<div class="flex items-center gap-2">
-										<span class="rounded px-1.5 py-0.5 font-bold {pos.type === 'BUY' ? 'bg-pos/20 text-pos' : 'bg-neg/20 text-neg'}">{pos.type}</span>
+										<span class="rounded px-1.5 py-0.5 font-bold {arah === 'BUY' ? 'bg-pos/20 text-pos' : 'bg-neg/20 text-neg'}">{arah}</span>
 										<span class="text-text font-bold">{pos.symbol}</span>
 										<span class="text-text-3">#{pos.ticket}</span>
 										<span class="text-text-3">Vol: {pos.volume} Lot</span>
 									</div>
-									<div class="flex items-center gap-3">
+									<div class="flex flex-wrap items-center gap-3">
 										<span class="text-text-3">Open: ${pos.open_price}</span>
 										<span class="text-text-3">Current: ${pos.current_price}</span>
-										<span class="font-bold {pos.pnl >= 0 ? 'text-pos' : 'text-neg'}">{formatPnl(pos.pnl)}</span>
+										{#if pos.sl}<span class="text-neg">SL: ${pos.sl}</span>{/if}
+										{#if pos.tp}<span class="text-pos">TP: ${pos.tp}</span>{/if}
+										<span class="font-bold {nilaiPnl >= 0 ? 'text-pos' : 'text-neg'}">{formatPnl(nilaiPnl)}</span>
 									</div>
 								</div>
 							{/each}
@@ -444,7 +448,7 @@
 			</div>
 
 			<div class="mt-4 pt-3 border-t border-line-soft text-[11px] font-sans text-text-3 leading-relaxed">
-				Aturan EMA+RSI memvalidasi setiap micro-breakout M5 sebelum order 0.10 lot ditembakkan ke Exness, melindungi dari jebakan false sweep.
+				Aturan EMA+RSI+ATR di GOLD_Reaper_Hexa memvalidasi setup M5 pada Sesi London (15:00–16:59 WIB) & NY (20:15–22:59 WIB) sebelum Twin-Order 0.01 lot (Scalp +0.7R & Runner +2.0R) ditembakkan ke Exness.
 			</div>
 		</div>
 	</div>
@@ -464,23 +468,23 @@
 						PRE-FLIGHT RADAR
 					</span>
 					<span class="rounded bg-accent/10 px-2 py-0.5 text-xs font-mono font-bold text-accent border border-accent/20">
-						LOT: 0.10 FIXED
+						TWIN: 2×0.01 LOT
 					</span>
 				</div>
 				<p class="text-xs text-text-3 mt-0.5">
-					Kandidat level setup M5 dari mesin analisa kuantitatif, order baru akan dikirim ke MT5 saat level ter-trigger & dikonfirmasi Laya AI
+					Kandidat level setup M5 dari mesin analisa kuantitatif; eksekusi live dilakukan EA saat jendela sesi London/NY & filter M15/H1 terpenuhi
 				</p>
 			</div>
 
-			<div class="flex items-center gap-2 font-mono text-xs">
+			<div class="flex flex-wrap items-center gap-2 font-mono text-xs">
 				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
-					RRR Gate: <strong class="text-pos">≥ 1.6 : 1</strong>
+					Target: <strong class="text-pos">+0.7R / +2.0R</strong>
 				</span>
 				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
-					Buffered BE: <strong class="text-pos">ON (+1.2R)</strong>
+					Buffered BE: <strong class="text-pos">ON (+0.7R)</strong>
 				</span>
 				<span class="rounded bg-surface-2 px-2.5 py-1 text-text-3 border border-line">
-					Trailing: <strong class="text-pos">ON (+1.5R)</strong>
+					Ratchet & Squeeze: <strong class="text-pos">0.5R / 0.3R</strong>
 				</span>
 			</div>
 		</div>
@@ -506,7 +510,7 @@
 					<div class="text-xs text-text-3 mb-1">PROYEKSI STOP LOSS</div>
 					<div class="text-xl font-bold text-neg">${signal.levels?.sl?.toFixed(2)}</div>
 					<div class="text-[11px] text-text-3 mt-1">
-						Risk: -${signal.levels?.risk?.toFixed(2)} (Maks: -$30.00 pada 0.10 lot)
+						Risk: -${signal.levels?.risk?.toFixed(2)} harga (Twin 2×0.01 lot)
 					</div>
 				</div>
 

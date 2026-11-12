@@ -47,6 +47,7 @@
 	<p class="text-11 text-text-3">
 		Market lain yang sudah aktif: <a class="text-accent underline" href="/forex">Forex</a> ·
 		<a class="text-accent underline" href="/crypto">Crypto</a> ·
+		<a class="text-accent underline" href="/idx">IDX</a> ·
 		<a class="text-accent underline" href="/jurnal">Jurnal</a>
 	</p>
 </div>

@@ -16,11 +16,11 @@
 			'Universe dan harga dari OKX. Kalau OKX membatasi akses, angka berhenti diperbarui tanpa peringatan otomatis.'
 		],
 		forex: [
-			'Telemetri bergantung pada VM Azure. Kalau VM mati, angka forex berhenti diperbarui; situs tetap hidup dengan data terakhir.',
-			'Sinyal dihitung dari telemetri MT5 + aturan EMA/RSI di EA. Laya AI sedang dinonaktifkan, jadi tidak ada penilai AI yang berjalan; "menunggu setup" berarti aturan belum terpenuhi.',
-			'Baru ada 6 trade live di akun demo. Itu terlalu kecil untuk menyimpulkan win rate 66,7% sebagai edge.',
-			'Spread yang terukur 240 point ($0,28) adalah kondisi sekarang. Saat rollover dan berita, spread bisa melebar beberapa kali.',
-			'War Room tidak mengirim order sendiri. Eksekusi dilakukan EA di terminal MT5, dan selisih antara sinyal dan fill dicatat di jurnal.'
+			'Telemetri bergantung pada runner Instabox (box-2aacb3). Kalau runner berhenti, angka forex berhenti diperbarui; situs tetap hidup dengan data terakhir.',
+			'Sinyal dihitung dari telemetri MT5 + aturan EMA/RSI/ATR di EA GOLD_Reaper_Hexa (London 08–09 & NY 13:15–15:59 jam server). Laya AI sedang dinonaktifkan; "menunggu setup" berarti aturan belum terpenuhi.',
+			'Akun utama kini berjalan di Exness Real Cent (#452009427, satuan USC = $0,01 USD) dengan jumlah sampel live yang masih bertumbuh.',
+			'Spread XAUUSDc terukur sekitar 160–240 point ($0,16–$0,24) di kondisi normal. Saat rollover dan rilis berita, spread bisa melebar beberapa kali.',
+			'War Room tidak mengirim order dari browser. Eksekusi dilakukan EA di terminal MT5 (Twin-Order Scalp +0.7R & Runner +2.0R), dan setiap deal dicatat di jurnal.'
 		]
 	} as const;
 
