@@ -62,7 +62,13 @@ def read_laya_queue(limit: int = Query(10, ge=1, le=50), balance: float = Query(
     queue = []
     for item in raw_list:
         parsed = parse_forex_signal(item.get("message_text", ""), item.get("channel_name", ""))
-        if parsed and parsed.get("action") and parsed.get("symbol") in ["XAUUSD", "USTEC"]:
+        if (
+            parsed
+            and parsed.get("action")
+            and parsed.get("signal_type") == "ENTRY"
+            and not parsed.get("is_milestone")
+            and parsed.get("symbol") in ["XAUUSD", "USTEC"]
+        ):
             enriched = dict(parsed)
             enriched["timestamp"] = item["timestamp"]
             verdict = risk_gate.evaluate(enriched, balance=balance)
