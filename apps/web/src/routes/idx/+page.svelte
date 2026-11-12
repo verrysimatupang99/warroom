@@ -4,12 +4,12 @@
 	// dan pencarian saham. Yang belum ada tetap dinyatakan, bukan disembunyikan.
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { AREAS } from '$lib/nav';
+	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import { urlApi } from '$lib/api/client';
 	import MarketShell from '$lib/components/MarketShell.svelte';
-	import PageHeader from '$lib/components/PageHeader.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
+	import BatasPasar from '$lib/components/BatasPasar.svelte';
 	import RunningTrade from '$lib/components/market/RunningTrade.svelte';
 
 	interface Candle { t: number; o: number; h: number; l: number; c: number; v: number }
@@ -84,7 +84,10 @@
 
 	const area = AREAS.find((a) => a.kunci === 'idx')!;
 	// Sub-nav standar (Ringkas/Sinyal/Uji/Eksekusi) — samakan ritme dgn crypto/forex.
-	const sub = $derived(page.url.searchParams.get('sub') ?? 'ringkas');
+	const sub = $derived.by(() => {
+		const s = page.url.searchParams.get('sub') ?? 'ringkas';
+		return SLUG_LAMA[s] ?? s;
+	});
 
 	onMount(async () => {
 		const [p, r] = await Promise.allSettled([
@@ -236,17 +239,16 @@
 
 <svelte:head><title>IDX | War Room</title></svelte:head>
 
-<MarketShell {area} aktif={sub} tanpaKepala>
+<MarketShell
+	{area}
+	aktif={sub}
+	judul="Saham IDX"
+	tag="AKTIF"
+	deskripsi="IHSG dari sumber publik, plus data per emiten dari idx-edge: harga, penggerak, ringkasan broker, dan laporan keuangan."
+	terverifikasi={true}
+	sumber="yahoo:jkse + idx-edge:stock.arjum.com"
+>
 <div class="space-y-4">
-	<PageHeader
-		eyebrow="War Room · IDX"
-		title="IDX"
-		tag="AKTIF"
-		description="IHSG dari sumber publik, plus data per emiten dari idx-edge: harga, penggerak, ringkasan broker, dan laporan keuangan."
-		terverifikasi={true}
-		sumber="yahoo:jkse + idx-edge:stock.arjum.com"
-	/>
-
 	{#if sub === 'ringkas'}
 	{#if memuat}
 		<Skeleton baris={5} tinggi={44} />
@@ -534,10 +536,10 @@
 			</section>
 		{/if}
 
-		<!-- Batas jujur -->
-		<section class="rounded-card border border-line bg-surface p-4">
-			<h2 class="text-13 font-bold text-text">Batas jujur</h2>
-			{#if ringkas?.pemakaian}
+		<!-- Kuota & Batas jujur -->
+		{#if ringkas?.pemakaian}
+			<section class="rounded-card border border-line bg-surface p-4">
+				<h2 class="text-13 font-bold text-text">Kuota API idx-edge</h2>
 				<div class="mt-2 rounded border border-line bg-surface-2 p-2">
 					<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-11">
 						<span class="text-text-3">Panggilan keluar hari ini</span>
@@ -547,18 +549,12 @@
 					</div>
 					<p class="mt-1 text-10 leading-relaxed text-text-3">
 						Dihitung sendiri dari panggilan keluar. Sisa kuota resmi hanya terlihat di dashboard
-						arjum karena endpoint usage menolak API key. Kuota berbayar per panggilan, jadi halaman
-						ini memakai cache: quote 60 detik, riwayat 15 menit, laporan keuangan 24 jam.
+						arjum karena endpoint usage menolak API key.
 					</p>
 				</div>
-			{/if}
-			<ul class="mt-2 space-y-1.5 text-11 leading-relaxed text-text-2">
-				<li>· Harga saham dari idx-edge bisa tertunda; kolom waktu sumber ditampilkan, jangan dipakai sebagai harga eksekusi.</li>
-				<li>· Sebagian endpoint idx-edge memakan kuota per panggilan (1 kode = 1 kuota untuk daftar harga).</li>
-				<li>· Tidak ada sinyal IDX yang dikirim ke mana pun. Halaman ini hanya menampilkan data.</li>
-				<li>· Scanner otomatis dan bandarmologi harian belum dijadwalkan; data broker masih dibuka manual per emiten.</li>
-			</ul>
-		</section>
+			</section>
+		{/if}
+		<BatasPasar market="idx" />
 	{/if}
 
 	{:else if sub === 'sinyal'}

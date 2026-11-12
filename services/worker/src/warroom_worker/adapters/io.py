@@ -35,6 +35,10 @@ __all__ = [
 # Cermin /etc/sudoers.d/warroom-poly-readonly: hanya kombinasi persis ini yang boleh
 # memakai sudo, sisanya selesai dengan status jujur tanpa menyulap proses.
 _CAT_SUDO = frozenset({
+    "/var/lib/poly-paper/execution-paper-shadow-summary.json",
+    "/var/lib/poly-paper-candidate/execution-paper-shadow-summary.json",
+    "/var/lib/poly-paper-fade/execution-paper-shadow-summary.json",
+    "/var/lib/poly-paper-favorite/execution-paper-shadow-summary.json",
     "/var/lib/poly-paper/execution-paper-shadow-state.json",
     "/var/lib/poly-paper-candidate/execution-paper-shadow-state.json",
     "/var/lib/poly-paper-fade/execution-paper-shadow-state.json",

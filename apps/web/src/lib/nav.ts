@@ -119,8 +119,8 @@ export const AREAS: Area[] = [
 		rute: '/polymarket',
 		ikon: 'polymarket',
 		kategori: 'floor',
-		status: 'STANDBY',
-		anak: []
+		status: 'PAPER',
+		anak: TAB_DASAR(['poly_sinyal', 'verdict'], ['poly_ledger', 'poly_posisi'])
 	},
 	{
 		kunci: 'gmgn',
@@ -128,8 +128,8 @@ export const AREAS: Area[] = [
 		rute: '/gmgn',
 		ikon: 'gmgn',
 		kategori: 'floor',
-		status: 'STANDBY',
-		anak: []
+		status: 'PAPER',
+		anak: TAB_DASAR(['radar', 'gmgn'], ['lp_paper', 'gmgn_ledger'])
 	},
 	{
 		kunci: 'signals',
