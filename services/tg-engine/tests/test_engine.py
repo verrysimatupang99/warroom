@@ -29,6 +29,12 @@ class TestKlasifikasi:
     def test_forex_dari_kata_kunci(self):
         assert engine.classify_message("XAUUSD buy limit 3980", "") == "FOREX"
 
+    def test_forex_dari_kata_kunci_standar_us04(self):
+        """US-04 Scenario 1: BUY 2650 SL 2640 TP 2670 diklasifikasikan sebagai FOREX."""
+        assert engine.classify_message("BUY 2650 SL 2640 TP 2670", "") == "FOREX"
+        assert engine.classify_message("SELL 2650 SL 2660 TP1 2630", "") == "FOREX"
+        assert engine.classify_message("ENTRY 2650 SL 2640 TP 2670", "") == "FOREX"
+
     def test_saham_dari_kata_kunci(self):
         assert engine.classify_message("IHSG naik, BBRI breakout", "") == "SAHAM"
 

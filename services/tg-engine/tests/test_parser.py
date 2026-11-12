@@ -90,3 +90,34 @@ class TestParserMilestone:
     def test_obrolan_kosong_atau_general(self):
         assert parse_forex_signal("", "") is None
         assert parse_forex_signal("Selamat pagi rekan trader, jangan lupa ngopi", "") is None
+
+    def test_entry_range_tanpa_prefix_at(self):
+        """US-04 Scenario 2: GOLD BUY 2650 - 2648 SL 2640 TP 2670 tanpa @."""
+        text = "GOLD BUY 2650 - 2648 SL 2640 TP 2670"
+        parsed = parse_forex_signal(text, "")
+        assert parsed is not None
+        assert parsed["symbol"] == "XAUUSD"
+        assert parsed["action"] == "BUY"
+        assert parsed["entry_low"] == 2648.0
+        assert parsed["entry_high"] == 2650.0
+        assert parsed["sl"] == 2640.0
+        assert parsed["tp1"] == 2670.0
+
+    def test_pemisah_ribuan_tidak_merusak_harga(self):
+        """US-04: 18,500 diparsing sebagai 18500 bukan 18.5."""
+        text = "USTEC BUY @ 18,500 SL 18,400 TP 18,700"
+        parsed = parse_forex_signal(text, "")
+        assert parsed is not None
+        assert parsed["symbol"] == "USTEC"
+        assert parsed["entry_low"] == 18500.0
+        assert parsed["sl"] == 18400.0
+        assert parsed["tp1"] == 18700.0
+
+    def test_koma_daftar_tp_berurutan(self):
+        """US-04: TP: 2660, 2670, 2680 terbaca tp1, tp2, tp3."""
+        text = "XAUUSD BUY 2650 SL 2640 TP 2660, 2670, 2680"
+        parsed = parse_forex_signal(text, "")
+        assert parsed is not None
+        assert parsed["tp1"] == 2660.0
+        assert parsed["tp2"] == 2670.0
+        assert parsed["tp3"] == 2680.0

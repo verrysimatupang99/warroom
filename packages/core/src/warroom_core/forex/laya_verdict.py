@@ -27,6 +27,15 @@ DEFAULT_TTL_SEC = 180
 DEFAULT_MIN_CONFIDENCE = 0.60
 
 
+def is_laya_enabled() -> bool:
+    """Cek apakah Laya AI inferensi aktif via env var.
+
+    Default "0" (mode teknis murni).
+    Mendukung WARROOM_LAYA_INFERENSI dengan alias WARROOM_LAYA_ENABLE.
+    """
+    return os.environ.get("WARROOM_LAYA_INFERENSI", os.environ.get("WARROOM_LAYA_ENABLE", "0")).strip().lower() in ("1", "true", "yes")
+
+
 def _path() -> Path:
     return Path(os.environ.get("WARROOM_LAYA_VERDICT_PATH", DEFAULT_PATH))
 

@@ -60,6 +60,9 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
                 "ticket": str(r.ext_id or ""),
                 "account": str(ev.get("account") or "unknown"),
                 "strategy_version": str(ev.get("strategy_version") or "unknown"),
+                "currency": str(ev.get("currency") or "USD"),
+                "cent_factor": float(ev.get("cent_factor", 100.0 if ev.get("currency") == "USC" else 1.0)),
+                "net_usc": ev.get("net_usc"),
                 "market": "forex",
                 # Forex = deal NYATA dari EA MT5; dibedakan dari paper crypto.
                 "status": "closed_deal",

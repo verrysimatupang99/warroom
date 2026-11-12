@@ -29,7 +29,8 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 # Saklar keselamatan: inferensi hanya jalan bila operator menyalakannya.
-LAYA_AKTIF = os.environ.get("WARROOM_LAYA_ENABLE", "").strip() in ("1", "true", "yes")
+# Mendukung WARROOM_LAYA_INFERENSI (alias ke WARROOM_LAYA_ENABLE, default "0").
+LAYA_AKTIF = os.environ.get("WARROOM_LAYA_INFERENSI", os.environ.get("WARROOM_LAYA_ENABLE", "0")).strip().lower() in ("1", "true", "yes")
 
 # Ambang keyakinan: di bawah ini sinyal diperlakukan tidak aman (SKIP).
 MIN_CONFIDENCE_DEFAULT = 0.60

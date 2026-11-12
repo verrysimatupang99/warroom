@@ -14,7 +14,7 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-from ..laya_verdict import ambil as ambil_verdict_laya
+from ..laya_verdict import ambil as ambil_verdict_laya, is_laya_enabled
 from .base import BaseStrategy
 
 log = logging.getLogger("warroom_core.forex.strategies.multi_session_laya")
@@ -76,26 +76,83 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
         else:
             return "NEW_YORK"
 
-    def evaluate_laya(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
-        """Baca keputusan gerbang Laya dari CACHE (bukan jalankan model).
+    def evaluate_technical_fallback(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
+        """Evaluasi aturan teknis murni saat Laya AI dinonaktifkan atau berkas verdict belum tersedia.
 
-        Inferensi dipindahkan ke job terjadwal `ops/laya_verdict_job.py` karena
-        model 421M menambah ~1 GB RSS dan 30 detik cold start — tidak layak berada
-        di jalur permintaan yang di-poll EA tiap 5 detik dengan timeout 3 detik.
-
-        Semantik FAIL-CLOSED: cache tidak ada, basi, atau sesi tidak cocok berarti
-        sinyal DIBLOKIR. Tidak ada jalur yang meloloskan sinyal tanpa verdict segar.
+        Kriteria:
+        1. Sesi pasar sah (ASIA, LONDON, NEW_YORK).
+        2. RRR minimal >= 1.6 (memenuhi syarat scalping asimetris).
+        3. Toleransi jarak SL <= max_sl_points (dan > 0).
         """
-        if not self.enable_laya:
-            alasan = "Gerbang Laya dinonaktifkan di strategi — sinyal DIBLOKIR"
+        session = str(market_state.get("session") or self.get_current_session()).upper()
+        if session not in ("ASIA", "LONDON", "NEW_YORK"):
+            alasan = f"Mode teknis murni ditolak: sesi {session} di luar jam trading (ASIA/LONDON/NEW_YORK) — sinyal DIBLOKIR"
             log.warning(alasan)
             return False, 0.0, alasan
+
+        # Evaluasi RRR (minimal 1.6)
+        rrr = market_state.get("rrr")
+        if rrr is not None:
+            try:
+                rrr_f = float(rrr)
+                if rrr_f < 1.6:
+                    alasan = f"Mode teknis murni ditolak: RRR {rrr_f:.2f} di bawah batas minimal 1.60 — sinyal DIBLOKIR"
+                    log.warning(alasan)
+                    return False, 0.0, alasan
+            except (TypeError, ValueError):
+                alasan = "Mode teknis murni ditolak: RRR tidak valid — sinyal DIBLOKIR"
+                log.warning(alasan)
+                return False, 0.0, alasan
+        elif self.rrr_min < 1.6:
+            alasan = f"Mode teknis murni ditolak: strategi rrr_min {self.rrr_min:.2f} di bawah batas 1.60 — sinyal DIBLOKIR"
+            log.warning(alasan)
+            return False, 0.0, alasan
+
+        # Evaluasi jarak Stop-Loss
+        risk = market_state.get("risk") or market_state.get("sl_points")
+        if risk is not None:
+            try:
+                risk_f = float(risk)
+                if risk_f > self.max_sl_points:
+                    alasan = (
+                        f"Mode teknis murni ditolak: jarak SL {risk_f:.2f} "
+                        f"melebihi toleransi maksimal {self.max_sl_points:.2f} — sinyal DIBLOKIR"
+                    )
+                    log.warning(alasan)
+                    return False, 0.0, alasan
+                if risk_f <= 0.0:
+                    alasan = f"Mode teknis murni ditolak: jarak SL {risk_f:.2f} tidak valid — sinyal DIBLOKIR"
+                    log.warning(alasan)
+                    return False, 0.0, alasan
+            except (TypeError, ValueError):
+                alasan = "Mode teknis murni ditolak: jarak SL tidak valid — sinyal DIBLOKIR"
+                log.warning(alasan)
+                return False, 0.0, alasan
+
+        return True, 1.0, "Mode teknis murni (WARROOM_LAYA_INFERENSI=0) — lolos filter teknis"
+
+    def evaluate_laya(self, market_state: dict[str, Any]) -> tuple[bool, float, str]:
+        """Evaluasi keputusan gerbang Laya AI atau fallback ke mode teknis murni.
+
+        Bila self.enable_laya False atau AI nonaktif (WARROOM_LAYA_INFERENSI=0),
+        evaluasi kriteria teknis murni (sesi, RRR >= 1.6, toleransi SL) tanpa memblokir sinyal.
+        Bila Laya AI aktif namun berkas verdict belum tersedia, fallback ke mode teknis murni.
+        """
+        ai_aktif = self.enable_laya and is_laya_enabled()
+        if not ai_aktif:
+            return self.evaluate_technical_fallback(market_state)
 
         layak, keyakinan, alasan = ambil_verdict_laya(
             side=str(market_state.get("side") or ""),
             session=str(market_state.get("session") or ""),
             min_confidence=self.laya_min_confidence,
         )
+
+        # Fallback bila berkas verdict belum tersedia dari job terjadwal
+        if not layak and "belum tersedia" in alasan:
+            log.warning("Verdict Laya belum tersedia — fallback otomatis ke evaluasi teknis murni")
+            return self.evaluate_technical_fallback(market_state)
+
         log.info("Gerbang Laya: %s -> %s", "LOLOS" if layak else "DIBLOKIR", alasan)
         return layak, keyakinan, alasan
 
@@ -204,6 +261,9 @@ class MultiSessionLayaScalperStrategy(BaseStrategy):
             "price": price,
             "atr": atr14,
             "setup": setup_name,
+            "risk": risk,
+            "reward": reward,
+            "rrr": rasio,
         }
         is_safe, confidence, laya_reason = self.evaluate_laya(market_state)
 

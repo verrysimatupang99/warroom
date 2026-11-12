@@ -95,19 +95,25 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
     Bentuk baris sama dengan `dari_ledger` supaya pemaakai tidak tahu bedanya —
     kalau DB kosong/belum terisi, pemanggil boleh jatuh ke ledger.
     """
-    from sqlalchemy import text
-    from warroom_core.db import session_scope
+    try:
+        from sqlalchemy import text
+        from warroom_core.db import session_scope
+    except Exception:  # noqa: BLE001 — jurnal tidak boleh menjatuhkan halaman
+        return []
 
     hasil: list[dict[str, Any]] = []
-    with session_scope() as s:
-        rows = s.execute(
-            text(
-                "select ext_id, side, pnl_r, pnl_usd, price, opened_at, closed_at, "
-                "evidence_json from trades where venue='crypto' and mode='paper' "
-                "order by closed_at desc nulls last limit :n"
-            ),
-            {"n": batas},
-        ).fetchall()
+    try:
+        with session_scope() as s:
+            rows = s.execute(
+                text(
+                    "select ext_id, side, pnl_r, pnl_usd, price, opened_at, closed_at, "
+                    "evidence_json from trades where venue='crypto' and mode='paper' "
+                    "order by closed_at desc nulls last limit :n"
+                ),
+                {"n": batas},
+            ).fetchall()
+    except Exception:  # noqa: BLE001 — DB belum siap/belum migrasi / WARROOM_DB_URL tidak diset
+        return []
     for r in rows:
         ev = r.evidence_json if isinstance(r.evidence_json, dict) else json.loads(r.evidence_json or "{}")
         hasil.append(

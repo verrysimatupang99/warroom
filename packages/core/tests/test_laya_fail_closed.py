@@ -28,6 +28,7 @@ def cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     p = tmp_path / "laya_verdict.json"
     monkeypatch.setenv("WARROOM_LAYA_VERDICT_PATH", str(p))
     monkeypatch.setenv("WARROOM_LAYA_VERDICT_TTL_SEC", "180")
+    monkeypatch.setenv("WARROOM_LAYA_INFERENSI", "1")
     return p
 
 
@@ -117,19 +118,33 @@ def test_strategi_memakai_cache_bukan_model(cache: Path) -> None:
     assert alasan.startswith("Laya EXECUTE")
 
 
-def test_strategi_tanpa_cache_memblokir(cache: Path) -> None:
+def test_strategi_tanpa_cache_fallback_ke_teknis(cache: Path) -> None:
+    """Bila berkas cache belum ditulis, fallback otomatis ke mode teknis murni (US-01 Scenario 2)."""
     s = MultiSessionLayaScalperStrategy(enable_laya=True)
+    # Lolos kriteria teknis
     layak, keyakinan, alasan = s.evaluate_laya({"side": "LONG", "session": "LONDON"})
-    assert layak is False
-    assert keyakinan == 0.0
-    assert "DIBLOKIR" in alasan
+    assert layak is True
+    assert keyakinan == 1.0
+    assert "Mode teknis murni" in alasan
+
+    # Ditolak bila kriteria teknis gagal (sesi tidak sah)
+    layak_bad, _, alasan_bad = s.evaluate_laya({"side": "LONG", "session": "LIBUR"})
+    assert layak_bad is False
+    assert "DIBLOKIR" in alasan_bad
 
 
-def test_laya_dinonaktifkan_memblokir(cache: Path) -> None:
+def test_laya_dinonaktifkan_fallback_teknis(cache: Path) -> None:
+    """Bila Laya dinonaktifkan di strategi, jalankan mode teknis murni tanpa memblokir sinyal valid."""
     s = MultiSessionLayaScalperStrategy(enable_laya=False)
-    layak, _, alasan = s.evaluate_laya({"side": "LONG", "session": "LONDON"})
-    assert layak is False
-    assert "dinonaktifkan" in alasan
+    layak, keyakinan, alasan = s.evaluate_laya({"side": "LONG", "session": "LONDON"})
+    assert layak is True
+    assert keyakinan == 1.0
+    assert "Mode teknis murni" in alasan
+
+    # Ditolak bila RRR di bawah ambang minimal 1.6
+    layak_bad, _, alasan_bad = s.evaluate_laya({"side": "LONG", "session": "LONDON", "rrr": 1.4})
+    assert layak_bad is False
+    assert "DIBLOKIR" in alasan_bad
 
 
 def test_override_ambang_lewat_env(cache: Path, monkeypatch: pytest.MonkeyPatch) -> None:

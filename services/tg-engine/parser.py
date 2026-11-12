@@ -43,7 +43,10 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
     if not text:
         return None
 
-    clean_text = text.replace(",", ".")
+    # Tangani pemisah ribuan (mis. 18,500 -> 18500) tanpa merusak desimal atau pemisah koma list
+    clean_text = re.sub(r"\b(\d{1,3}),(\d{3})\b", r"\1\2", text)
+    # Ubah desimal koma Eropa/Indonesia (mis. 2650,5 -> 2650.5 atau 2650,25 -> 2650.25)
+    clean_text = re.sub(r"(?<=\d),(?=\d{1,2}\b)", ".", clean_text)
     is_milestone = is_milestone_or_update(clean_text)
     sig_type = classify_signal_type(clean_text)
 
@@ -91,19 +94,22 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
     if not action and not is_milestone:
         return None
 
-    # 3. Deteksi Entry (Bisa berupa single level atau Range Zona)
+    # 3. Deteksi Entry (Bisa berupa single level atau Range Zona, mendukung tanpa prefix '@')
     entry_low = None
     entry_high = None
     entry_match = re.search(
-        r"(?:entry\s*price|entry|zone|zona|zona entry|at|@|limit|stop)[:\s]*"
+        r"(?:(?:entry\s*price|entry|zone|zona|zona entry|at|@|limit|stop)[:\s]*|"
+        r"(?:\b(?:BUY|SELL)(?:\s*(?:NOW|LIMIT|STOP))?(?:\s+[A-Za-z0-9/]+)?\s+))"
         r"([0-9]{3,6}(?:\.[0-9]+)?)"
         r"(?:\s*[-–/]\s*([0-9]{3,6}(?:\.[0-9]+)?))?",
         clean_text,
         re.I,
     )
     if entry_match and entry_match.group(1):
-        entry_low = float(entry_match.group(1))
-        entry_high = float(entry_match.group(2)) if entry_match.group(2) else entry_low
+        p1 = float(entry_match.group(1))
+        p2 = float(entry_match.group(2)) if entry_match.group(2) else p1
+        entry_low = min(p1, p2)
+        entry_high = max(p1, p2)
 
     # 4. Deteksi Stop Loss (SL)
     sl = None
@@ -144,7 +150,7 @@ def parse_forex_signal(text: str, channel_name: str = "") -> dict[str, Any] | No
     if (not tp2 or not tp1) and "TP" in clean_text.upper():
         tp_idx = clean_text.upper().find("TP")
         tp_snippet = clean_text[tp_idx : tp_idx + 80]
-        if "/" in tp_snippet or " - " in tp_snippet:
+        if "/" in tp_snippet or " - " in tp_snippet or "," in tp_snippet:
             tp_multi = re.findall(r"[0-9]{3,6}(?:\.[0-9]+)?", tp_snippet)
             if len(tp_multi) > 1:
                 tp1 = float(tp_multi[0])

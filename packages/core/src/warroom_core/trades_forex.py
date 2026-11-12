@@ -84,6 +84,25 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
     net = _angka(baris.get("net"))
     volume = _angka(baris.get("volume"))
 
+    account = str(baris.get("account") or "unknown")
+    raw_curr = baris.get("currency")
+    if not raw_curr:
+        if account in ("452009427", "36525553"):
+            currency = "USC"
+        else:
+            currency = "USD"
+    else:
+        currency = str(raw_curr).strip().upper()
+
+    cent_factor_val = baris.get("cent_factor")
+    try:
+        cent_factor = float(cent_factor_val) if cent_factor_val is not None else (100.0 if currency == "USC" else 1.0)
+    except (TypeError, ValueError):
+        cent_factor = 100.0 if currency == "USC" else 1.0
+
+    if currency == "USC" and cent_factor == 1.0:
+        cent_factor = 100.0
+
     strategi = str(baris.get("strategy_version") or "").strip()
     evidence = {
         "ticket": ticket,
@@ -93,9 +112,17 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
         "open_price": open_price,
         "close_price": close_price,
         "net": net,
-        "account": str(baris.get("account") or "unknown"),
+        "account": account,
         "strategy_version": strategi or "unknown",
+        "currency": currency,
+        "cent_factor": cent_factor,
     }
+    if currency == "USC":
+        evidence["net_usc"] = net
+        pnl_usd = round(net / cent_factor, 4) if net is not None else None
+    else:
+        pnl_usd = net
+
     jejak = baris.get("_koreksi")
     if jejak:
         # Jejak koreksi ikut disimpan: pembaca bisa melihat angka mana yang
@@ -112,7 +139,7 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
         side=side,
         qty=volume,
         price=close_price,
-        pnl_usd=net,
+        pnl_usd=pnl_usd,
         pnl_r=None,  # deals.csv tidak membawa R; jangan menghitung ulang dari SL yang tak ada
         opened_at=opened_at,
         closed_at=closed_at,
