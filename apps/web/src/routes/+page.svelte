@@ -21,6 +21,7 @@
 	import TrackBar from '$lib/components/TrackBar.svelte';
 	import HealthStrip from '$lib/components/HealthStrip.svelte';
 	import FreshnessBadge from '$lib/components/FreshnessBadge.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
 
 	let sinyal = $state<SignalPayload | null>(null);
 	let kripto = $state<AreaPayload | null>(null);
@@ -43,7 +44,9 @@
 	// TTL sinyal dilaporkan API (/api/v1/freshness, kind="signal"), bukan dikarang di UI.
 	// null = API tidak melaporkan TTL → badge tampil n/a, bukan "segar" palsu.
 	let ttlSinyal = $state<number | null>(null);
+	let memuatAwal = $state(true);
 async function muat() {
+	try {
 	const [s, k, a, sm, m, sys, poly, siap, segar] = await Promise.allSettled([
 		getSinyalPerPasar(),
 		getArea('crypto'),
@@ -89,6 +92,9 @@ async function muat() {
 		const d = arms.find((x) => x.nama === 'D favorit');
 		dompetPoly = d ? Number(d.balance ?? 20) : null;
 	} else dompetPoly = null;
+	} finally {
+		memuatAwal = false;
+	}
 }
 	$effect(() => {
 		void muat();
@@ -547,7 +553,11 @@ async function muat() {
 							{/if}
 						</a>
 					{/each}
-					{#if pasarDaftar.length === 0}
+					{#if memuatAwal}
+						<div class="col-span-full py-4">
+							<Skeleton baris={3} tinggi={28} />
+						</div>
+					{:else if pasarDaftar.length === 0}
 						<p class="dim">Status pasar belum tersedia{galat ? `: ${galat}` : '.'}</p>
 					{/if}
 				</div>

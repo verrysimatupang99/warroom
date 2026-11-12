@@ -17,6 +17,7 @@ from warroom_api import auth
 router = APIRouter()
 
 
+@router.get("/api/v1/leaderboard")
 @router.get("/api/v1/leaderboard/strategi")
 def leaderboard_strategi(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, Any]:
     """Peringkat strategi: ekuitas (R/USD), WR, expectancy R, max DD, biaya, status.

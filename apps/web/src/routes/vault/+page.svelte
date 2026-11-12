@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { urlApi } from "$lib/api/client";
+  import Skeleton from "$lib/components/Skeleton.svelte";
 
   type Preset = {
     id: string;
@@ -20,35 +22,36 @@
     extra_keys: string[];
   };
 
-  let preset: Preset[] = [];
-  let items: Item[] = [];
-  let loading = true;
-  let pesan = "";
-  let err = "";
+  let preset = $state<Preset[]>([]);
+  let items = $state<Item[]>([]);
+  let loading = $state(true);
+  let pesan = $state("");
+  let err = $state("");
 
-  let pilihPlatform = "";
-  let label = "";
-  let endpoint = "";
-  let apiKey = "";
-  let apiSecret = "";
-  let extraFields: Record<string, string> = {};
+  let pilihPlatform = $state("");
+  let label = $state("");
+  let endpoint = $state("");
+  let apiKey = $state("");
+  let apiSecret = $state("");
+  let extraFields = $state<Record<string, string>>({});
 
-  $: presetAktif = preset.find((p) => p.id === pilihPlatform);
+  let presetAktif = $derived(preset.find((p) => p.id === pilihPlatform));
 
   async function muat() {
     loading = true;
     err = "";
     try {
       const [rp, ri] = await Promise.all([
-        fetch("/api/v1/vault/platform"),
-        fetch("/api/v1/vault"),
+        fetch(urlApi("/api/v1/vault/platform"), { credentials: "include" }),
+        fetch(urlApi("/api/v1/vault"), { credentials: "include" }),
       ]);
       if (rp.ok) preset = (await rp.json()).platform;
       if (ri.ok) items = (await ri.json()).items;
     } catch (e) {
       err = String(e);
+    } finally {
+      loading = false;
     }
-    loading = false;
   }
 
   async function simpan() {
@@ -58,8 +61,9 @@
       err = "Pilih platform dan isi label.";
       return;
     }
-    const res = await fetch("/api/v1/vault", {
+    const res = await fetch(urlApi("/api/v1/vault"), {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         platform: pilihPlatform,
@@ -86,13 +90,16 @@
 
   async function hapus(id: number) {
     if (!confirm("Hapus kredensial ini?")) return;
-    const res = await fetch(`/api/v1/vault/${id}`, { method: "DELETE" });
+    const res = await fetch(urlApi(`/api/v1/vault/${id}`), {
+      method: "DELETE",
+      credentials: "include"
+    });
     if (res.ok || res.status === 204) await muat();
     else err = `Gagal hapus (${res.status})`;
   }
 
   async function tampilkan(id: number) {
-    const res = await fetch(`/api/v1/vault/${id}/rahasia`);
+    const res = await fetch(urlApi(`/api/v1/vault/${id}/rahasia`), { credentials: "include" });
     if (!res.ok) {
       err = `Gagal ambil rahasia (${res.status})`;
       return;
@@ -129,7 +136,7 @@
   {#if err}<p class="galat" role="alert">{err}</p>{/if}
   {#if pesan}<p class="ok" role="status">{pesan}</p>{/if}
 
-  <form class="kartu" on:submit|preventDefault={simpan}>
+  <form class="kartu" onsubmit={(e) => { e.preventDefault(); void simpan(); }}>
     <h2>Tambah kredensial</h2>
     <label>
       Platform
@@ -173,7 +180,7 @@
 
   <h2>Daftar kredensial</h2>
   {#if loading}
-    <p>Memuat…</p>
+    <Skeleton baris={4} tinggi={36} />
   {:else if items.length === 0}
     <p class="kosong">Belum ada kredensial tersimpan.</p>
   {:else}
@@ -190,8 +197,8 @@
             <small>{it.punya_key ? "🔑 key" : ""} {it.punya_secret ? "🔐 secret" : ""}
               {#each it.extra_keys as k}· {k}{/each}</small>
             <span>
-              <button type="button" on:click={() => tampilkan(it.id)}>Salin rahasia</button>
-              <button type="button" class="bahaya" on:click={() => hapus(it.id)}>Hapus</button>
+              <button type="button" onclick={() => tampilkan(it.id)}>Salin rahasia</button>
+              <button type="button" class="bahaya" onclick={() => hapus(it.id)}>Hapus</button>
             </span>
           </div>
         </li>
@@ -204,68 +211,70 @@
   .wrap {
     max-width: 40rem;
     margin: 0 auto;
-    padding: var(--space-4);
+    padding: 1rem;
     display: grid;
-    gap: var(--space-4);
+    gap: 1rem;
   }
   .sub {
-    color: var(--color-text-muted);
+    color: var(--color-text-3);
   }
   .kartu {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--space-4);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 1rem;
     display: grid;
-    gap: var(--space-3);
+    gap: 0.75rem;
     background: var(--color-surface);
   }
   label {
     display: grid;
-    gap: var(--space-1);
+    gap: 0.25rem;
   }
   input,
   select {
-    padding: var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface-raised, var(--color-surface));
+    padding: 0.5rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface-2);
     color: var(--color-text);
   }
   button {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-line);
     background: var(--color-accent);
-    color: var(--color-text-inverted);
+    color: var(--color-on-accent);
+    font-weight: 600;
     cursor: pointer;
   }
   .bahaya {
-    background: var(--color-danger);
+    background: var(--color-neg);
+    color: #fff;
   }
   .galat {
-    color: var(--color-danger);
+    color: var(--color-neg);
   }
   .ok {
-    color: var(--color-success);
+    color: var(--color-pos);
   }
   .badge {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    padding: 0 var(--space-2);
-    font-size: var(--font-size-sm, 0.85rem);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    padding: 0 0.5rem;
+    font-size: 0.85rem;
   }
   .nonaktif {
-    color: var(--color-danger);
+    color: var(--color-neg);
   }
   .ep {
     word-break: break-all;
-    color: var(--color-text-muted);
+    color: var(--color-text-3);
   }
   .baris {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-2);
+    gap: 0.5rem;
   }
   .aksi {
     flex-wrap: wrap;
@@ -274,9 +283,9 @@
     list-style: none;
     padding: 0;
     display: grid;
-    gap: var(--space-3);
+    gap: 0.75rem;
   }
   .kosong {
-    color: var(--color-text-muted);
+    color: var(--color-text-3);
   }
 </style>

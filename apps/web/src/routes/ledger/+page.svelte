@@ -12,6 +12,8 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	interface Trade {
 		iso?: string; symbol?: string; side?: string; market?: string;
 		price_filled?: string; pnl_pct?: string; r?: Angka; slippage_pts?: string;
+		currency?: string; cent_factor?: number; net_usc?: number; pnl_usd?: string | number;
+		account?: string; ticket?: string;
 	}
 	let trades = $state<Trade[]>([]);
 	let memuat = $state(true);
@@ -33,8 +35,18 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	const terpaginasi = $derived(terfilter.slice(halaman * PER_HALAMAN, (halaman + 1) * PER_HALAMAN));
 	// Ringkasan dari seluruh baris terfilter (bukan cuma halaman aktif).
 	const ringkasan = $derived.by(() => {
-		const menang = terfilter.filter((t) => (t.market === 'crypto' ? (t.r ?? 0) > 0 : parseFloat(t.pnl_pct ?? '') > 0)).length;
-		const rugi = terfilter.filter((t) => (t.market === 'crypto' ? (t.r ?? 0) < 0 : parseFloat(t.pnl_pct ?? '') < 0)).length;
+		const menang = terfilter.filter((t) => {
+			if (t.market === 'crypto') return (t.r ?? 0) > 0;
+			if ((t.currency === 'USC' || t.account === '452009427') && t.net_usc != null) return Number(t.net_usc) > 0;
+			if (t.pnl_usd != null && t.pnl_usd !== '') return Number(t.pnl_usd) > 0;
+			return parseFloat(t.pnl_pct ?? '') > 0;
+		}).length;
+		const rugi = terfilter.filter((t) => {
+			if (t.market === 'crypto') return (t.r ?? 0) < 0;
+			if ((t.currency === 'USC' || t.account === '452009427') && t.net_usc != null) return Number(t.net_usc) < 0;
+			if (t.pnl_usd != null && t.pnl_usd !== '') return Number(t.pnl_usd) < 0;
+			return parseFloat(t.pnl_pct ?? '') < 0;
+		}).length;
 		const totalR = terfilter.reduce((a, t) => a + (t.market === 'crypto' && t.r != null ? t.r : 0), 0);
 		const tuntas = menang + rugi;
 		const wr = tuntas > 0 ? (menang / tuntas) * 100 : null;
@@ -71,6 +83,22 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	}
 	function hasil(t: Trade) {
 		if (t.market === 'crypto') return t.r != null ? `${t.r > 0 ? '+' : ''}${t.r}R` : '—';
+		const isCent = t.currency === 'USC' || t.account === '452009427';
+		if (isCent) {
+			const val = t.net_usc != null ? Number(t.net_usc) : (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) * 100 : null);
+			if (val != null && !isNaN(val)) {
+				const usd = (val / 100).toFixed(2);
+				const sign = val > 0 ? '+' : '';
+				return `${sign}${val.toFixed(2)} USC (${sign}$${usd})`;
+			}
+		}
+		if (t.pnl_usd != null && t.pnl_usd !== '') {
+			const num = Number(t.pnl_usd);
+			if (!isNaN(num)) {
+				const sign = num > 0 ? '+' : '';
+				return `${sign}$${num.toFixed(2)}`;
+			}
+		}
 		return t.pnl_pct || '—';
 	}
 	// Petakan trade ke bentuk yang diminta ExportLedgerCsv.
@@ -164,7 +192,7 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-line-soft">
-						{#each terpaginasi as t, i (i)}
+						{#each terpaginasi as t, i (t.ticket ?? (t.iso ? `${t.iso}-${t.symbol}-${i}` : i))}
 							<tr class="hover:bg-surface-2/60">
 								<td class="px-2 py-1.5 font-mono text-text-3 whitespace-nowrap">{fmtWaktu(t.iso)}</td>
 								<td class="px-2 py-1.5 uppercase text-text-3">{t.market ?? '—'}</td>

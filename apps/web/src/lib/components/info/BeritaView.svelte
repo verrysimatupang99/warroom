@@ -6,7 +6,6 @@
 	import type { AreaPayload, Fact } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -56,8 +55,6 @@
 		alasan="feed publik belum merespons"
 		description="Judul + tautan dari feed publik. Ringkasan tidak disalin, klik untuk baca di sumbernya."
 	/>
-
-	<NavInfo />
 
 	{#if galat && !forex}
 		<ErrorState pesan={galat} onulang={muat} />

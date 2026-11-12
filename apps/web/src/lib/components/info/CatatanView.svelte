@@ -8,7 +8,6 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import NavInfo from '$lib/components/NavInfo.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -54,7 +53,7 @@
 	});
 
 	function pilih(slug: string) {
-		if (typeof window !== 'undefined') void goto(`?doc=${slug}`, { keepFocus: true, noScroll: true });
+		if (typeof window !== 'undefined') void goto(`?sub=catatan&doc=${slug}`, { keepFocus: true, noScroll: true });
 	}
 
 	// Markdown ringan → HTML aman. HANYA yang kita kenali (judul, list, tebal, kode,
@@ -126,8 +125,6 @@
 		alasan="folder catatan repo belum terbaca"
 		description="Dokumentasi proyek: temuan, keputusan, dan pelajaran. Dibaca langsung dari repo."
 	/>
-
-	<NavInfo />
 
 	{#if galat && !daftar}
 		<ErrorState pesan={galat} onulang={muatDaftar} />
