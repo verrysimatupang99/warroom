@@ -483,7 +483,18 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     # Broadcast perubahan ke seluruh client web yang tersambung via SSE
     _broadcast_sse_telemetry(snapshot)
 
-    # Instruksi otomatis untuk loop telemetry di Azure VM:
+    # HARD ISOLATION (BE-06 / US-06): Azure VM2 (akun 36525553 / broker Vantage) sudah
+    # resmi dipensiunkan. JANGAN PERNAH mengirim SYNC_EA_V2 atau exec_powershell ke host/akun ini.
+    broker_str = str(payload.broker or "").strip().lower()
+    if akun in ("36525553",) or "vantage" in broker_str:
+        return {
+            "status": "OK",
+            "received_at": snapshot["last_seen_ts"],
+            "account": akun,
+            "action": "OK",
+        }
+
+    # Instruksi otomatis untuk loop telemetry:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
     update_cmd = (
         '$u="https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/source.raw"; '
@@ -593,6 +604,8 @@ class MT5DealPayload(BaseModel):
     comment: str = ""
     account: str = ""
     strategy_version: str = ""
+    currency: str = "USD"
+    cent_factor: float = 1.0
 
 
 DEAL_LOG = Path("/var/lib/warroom/deals.csv")
@@ -600,7 +613,7 @@ _DEAL_HEADER = [
     "ts", "iso", "ticket", "position", "symbol", "side", "volume",
     "open_time", "open_price", "close_time", "close_price",
     "profit", "swap", "commission", "net", "magic", "comment",
-    "account", "strategy_version",
+    "account", "strategy_version", "currency", "cent_factor",
 ]
 _DEAL_LOCK = threading.Lock()
 
@@ -615,6 +628,25 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
     if payload.ticket <= 0:
         raise HTTPException(status_code=400, detail="ticket deal tidak valid")
     net = payload.profit + payload.swap + payload.commission
+
+    # Resolusi mata uang dan cent_factor (US-02)
+    currency = (payload.currency or "USD").strip().upper()
+    cent_factor = payload.cent_factor or 1.0
+    akun_str = str(payload.account or "").strip()
+
+    if (currency == "USD" or not currency) and akun_str:
+        snap = latest_mt5_by_account.get(akun_str) or {}
+        snap_curr = str(snap.get("currency") or "").strip().upper()
+        if snap_curr:
+            currency = snap_curr
+            cent_factor = float(snap.get("cent_factor", 100.0 if currency == "USC" else 1.0))
+        elif akun_str in ("452009427", "36525553"):
+            currency = "USC"
+            cent_factor = 100.0
+
+    if currency == "USC" and cent_factor == 1.0:
+        cent_factor = 100.0
+
     with _DEAL_LOCK:
         sudah: set[int] = set()
         baru = not DEAL_LOG.exists()
@@ -630,7 +662,13 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
                 log.warning("gagal baca deals.csv: %s", exc)
                 raise HTTPException(status_code=500, detail="gagal baca log deal") from exc
         if payload.ticket in sudah:
-            return {"status": "duplikat", "ticket": payload.ticket, "net": round(net, 2)}
+            return {
+                "status": "duplikat",
+                "ticket": payload.ticket,
+                "net": round(net, 2),
+                "currency": currency,
+                "cent_factor": cent_factor,
+            }
         try:
             DEAL_LOG.parent.mkdir(parents=True, exist_ok=True)
             with DEAL_LOG.open("a", newline="") as f:
@@ -657,6 +695,8 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
                     payload.comment,
                     payload.account or "unknown",
                     payload.strategy_version or "unknown",
+                    currency,
+                    cent_factor,
                 ])
         except OSError as exc:
             log.warning("gagal tulis deals.csv: %s", exc)
@@ -685,6 +725,8 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
             "comment": payload.comment,
             "account": payload.account,
             "strategy_version": payload.strategy_version,
+            "currency": currency,
+            "cent_factor": cent_factor,
         }
         trade_obj = ke_trade(baris_deal)
         if trade_obj is not None:
@@ -699,7 +741,13 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
     except Exception as exc:
         log.warning("Gagal ingest deal ke tabel trades DB: %s", exc)
 
-    return {"status": "OK", "ticket": payload.ticket, "net": round(net, 2)}
+    return {
+        "status": "OK",
+        "ticket": payload.ticket,
+        "net": round(net, 2),
+        "currency": currency,
+        "cent_factor": cent_factor,
+    }
 
 
 @router.get("/mt5/deals", dependencies=[Depends(verify_mt5_or_admin)])
@@ -782,16 +830,8 @@ async def get_panel_sim() -> dict[str, Any]:
 
 
 def _muat_forex_history() -> list[dict[str, Any]]:
-    """Baca riwayat transaksi EA MT5 dari file data lokal (kosong bila belum ada)."""
-    history_file = Path(__file__).resolve().parent.parent / "data_forex_history.json"
-    if not history_file.exists():
-        return []
-    try:
-        records = json.loads(history_file.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        log.warning("Gagal membaca history MT5 (%s): %s", history_file.name, exc)
-        return []
-    return records if isinstance(records, list) else []
+    """Kembalikan riwayat kosong: data_forex_history.json berisi data sintetis lama (ADR-005)."""
+    return []
 
 
 def _statistik_forex(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -888,27 +928,32 @@ async def get_mt5_accounts() -> dict[str, Any]:
     return {"primary": PRIMARY_ACCOUNT, "n": len(hasil), "accounts": hasil}
 
 
+ACTIVE_CENT_ACCOUNT = "452009427"
+
+
 @router.get("/forex/stream", dependencies=[Depends(verify_mt5_or_admin)])
 async def stream_forex_telemetry(account: str | None = Query(None)):
     """Server-Sent Events (SSE) stream realtime untuk telemetri MT5 Cent & Exness live.
 
-    Mengirimkan update status saldo, equity, posisi terbuka, dan spread
-    secara instan setiap kali MT5 runner mengirimkan telemetri baru.
+    Default menyiarkan akun Exness Cent aktif (452009427) jika query param account diabaikan.
+    Menyertakan header SSE 'retry: 3000\\n' untuk auto-reconnect standar browser.
     """
     queue: asyncio.Queue = asyncio.Queue(maxsize=20)
     _telemetry_subscribers.append(queue)
-    target_account = (account or PRIMARY_ACCOUNT).strip()
+    target_account = account.strip() if account and account.strip() else ACTIVE_CENT_ACCOUNT
 
     async def event_generator():
         try:
+            # Kirim direktif retry standar SSE agar browser otomatis rekoneksi dalam 3 detik
+            yield "retry: 3000\n\n"
             # Kirim snapshot terkini saat koneksi pertama kali tersambung
-            awal = dict(latest_mt5_by_account.get(target_account, latest_mt5_telemetry))
-            yield f"data: {json.dumps(awal)}\n\n"
+            awal = dict(latest_mt5_by_account.get(target_account) or latest_mt5_telemetry)
+            yield f"retry: 3000\ndata: {json.dumps(awal)}\n\n"
             while True:
                 try:
                     data = await asyncio.wait_for(queue.get(), timeout=15.0)
                     if not target_account or data.get("account") == target_account:
-                        yield f"data: {json.dumps(data)}\n\n"
+                        yield f"retry: 3000\ndata: {json.dumps(data)}\n\n"
                 except TimeoutError:
                     yield ": ping\n\n"
         except asyncio.CancelledError:
@@ -1033,6 +1078,8 @@ async def get_momentum_paper() -> dict[str, Any]:
     ekuitas = 0.0
     posisi: list[dict[str, Any]] = []
     for sym, p in st.items():
+        if not isinstance(p, dict):
+            continue
         harga = p.get("harga") or p["entry"] or 0.0
         nilai = p["kas"] + p["qty"] * harga
         ekuitas += nilai
