@@ -172,6 +172,8 @@ def main() -> None:
     total = 0.0
     terbuka = 0
     for p in st.values():
+        if not isinstance(p, dict):
+            continue
         harga = p.get("harga") or p["entry"] or 0.0
         total += p["kas"] + p["qty"] * harga
         if p["qty"] > 0:
