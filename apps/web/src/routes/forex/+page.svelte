@@ -12,6 +12,7 @@
 	import KalkulatorPosisi from '$lib/components/market/KalkulatorPosisi.svelte';
 	import AkunMT5 from '$lib/components/market/AkunMT5.svelte';
 	import JamTerbaikCard from '$lib/components/market/JamTerbaikCard.svelte';
+	import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'forex')!;
 	const sub = $derived.by(() => {
@@ -27,7 +28,7 @@
 	aktif={sub}
 	judul="Forex & Gold"
 	tag="AKTIF"
-	deskripsi="Eksekusi demo XAUUSD lewat EA Reaper di Azure. Sinyal dihitung lokal di EA (EMA+RSI), telemetri dicatat ke server."
+	deskripsi="Eksekusi Real Cent XAUUSDc (#452009427) lewat GOLD_Reaper_Hexa di Instabox (box-2aacb3). Sinyal dihitung lokal di EA (EMA+RSI+ATR), telemetri dicatat ke server."
 	sumber="Telemetri MT5 + fills.csv"
 	terverifikasi={true}
 >
@@ -48,7 +49,10 @@
 	{:else if sub === 'eksekusi'}
 		<JournalPanel market="forex" />
 	{:else if sub === 'paper'}
-		<JournalPanel market="forex" />
+		<div class="space-y-4">
+			<PaperVsRealCard />
+			<JournalPanel market="forex" />
+		</div>
 	{:else if sub === 'alat'}
 		<div class="space-y-4">
 			<KalkulatorPosisi />
