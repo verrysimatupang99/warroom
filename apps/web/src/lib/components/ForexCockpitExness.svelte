@@ -71,6 +71,7 @@
 	let galat = $state<string | null>(null);
 	let streamConnected = $state(false);
 	let streamStatus = $state<'connecting' | 'connected' | 'disconnected'>('connecting');
+	let selectedAccount = $state<'452009427' | '434446792'>('452009427');
 
 	let evtSource: EventSource | null = null;
 
@@ -124,7 +125,7 @@
 		if (!packet) return;
 		mt5 = {
 			connected: packet.connected ?? true,
-			account: packet.account ?? mt5?.account ?? '452009427',
+			account: packet.account ?? mt5?.account ?? selectedAccount,
 			broker: packet.broker ?? mt5?.broker ?? 'Exness Technologies Ltd',
 			currency: packet.currency ?? mt5?.currency,
 			cent_factor: packet.cent_factor ?? mt5?.cent_factor,
@@ -152,7 +153,7 @@
 	async function fetchInitialData() {
 		try {
 			const [resMt5, resSen, resSig] = await Promise.all([
-				fetch(urlApi('/api/v1/tencent/mt5/status?account=452009427'), { credentials: 'include' }),
+				fetch(urlApi(`/api/v1/tencent/mt5/status?account=${selectedAccount}`), { credentials: 'include' }),
 				fetch(urlApi('/api/v1/tencent/forex/sentinel'), { credentials: 'include' }),
 				fetch(urlApi('/api/v1/tencent/forex/levels?symbol=XAUUSD'), { credentials: 'include' })
 			]);
@@ -183,7 +184,7 @@
 		}
 
 		streamStatus = 'connecting';
-		const streamUrl = urlApi('/api/v1/tencent/forex/stream?account=452009427');
+		const streamUrl = urlApi(`/api/v1/tencent/forex/stream?account=${selectedAccount}`);
 
 		try {
 			evtSource = new EventSource(streamUrl, { withCredentials: true });
@@ -221,6 +222,19 @@
 		loading = true;
 		galat = null;
 		void fetchInitialData();
+		connectSse();
+	}
+
+	function switchAccount(acc: '452009427' | '434446792') {
+		if (selectedAccount === acc) return;
+		selectedAccount = acc;
+		mt5 = null;
+		loading = true;
+		if (evtSource) {
+			evtSource.close();
+			evtSource = null;
+		}
+		fetchInitialData();
 		connectSse();
 	}
 
@@ -273,7 +287,11 @@
 					</div>
 					<div>
 						<div class="flex items-center gap-2">
-							<h2 class="font-mono text-base font-bold tracking-wider text-text">EXNESS MT5 ALGO COCKPIT</h2>
+							<div class="flex flex-wrap items-center gap-2 mb-3">
+		<button type="button" onclick={() => switchAccount('452009427')} class={`px-3 py-1 rounded-full text-xs font-mono border transition ${selectedAccount === '452009427' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Live #452009427 (CENT)</button>
+		<button type="button" onclick={() => switchAccount('434446792')} class={`px-3 py-1 rounded-full text-xs font-mono border transition ${selectedAccount === '434446792' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Paper #434446792 (DEMO)</button>
+	</div>
+	<h2 class="font-mono text-base font-bold tracking-wider text-text">EXNESS MT5 ALGO COCKPIT</h2>
 							{#if !loading && mt5}
 								<span class="rounded bg-pos/10 px-2.5 py-0.5 text-xs font-mono font-bold text-pos border border-pos/20">
 									#{mt5.account}
