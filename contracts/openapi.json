@@ -473,6 +473,11 @@
             "title": "Account",
             "type": "string"
           },
+          "cent_factor": {
+            "default": 1.0,
+            "title": "Cent Factor",
+            "type": "number"
+          },
           "close_price": {
             "default": 0.0,
             "title": "Close Price",
@@ -492,6 +497,11 @@
             "default": 0.0,
             "title": "Commission",
             "type": "number"
+          },
+          "currency": {
+            "default": "USD",
+            "title": "Currency",
+            "type": "string"
           },
           "magic": {
             "default": 0,
@@ -1192,6 +1202,19 @@
           "sl_price"
         ],
         "title": "SizingRequest",
+        "type": "object"
+      },
+      "TogglePayload": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "TogglePayload",
         "type": "object"
       },
       "UserBaru": {
@@ -7649,6 +7672,146 @@
         "summary": "Status Sistem"
       }
     },
+    "/api/v1/strategies": {
+      "get": {
+        "description": "Daftar seluruh strategi modular yang terdaftar di registry.",
+        "operationId": "list_strategies_api_v1_strategies_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Market"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Strategies",
+        "tags": [
+          "strategies"
+        ]
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/backtest": {
+      "post": {
+        "description": "Jalankan backtest on-demand untuk strategi modular tertentu.",
+        "operationId": "run_strategy_backtest_api_v1_strategies__strategy_id__backtest_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "title": "Strategy Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Strategy Backtest",
+        "tags": [
+          "strategies"
+        ]
+      }
+    },
+    "/api/v1/strategies/{strategy_id}/toggle": {
+      "post": {
+        "description": "Aktifkan atau nonaktifkan strategi modular secara dinamis.",
+        "operationId": "toggle_strategy_api_v1_strategies__strategy_id__toggle_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "strategy_id",
+            "required": true,
+            "schema": {
+              "title": "Strategy Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TogglePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Toggle Strategy",
+        "tags": [
+          "strategies"
+        ]
+      }
+    },
     "/api/v1/stream": {
       "get": {
         "operationId": "stream_api_v1_stream_get",
@@ -8145,7 +8308,7 @@
     },
     "/api/v1/tencent/forex/stream": {
       "get": {
-        "description": "Server-Sent Events (SSE) stream realtime untuk telemetri MT5 Cent & Exness live.\n\nMengirimkan update status saldo, equity, posisi terbuka, dan spread\nsecara instan setiap kali MT5 runner mengirimkan telemetri baru.",
+        "description": "Server-Sent Events (SSE) stream realtime untuk telemetri MT5 Cent & Exness live.\n\nDefault menyiarkan akun Exness Cent aktif (452009427) jika query param account diabaikan.\nMenyertakan header SSE 'retry: 3000\\n' untuk auto-reconnect standar browser.",
         "operationId": "stream_forex_telemetry_api_v1_tencent_forex_stream_get",
         "parameters": [
           {
