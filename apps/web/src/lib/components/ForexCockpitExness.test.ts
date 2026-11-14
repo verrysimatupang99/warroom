@@ -1,19 +1,17 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
 import ForexCockpitExness from './ForexCockpitExness.svelte';
 
-// ForexCockpitExness memanggil fetch() global ke 3 endpoint (mt5/status,
-// forex/sentinel, forex/levels) lalu polling tiap 2.5 dtk. Kita stub fetch
-// agar komponen bisa dirender tanpa jaringan.
 const mt5 = {
 	connected: true,
-	account: '36525553',
-	broker: 'Exness-MT5Trial7',
-	balance: 1000,
-	equity: 512.5,
-	floating_pnl: 12.5,
-	margin: 100,
-	free_margin: 412.5,
+	account: '452009427',
+	broker: 'Exness Technologies Ltd',
+	currency: 'USC',
+	balance: 1095.44,
+	equity: 1095.44,
+	floating_pnl: 0,
+	margin: 0,
+	free_margin: 1095.44,
 	positions: [],
 	total_trades_today: 7,
 	win_rate_pct: 57.1,
@@ -34,7 +32,21 @@ const sentinel = {
 	all_strategies: []
 };
 
-const signal = { symbol: 'XAUUSD', bias: 'BUY', levels: [] };
+const signal = { symbol: 'XAUUSD', bias: 'BUY', status: 'OK', price: 2650.0, rrr: 2.0, levels: { entry: 2650, sl: 2640, tp1: 2670, tp2: 2690, risk: 10, reward: 20 } };
+
+class MockEventSource {
+	url: string;
+	onopen: (() => void) | null = null;
+	onmessage: ((ev: { data: string }) => void) | null = null;
+	onerror: ((ev: any) => void) | null = null;
+	static instances: MockEventSource[] = [];
+
+	constructor(url: string) {
+		this.url = url;
+		MockEventSource.instances.push(this);
+	}
+	close() {}
+}
 
 function stubFetch(ok = true) {
 	return vi.fn((url: string) => {
@@ -44,7 +56,9 @@ function stubFetch(ok = true) {
 }
 
 beforeEach(() => {
+	MockEventSource.instances = [];
 	vi.stubGlobal('fetch', stubFetch(true));
+	vi.stubGlobal('EventSource', MockEventSource);
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -82,13 +96,64 @@ describe('ForexCockpitExness', () => {
 		render(ForexCockpitExness);
 		expect(await screen.findByText('CENT')).toBeTruthy();
 		expect(await screen.findByText('#452009427')).toBeTruthy();
-		expect(await screen.findByText(/1074.81 USC/)).toBeTruthy();
+		expect(await screen.findAllByText(/1074.81 USC/)).toBeTruthy();
 	});
 
-	it('fetch gagal → tetap render tanpa crash', async () => {
-		vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
+	it('fetch gagal → tampilkan banner galat visual dan tombol coba lagi (FE-02 / US-08)', async () => {
+		vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('Koneksi jaringan terputus'))));
 		render(ForexCockpitExness);
 		// Judul tetap tampil meski data gagal
 		expect(await screen.findByText(/EXNESS MT5 ALGO COCKPIT/)).toBeTruthy();
+		// Banner galat visual dan tombol retry tampil
+		expect(await screen.findByRole('alert')).toBeTruthy();
+		expect(screen.getByText(/Gagal memuat telemetri forex/)).toBeTruthy();
+		expect(screen.getByText('Coba Lagi')).toBeTruthy();
+	});
+
+	it('berlangganan SSE stream GET /api/v1/tencent/forex/stream dan update live real-time (FE-01 / US-07)', async () => {
+		render(ForexCockpitExness);
+
+		await waitFor(() => {
+			expect(MockEventSource.instances.length).toBeGreaterThan(0);
+		});
+
+		const es = MockEventSource.instances[0];
+		expect(es.url).toContain('/api/v1/tencent/forex/stream?account=452009427');
+
+		// Simulasikan koneksi tersambung
+		es.onopen?.();
+		await waitFor(() => {
+			expect(document.body.textContent).toContain('LIVE STREAM');
+		});
+
+		// Kirim packet telemetri SSE live
+		const livePacket = {
+			account: '452009427',
+			currency: 'USC',
+			balance: 1250.75,
+			equity: 1280.00,
+			bid: 2665.40,
+			ask: 2665.70,
+			positions: [
+				{
+					ticket: 88812,
+					symbol: 'XAUUSD',
+					type: 'BUY',
+					volume: 0.1,
+					open_price: 2660.0,
+					current_price: 2665.4,
+					pnl: 54.0
+				}
+			]
+		};
+
+		es.onmessage?.({ data: JSON.stringify(livePacket) });
+
+		await waitFor(() => {
+			expect(document.body.textContent).toContain('BID: $2665.40 / ASK: $2665.70');
+			expect(document.body.textContent).toContain('1250.75 USC');
+			expect(document.body.textContent).toContain('1280.00 USC');
+			expect(document.body.textContent).toContain('#88812');
+		});
 	});
 });
