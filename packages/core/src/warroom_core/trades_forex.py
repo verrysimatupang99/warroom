@@ -82,6 +82,13 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
     open_price = _angka(baris.get("open_price"))
     close_price = _angka(baris.get("close_price"))
     net = _angka(baris.get("net"))
+    net_raw = net
+    account_str = str(baris.get("account") or "").strip()
+    currency_str = str(baris.get("currency") or "").strip().upper()
+    is_cent = currency_str == "USC" or account_str in ("452009427", "36525553")
+    cent_factor = 100.0 if is_cent else 1.0
+    pnl_usd_norm = round(net_raw / cent_factor, 4) if net_raw is not None else None
+    net_usc_val = net_raw if is_cent else (round(net_raw * 100.0, 2) if net_raw is not None else None)
     volume = _angka(baris.get("volume"))
 
     strategi = str(baris.get("strategy_version") or "").strip()
@@ -93,7 +100,11 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
         "open_price": open_price,
         "close_price": close_price,
         "net": net,
-        "account": str(baris.get("account") or "unknown"),
+        "net_raw": net_raw,
+        "net_usc": net_usc_val,
+        "currency": "USC" if is_cent else "USD",
+        "cent_factor": cent_factor,
+        "account": account_str or "unknown",
         "strategy_version": strategi or "unknown",
     }
     jejak = baris.get("_koreksi")
@@ -112,7 +123,7 @@ def ke_trade(baris: dict[str, Any]) -> Trade | None:
         side=side,
         qty=volume,
         price=close_price,
-        pnl_usd=net,
+        pnl_usd=pnl_usd_norm,
         pnl_r=None,  # deals.csv tidak membawa R; jangan menghitung ulang dari SL yang tak ada
         opened_at=opened_at,
         closed_at=closed_at,

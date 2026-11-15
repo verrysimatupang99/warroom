@@ -15,7 +15,17 @@ from warroom_worker.adapters.io import baca_json, ringkas_dir
 
 __all__ = ["gmgn_ringkas", "radar_ringkas"]
 
-GMGN_STATE = "~/gmgn-paper/state"
+def _pilih_gmgn_state() -> str:
+    for kandidat in (
+        Path("~/gmgn-paper/state").expanduser(),
+        Path("~/projects/trading/gmgn-paper/state").expanduser(),
+    ):
+        if kandidat.exists():
+            return str(kandidat)
+    return "~/gmgn-paper/state"
+
+
+GMGN_STATE = _pilih_gmgn_state()
 RADAR_STATE = "~/live-trading/state/radar_state.json"
 LP_MARK_STATE = "~/live-trading/state/lp_mark_terakhir.json"
 
@@ -107,7 +117,17 @@ def radar_ringkas(state_path: str | None = None) -> dict[str, Any]:
 # Rumus dipakai SAMA seperti mesin (gmgn_paper/sim.py::summarize): median/mean net_pct,
 # tp_rate/sl_rate, expectancy_usd = mean/100*4.0 (notional $4), "cukup" = n>=30.
 # TIDAK ada rumus baru, TIDAK ada default angka: berkas hilang -> status jujur.
-SIM_LEDGER_STATE = "~/gmgn-paper/state/sim_ledger.jsonl"
+def _pilih_sim_ledger() -> str:
+    for kandidat in (
+        Path("~/gmgn-paper/state/sim_ledger.jsonl").expanduser(),
+        Path("~/projects/trading/gmgn-paper/state/sim_ledger.jsonl").expanduser(),
+    ):
+        if kandidat.exists():
+            return str(kandidat)
+    return "~/gmgn-paper/state/sim_ledger.jsonl"
+
+
+SIM_LEDGER_STATE = _pilih_sim_ledger()
 _LP_NOTIONAL_USD = 4.0
 
 

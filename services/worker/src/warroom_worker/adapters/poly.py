@@ -89,7 +89,13 @@ def _ringkas_summary(b: Bacaan) -> dict[str, Any]:
         return {"status": b.status, "detail": b.detail or "summary tidak terbaca"}
     d = b.data
     out: dict[str, Any] = {"status": "ok", "rawat": False}
-    for kunci in ("mode", "execution", "modelVersion"):
+    for kunci in (
+        "mode", "execution", "modelVersion",
+        "initialBalance", "balance", "equity", "cash", "pnl",
+        "entries", "settled", "wins", "losses", "open",
+        "dayLoss", "dayKey", "dailyLossCap", "entryLo", "entryHi",
+        "updated",
+    ):
         if kunci in d:
             out[kunci] = d[kunci]
     # Bentuk ringkasan berbeda antar versi: ambil apa pun yang ada, jangan mengarang.
@@ -100,7 +106,9 @@ def _ringkas_summary(b: Bacaan) -> dict[str, Any]:
     strat = d.get("strategy")
     if isinstance(strat, dict):
         out["strategi"] = {
-            k: strat[k] for k in ("entryLo", "entryHi", "sideMode", "invert", "momThresh")
+            k: strat[k] for k in (
+                "entryLo", "entryHi", "sideMode", "invert", "momThresh", "decideWindowSeconds"
+            )
             if k in strat
         }
     return out
@@ -145,6 +153,8 @@ def agent_ringkas(dirpath: str | None = None) -> dict[str, Any]:
     state = baca_json(d / "agent-state.json")
     lessons = baca_jsonl_ekor(d / "agent-lessons.jsonl", n=200)
     upgrades = baca_jsonl_ekor(d / "agent-upgrades.jsonl", n=200)
+    settled = baca_jsonl_ekor(d / "agent-settled.jsonl", n=30)
+    events = baca_jsonl_ekor(d / "agent-events.jsonl", n=30)
     heartbeat = baca_json(d / "harness-heartbeat.json")
 
     diterapkan: list[dict[str, Any]] = []
@@ -159,6 +169,39 @@ def agent_ringkas(dirpath: str | None = None) -> dict[str, Any]:
                         {"ts": baris.get("ts"), "kunci": item.get("key"),
                          "nilai": item.get("value"), "alasan": item.get("reason")}
                     )
+
+    settled_terakhir: list[dict[str, Any]] = []
+    if settled.ok and isinstance(settled.data, list):
+        for s in reversed(settled.data):
+            if isinstance(s, dict):
+                settled_terakhir.append({
+                    "ts": s.get("ts"),
+                    "key": s.get("key"),
+                    "coin": s.get("coin"),
+                    "side": s.get("side"),
+                    "won": s.get("won"),
+                    "price": s.get("price"),
+                    "cost": s.get("cost"),
+                    "payout": s.get("payout"),
+                    "pnl": s.get("pnl"),
+                    "score": s.get("score"),
+                    "balanceAfter": s.get("balanceAfter"),
+                    "signals": s.get("signals"),
+                })
+
+    events_terakhir: list[dict[str, Any]] = []
+    if events.ok and isinstance(events.data, list):
+        for ev in reversed(events.data):
+            if isinstance(ev, dict):
+                events_terakhir.append({
+                    "ts": ev.get("ts"),
+                    "kind": ev.get("kind"),
+                    "key": ev.get("key"),
+                    "coin": ev.get("coin"),
+                    "reason": ev.get("reason"),
+                    "elapsed": ev.get("elapsed"),
+                })
+
     return {
         "summary_status": summary.status,
         "summary": summary.data if summary.ok else None,
@@ -170,6 +213,8 @@ def agent_ringkas(dirpath: str | None = None) -> dict[str, Any]:
         "upgrades": {"status": upgrades.status, "n": (upgrades.meta or {}).get("baris")},
         "diterapkan_200": diterapkan[-40:],
         "ditolak_200": ditolak[-40:],
+        "settled_terakhir": settled_terakhir[:25],
+        "events_terakhir": events_terakhir[:20],
     }
 
 

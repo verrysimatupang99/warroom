@@ -1,7 +1,7 @@
 <script lang="ts">
 	/**
 	 * OyenzaSidebar.svelte
-	 * Sidebar 272px fixed kiri terinspirasi langsung dari Oyenza Trade (StockMap by Oyenza).
+	 * Sidebar 260px fixed kiri terinspirasi langsung dari Oyenza Trade (StockMap by Oyenza).
 	 * Mengelompokkan Pasar (Markets), Sistem & Transparansi Data (1001Startup), serta status bot.
 	 */
 	import { page } from '$app/state';
@@ -11,8 +11,9 @@
 
 	interface Props {
 		onclose?: () => void;
+		onshortcuts?: () => void;
 	}
-	let { onclose }: Props = $props();
+	let { onclose, onshortcuts }: Props = $props();
 
 	const jalur = $derived(page.url.pathname);
 	const sub = $derived(page.url.searchParams.get('sub') ?? '');
@@ -23,19 +24,13 @@
 	 * isi nyata) tidak pernah muncul di menu dan tak punya satu pun tautan masuk.
 	 * Yang disimpan lokal hanya dua hal kosmetik: tag status dan nomor pintasan.
 	 */
-	// Tag status kini dibaca dari nav.ts supaya rail dan isi halaman tidak pernah
-	// berbeda. Sebelumnya daftar ini disimpan lokal dan sempat menulis "WIP" untuk
-	// market yang sebenarnya cuma standby, serta "WIP" untuk Riset yang isinya ada.
 	const TAG: Record<string, string> = Object.fromEntries(
 		AREAS.filter((a) => a.status).map((a) => [a.rute, a.status as string])
 	);
 	TAG['/sistem'] = 'OPS';
 
 	const NUM: Record<string, string> = Object.fromEntries(
-		// Nomor pintasan mengikuti urutan nav, bukan daftar manual. Daftar manual
-		// menyimpan rute yang sudah dialihkan (mis. /tencent) dan bisa meleset
-		// setiap kali area ditambah atau dihapus.
-		AREAS.map((a, i) => [a.rute, String(i + 1)])
+		AREAS.map((a, i) => [a.rute, i < 9 ? String(i + 1) : '·'])
 	);
 
 	const keItem = (a: (typeof AREAS)[number]) => ({
@@ -66,11 +61,11 @@
 	<!-- Top Brand Area -->
 	<div class="brand-area">
 		<a href="/" class="brand-link" onclick={() => onclose?.()}>
-			<div class="logo-box">
+			<div class="logo-box" aria-hidden="true">
 				<span class="logo-char">W</span>
 			</div>
 			<div class="brand-text">
-				<span class="brand-title">WarRoom <small>v2.0</small></span>
+				<span class="brand-title">War<span class="brand-accent">Room</span> <small>v2.0</small></span>
 				<span class="brand-sub font-mono">QUANT MULTI-MARKET</span>
 			</div>
 		</a>
@@ -83,31 +78,31 @@
 
 	<!-- Live Engine Status Badge -->
 	<div class="engine-badge-strip font-mono">
-		<div class="flex items-center gap-2">
-			<span class="live-dot {live.status === 'live' ? 'active' : ''}"></span>
-			<span class="text-11 font-bold text-text">{live.status.toUpperCase()}</span>
+		<div class="flex items-center gap-1.5">
+			<span class="live-dot {live.status === 'live' ? 'active' : ''}" aria-hidden="true"></span>
+			<span class="text-10 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">CENT REAL · CRYPTO PAPER</span>
+		<span class="tag-status">FOREX LIVE · POLY PAPER</span>
 	</div>
 
 	<!-- Pilar 1: TRADING FLOOR -->
 	<div class="nav-group">
 		<span class="grp-label font-mono">TRADING FLOOR</span>
-		<nav class="nav-list font-sans">
+		<nav class="nav-list font-sans" aria-label="Trading Floor">
 			{#each floor as m}
 				{@const active = isAktif(m.rute)}
-				<a 
-					href={m.rute} 
-					class="nav-item {active ? 'active' : ''}" 
+				<a
+					href={m.rute}
+					class="nav-item {active ? 'active' : ''}"
 					aria-current={active ? 'page' : undefined}
 					data-sveltekit-reload={m.eksternal ? '' : undefined}
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -118,21 +113,21 @@
 	<!-- Pilar 2: INTELLIGENCE -->
 	<div class="nav-group">
 		<span class="grp-label font-mono">INTELLIGENCE</span>
-		<nav class="nav-list font-sans">
+		<nav class="nav-list font-sans" aria-label="Intelligence">
 			{#each intel as m}
 				{@const active = isAktif(m.rute)}
-				<a 
-					href={m.rute} 
-					class="nav-item {active ? 'active' : ''}" 
+				<a
+					href={m.rute}
+					class="nav-item {active ? 'active' : ''}"
 					aria-current={active ? 'page' : undefined}
 					data-sveltekit-reload={m.eksternal ? '' : undefined}
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -143,21 +138,21 @@
 	<!-- Pilar 3: AUDIT & LEDGER -->
 	<div class="nav-group">
 		<span class="grp-label font-mono">AUDIT &amp; LEDGER</span>
-		<nav class="nav-list font-sans">
+		<nav class="nav-list font-sans" aria-label="Audit dan Ledger">
 			{#each audit as m}
 				{@const active = isAktif(m.rute)}
-				<a 
-					href={m.rute} 
-					class="nav-item {active ? 'active' : ''}" 
+				<a
+					href={m.rute}
+					class="nav-item {active ? 'active' : ''}"
 					aria-current={active ? 'page' : undefined}
 					data-sveltekit-reload={m.eksternal ? '' : undefined}
 					rel={m.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={m.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{m.label}</span>
 					{#if m.tag}
-						<span class="prop-tag font-mono">{m.tag}</span>
+						<span class="prop-tag tag-{m.tag.toLowerCase()} font-mono">{m.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{m.num}</kbd>
 				</a>
@@ -168,21 +163,21 @@
 	<!-- Pilar 4: KONTROL SISTEM -->
 	<div class="nav-group">
 		<span class="grp-label font-mono">KONTROL SISTEM</span>
-		<nav class="nav-list font-sans">
+		<nav class="nav-list font-sans" aria-label="Kontrol Sistem">
 			{#each system as s}
 				{@const active = isAktif(s.rute)}
-				<a 
-					href={s.rute} 
-					class="nav-item {active ? 'active' : ''}" 
+				<a
+					href={s.rute}
+					class="nav-item {active ? 'active' : ''}"
 					aria-current={active ? 'page' : undefined}
 					data-sveltekit-reload={s.eksternal ? '' : undefined}
 					rel={s.eksternal ? 'external' : undefined}
 					onclick={() => onclose?.()}
 				>
-					<span class="nav-icon"><Ikon nama={s.ikon} ukuran={15} /></span>
+					<span class="nav-icon"><Ikon nama={s.ikon} ukuran={14} /></span>
 					<span class="nav-title truncate">{s.label}</span>
 					{#if s.tag}
-						<span class="prop-tag font-mono">{s.tag}</span>
+						<span class="prop-tag tag-{s.tag.toLowerCase()} font-mono">{s.tag}</span>
 					{/if}
 					<kbd class="nav-kbd font-mono">{s.num}</kbd>
 				</a>
@@ -191,29 +186,39 @@
 	</div>
 
 	<!-- Sidebar Footer / Provenance Transparency Note -->
-	<div class="sidebar-foot font-mono text-11">
+	<div class="sidebar-foot font-mono text-10">
 		<div class="flex items-center justify-between text-text-3">
 			<span>PROVENANCE</span>
-			<span class="text-pos">1001STARTUP OK</span>
+			<div class="flex items-center gap-2">
+				<span class="text-pos font-semibold">1001STARTUP OK</span>
+				{#if onshortcuts}
+					<button
+						type="button"
+						class="shortcut-btn"
+						onclick={() => onshortcuts?.()}
+						aria-label="Pintasan keyboard (?)"
+						title="Pintasan keyboard (?)"
+					>
+						?
+					</button>
+				{/if}
+			</div>
 		</div>
-		<p class="foot-desc font-sans text-text-3 mt-1">
-			Setiap sinyal tertaut ke sumbernya sendiri: OKX, Yahoo Finance, dan telemetri MT5.
-		</p>
 	</div>
 </aside>
 
 <style>
 	.oy-sidebar {
-		width: 272px;
-		height: 100vh;
+		width: var(--rail-w, 260px);
+		height: 100dvh;
 		position: sticky;
 		top: 0;
 		background: var(--color-surface);
 		border-right: 1px solid var(--color-line);
-		padding: 1.25rem 0.85rem;
+		padding: 0.65rem 0.7rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 0.45rem;
 		overflow-y: auto;
 		scrollbar-width: none;
 		z-index: 50;
@@ -225,17 +230,17 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0 0.4rem 0.5rem;
+		padding: 0.1rem 0.35rem 0.25rem;
 	}
 	.brand-link {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
+		gap: 0.55rem;
 		text-decoration: none;
 	}
 	.logo-box {
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		background: var(--color-surface-2);
 		border: 1px solid var(--color-line);
 		border-radius: 6px;
@@ -245,7 +250,7 @@
 	.logo-char {
 		font-family: var(--font-display);
 		font-weight: 700;
-		font-size: 16px;
+		font-size: 15px;
 		color: var(--color-accent);
 	}
 	.brand-text {
@@ -253,26 +258,32 @@
 		flex-direction: column;
 	}
 	.brand-title {
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 700;
 		color: var(--color-text);
-		line-height: 1.2;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
+	}
+	.brand-accent {
+		color: var(--color-accent);
 	}
 	.brand-title small {
 		font-size: 10px;
 		color: var(--color-text-3);
 		font-weight: 500;
+		margin-left: 2px;
 	}
 	.brand-sub {
-		font-size: 9.5px;
+		font-size: 9px;
 		color: var(--color-text-3);
 		letter-spacing: 0.08em;
+		margin-top: 1px;
 	}
 	.close-btn {
-		background: transparent;
+		background: var(--color-surface-2);
 		border: 1px solid var(--color-line);
-		color: var(--color-text-3);
-		border-radius: 4px;
+		color: var(--color-text-2);
+		border-radius: 5px;
 		width: 28px;
 		height: 28px;
 		display: grid;
@@ -282,61 +293,65 @@
 		background: var(--color-surface-2);
 		border: 1px solid var(--color-line);
 		border-radius: 6px;
-		padding: 0.45rem 0.65rem;
+		padding: 0.32rem 0.55rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 	}
 	.live-dot {
-		width: 7px;
-		height: 7px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
 		background: var(--color-text-3);
 	}
 	.live-dot.active {
 		background: var(--color-pos);
-		box-shadow: 0 0 6px color-mix(in srgb, var(--color-pos) 40%, transparent);
 	}
 	.tag-status {
-		font-size: 9px;
+		font-size: 8.5px;
 		font-weight: 700;
 		color: var(--color-accent);
 		background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-		border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+		border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
 		border-radius: 4px;
 		padding: 1px 5px;
+		letter-spacing: 0.03em;
 	}
 	.nav-group {
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.15rem;
 	}
 	.grp-label {
-		font-size: 10px;
+		font-size: 9.5px;
 		font-weight: 700;
 		color: var(--color-text-3);
-		letter-spacing: 0.08em;
-		padding-inline: 0.5rem;
-		margin-bottom: 0.2rem;
+		letter-spacing: 0.09em;
+		padding-inline: 0.45rem;
+		margin-bottom: 0.05rem;
 	}
 	.nav-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
+		gap: 1px;
 	}
 	.nav-item {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.45rem 0.6rem;
-		border-radius: 6px;
-		color: var(--color-text-3);
+		gap: 0.5rem;
+		padding: 0.25rem 0.5rem;
+		border-radius: 5px;
+		color: var(--color-text-2);
 		text-decoration: none;
-		font-size: 13px;
+		font-size: 12.5px;
 		font-weight: 500;
 		border: 1px solid transparent;
-		transition: all 120ms ease-out;
-		min-height: 38px;
+		transition:
+			background-color 120ms ease-out,
+			color 120ms ease-out,
+			border-color 120ms ease-out;
+		min-height: 30px;
 	}
 	.nav-item:hover {
 		background: var(--color-surface-2);
@@ -344,9 +359,11 @@
 		border-color: var(--color-line-soft);
 	}
 	.nav-item.active {
-		background: var(--color-surface-3);
+		background: var(--color-surface-2);
 		color: var(--color-text);
 		border-color: var(--color-line);
+		border-left: 2px solid var(--color-accent);
+		padding-left: calc(0.5rem - 1px);
 		font-weight: 600;
 	}
 	.nav-item.active .nav-icon {
@@ -362,32 +379,67 @@
 		flex: 1;
 	}
 	.prop-tag {
-		font-size: 9px;
+		font-size: 8.5px;
 		font-weight: 700;
 		color: var(--color-pos);
 		background: color-mix(in srgb, var(--color-pos) 12%, transparent);
 		border: 1px solid color-mix(in srgb, var(--color-pos) 30%, transparent);
 		border-radius: 3px;
 		padding: 0 4px;
+		line-height: 1.4;
+		letter-spacing: 0.03em;
+	}
+	.prop-tag.tag-paper {
+		color: var(--color-warn);
+		background: color-mix(in srgb, var(--color-warn) 12%, transparent);
+		border-color: color-mix(in srgb, var(--color-warn) 30%, transparent);
+	}
+	.prop-tag.tag-standby {
+		color: var(--color-text-3);
+		background: var(--color-surface-2);
+		border-color: var(--color-line);
+	}
+	.prop-tag.tag-ops {
+		color: var(--color-text-2);
+		background: var(--color-surface-2);
+		border-color: var(--color-line);
 	}
 	.nav-kbd {
-		font-size: 10.5px;
+		font-size: 10px;
 		color: var(--color-text-3);
 		background: var(--color-bg);
 		border: 1px solid var(--color-line);
 		border-radius: 4px;
-		min-width: 20px;
-		height: 20px;
+		min-width: 18px;
+		height: 18px;
 		display: grid;
 		place-items: center;
 	}
+	.nav-item.active .nav-kbd {
+		color: var(--color-accent);
+		border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
+	}
 	.sidebar-foot {
 		margin-top: auto;
-		padding-top: 0.85rem;
+		padding-top: 0.45rem;
 		border-top: 1px solid var(--color-line);
 	}
-	.foot-desc {
-		line-height: 1.4;
-		font-size: 11px;
+	.shortcut-btn {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 700;
+		color: var(--color-text-3);
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-line);
+		border-radius: 4px;
+		width: 18px;
+		height: 18px;
+		display: inline-grid;
+		place-items: center;
+		padding: 0;
+	}
+	.shortcut-btn:hover {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
 	}
 </style>

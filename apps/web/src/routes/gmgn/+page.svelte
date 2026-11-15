@@ -1,18 +1,12 @@
 <script lang="ts">
-	import StandbyPasar from '$lib/components/StandbyPasar.svelte';
+	import UnderConstruction from '$lib/components/UnderConstruction.svelte';
 </script>
 
 <svelte:head><title>GMGN | War Room</title></svelte:head>
 
-<StandbyPasar
-	nama="GMGN"
-	ringkas="Radar meme coin Solana dan pemantauan DEX. Dinonaktifkan sementara."
-	alasan="Radar GMGN (sniper token, Pump.fun, lonjakan volume on-chain) dinonaktifkan agar resource komputasi dan perhatian trading terpusat pada Forex dan Gold. Risiko market ini juga paling tinggi, jadi butuh modal dan batas risiko terpisah."
-	syarat={[
-		'Akses API GMGN atau RPC Solana yang stabil dari server',
-		'Filter anti-rug dan anti-honeypot yang teruji',
-		'Batas modal terpisah, tidak mencampur dengan akun forex',
-		'Gate B lulus untuk satu strategi, dengan biaya on-chain dihitung'
-	]}
-	terakhir={null}
+<UnderConstruction
+	marketTitle="GMGN & DEX Radar"
+	category="ON-CHAIN & MEMECOIN"
+	eta="Pasca Stabilitas 4 Market Utama"
+	detail="War Room saat ini difokuskan pada 4 pasar utama: Forex (Cent MT5), Polymarket, Saham IDX, dan Crypto. Modul radar likuiditas DEX & memecoin on-chain (GMGN) masih dalam tahap Under Construction dan ditangguhkan sementara agar modal dan perhatian eksekusi tidak terpecah."
 />

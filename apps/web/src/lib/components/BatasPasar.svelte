@@ -3,7 +3,7 @@
 	// di sini, dan apa yang sengaja belum diukur. Ditulis dari keadaan sistem, bukan
 	// dari harapan.
 	interface Props {
-		market: 'crypto' | 'forex';
+		market: 'crypto' | 'forex' | 'idx' | 'polymarket' | 'gmgn';
 	}
 	let { market }: Props = $props();
 
@@ -16,11 +16,29 @@
 			'Universe dan harga dari OKX. Kalau OKX membatasi akses, angka berhenti diperbarui tanpa peringatan otomatis.'
 		],
 		forex: [
-			'Telemetri bergantung pada VM Azure. Kalau VM mati, angka forex berhenti diperbarui; situs tetap hidup dengan data terakhir.',
-			'Sinyal dihitung dari telemetri MT5 + aturan EMA/RSI di EA. Laya AI sedang dinonaktifkan, jadi tidak ada penilai AI yang berjalan; "menunggu setup" berarti aturan belum terpenuhi.',
-			'Baru ada 6 trade live di akun demo. Itu terlalu kecil untuk menyimpulkan win rate 66,7% sebagai edge.',
-			'Spread yang terukur 240 point ($0,28) adalah kondisi sekarang. Saat rollover dan berita, spread bisa melebar beberapa kali.',
-			'War Room tidak mengirim order sendiri. Eksekusi dilakukan EA di terminal MT5, dan selisih antara sinyal dan fill dicatat di jurnal.'
+			'Telemetri bergantung pada runner Instabox (box-2aacb3). Kalau runner berhenti, angka forex berhenti diperbarui; situs tetap hidup dengan data terakhir.',
+			'Sinyal dihitung dari telemetri MT5 + aturan EMA/RSI/ATR di EA GOLD_Reaper_Hexa (London 08–09 & NY 13:15–15:59 jam server). Laya AI sedang dinonaktifkan; "menunggu setup" berarti aturan belum terpenuhi.',
+			'Akun utama kini berjalan di Exness Real Cent (#452009427, satuan USC = $0,01 USD) dengan jumlah sampel live yang masih bertumbuh.',
+			'Spread XAUUSDc terukur sekitar 160–240 point ($0,16–$0,24) di kondisi normal. Saat rollover dan rilis berita, spread bisa melebar beberapa kali.',
+			'War Room tidak mengirim order dari browser. Eksekusi dilakukan EA di terminal MT5 (Twin-Order Scalp +0.7R & Runner +2.0R), dan setiap deal dicatat di jurnal.'
+		],
+		idx: [
+			'Harga saham dari idx-edge bisa tertunda; kolom waktu sumber ditampilkan, jangan dipakai sebagai harga eksekusi langsung.',
+			'Sebagian endpoint idx-edge memakan kuota per panggilan (1 kode = 1 kuota untuk daftar harga). Cache lokal: quote 60 detik, riwayat 15 menit, laporan keuangan 24 jam.',
+			'Tidak ada order atau sinyal IDX otomatis yang dikirim ke broker. Halaman ini berfungsi sebagai radar riset, screener, dan bandarmologi.',
+			'Data ringkasan broker dan akumulasi bergantung pada ketersediaan sesi bursa harian di Stock Arjum.'
+		],
+		polymarket: [
+			'Eksekusi live CLOB ditangguhkan sementara; seluruh 4 arm (A-shadow, B-kandidat, C-fade, D-favorit) dan poly-agent berjalan aktif dalam mode PAPER / riset.',
+			'Verdict aturan favorit (0,70–0,95) dihitung dengan Wilson CI 95% dua sisi + koreksi klaster (deff) dari rekaman window 5 menit BTC & ETH.',
+			'Klaim payout di state pilot tidak pernah dianggap uang nyata tanpa verifikasi RPC Polygon on-chain (mode penarikan manual via dashboard).',
+			'Skill alternatif PolyBTC 5m Momentum berjalan terpisah dalam mode dry-run sebagai pembanding struktur mikro.'
+		],
+		gmgn: [
+			'Eksekusi sniper on-chain dinonaktifkan sementara; pemindaian radar multi-chain dan simulasi LP berjalan dalam mode PAPER.',
+			'Simulasi LP (sim_ledger.jsonl) memperhitungkan slippage dan fee per sisi pada notional uji $4,00 dengan geometri dasar TP+100% / SL-65%.',
+			'Radar rantai (Robinhood, Arc, HyperEVM, Solana, Base, BSC) diperbarui secara berkala dari state lokal untuk memantau rasio V/L dan jendela likuiditas.',
+			'Risiko rug-pull dan honeypot di DEX sangat tinggi; modal riset DEX dipisahkan sepenuhnya dari jalur utama Forex & Gold.'
 		]
 	} as const;
 

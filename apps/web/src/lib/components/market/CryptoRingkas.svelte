@@ -16,6 +16,8 @@
 		return_pct?: number;
 		posisi_terbuka?: number;
 		posisi?: Posisi[];
+		trade_terakhir?: Record<string, string>[];
+		catatan?: string;
 	}
 
 	let d = $state<Ringkas | null>(null);
@@ -72,8 +74,13 @@
 			</div>
 			<div class="rounded-card border border-line bg-surface p-4">
 				<div class="label-mikro font-mono text-text-3">RETURN</div>
-				<div class="mt-1 font-mono text-17 font-bold text-text">
-					{d.return_pct == null ? '—' : `${d.return_pct} %`}
+				<div
+					class="mt-1 font-mono text-17 font-bold"
+					class:text-pos={(d.return_pct ?? 0) > 0}
+					class:text-neg={(d.return_pct ?? 0) < 0}
+					class:text-text={(d.return_pct ?? 0) === 0}
+				>
+					{d.return_pct == null ? '—' : `${d.return_pct > 0 ? '+' : ''}${d.return_pct} %`}
 				</div>
 				<div class="mt-1 text-11 text-text-3">sejak modal awal</div>
 			</div>
@@ -125,5 +132,35 @@
 				</div>
 			{/if}
 		</section>
+
+		{#if d.trade_terakhir && d.trade_terakhir.length > 0}
+			{@const kolom = Object.keys(d.trade_terakhir[0] ?? {})}
+			<section class="rounded-card border border-line bg-surface p-4">
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<h2 class="text-13 font-bold text-text">Trade paper terakhir</h2>
+					<span class="font-mono text-10 text-text-3">{d.trade_terakhir.length} baris terbaru</span>
+				</div>
+				<div class="mt-2 overflow-x-auto">
+					<table class="w-full text-11 text-left font-mono">
+						<thead class="border-b border-line text-10 text-text-3">
+							<tr>
+								{#each kolom as k (k)}
+									<th class="px-2 py-1.5 uppercase">{k}</th>
+								{/each}
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-line-soft">
+							{#each d.trade_terakhir as tr, idx (idx)}
+								<tr class="hover:bg-surface-2/60">
+									{#each kolom as k (k)}
+										<td class="px-2 py-1.5 text-text-2">{tr[k] ?? '—'}</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</section>
+		{/if}
 	</div>
 {/if}

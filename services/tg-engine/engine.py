@@ -64,6 +64,12 @@ FOREX_KEYWORDS = [
     r"\bsell limit\b",
     r"\bbuy now\b",
     r"\bsell now\b",
+    r"\bbuy\b",
+    r"\bsell\b",
+    r"\bsl\b",
+    r"\btp\b",
+    r"\btp[1-5]\b",
+    r"\bentry\b",
     r"\bustec\b",
     r"\bnas100\b",
     r"\bnasdaq\b",
@@ -216,6 +222,26 @@ def classify_message(text: str, channel_title: str = "") -> str:
     combined = f"{channel_title} {text}".lower()
 
     # Priority 1: Direct channel match
+    # Reject obvious spam, scam, and non-trading groups immediately
+    spam_markers = [
+        "jual beli",
+        "fwb",
+        "cari temen",
+        "profit 120%",
+        "plan basic",
+        "plan silver",
+        "plan gold",
+        "plan platinum",
+        "plan vip",
+        "cair 1 x",
+        "cair 2 x",
+        "juuwai_musa",
+        "ylpay",
+        "pt ajaib sekuritas",
+    ]
+    if any(m in combined for m in spam_markers):
+        return "GENERAL"
+
     for ch_name, cat in CHANNEL_CATEGORY_MAP.items():
         if ch_name in channel_title.lower():
             # If text has specific keywords, allow overriding to more accurate sub-type
@@ -232,7 +258,9 @@ def classify_message(text: str, channel_title: str = "") -> str:
     scores = [("FOREX", score_forex), ("SAHAM", score_saham), ("CRYPTO", score_crypto)]
     scores.sort(key=lambda x: x[1], reverse=True)
 
-    if scores[0][1] > 0:
+    # Require at least 2 distinct keyword matches from non-whitelisted channels
+    # to avoid false positives (e.g. casual chat mentioning "Ara").
+    if scores[0][1] >= 2:
         return scores[0][0]
 
     # Check channel title hints

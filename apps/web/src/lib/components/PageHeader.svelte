@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Komponen Header Halaman Terpadu: Penyeragam ritme kepala seluruh 14 halaman War Room.
+	// Komponen Header Halaman Terpadu: Penyeragam ritme kepala seluruh halaman War Room.
 	// Anatomi: Eyebrow mono uppercase + Judul H1 font-display + Badge Area + HonestyTag + Deskripsi.
 	import type { Snippet } from 'svelte';
 	import HonestyTag from './HonestyTag.svelte';
@@ -25,15 +25,27 @@
 		alasan = null,
 		action
 	}: Props = $props();
+
+	const tagTone = $derived.by(() => {
+		const t = (tag ?? '').toUpperCase();
+		if (t === 'LIVE' || t === 'AKTIF') return 'border-pos/35 bg-pos/10 text-pos';
+		if (t === 'PAPER') return 'border-warn/35 bg-warn/10 text-warn';
+		return 'border-line bg-surface-2 text-accent';
+	});
 </script>
 
-<header class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3" data-testid="page-header">
+<header
+	class="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3.5"
+	data-testid="page-header"
+>
 	<div class="min-w-0">
 		<span class="label-mikro text-text-3 font-mono block">{eyebrow.toUpperCase()}</span>
-		<div class="flex flex-wrap items-center gap-2 mt-0.5">
-			<h1 class="text-22 sm:text-26 font-bold tracking-tight text-text font-display">{title}</h1>
+		<div class="flex flex-wrap items-center gap-2 mt-1">
+			<h1 class="text-20 sm:text-24 font-bold tracking-tight text-text font-display leading-tight">
+				{title}
+			</h1>
 			{#if tag}
-				<span class="rounded bg-surface px-2 py-0.5 text-11 font-mono uppercase text-accent border border-line">
+				<span class="rounded px-2 py-0.5 text-10 font-mono font-bold uppercase border {tagTone}">
 					{tag}
 				</span>
 			{/if}
@@ -42,7 +54,7 @@
 			{/if}
 		</div>
 		{#if description}
-			<p class="text-12 text-text-3 mt-1 max-w-2xl leading-relaxed">{description}</p>
+			<p class="text-12 text-text-2 mt-1 max-w-3xl leading-relaxed">{description}</p>
 		{/if}
 	</div>
 

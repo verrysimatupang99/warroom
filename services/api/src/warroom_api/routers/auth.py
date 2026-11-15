@@ -49,11 +49,13 @@ def login(body: LoginBody, response: Response, request: Request) -> dict[str, An
 @router.post("/api/v1/auth/logout")
 def logout(
     user: Annotated[User, Depends(auth.current_user)],
+    response: Response,
     wr_session: Annotated[str | None, Cookie(alias=auth.COOKIE_NAME)] = None,
 ) -> dict[str, Any]:
     with session_scope() as s:
         if wr_session:
             auth.revoke_session(s, wr_session)
+    response.delete_cookie(key=auth.COOKIE_NAME, path="/", secure=True, httponly=True, samesite="lax")
     return {"ok": True}
 
 
