@@ -947,7 +947,19 @@ async def stream_forex_telemetry(account: str | None = Query(None)):
             # Kirim direktif retry standar SSE agar browser otomatis rekoneksi dalam 3 detik
             yield "retry: 3000\n\n"
             # Kirim snapshot terkini saat koneksi pertama kali tersambung
-            awal = dict(latest_mt5_by_account.get(target_account) or latest_mt5_telemetry)
+            snap = latest_mt5_by_account.get(target_account)
+            if snap:
+                awal = dict(snap)
+            elif not target_account and latest_mt5_telemetry:
+                awal = dict(latest_mt5_telemetry)
+            else:
+                awal = {
+                    "connected": False,
+                    "account": target_account,
+                    "broker": "Exness-MT5Trial7 (Demo)" if target_account == "434446792" else "Exness Technologies Ltd",
+                    "currency": "USD" if target_account == "434446792" else "USC",
+                    "offline": True,
+                }
             yield f"retry: 3000\ndata: {json.dumps(awal)}\n\n"
             while True:
                 try:

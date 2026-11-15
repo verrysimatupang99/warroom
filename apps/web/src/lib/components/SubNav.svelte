@@ -10,14 +10,17 @@
 </script>
 
 <nav aria-label={`Sub-navigasi ${area.label}`}>
-	<div class="flex flex-wrap gap-1" role="tablist">
+	<div
+		class="inline-flex flex-wrap gap-1 rounded-card border border-line bg-surface p-1"
+		role="tablist"
+	>
 		{#each area.anak as a (a.slug)}
 			<button
 				type="button"
 				role="tab"
-				class="label-mikro transisi min-h-[44px] rounded-control border px-2.5 {aktif === a.slug
-					? 'border-accent text-accent'
-					: 'border-line text-text-3 hover:border-accent-2 hover:text-text'}"
+				class="label-mikro transisi min-h-[34px] rounded-control border px-3 py-1 {aktif === a.slug
+					? 'border-accent/60 bg-surface-2 text-accent'
+					: 'border-transparent text-text-3 hover:border-line hover:bg-surface-2/60 hover:text-text'}"
 				aria-selected={aktif === a.slug}
 				title={a.catatan}
 				onclick={() => onpilih(a.slug)}

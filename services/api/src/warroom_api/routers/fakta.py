@@ -119,44 +119,24 @@ def sumber_data(user: Annotated[User, Depends(auth.current_user)]) -> dict[str, 
     """
     return {
         "sumber": [
+            {"pasar": "forex", "label": "Forex & Gold", "sumber": "Exness MT5 (#452009427)",
+             "keterangan": "Eksekusi Real Cent XAUUSDc via GOLD_Reaper_Hexa di Instabox (box-2aacb3) + Yahoo Finance."},
+            {"pasar": "polymarket", "label": "Polymarket", "sumber": "Poly-Agent + Gamma",
+             "keterangan": "Arm D favorit 0,70–0,95 & self-tuning AI Agent 5m BTC/ETH."},
+            {"pasar": "idx", "label": "Saham IDX", "sumber": "Stock Arjum + Yahoo",
+             "keterangan": "IHSG live + screener, broker summary & akumulasi via idx-edge (stock.arjum.com)."},
             {"pasar": "crypto", "label": "Crypto", "sumber": "OKX",
              "keterangan": (
                  "Harga & depth dari OKX (venue paper). "
-                 "Sinyal = SMC multi-timeframe, gate 6 aturan."
+                 "Sinyal = SMC multi-timeframe + momentum 40 koin."
              )},
-            {"pasar": "idx", "label": "IDX", "sumber": "Stock Arjum",
-             "keterangan": "Bandarmologi/BSJP dari Stock Arjum + arsip tick; mesin lama (Tencent) beku."},
-            {"pasar": "forex", "label": "Forex", "sumber": "TVC",
-             "keterangan": "Chart/series TradingView (TVC:) untuk bias & struktur."},
-            {"pasar": "polymarket", "label": "Polymarket", "sumber": "Dokumentasi PM",
-             "keterangan": "Arm B favorit 0,70–0,95; aturan & contoh dari dokumentasi Polymarket."},
-            {
-                "pasar": "gmgn",
-                "label": "Meme / DEX",
-                "sumber": "GMGN + FOMO",
-                "keterangan": (
-                    "Memecoin: pemindaian GMGN/FOMO "
-                    "(sol, bsc, base, eth, robinhood, arc, stable)."
-                ),
-            },
-            {
-                "pasar": "lp",
-                "label": "LP",
-                "sumber": "Meteora (Solana) · Uniswap (Robinhood Chain)",
-                "keterangan": (
-                    "LP Solana lewat Meteora (DLMM/DAMM v2); LP Robinhood Chain lewat "
-                    "Uniswap v2/v3/v4. Dua protokol BERBEDA."
-                ),
-            },
         ],
         "sumber_atom": [
+            {"nama": "Exness MT5 (#452009427)", "dipakai": "telemetri & eksekusi live Real Cent XAUUSDc"},
+            {"nama": "Poly-Agent + Gamma", "dipakai": "evaluasi 4 arm & settlement 5m Polymarket"},
+            {"nama": "Stock Arjum (idx-edge)", "dipakai": "IDX screener, broker flow & akumulasi"},
             {"nama": "OKX", "dipakai": "harga & eksekusi paper crypto"},
-            {"nama": "Stock Arjum", "dipakai": "IDX bandarmologi/BSJP"},
-            {"nama": "TVC (TradingView)", "dipakai": "forex (bias/struktur)"},
-            {"nama": "Dokumentasi Polymarket", "dipakai": "aturan & dataset Polymarket"},
-            {"nama": "GMGN / FOMO", "dipakai": "memecoin baru + smart money"},
-            {"nama": "Meteora", "dipakai": "LP Solana (DLMM, DAMM v2)"},
-            {"nama": "Uniswap", "dipakai": "LP Robinhood Chain (v2/v3/v4)"},
+            {"nama": "Yahoo Finance", "dipakai": "candle cadangan XAUUSD, DXY & IHSG (^JKSE)"},
         ],
     }
 

@@ -22,7 +22,7 @@ describe('KurvaEkuitas', () => {
 		expect(screen.getByText(/drawdown maks 0.50%/)).toBeInTheDocument();
 		expect(screen.getByText(/2 penanda/)).toBeInTheDocument();
 		expect(screen.getAllByText(/\+[$]10\.00/).length).toBeGreaterThan(0);
-		expect(screen.getAllByText(/[$]-5\.00/).length).toBeGreaterThan(0);
+		expect(screen.getAllByText(/-[$]5\.00/).length).toBeGreaterThan(0);
 	});
 
 	it('menjelaskan saat titik belum cukup', () => {

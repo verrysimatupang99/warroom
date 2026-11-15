@@ -94,6 +94,9 @@ def agregat_jam_hari(
         if nilai is None:
             n_tanpa_hasil += 1
             continue
+        is_cent = t.get("currency") == "USC" or str(t.get("account")) in ("452009427", "36525553")
+        if is_cent and kunci == "pnl_usd" and (t.get("net_raw") == t.get("pnl_usd") or abs(nilai) > 0.5):
+            nilai = nilai / 100.0
 
         for k in (per_jam[dt.hour], per_hari[dt.weekday()]):
             k["n"] += 1

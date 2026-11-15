@@ -28,6 +28,11 @@
 	let bias = $state<Bias | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
+	let selectedAccount = $state<'452009427' | '434446792' | '464202979'>('452009427');
+	async function gantiAkun(acc: '452009427' | '434446792' | '464202979') {
+		selectedAccount = acc;
+		mt5 = await j<Mt5>(`/api/v1/tencent/mt5/status?account=${acc}`);
+	}
 
 	async function j<T>(jalur: string): Promise<T | null> {
 		try {
@@ -80,7 +85,7 @@
 	onMount(async () => {
 		[level, mt5, bias] = await Promise.all([
 			j<Level>('/api/v1/tencent/forex/levels?symbol=XAUUSD'),
-			j<Mt5>('/api/v1/tencent/mt5/status'),
+			j<Mt5>('/api/v1/tencent/mt5/status?account=452009427'),
 			j<Bias>('/api/v1/tencent/forex/bias')
 		]);
 		memuat = false;
@@ -150,7 +155,12 @@
 
 		<section class="rounded-card border border-line bg-surface p-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
-				<h2 class="text-13 font-bold text-text">Pasar saat ini</h2>
+				<div class="flex flex-wrap items-center gap-2">
+					<h2 class="text-13 font-bold text-text">Pasar saat ini</h2>
+					<button type="button" onclick={() => gantiAkun('452009427')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '452009427' ? 'border-pos text-pos bg-pos/10' : 'border-line text-text-3'}`}>Live #452009427</button>
+					<button type="button" onclick={() => gantiAkun('434446792')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '434446792' ? 'border-warn text-warn bg-warn/10' : 'border-line text-text-3'}`}>Paper-1 #434446792</button>
+					<button type="button" onclick={() => gantiAkun('464202979')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '464202979' ? 'border-accent text-accent bg-accent/10' : 'border-line text-text-3'}`}>Paper-2 #464202979</button>
+				</div>
 				<span class="font-mono text-11 text-text-3">
 					{mt5?.connected ? 'MT5 tersambung' : 'MT5 tidak tersambung'}{mt5?.account ? ` · ${mt5.account}` : ''}
 				</span>
@@ -193,7 +203,7 @@
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h2 class="text-13 font-bold text-text">Status mesin Reaper</h2>
 				<span class="font-mono text-11" class:text-pos={mt5?.eval_sesi} class:text-text-3={!mt5?.eval_sesi}>
-					{mt5?.eval_sesi ? 'sesi 08–09 aktif' : 'di luar sesi 08–09'}
+					{mt5?.eval_sesi ? 'sesi London/NY aktif' : 'di luar sesi London (08–09) / NY (13:15–15:59)'}
 				</span>
 			</div>
 			<div class="mt-2 rounded border border-line bg-surface-2 p-3">
@@ -230,8 +240,8 @@
 				</div>
 			</dl>
 			<p class="mt-2 text-11 text-text-3">
-				EA hanya mengevaluasi entry di sesi 08–09 jam server. "Di luar sesi" berarti mesin
-				sengaja menunggu, bukan mati.
+				GOLD_Reaper_Hexa mengevaluasi entry di Sesi London (08:00–09:59 server / 15:00–16:59 WIB) dan
+				Sesi New York (13:15–15:59 server / 20:15–22:59 WIB). "Di luar sesi" berarti mesin sengaja menunggu, bukan mati.
 			</p>
 		</section>
 

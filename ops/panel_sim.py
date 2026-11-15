@@ -20,6 +20,19 @@ from pathlib import Path
 API = os.environ.get("WARROOM_API", "http://127.0.0.1:8800")
 STATE = Path(os.environ.get("PANEL_STATE", "/var/lib/warroom/panels.json"))
 LOG = Path(os.environ.get("PANEL_LOG", "/var/lib/warroom/panels_trades.csv"))
+TOKEN_FILE = Path("/etc/warroom/service_token.env")
+
+
+def _ambil_token() -> str:
+    if "WARROOM_SERVICE_TOKEN" in os.environ:
+        return os.environ["WARROOM_SERVICE_TOKEN"]
+    if TOKEN_FILE.is_file():
+        for baris in TOKEN_FILE.read_text().splitlines():
+            if baris.startswith("WARROOM_SERVICE_TOKEN="):
+                return baris.split("=", 1)[1].strip()
+    return ""
+
+
 MODAL_AWAL = 500.0
 
 # Skema: (nama, risiko per trade % modal, target harian %, stop harian %, maks trade/hari)
@@ -34,7 +47,11 @@ LOCK_RASIO = 0.60  # kunci di 60% dari puncak
 
 def ambil(path: str, timeout: float = 20.0) -> dict | None:
     try:
-        with urllib.request.urlopen(f"{API}{path}", timeout=timeout) as r:
+        req = urllib.request.Request(f"{API}{path}")
+        tok = _ambil_token()
+        if tok:
+            req.add_header("X-Warroom-Token", tok)
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read().decode())
     except Exception:
         return None

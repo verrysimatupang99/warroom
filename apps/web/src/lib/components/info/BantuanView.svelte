@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import NavInfo from '$lib/components/NavInfo.svelte';
 	// Bantuan — padanan /faq algentis, ditulis dari produk kita sendiri.
 	// Setiap jawaban mengacu ke perilaku nyata (bukan janji). Pertanyaan yang
 	// jawabannya "belum ada" ditulis apa adanya, bukan dijawab seolah sudah ada.
@@ -72,8 +71,6 @@
 		alasan="basis tanya jawab tervalidasi"
 		description="Jawaban dari perilaku nyata sistem. Yang belum ada ditulis belum ada."
 	/>
-
-	<NavInfo />
 
 	<ul class="daftar">
 		{#each tanya as t, i (t.q)}

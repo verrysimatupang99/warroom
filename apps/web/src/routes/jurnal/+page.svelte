@@ -34,17 +34,19 @@
 		sumber="fills.csv + momentum_trades.csv + mt5_snapshot"
 	/>
 
-	<div class="flex flex-wrap gap-1" role="tablist" aria-label="Filter market">
+	<div
+		class="inline-flex flex-wrap gap-1 rounded-card border border-line bg-surface p-1"
+		role="tablist"
+		aria-label="Filter market"
+	>
 		{#each PILIHAN as p (p.nilai)}
 			<button
 				type="button"
 				role="tab"
 				aria-selected={market === p.nilai}
-				class="label-mikro transisi min-h-[44px] rounded-control border px-2.5"
-				class:border-accent={market === p.nilai}
-				class:text-accent={market === p.nilai}
-				class:border-line={market !== p.nilai}
-				class:text-text-3={market !== p.nilai}
+				class="label-mikro transisi min-h-[34px] rounded-control border px-3 py-1 {market === p.nilai
+					? 'border-accent/60 bg-surface-2 text-accent'
+					: 'border-transparent text-text-3 hover:border-line hover:bg-surface-2/60 hover:text-text'}"
 				onclick={() => pilih(p.nilai)}
 			>
 				{p.label}

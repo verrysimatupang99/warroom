@@ -16,6 +16,8 @@
 	interface Stats {
 		market?: string;
 		akun?: string | number | null;
+		currency?: string;
+		cent_factor?: number;
 		saldo?: Angka;
 		ekuitas?: Angka;
 		pnl_hari_ini_usd?: Angka;
@@ -30,6 +32,8 @@
 		iso?: string; symbol?: string; side?: string; volume?: string;
 		price_filled?: string; slippage_pts?: string; latency_ms?: string;
 		market?: string; pnl_pct?: string; r?: Angka;
+		currency?: string; cent_factor?: number; net_usc?: number; pnl_usd?: string | number;
+		account?: string; ticket?: string;
 	}
 	interface Edge {
 		per_jam?: Record<string, { n: number; slip_rata_pts: number }>;
@@ -87,8 +91,31 @@
 		void muat();
 	});
 
+	const isCentAccount = $derived(stats?.currency === 'USC' || String(stats?.akun) === '452009427');
+
+	function formatUang(v: Angka | undefined, currency?: string) {
+		if (v == null) return '—';
+		const isCent = currency ? currency === 'USC' : isCentAccount;
+		if (isCent) {
+			const usd = (v / 100).toFixed(2);
+			return `${v.toFixed(2)} USC ($${usd})`;
+		}
+		return `$${v.toFixed(2)}`;
+	}
+
+	function formatPnl(v: Angka | undefined, currency?: string) {
+		if (v == null) return '—';
+		const isCent = currency ? currency === 'USC' : isCentAccount;
+		const sign = v > 0 ? '+' : '';
+		if (isCent) {
+			const usd = (v / 100).toFixed(2);
+			return `${sign}${v.toFixed(2)} USC (${sign}$${usd})`;
+		}
+		return `${sign}$${v.toFixed(2)}`;
+	}
+
 	function rp(v: Angka | undefined) {
-		return v == null ? '—' : `$${v.toFixed(2)}`;
+		return formatUang(v);
 	}
 	function alasan(jalur: string, cadangan: string) {
 		return galat[jalur] ?? cadangan;
@@ -103,9 +130,25 @@
 		const pad = (x: number) => String(x).padStart(2, '0');
 		return `${pad(d.getDate())} ${bulan[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 	}
-	// Pilih hasil: crypto pakai R, forex pakai P/L %.
+	// Pilih hasil: crypto pakai R, forex cent pakai USC ($...), forex USD pakai PnL/persen.
 	function hasil(t: Trade) {
 		if (t.market === 'crypto') return t.r != null ? `${t.r > 0 ? '+' : ''}${t.r}R` : '—';
+		const isCent = t.currency === 'USC' || t.account === '452009427';
+		if (isCent) {
+			const val = t.net_usc != null ? Number(t.net_usc) : (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) * 100 : null);
+			if (val != null && !isNaN(val)) {
+				const usd = (val / 100).toFixed(2);
+				const sign = val > 0 ? '+' : '';
+				return `${sign}${val.toFixed(2)} USC (${sign}$${usd})`;
+			}
+		}
+		if (t.pnl_usd != null && t.pnl_usd !== '') {
+			const num = Number(t.pnl_usd);
+			if (!isNaN(num)) {
+				const sign = num > 0 ? '+' : '';
+				return `${sign}$${num.toFixed(2)}`;
+			}
+		}
 		return t.pnl_pct || '—';
 	}
 </script>
@@ -122,7 +165,7 @@
 			</div>
 			<div class="rounded-card border border-line bg-surface p-4">
 				<div class="label-mikro text-text-3 font-mono">FOREX · PNL HARI INI</div>
-				<div class="mt-1 text-17 font-bold font-mono text-text">{rp(stats?.pnl_hari_ini_usd)}</div>
+				<div class="mt-1 text-17 font-bold font-mono text-text">{formatPnl(stats?.pnl_hari_ini_usd)}</div>
 				<div class="mt-1 text-11 text-text-3">fill {stats?.n_fill_forex ?? 0}</div>
 			</div>
 			<div class="rounded-card border border-line bg-surface p-4">

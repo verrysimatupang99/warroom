@@ -692,12 +692,12 @@ class MarketSignalList:
 
 def _rute_pasar(pasar: str) -> str:
     return {
-        "crypto": "/crypto?sub=setup",
-        "polymarket": "/polymarket?sub=setup-b",
-        "gmgn": "/gmgn?sub=memecoin",
-        "lp": "/gmgn?sub=lp",
+        "crypto": "/crypto?sub=sinyal",
+        "polymarket": "/polymarket?sub=ringkas",
+        "gmgn": "/gmgn",
+        "lp": "/gmgn",
         "idx": "/idx?sub=sinyal",
-        "forex": "/forex?sub=struktur",
+        "forex": "/forex?sub=ringkas",
     }.get(pasar, f"/{pasar}")
 
 
@@ -854,17 +854,17 @@ def signals_per_market(
         sumber_pasar = {
             "idx": (
                 "Stock Arjum",
-                "HISTORIS",
-                "mesin dibekukan (cron Tencent pause) — angka lama, tidak diperbarui",
+                "AKTIF",
+                "IHSG live + screener, broker summary & akumulasi via idx-edge (stock.arjum.com)",
             ),
             "forex": (
-                "TVC (TradingView)",
-                "PAPER",
-                "bias/struktur dari seri TVC; eksekusi paper, biaya belum tercatat",
+                "Exness MT5 (#452009427)",
+                "LIVE",
+                "eksekusi Real Cent XAUUSDc via GOLD_Reaper_Hexa di Instabox (box-2aacb3)",
             ),
-            "polymarket": ("Dokumentasi Polymarket", "PAPER", "arm B favorit 0,70–0,95; ledger shadow/paper"),
-            "gmgn": ("GMGN / FOMO", "PAPER", "radar + bot paper; belum ada eksekusi on-chain"),
-            "lp": ("Meteora (Solana)", "PAPER", "posisi LP disimulasikan; belum direkonsiliasi on-chain"),
+            "polymarket": ("Poly-Agent + Gamma", "PAPER", "Arm D favorit 0,70–0,95 & self-tuning AI Agent 5m"),
+            "gmgn": ("GMGN / FOMO", "STANDBY", "modul radar on-chain ditangguhkan sementara (Under Construction)"),
+            "lp": ("Meteora (Solana)", "STANDBY", "modul LP ditangguhkan sementara (Under Construction)"),
         }.get(sp.pasar, ("—", "PAPER", ""))
         if sp.ada:
             keluar.append(

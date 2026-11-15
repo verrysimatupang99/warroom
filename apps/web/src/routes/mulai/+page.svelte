@@ -8,9 +8,9 @@
 	let build = $state<string>('');
 
 	onMount(() => {
-		fetch(urlApi('/api/v1/health'))
+		fetch(urlApi('/api/v1/build'))
 			.then((r) => r.json())
-			.then((d) => (build = d?.build ?? ''))
+			.then((d) => (build = d?.build_id ?? ''))
 			.catch(() => null);
 	});
 

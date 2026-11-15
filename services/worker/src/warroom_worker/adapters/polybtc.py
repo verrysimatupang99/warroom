@@ -18,7 +18,20 @@ import os
 from pathlib import Path
 from typing import Any
 
-SKILL_DIR = Path(os.environ.get("POLYBTC_SKILL_DIR", "/home/admin/polymarket-btc-5m"))
+def _pilih_skill_dir() -> Path:
+    env_dir = os.environ.get("POLYBTC_SKILL_DIR")
+    if env_dir:
+        return Path(env_dir)
+    for kandidat in (
+        Path("/home/admin/polymarket-btc-5m"),
+        Path("/home/admin/projects/trading/polymarket-btc-5m"),
+    ):
+        if kandidat.is_dir():
+            return kandidat
+    return Path("/home/admin/polymarket-btc-5m")
+
+
+SKILL_DIR = _pilih_skill_dir()
 RUNTIME = SKILL_DIR / "runtime"
 
 
@@ -130,6 +143,20 @@ def polybtc_ringkas() -> dict[str, Any]:
                 "berkas": rep.name,
                 "ringkas": {k: d.get(k) for k in kunci_ringkas if k in d},
             }
+
+    # --- paper ledger (keputusan dry-run skill) ---
+    ledger = _baca_jsonl(RUNTIME / "paper_ledger.jsonl", limit=200)
+    if ledger:
+        menang = sum(1 for r in ledger if r.get("hasil_paper") == "MENANG")
+        kalah = sum(1 for r in ledger if r.get("hasil_paper") == "KALAH")
+        pnl_total = sum(float(r.get("pnl_usd") or 0.0) for r in ledger if r.get("pnl_usd") is not None)
+        hasil["ledger"] = {
+            "total": len(ledger),
+            "menang": menang,
+            "kalah": kalah,
+            "pnl_usd": round(pnl_total, 4),
+            "terakhir": list(reversed(ledger[-15:])),
+        }
 
     # --- catatan jujur ---
     catatan: list[str] = []

@@ -463,6 +463,7 @@ def run_one(s: SASession, job: Job, now: datetime | None = None) -> tuple[str, s
             detail = handler(s, job) or ""
             status = "ok"
         except Exception as exc:  # noqa: BLE001 — kegagalan job harus tercatat, bukan mematikan loop
+            s.rollback()
             status, detail = "gagal", f"{type(exc).__name__}: {exc}"
 
     job.last_run_at = t

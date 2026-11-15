@@ -16,8 +16,9 @@
 		deret?: Titik[];
 		markers?: Marker[];
 		drawdown_pct?: number | null;
+		currency?: string;
 	}
-	let { deret = [], markers = [], drawdown_pct = null }: Props = $props();
+	let { deret = [], markers = [], drawdown_pct = null, currency = 'USD' }: Props = $props();
 
 	const titik = $derived(
 		deret.filter(
@@ -98,6 +99,17 @@
 		if (v == null) return '—';
 		return `${v >= 0 ? '+' : ''}$${v.toFixed(2)}`;
 	}
+
+	function rpMarker(v?: number | null, curr = currency) {
+		if (v == null) return '—';
+		const sign = v > 0 ? '+' : v < 0 ? '-' : '';
+		const absVal = Math.abs(v);
+		if (curr === 'USC') {
+			const usd = (absVal / 100).toFixed(2);
+			return `${sign}${absVal.toFixed(2)} USC (${sign}$${usd})`;
+		}
+		return `${sign}$${absVal.toFixed(2)}`;
+	}
 </script>
 
 <div class="mt-3" data-testid="kurva-ekuitas">
@@ -120,7 +132,7 @@
 					stroke-width="1.5"
 					data-testid="marker-trade"
 				>
-					<title>{`#${m.ticket ?? '?'} ${m.symbol ?? ''} ${rp(m.net_usd)} · ${m.t ?? ''}`}</title>
+					<title>{`#${m.ticket ?? '?'} ${m.symbol ?? ''} ${rpMarker(m.net_usd, currency)} · ${m.t ?? ''}`}</title>
 				</circle>
 			{/each}
 		</svg>
@@ -137,7 +149,7 @@
 					<span class="font-mono">
 						#{m.ticket ?? '?'} {m.symbol ?? ''}
 						<span class:text-pos={m.net_usd != null && m.net_usd >= 0} class:text-neg={m.net_usd != null && m.net_usd < 0}>
-							{rp(m.net_usd)}
+							{rpMarker(m.net_usd, currency)}
 						</span>
 					</span>
 				{/each}

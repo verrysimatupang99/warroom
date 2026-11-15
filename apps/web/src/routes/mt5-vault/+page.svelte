@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { urlApi } from "$lib/api/client";
+  import PageHeader from "$lib/components/PageHeader.svelte";
   import Skeleton from "$lib/components/Skeleton.svelte";
+  import EmptyState from "$lib/components/EmptyState.svelte";
 
   type Akun = {
     id: number;
@@ -28,6 +30,16 @@
   let note = $state("");
   let menampilkan = $state(false); // reveal sandi satu akun, sekali, di client
   let sandiTerlihat = $state("");
+  let liveAccounts = $state<any[]>([]);
+  async function muatLive() {
+    try {
+      const r = await fetch(urlApi("/api/v1/tencent/mt5/accounts"), { credentials: "include" });
+      if (r.ok) {
+        const d = await r.json();
+        liveAccounts = d.accounts ?? [];
+      }
+    } catch {}
+  }
 
   async function muat() {
     loading = true;
@@ -92,85 +104,219 @@
     }
   }
 
-  onMount(muat);
+  onMount(() => { void muat(); void muatLive(); });
 </script>
 
 <svelte:head>
   <title>MT5 Vault | War Room</title>
 </svelte:head>
 
-<section class="vault max-w-4xl mx-auto p-4 w-full">
-  <h2 class="text-xl font-bold font-mono text-text">MT5 Login Vault</h2>
-  <p class="hint text-xs text-text-3 mt-1 leading-relaxed">
-    Gudang detail akun MT5 biar tinggal salin-tempel saat login manual di MT5 Webtop.
-    Sandi tersimpan terenkripsi di server dan tidak pernah tampil otomatis, buka manual satu akun saja.
-    <strong>Sarankan pakai Investor Password</strong> (read-only), bukan master.
-  </p>
+<div class="space-y-4">
+  <PageHeader
+    eyebrow="War Room · Kontrol Sistem"
+    title="MT5 Login Vault"
+    tag="TERENKRIPSI"
+    description="Gudang detail akun MT5 agar mudah salin-tempel saat login manual di MT5 Webtop. Sandi tersimpan terenkripsi di server dan tidak pernah tampil otomatis. Sarankan pakai Investor Password (read-only), bukan master."
+    terverifikasi={true}
+    sumber="/api/v1/mt5-vault"
+  />
 
-  {#if error}<p class="err text-xs text-neg font-mono mt-2" role="alert">{error}</p>{/if}
-  {#if pesan}<p class="ok text-xs text-pos font-mono mt-2" role="status">{pesan}</p>{/if}
-  {#if !kunciVaultAda && !loading}
-    <p class="err text-xs text-neg font-mono mt-2">Kunci vault belum terpasang di server, simpan akun dinonaktifkan sementara.</p>
-  {/if}
-
-  <form
-    onsubmit={(e) => { e.preventDefault(); void simpan(); }}
-    aria-label="Simpan detail akun MT5"
-    class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4 w-full"
-  >
-    <input bind:value={label} placeholder="Label (mis. Exness cent)" maxlength={120} class="p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text" />
-    <input bind:value={login} placeholder="Login (angka)" required inputmode="numeric" maxlength={32} class="p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text" />
-    <input bind:value={server} placeholder="Server (mis. Exness-MT5Real25)" required maxlength={160} class="p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text" />
-    <input bind:value={password} type="password" placeholder="Password" required maxlength={128} autocomplete="off" class="p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text" />
-    <select bind:value={passwordKind} aria-label="Jenis sandi" class="p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text">
-      <option value="investor">Investor (read-only, disarankan)</option>
-      <option value="master">Master (risiko penuh)</option>
-    </select>
-    <textarea bind:value={note} placeholder="Catatan (opsional)" rows={2} maxlength={2000} class="col-span-full p-2 text-xs font-mono rounded bg-surface-2 border border-line text-text"></textarea>
-    <button type="submit" disabled={!kunciVaultAda} class="col-span-full p-2.5 text-xs font-mono font-bold rounded bg-accent text-on-accent border border-line hover:opacity-90 disabled:opacity-40 cursor-pointer">Simpan</button>
-  </form>
-
-  {#if loading}
-    <Skeleton baris={4} tinggi={36} />
-  {:else if akun.length === 0}
-    <p class="hint text-xs text-text-3 font-mono">Belum ada akun tersimpan.</p>
-  {:else}
-    <div class="overflow-x-auto w-full rounded border border-line">
-      <table class="w-full border-collapse text-xs font-mono text-left">
-        <thead class="bg-surface-2 border-b border-line text-text-3">
-          <tr>
-            <th class="p-2.5">Label</th>
-            <th class="p-2.5">Login</th>
-            <th class="p-2.5">Server</th>
-            <th class="p-2.5">Jenis</th>
-            <th class="p-2.5 text-right">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-line-soft">
-          {#each akun as a (a.id)}
-            <tr class="hover:bg-surface-2/50 {a.active ? '' : 'opacity-50'}">
-              <td class="p-2.5 text-text">{a.label || "—"}</td>
-              <td class="p-2.5"><code class="text-accent">{a.login}</code></td>
-              <td class="p-2.5 text-text-3">{a.server}</td>
-              <td class="p-2.5 {a.password_kind === 'master' ? 'text-warn font-bold' : 'text-text-3'}">
-                {a.password_kind === "master" ? "⚠ master" : "investor"}
-              </td>
-              <td class="p-2.5 text-right space-x-2">
-                <button type="button" class="px-2 py-1 rounded bg-surface-3 hover:bg-surface-2 border border-line text-text cursor-pointer" onclick={() => tampilkanSandi(a)}>Lihat sandi</button>
-                <button type="button" class="px-2 py-1 rounded bg-neg/15 hover:bg-neg/25 border border-neg/30 text-neg cursor-pointer" onclick={() => hapus(a.id)}>Hapus</button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+  {#if error}
+    <div class="rounded-control border border-neg/40 bg-neg/10 px-3 py-2 text-12 font-mono text-neg" role="alert">
+      ! {error}
     </div>
   {/if}
+  {#if pesan}
+    <div class="rounded-control border border-pos/40 bg-pos/10 px-3 py-2 text-12 font-mono text-pos" role="status">
+      {pesan}
+    </div>
+  {/if}
+  {#if !kunciVaultAda && !loading}
+    <div class="rounded-control border border-neg/40 bg-neg/10 px-3 py-2 text-12 font-mono text-neg" role="status">
+      ! Kunci vault belum terpasang di server, simpan akun dinonaktifkan sementara.
+    </div>
+  {/if}
+
+  {#if liveAccounts.length > 0}
+    <section class="kartu p-4 space-y-3" aria-label="Status Telemetri Multi-Akun MT5">
+      <div class="flex items-center justify-between border-b border-line-soft pb-2">
+        <h2 class="label-mikro text-text-2">Telemetri Aktif Multi-Akun (Instabox Cloud)</h2>
+        <span class="angka text-11 text-pos">{liveAccounts.filter(a => a.connected).length}/{liveAccounts.length} ONLINE</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-12">
+        {#each liveAccounts as acc (acc.account)}
+          <div class="rounded-control border border-line bg-surface-2 p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-text">#{acc.account}</span>
+              <span class="px-2 py-0.5 rounded text-10 font-bold {acc.connected ? 'bg-pos/15 text-pos border border-pos/30' : 'bg-neg/15 text-neg border border-neg/30'}">
+                {acc.connected ? `ONLINE (${acc.seconds_ago}s)` : 'OFFLINE'}
+              </span>
+            </div>
+            <div class="text-11 text-text-3">{acc.account === '452009427' ? 'box-2aacb3 · LIVE CENT (v3.0)' : acc.account === '434446792' ? 'mt5-paper-1 · PAPER-1 (v3.0 NoMon=OFF)' : 'mt5-paper-2 · PAPER-2 (Gold+BTC 24/7)'}</div>
+            <div class="flex items-center justify-between pt-1 border-t border-line-soft">
+              <span class="text-text-3">Equity:</span>
+              <span class="font-bold text-pos">{acc.currency === 'USC' ? `${acc.equity?.toFixed(2)} USC` : `$${acc.equity?.toFixed(2)}`}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
+  <div class="grid gap-4 lg:grid-cols-12">
+    <form
+      onsubmit={(e) => { e.preventDefault(); void simpan(); }}
+      aria-label="Simpan detail akun MT5"
+      class="kartu p-4 space-y-3 lg:col-span-5"
+    >
+      <h2 class="label-mikro text-text-2 border-b border-line-soft pb-2">Tambah akun MT5</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="block space-y-1">
+          <span class="label-mikro">Label</span>
+          <input
+            bind:value={label}
+            placeholder="mis. Exness cent"
+            maxlength={120}
+            class="w-full h-9 px-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text placeholder:text-text-3"
+          />
+        </label>
+        <label class="block space-y-1">
+          <span class="label-mikro">Login (Angka)</span>
+          <input
+            bind:value={login}
+            placeholder="Login (angka)"
+            required
+            inputmode="numeric"
+            maxlength={32}
+            class="w-full h-9 px-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text placeholder:text-text-3"
+          />
+        </label>
+        <label class="block space-y-1">
+          <span class="label-mikro">Server Broker</span>
+          <input
+            bind:value={server}
+            placeholder="mis. Exness-MT5Real25"
+            required
+            maxlength={160}
+            class="w-full h-9 px-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text placeholder:text-text-3"
+          />
+        </label>
+        <label class="block space-y-1">
+          <span class="label-mikro">Password</span>
+          <input
+            bind:value={password}
+            type="password"
+            placeholder="Password"
+            required
+            maxlength={128}
+            autocomplete="off"
+            class="w-full h-9 px-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text placeholder:text-text-3"
+          />
+        </label>
+      </div>
+      <label class="block space-y-1">
+        <span class="label-mikro">Jenis Sandi</span>
+        <select
+          bind:value={passwordKind}
+          aria-label="Jenis sandi"
+          class="w-full h-9 px-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text"
+        >
+          <option value="investor">Investor (read-only, disarankan)</option>
+          <option value="master">Master (risiko penuh)</option>
+        </select>
+      </label>
+      <label class="block space-y-1">
+        <span class="label-mikro">Catatan</span>
+        <textarea
+          bind:value={note}
+          placeholder="Catatan (opsional)"
+          rows={2}
+          maxlength={2000}
+          class="w-full p-2.5 text-12 font-mono rounded-control bg-surface-2 border border-line text-text placeholder:text-text-3"
+        ></textarea>
+      </label>
+      <button
+        type="submit"
+        disabled={!kunciVaultAda}
+        class="w-full h-9 px-3 text-12 font-mono font-bold rounded-control bg-accent text-on-accent border border-line hover:opacity-90 disabled:opacity-40 cursor-pointer"
+      >
+        Simpan
+      </button>
+    </form>
+
+    <section class="kartu p-4 space-y-3 lg:col-span-7" aria-label="Daftar akun MT5">
+      <div class="flex items-center justify-between border-b border-line-soft pb-2">
+        <h2 class="label-mikro text-text-2">Akun tersimpan</h2>
+        <span class="angka text-11 text-text-3">{akun.length} akun</span>
+      </div>
+
+      {#if loading}
+        <Skeleton baris={4} tinggi={36} />
+      {:else if akun.length === 0}
+        <EmptyState judul="Belum ada akun tersimpan" pesan="Simpan kredensial investor MT5 lewat formulir di samping." ringkas />
+      {:else}
+        <div class="overflow-x-auto w-full rounded-control border border-line bg-surface">
+          <table class="w-full border-collapse text-12 font-mono text-left">
+            <thead class="bg-surface-2 border-b border-line">
+              <tr>
+                <th class="px-2.5 py-2 label-mikro">Label</th>
+                <th class="px-2.5 py-2 label-mikro">Login</th>
+                <th class="px-2.5 py-2 label-mikro">Server</th>
+                <th class="px-2.5 py-2 label-mikro">Jenis</th>
+                <th class="px-2.5 py-2 label-mikro text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line-soft">
+              {#each akun as a (a.id)}
+                <tr class="hover:bg-surface-2/60 {a.active ? '' : 'opacity-50'}">
+                  <td class="px-2.5 py-2 text-text font-sans">{a.label || "—"}</td>
+                  <td class="px-2.5 py-2"><code class="text-accent font-semibold">{a.login}</code></td>
+                  <td class="px-2.5 py-2 text-text-2">{a.server}</td>
+                  <td class="px-2.5 py-2 {a.password_kind === 'master' ? 'text-warn font-bold' : 'text-text-3'}">
+                    {a.password_kind === "master" ? "⚠ master" : "investor"}
+                  </td>
+                  <td class="px-2.5 py-2 text-right space-x-1.5 whitespace-nowrap">
+                    <button
+                      type="button"
+                      class="h-7 px-2.5 rounded-control bg-surface-2 hover:border-accent border border-line text-11 text-text-2 hover:text-text cursor-pointer"
+                      onclick={() => tampilkanSandi(a)}
+                    >
+                      Lihat sandi
+                    </button>
+                    <button
+                      type="button"
+                      class="h-7 px-2.5 rounded-control bg-neg/10 hover:bg-neg/20 border border-neg/40 text-11 text-neg cursor-pointer"
+                      onclick={() => hapus(a.id)}
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
+    </section>
+  </div>
 
   {#if menampilkan}
-    <div class="reveal fixed inset-x-0 bottom-20 mx-auto w-[min(30rem,90vw)] bg-surface border border-line rounded-lg p-4 text-center shadow-xl z-50" role="dialog" aria-label="Sandi akun">
-      <p class="text-xs text-text-3 font-mono">Salin sekarang, lalu tutup:</p>
-      <code class="block my-2 text-base font-bold font-mono text-accent select-all">{sandiTerlihat}</code>
-      <button type="button" class="px-3 py-1 rounded bg-accent text-on-accent font-mono text-xs font-bold cursor-pointer" onclick={() => (menampilkan = false)}>Tutup</button>
+    <div
+      class="reveal fixed inset-x-0 bottom-20 mx-auto w-[min(30rem,90vw)] bg-surface border border-line rounded-card p-4 text-center z-50"
+      role="dialog"
+      aria-label="Sandi akun"
+    >
+      <p class="label-mikro text-text-3">Salin sekarang, lalu tutup:</p>
+      <code class="block my-2.5 rounded-control border border-line bg-surface-2 py-2 text-15 font-bold font-mono text-accent select-all">
+        {sandiTerlihat}
+      </code>
+      <button
+        type="button"
+        class="h-8 px-4 rounded-control bg-accent text-on-accent font-mono text-12 font-bold cursor-pointer"
+        onclick={() => (menampilkan = false)}
+      >
+        Tutup
+      </button>
     </div>
   {/if}
-</section>
+</div>

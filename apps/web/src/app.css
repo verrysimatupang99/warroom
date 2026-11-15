@@ -13,7 +13,7 @@
    keputusan ini override catatan PRODUCT.md bahwa tema app.css lama mengikat).
 
    Bahasa visual: "ops ledger" graphite gelap berlapis dengan SATU lampu amber.
-     - graphite netral berlapis (#101214 -> #17191C -> #1D2126), BUKAN biru
+     - graphite netral berlapis (#0b0c0e -> #111316 -> #171a1e), BUKAN biru
      - aksen tunggal AMBER #F5B83D: identitas "lampu war room"
      - mint #34E39A khusus nilai positif TERUKUR (satu warna satu arti)
      - merah #FF6B6B hanya risiko, dan SELALU berpasangan glyph + kata
@@ -40,25 +40,25 @@
    (bukan biru) dari DESIGN-USULAN. Sumber: mockup home.html (Tailwind config). */
 @theme {
 	/* Permukaan graphite netral berlapis Oyenza */
-	--p-ink-950: #0c0d0e;
-	--p-ink-900: #0c0d0e;
-	--p-ink-800: #121314;
-	--p-ink-700: #16181a;
-	--p-ink-600: #232629;
-	--p-ink-500: #2f3337;
-	--p-ink-400: #1c1f22;
-	--p-ink-350: #111214;
-	/* Teks (putih-abu netral) */
-	--p-mist-50: #ededec;
-	--p-mist-300: #a6aab0;
-	--p-mist-500: #787d84;
-	--p-slate-400: #787d84;
+	--p-ink-950: #090a0b;
+	--p-ink-900: #0b0c0e;
+	--p-ink-800: #111316;
+	--p-ink-700: #171a1e;
+	--p-ink-600: #22262b;
+	--p-ink-500: #2e3339;
+	--p-ink-400: #1c1f24;
+	--p-ink-350: #0e1012;
+	/* Teks (putih-abu netral — hierarki 3 tingkat jelas: 50 / 300 / 500) */
+	--p-mist-50: #f1f2f3;
+	--p-mist-300: #b2b6bc;
+	--p-mist-500: #82878f;
+	--p-slate-400: #82878f;
 	/* Aksen tunggal amber / gold + semantik terbatas mint dan merah */
 	--p-mint-400: #3cc76b;
 	--p-amber-400: #f5b83d;
 	--p-red-400: #f2604f;
 	--p-red-300: #f87171;
-	--p-ink-on: #0c0d0e;
+	--p-ink-on: #0b0c0e;
 
 	/* Skala tipografi — satu tangga, tanpa lompatan */
 	--text-10: 10px;
@@ -68,11 +68,13 @@
 	--text-14: 14px;
 	--text-15: 15px;
 	--text-16: 16px;
+	--text-18: 18px;
 	--text-19: 19px;
 	--text-20: 20px;
+	--text-22: 22px;
 	--text-24: 24px;
-	--text-32: 32px;
 	--text-26: 26px;
+	--text-32: 32px;
 	--text-34: 34px;
 
 	/* Radius 6px + hairline — kartu terbaca sebagai dokumen berbatas, bukan
@@ -105,10 +107,10 @@
 	--color-surface-2: var(--p-ink-700);
 	--color-surface-3: var(--p-ink-600);
 	--color-line: var(--p-ink-600);
-	--color-line-soft: var(--p-ink-600);
+	--color-line-soft: var(--p-ink-400);
 	--color-text: var(--p-mist-50);
 	--color-text-2: var(--p-mist-300);
-	--color-text-3: var(--p-mist-300);
+	--color-text-3: var(--p-mist-500);
 	--color-accent: var(--p-amber-400);
 	--color-accent-2: var(--p-amber-400);
 	--color-premium: var(--p-amber-400);
@@ -149,13 +151,13 @@
 
 	/* ---------- LAPIS 3: COMPONENT — nilai khas komponen ----------
 	   Kerapatan mengikuti panduan data-dense (ui-ux-pro-max): padding kartu 12px,
-	   jarak grid 8px, tinggi baris 36px, rail 240px (dulu 320px — terlalu lebar). */
+	   jarak grid 8px, tinggi baris 36px, rail 260px. */
 	--card-bg: var(--color-surface);
 	--card-border: var(--color-line);
 	--card-radius: var(--radius-card);
 	--card-pad: 12px;
 	--grid-gap: 8px;
-	--rail-w: 15rem;
+	--rail-w: 16.25rem;
 	--row-h: 36px;
 	--focus-ring: 2px solid var(--color-accent);
 }
@@ -168,9 +170,10 @@
 		margin: 0;
 		color: var(--color-text);
 		font-family: var(--font-sans);
-		font-size: 14px;
+		font-size: 13.5px;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 		/* FLAT (DESIGN-USULAN): latar polos, tanpa pendar radial. Kedalaman datang
 		   dari lapisan graphite + border hairline, bukan dari glow. */
 		background: var(--color-bg);
@@ -182,8 +185,8 @@
 		letter-spacing: -0.02em;
 		font-weight: 700;
 	}
-	/* Panduan checklist: SEMUA elemen yang bisa diklik harus `cursor-pointer`.
-	   Peramban memberi <button> kursor `default`, jadi ini harus dinyatakan. */
+	/* Panduan checklist: SEMUA elemen yang bisa diklik harus cursor-pointer.
+	   Peramban memberi <button> kursor default, jadi ini harus dinyatakan. */
 	button:not(:disabled),
 	[role='button']:not([aria-disabled='true']),
 	[role='tab'],
@@ -218,9 +221,10 @@
 	   label struktur, bukan sebagai teks kecil yang kebetulan huruf besar. */
 	.label-mikro {
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 10.5px;
+		font-weight: 600;
 		line-height: 1.2;
-		letter-spacing: 0.12em;
+		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--color-text-3);
 	}
@@ -238,6 +242,7 @@
 		background: var(--color-surface);
 		border: 1px solid var(--color-line);
 		border-radius: var(--radius-card);
+		transition: border-color 140ms var(--ease-out);
 	}
 	.permukaan-2 {
 		background: var(--color-surface-2);
@@ -247,7 +252,7 @@
 	.pil {
 		border-radius: var(--radius-track);
 		border: 1px solid var(--color-line);
-		padding: 6px 14px;
+		padding: 5px 12px;
 	}
 	.target-44 {
 		min-height: 44px;
@@ -255,10 +260,10 @@
 	}
 	.transisi {
 		transition:
-			color 160ms var(--ease-out),
-			background-color 160ms var(--ease-out),
-			border-color 160ms var(--ease-out),
-			opacity 160ms var(--ease-out);
+			color 140ms var(--ease-out),
+			background-color 140ms var(--ease-out),
+			border-color 140ms var(--ease-out),
+			opacity 140ms var(--ease-out);
 	}
 
 	/* ---------------------------------------------------------------------
@@ -283,29 +288,26 @@
 		height: 100%;
 		border-radius: var(--radius-track);
 		background: var(--color-text-2);
-		/* Animasi lebar dulu `transition: width 400ms` — itu memicu layout ulang setiap
-		   frame. Diganti transform: scaleX, yang dikerjakan kompositor tanpa layout
-		   (temuan detektor impeccable 6 Okt 2026, "Layout property animation").
-		   transform-origin kiri supaya bar tumbuh dari kiri seperti sebelumnya. */
 		transform-origin: left center;
-		transition: transform 400ms var(--ease-out);
+		transition: transform 280ms var(--ease-out);
+		will-change: transform;
 	}
-	/* Warna isi bar mengikuti makna, bukan dekorasi: mint hanya bila nilai positif
-	   TERUKUR (design-usulan), merah hanya risiko — pemanggil selalu menyisipkan
-	   glyph/kata di labelnya, bukan mengandalkan warna bar. */
-	.bar-isi.terkukur {
+	.bar-isi-pos {
 		background: var(--color-pos);
 	}
-	.bar-isi.warn {
+	.bar-isi-warn {
 		background: var(--color-warn);
 	}
-	.bar-isi.bahaya {
+	.bar-isi-neg {
 		background: var(--color-neg);
+	}
+	.bar-isi-aksen {
+		background: var(--color-accent);
 	}
 
 	/* ---------------------------------------------------------------------
-	   DELTA — perubahan nilai uang/angka. Glif + warna, TIDAK pernah warna saja:
-	   "▲ +12,40" tetap terbaca kalau warnanya hilang.
+	   DELTA — perubahan naik/turun selalu berpasangan glyph (▲ / ▼) + warna
+	   Supaya pembaca buta warna tetap menangkap arah tanpa mengandalkan hue.
 	   --------------------------------------------------------------------- */
 	.delta {
 		display: inline-flex;
@@ -326,11 +328,11 @@
 	   Flash halus hijau/merah saat ada data tick harga/sinyal baru via SSE.
 	   --------------------------------------------------------------------- */
 	@keyframes flash-green-fade {
-		0% { background-color: rgba(52, 227, 154, 0.28); }
+		0% { background-color: rgba(60, 199, 107, 0.24); }
 		100% { background-color: transparent; }
 	}
 	@keyframes flash-red-fade {
-		0% { background-color: rgba(255, 107, 107, 0.28); }
+		0% { background-color: rgba(242, 96, 79, 0.24); }
 		100% { background-color: transparent; }
 	}
 	.flash-tick-up {
@@ -341,28 +343,8 @@
 	}
 }
 
-
-/* ============================================================================
-   CANGKANG LAMA DIHAPUS (6 Okt 2026).
-   Blok `.app`, `.top`, `.bee*`, `.cap-banner`, `.rail`, `.board-*`, `.toast*`,
-   dan media query-nya DULU ada di sini. Semua dihapus saat rombak total karena:
-     - `.app`/`.grid`/`.top`/`.bee*`/`.cap-banner` sudah tidak dipakai satu pun
-       komponen (dicek: 0 pemakaian), dan
-     - tata letaknya kini ditangani AppShell + NavBar + halaman (grid 2 kolom),
-       bukan kelas cangkang warisan beebots.
-   Menyisakan CSS mati membuat pembaca berikutnya mengira masih ada yang bergantung
-   padanya. Komponen yang benar-benar dipakai punya <style> sendiri atau memakai
-   token global (--card-*, --rail-w, --grid-gap).
-   ============================================================================ */
-
-
 /* ============================================================================
    PENYEMPURNAAN AKSESIBILITAS & INTERAKSI (9 Nov 2026)
-   Berlaku untuk SEMUA halaman karena memakai elemen dasar.
-   - focus-visible: keyboard user dapat cincin fokus yang jelas (sebelumnya
-     tombol/tautan hanya bergantung pada hover).
-   - prefers-reduced-motion: matikan animasi bagi yang memintanya.
-   - angka tabular: metrik tidak "bergoyang" saat nilainya berubah.
    ============================================================================ */
 :where(a, button, [role='button'], input, select, textarea, summary):focus-visible {
 	outline: 2px solid var(--color-accent, #f5b83d);
@@ -392,23 +374,16 @@
 	}
 }
 
-
 /* ============================================================================
-   SKIP-LINK, SCROLLBAR, ANCHOR (9 Nov 2026 — upgrade menyeluruh lapisan shell)
-
-   Kenapa di app.css: berlaku untuk SEMUA halaman sekaligus. Menaruhnya di
-   masing-masing halaman berarti 9 salinan yang cepat menyimpang.
+   SKIP-LINK, SCROLLBAR, ANCHOR
    ============================================================================ */
-
-/* Skip-link: pengguna keyboard bisa melompati rail navigasi. Tersembunyi
-   sampai difokuskan — bukan elemen dekoratif yang selalu mencolok. */
 .skip-link {
 	position: absolute;
 	left: 8px;
 	top: -48px;
 	z-index: 100;
 	padding: 10px 14px;
-	border-radius: 8px;
+	border-radius: 6px;
 	background: var(--color-accent);
 	color: var(--color-on-accent);
 	font-family: var(--font-mono, ui-monospace, monospace);
@@ -422,30 +397,42 @@
 	top: 8px;
 }
 
-/* Scrollbar bertema: bawaan browser terang dan memotong tema gelap. */
 * {
 	scrollbar-width: thin;
-	scrollbar-color: var(--color-surface-3, #2f3337) transparent;
+	scrollbar-color: var(--color-surface-3, #22262b) transparent;
 }
 *::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
+	width: 8px;
+	height: 8px;
 }
 *::-webkit-scrollbar-track {
 	background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-	background: var(--color-surface-3, #2f3337);
+	background: var(--color-surface-3, #22262b);
 	border-radius: 999px;
 	border: 2px solid transparent;
 	background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-	background: var(--color-text-3, #787d84);
+	background: var(--color-text-3, #82878f);
 	background-clip: content-box;
 }
 
-/* Lompat ke anchor tidak berhenti di bawah header yang lengket. */
 html {
 	scroll-padding-top: 72px;
+}
+
+/* mobile-responsive-global */
+html, body {
+	overflow-x: hidden;
+	max-width: 100vw;
+}
+@media (max-width: 640px) {
+	table {
+		display: block;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		max-width: 100%;
+	}
 }

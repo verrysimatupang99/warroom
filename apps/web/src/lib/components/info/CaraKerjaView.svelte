@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import NavInfo from '$lib/components/NavInfo.svelte';
 	// Cara kerja — padanan /system algentis. Menjelaskan aliran War Room apa adanya,
 	// bukan aspirasi: alur yang benar-benar jalan (domain → worker → API → web).
 	// Ditulis dari kode, bukan dari rencana.
@@ -104,8 +103,6 @@
 		alasan="dokumentasi arsitektur nyata"
 		description="Aliran yang benar-benar jalan, bukan rencana. Angka hanya dari tabel fakta."
 	/>
-
-	<NavInfo />
 
 	<section class="kartu">
 		<h2 class="judul">Aliran</h2>

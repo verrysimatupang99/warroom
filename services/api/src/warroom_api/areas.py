@@ -86,6 +86,9 @@ AREA_EXTRA: dict[str, tuple[tuple[str, str], ...]] = {
         ("poly.verdict", "verdict"),
         ("poly.dataset", "recorder"),
         ("poly.akses", "cakupan"),
+        ("poly.agent", "ringkas"),
+        ("poly.parity", "drift"),
+        ("poly.money", "klaim-pilot"),
         # Alternatif BTC 5m (skill 0xgetz/polymarket-btc-5m) — dibaca job `polybtc-sync`
         # dari keluaran skill yang berjalan mandiri. Kind sendiri supaya jelas ini
         # bukan bagian arm D favorit.
@@ -101,6 +104,8 @@ AREA_KIND: dict[str, tuple[str, ...]] = {
     # `okx.account`/`okx.positions` = saldo & posisi akun OKX read-only (job okx-sync).
     # Kind sendiri agar jelas ini akun nyata, bukan angka paper.
     "crypto": ("signal", "okx.account", "okx.positions"),
+    # `poly.arm` = 4 arm Polymarket (A-shadow, B-kandidat, C-fade, D-favorit) dari job `poly-sync`.
+    "polymarket": ("poly.arm",),
     # kind `gmgn` = pembacaan folder /home/admin/gmgn-paper/state (job gmgn-sync):
     # kunci `paper` = konfigurasi & kesehatan berkas, `radar` = jendela likuiditas
     # per chain. Sebelumnya kind ini TIDAK sampai ke UI (hanya dibaca kind snapshot),

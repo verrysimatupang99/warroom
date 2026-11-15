@@ -26,8 +26,9 @@
 		broker: string;
 		currency?: string;
 		cent_factor?: number;
-		balance: number;
-		equity: number;
+		balance: number | null;
+		equity: number | null;
+		offline?: boolean;
 		floating_pnl: number;
 		margin: number;
 		free_margin: number;
@@ -71,23 +72,23 @@
 	let galat = $state<string | null>(null);
 	let streamConnected = $state(false);
 	let streamStatus = $state<'connecting' | 'connected' | 'disconnected'>('connecting');
-	let selectedAccount = $state<'452009427' | '434446792'>('452009427');
+	let selectedAccount = $state<'452009427' | '434446792' | '464202979'>('452009427');
 
 	let evtSource: EventSource | null = null;
 
 	let isCent = $derived(mt5?.currency === 'USC' || mt5?.account === '452009427');
 	let modalAwal = $derived(
-		mt5?.account === '452009427' ? 1008.0 : isCent ? 1000.0 : 500.0
+		mt5?.account === '452009427' ? 1008.0 : 1000.0
 	);
 	let retPct = $derived(
-		mt5?.equity !== undefined && modalAwal > 0
+		mt5?.equity != null && modalAwal > 0
 			? ((mt5.equity - modalAwal) / modalAwal) * 100
 			: 0
 	);
 	let pnlToday = $derived(
 		mt5?.net_pnl_today_usd != null
 			? mt5.net_pnl_today_usd
-			: (mt5?.equity !== undefined ? mt5.equity - modalAwal : null)
+			: (mt5?.equity != null ? mt5.equity - modalAwal : null)
 	);
 	let winsDisplay = $derived(mt5?.wins_today ?? mt5?.wins ?? 0);
 	let lossesDisplay = $derived(mt5?.losses_today ?? mt5?.losses ?? 0);
@@ -123,6 +124,10 @@
 
 	function handleTelemetryPacket(packet: Partial<MT5Status>) {
 		if (!packet) return;
+		if (packet.account && String(packet.account) !== selectedAccount) {
+			// Abaikan paket dari akun lain tanpa mereset saldo ke 0
+			return;
+		}
 		mt5 = {
 			connected: packet.connected ?? true,
 			account: packet.account ?? mt5?.account ?? selectedAccount,
@@ -160,6 +165,9 @@
 			if (resMt5.ok) {
 				const data = await resMt5.json();
 				handleTelemetryPacket(data);
+			} else if (resMt5.status === 404) {
+				// Akun offline: tandai offline tanpa trigger kalkulasi -100% drawdown
+				mt5 = { connected: false, account: selectedAccount, broker: '', balance: null, equity: null, offline: true, floating_pnl: 0, margin: 0, free_margin: 0, positions: [], seconds_ago: 0 };
 			}
 			if (resSen.ok) sentinel = await resSen.json();
 			if (resSig.ok) signal = await resSig.json();
@@ -225,7 +233,7 @@
 		connectSse();
 	}
 
-	function switchAccount(acc: '452009427' | '434446792') {
+	function switchAccount(acc: '452009427' | '434446792' | '464202979') {
 		if (selectedAccount === acc) return;
 		selectedAccount = acc;
 		mt5 = null;
@@ -255,7 +263,7 @@
 	<!-- ERROR BANNER WITH RETRY BUTTON -->
 	{#if galat && !mt5}
 		<div class="rounded-card border border-neg/30 bg-neg/10 p-4 text-xs font-mono text-neg flex flex-wrap items-center justify-between gap-3" role="alert">
-			<div class="flex items-center gap-2">
+			<div class="flex flex-wrap items-center gap-2">
 				<span class="inline-block w-2.5 h-2.5 rounded-full bg-neg animate-pulse"></span>
 				<span>Gagal memuat telemetri forex: {galat}</span>
 			</div>
@@ -286,10 +294,12 @@
 						{/if}
 					</div>
 					<div>
-						<div class="flex items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2">
 							<div class="flex flex-wrap items-center gap-2 mb-3">
-		<button type="button" onclick={() => switchAccount('452009427')} class={`px-3 py-1 rounded-full text-xs font-mono border transition ${selectedAccount === '452009427' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Live #452009427 (CENT)</button>
-		<button type="button" onclick={() => switchAccount('434446792')} class={`px-3 py-1 rounded-full text-xs font-mono border transition ${selectedAccount === '434446792' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Paper #434446792 (DEMO)</button>
+		<button type="button" onclick={() => switchAccount('452009427')} class={`px-3 py-1 rounded-full text-xs font-mono border transition cursor-pointer ${selectedAccount === '452009427' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Live #452009427 (CENT)</button>
+		<button type="button" onclick={() => switchAccount('434446792')} class={`px-3 py-1 rounded-full text-xs font-mono border transition cursor-pointer ${selectedAccount === '434446792' ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Paper-1 #434446792 (v3.0 NoMon=OFF)</button>
+		<button type="button" onclick={() => switchAccount('464202979')} class={`px-3 py-1 rounded-full text-xs font-mono border transition cursor-pointer ${selectedAccount === '464202979' ? 'bg-sky-500/20 border-sky-500 text-sky-300' : 'bg-surface-2 border-line-soft text-text-3'}`}>Paper-2 #464202979 (Gold+BTC 24/7)</button>
+		<a href="/forex?sub=paper" class="px-3 py-1 rounded-full text-xs font-mono border bg-surface-2 border-line-soft text-text-3 hover:text-text-1 transition">Paper Codebase</a>
 	</div>
 	<h2 class="font-mono text-base font-bold tracking-wider text-text">EXNESS MT5 ALGO COCKPIT</h2>
 							{#if !loading && mt5}
@@ -322,7 +332,7 @@
 					</div>
 				</div>
 
-				<div class="flex items-center gap-2">
+				<div class="flex flex-wrap items-center gap-2">
 					<a
 						href="/api/v1/tencent/mt5/source.raw"
 						target="_blank"
@@ -345,7 +355,7 @@
 				<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
 					<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
 						<span class="text-[11px] text-text-3 block mb-0.5">MODAL / SALDO</span>
-						<span class="text-lg font-bold text-text">{formatUang(mt5?.balance ?? modalAwal)}</span>
+						<span class="text-lg font-bold text-text">{formatUang(mt5?.offline ? null : (mt5?.balance ?? modalAwal))}</span>
 						<span class="text-[10px] text-text-3 block mt-0.5">{isCent ? 'Saldo Akun (Real Cent)' : 'Baseline Demo'}</span>
 					</div>
 					<div class="rounded-lg bg-surface-2 p-3 border border-line-soft">
@@ -376,7 +386,7 @@
 				<!-- STATUS POSISI LIVE DI MT5 -->
 				<div class="mt-4 rounded-lg bg-white/[0.02] border border-line-soft p-3">
 					<div class="flex flex-wrap items-center justify-between gap-2">
-						<div class="flex items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2">
 							<span class="w-2.5 h-2.5 rounded-full {mt5?.positions && mt5.positions.length > 0 ? 'bg-warn' : 'bg-pos'}"></span>
 							<span class="text-xs font-mono text-text-3">
 								Posisi Terbuka (Open Deals): 
@@ -397,7 +407,7 @@
 								{@const arah = pos.side ?? pos.type ?? 'BUY'}
 								{@const nilaiPnl = pos.pnl_usd ?? pos.pnl ?? 0}
 								<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-2 rounded p-2 text-xs font-mono border border-line-soft">
-									<div class="flex items-center gap-2">
+									<div class="flex flex-wrap items-center gap-2">
 										<span class="rounded px-1.5 py-0.5 font-bold {arah === 'BUY' ? 'bg-pos/20 text-pos' : 'bg-neg/20 text-neg'}">{arah}</span>
 										<span class="text-text font-bold">{pos.symbol}</span>
 										<span class="text-text-3">#{pos.ticket}</span>
@@ -422,7 +432,7 @@
 		<div class="rounded-card border border-line bg-surface p-5">
 			<div>
 				<div class="flex items-center justify-between border-b border-line-soft pb-3 mb-3">
-					<div class="flex items-center gap-2">
+					<div class="flex flex-wrap items-center gap-2">
 						<span class="relative flex h-3 w-3">
 							<span class="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
 						</span>
@@ -475,7 +485,7 @@
 	<div class="rounded-card border border-line bg-surface p-5">
 		<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-4 mb-4">
 			<div>
-				<div class="flex items-center gap-2">
+				<div class="flex flex-wrap items-center gap-2">
 					<h3 class="font-mono text-base font-bold text-text flex items-center gap-2">
 						<svg class="w-4 h-4 text-warn" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />

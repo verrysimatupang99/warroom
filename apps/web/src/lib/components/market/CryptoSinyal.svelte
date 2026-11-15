@@ -8,8 +8,10 @@
 	interface Candle { t: number; o: number; h: number; l: number; c: number; v: number }
 	interface Ticker { symbol?: string; last_price?: number; high_?: number; low_?: number; change_pct_?: number }
 
+	const INTERVALS = ['15m', '1h', '4h', '1d'] as const;
 	let universe = $state<string[]>([]);
 	let simbol = $state('BTCUSDT');
+	let interval = $state<(typeof INTERVALS)[number]>('1h');
 	let ticker = $state<Ticker | null>(null);
 	let candles = $state<Candle[]>([]);
 	let memuat = $state(true);
@@ -30,12 +32,13 @@
 		}
 	}
 
-	async function muatSimbol(s: string) {
+	async function muatSimbol(s: string, tf: (typeof INTERVALS)[number] = interval) {
 		simbol = s;
+		interval = tf;
 		memuat = true;
 		const [t, k] = await Promise.all([
 			j<Ticker>(`/api/v1/tencent/ticker?symbol=${s}`),
-			j<{ candles: Candle[] }>(`/api/v1/tencent/klines?market=crypto&symbol=${s}&interval=1h&limit=15`)
+			j<{ candles: Candle[] }>(`/api/v1/tencent/klines?market=crypto&symbol=${s}&interval=${tf}&limit=15`)
 		]);
 		ticker = t;
 		candles = k?.candles ?? [];
@@ -83,19 +86,33 @@
 	/>
 {:else}
 	<div class="space-y-4">
-		<section class="flex flex-wrap items-center gap-2">
-			<label class="label-mikro font-mono text-text-3" for="pilih-simbol">SIMBOL</label>
-			<select
-				id="pilih-simbol"
-				class="min-h-[44px] rounded-control border border-line bg-surface px-2 font-mono text-12 text-text"
-				value={simbol}
-				onchange={(e) => void muatSimbol((e.currentTarget as HTMLSelectElement).value)}
-			>
-				{#each universe as s (s)}
-					<option value={s}>{s}</option>
+		<section class="flex flex-wrap items-center justify-between gap-2">
+			<div class="flex flex-wrap items-center gap-2">
+				<label class="label-mikro font-mono text-text-3" for="pilih-simbol">SIMBOL</label>
+				<select
+					id="pilih-simbol"
+					class="min-h-[44px] rounded-control border border-line bg-surface px-2 font-mono text-12 text-text"
+					value={simbol}
+					onchange={(e) => void muatSimbol((e.currentTarget as HTMLSelectElement).value, interval)}
+				>
+					{#each universe as s (s)}
+						<option value={s}>{s}</option>
+					{/each}
+				</select>
+				<span class="text-11 text-text-3">{universe.length} simbol USDT di OKX</span>
+			</div>
+			<div class="flex items-center gap-1 font-mono text-11">
+				<span class="label-mikro text-text-3 mr-1">TIMEFRAME</span>
+				{#each INTERVALS as tf (tf)}
+					<button
+						type="button"
+						class="rounded border px-2.5 py-1 {interval === tf ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line text-text-3 hover:text-text'}"
+						onclick={() => void muatSimbol(simbol, tf)}
+					>
+						{tf}
+					</button>
 				{/each}
-			</select>
-			<span class="text-11 text-text-3">{universe.length} simbol USDT di OKX</span>
+			</div>
 		</section>
 
 		<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -105,8 +122,13 @@
 			</div>
 			<div class="rounded-card border border-line bg-surface p-4">
 				<div class="label-mikro font-mono text-text-3">PERUBAHAN 24 JAM</div>
-				<div class="mt-1 font-mono text-17 font-bold text-text">
-					{ticker.change_pct_ == null ? '—' : `${ticker.change_pct_} %`}
+				<div
+					class="mt-1 font-mono text-17 font-bold"
+					class:text-pos={(ticker.change_pct_ ?? 0) > 0}
+					class:text-neg={(ticker.change_pct_ ?? 0) < 0}
+					class:text-text={(ticker.change_pct_ ?? 0) === 0}
+				>
+					{ticker.change_pct_ == null ? '—' : `${ticker.change_pct_ > 0 ? '+' : ''}${ticker.change_pct_} %`}
 				</div>
 			</div>
 			<div class="rounded-card border border-line bg-surface p-4">
@@ -121,7 +143,7 @@
 
 		{#if struktur}
 			<section class="rounded-card border border-line bg-surface p-4">
-				<h2 class="text-13 font-bold text-text">Level struktur (dihitung lokal)</h2>
+				<h2 class="text-13 font-bold text-text">Level struktur (dihitung lokal · {interval})</h2>
 				<dl class="mt-2 grid gap-2 text-12 sm:grid-cols-2 lg:grid-cols-4">
 					<div>
 						<dt class="text-text-3">Swing tinggi</dt>
@@ -140,6 +162,12 @@
 						<dd class="font-mono text-15 font-bold text-text">{struktur.posisi.toFixed(1)} %</dd>
 					</div>
 				</dl>
+				<div class="mt-3 h-2 w-full overflow-hidden rounded bg-surface-2 border border-line-soft">
+					<div
+						class="h-full bg-accent transition-all"
+						style={`width: ${Math.max(0, Math.min(100, struktur.posisi)).toFixed(1)}%`}
+					></div>
+				</div>
 				<p class="mt-2 text-11 text-text-3">
 					Ini bukan analisis SMC. Engine SMC yang lama berjalan di node luar yang sudah
 					tidak aktif, jadi halaman ini hanya menampilkan angka yang bisa dihitung ulang
@@ -149,7 +177,7 @@
 		{/if}
 
 		<section class="rounded-card border border-line bg-surface p-4">
-			<h2 class="text-13 font-bold text-text">Candle 1 jam</h2>
+			<h2 class="text-13 font-bold text-text">Candle ({interval})</h2>
 			<div class="mt-2 overflow-x-auto">
 				<table class="w-full text-11 text-left">
 					<thead class="border-b border-line text-10 text-text-3">

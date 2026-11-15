@@ -142,6 +142,9 @@ def create_app() -> FastAPI:
     app.include_router(idx_ws_router.router)
     app.include_router(journal_router.router)
     app.include_router(kalender_router.router)
+    from .routes import strategies as strategies_router
+
+    app.include_router(strategies_router.router)
     app.include_router(cron_router.router)
 
     # --- papan peringkat strategi (baca fakta, angka + status jujur per setup) ---

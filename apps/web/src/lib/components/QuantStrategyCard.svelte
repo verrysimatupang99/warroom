@@ -1,6 +1,8 @@
 <script lang="ts">
 	// Komponen visual Quant Strategy & Backtest Break-Retest Multi-Asset (Gold, Crypto, Forex)
 	// Ditampilkan di seluruh halaman War Room (https://0xgunsl1ng3r.xyz)
+	import { onMount } from 'svelte';
+	import { getLeaderboard, getResearchRuns } from '$lib/api/client';
 	import Istilah from './Istilah.svelte';
 	import HonestyTag from './HonestyTag.svelte';
 
@@ -23,7 +25,7 @@
 		config: string;
 	}
 
-	const rawAssets: AssetPerformance[] = [
+	const fallbackAssets: AssetPerformance[] = [
 		{
 			symbol: 'XAUUSD',
 			name: 'Gold (Emas)',
@@ -86,10 +88,64 @@
 		}
 	];
 
+	let liveAssets = $state<AssetPerformance[]>([]);
+	let isLive = $state(false);
+	let totalRuns = $state(0);
+	let memuat = $state(true);
+
+	async function muatLive() {
+		memuat = true;
+		try {
+			const [resLb, resRuns] = await Promise.allSettled([
+				getLeaderboard(),
+				getResearchRuns()
+			]);
+
+			if (resRuns.status === 'fulfilled' && resRuns.value?.runs) {
+				totalRuns = resRuns.value.runs.length;
+			}
+
+			if (resLb.status === 'fulfilled' && resLb.value?.strategi && resLb.value.strategi.length > 0) {
+				const mapped: AssetPerformance[] = resLb.value.strategi.map((s) => ({
+					symbol: s.id || s.nama,
+					name: s.nama,
+					category: s.venue ? `${s.venue} (${s.tipe})` : (s.pasar === 'forex' ? 'Forex Major' : 'Crypto Momentum'),
+					market: s.pasar,
+					win_rate: s.winrate_pct ?? 0,
+					pf: s.expectancy_r != null && s.expectancy_r > 0 ? Number((1 + s.expectancy_r).toFixed(2)) : 1.0,
+					pnl: s.total_r != null ? Number(s.total_r.toFixed(2)) : 0,
+					max_dd: s.max_dd_pct ?? (s.max_dd_r ?? 0),
+					trades: s.n_samples ?? 0,
+					config: `${s.tipe} · ${s.venue} · Status: ${s.status_operasional}`
+				}));
+				liveAssets = mapped;
+				isLive = true;
+			} else {
+				// Graceful fallback saat backend memiliki 0 runs / strategi
+				isLive = false;
+				liveAssets = [];
+			}
+		} catch {
+			isLive = false;
+			liveAssets = [];
+		} finally {
+			memuat = false;
+		}
+	}
+
+	onMount(() => {
+		void muatLive();
+	});
+
+	const rawAssets = $derived(isLive && liveAssets.length > 0 ? liveAssets : fallbackAssets);
 	const assets = $derived.by(() => {
 		if (filter === 'all') return rawAssets;
 		return rawAssets.filter((a) => a.market === filter);
 	});
+
+	const goldAsset = $derived(rawAssets.find((a) => a.symbol.includes('XAU') || a.name.includes('Gold')) ?? rawAssets[0]);
+	const solAsset = $derived(rawAssets.find((a) => a.symbol.includes('SOL')) ?? rawAssets.find((a) => a.market === 'crypto') ?? rawAssets[0]);
+	const btcAsset = $derived(rawAssets.find((a) => a.symbol.includes('BTC')) ?? rawAssets.find((a) => a.market === 'crypto') ?? rawAssets[0]);
 </script>
 
 <div class="quant-card">
@@ -109,7 +165,12 @@
 				Hasil validasi backtest deterministik (Anti-Lookahead) terhadap data historis 1.000–2.000+ bar.
 			</p>
 		</div>
-		<div class="head-right">
+		<div class="head-right flex flex-wrap items-center gap-2">
+			{#if isLive}
+				<span class="status-pill pos">LIVE API ({liveAssets.length} STRATEGI{totalRuns > 0 ? ` · ${totalRuns} RUNS` : ''})</span>
+			{:else}
+				<span class="status-pill dim">FALLBACK BASELINE (0 RUNS)</span>
+			{/if}
 			<span class="status-pill pos">100% ASSET PROFITABLE</span>
 		</div>
 	</div>
@@ -119,29 +180,29 @@
 		{#if filter === 'forex' || filter === 'all'}
 			<div class="bento-item gold-box">
 				<div class="item-head">
-					<span class="symbol">🥇 XAUUSD (Gold)</span>
-					<span class="subtext">Metal / Komoditas</span>
+					<span class="symbol">🥇 {goldAsset?.symbol ?? 'XAUUSD'} ({goldAsset?.name ?? 'Gold'})</span>
+					<span class="subtext">{goldAsset?.category ?? 'Metal / Komoditas'}</span>
 				</div>
 				<div class="stats-row">
 					<div class="metric">
 						<span class="lbl">Profit Factor</span>
-						<span class="val pos">1.30</span>
+						<span class="val pos">{goldAsset?.pf?.toFixed(2) ?? '1.30'}</span>
 					</div>
 					<div class="metric">
 						<span class="lbl">Win Rate</span>
-						<span class="val">32.5% <small class="dim">(BE: 25%)</small></span>
+						<span class="val">{goldAsset?.win_rate?.toFixed(1) ?? '32.5'}% <small class="dim">(BE: 25%)</small></span>
 					</div>
 					<div class="metric">
 						<span class="lbl">Net PnL</span>
-						<span class="val pos">+2.34%</span>
+						<span class="val pos">+{goldAsset?.pnl?.toFixed(2) ?? '2.34'}%</span>
 					</div>
 					<div class="metric">
 						<span class="lbl">Max DD</span>
-						<span class="val">2.38%</span>
+						<span class="val">{goldAsset?.max_dd?.toFixed(2) ?? '2.38'}%</span>
 					</div>
 				</div>
 				<p class="formula-desc">
-					<strong>Formula:</strong> Lookback 35 bars · Stop Loss 1.6x ATR · RRR 1:3.0 · Retest Rejection Validated
+					<strong>Formula:</strong> {goldAsset?.config ?? 'Lookback 35 bars · Stop Loss 1.6x ATR · RRR 1:3.0 · Retest Rejection Validated'}
 				</p>
 			</div>
 		{/if}
@@ -149,29 +210,29 @@
 		{#if filter === 'crypto' || filter === 'all'}
 			<div class="bento-item sol-box">
 				<div class="item-head">
-					<span class="symbol">⚡ SOLUSDT &amp; BTC</span>
+					<span class="symbol">⚡ {solAsset?.symbol ?? 'SOLUSDT'} &amp; {btcAsset?.symbol ?? 'BTC'}</span>
 					<span class="subtext">Crypto Momentum</span>
 				</div>
 				<div class="stats-row">
 					<div class="metric">
-						<span class="lbl">SOL Top PnL</span>
-						<span class="val pos">+7.74%</span>
+						<span class="lbl">{solAsset?.symbol ?? 'SOL'} Top PnL</span>
+						<span class="val pos">+{solAsset?.pnl?.toFixed(2) ?? '7.74'}%</span>
 					</div>
 					<div class="metric">
-						<span class="lbl">SOL PF</span>
-						<span class="val pos">1.80</span>
+						<span class="lbl">{solAsset?.symbol ?? 'SOL'} PF</span>
+						<span class="val pos">{solAsset?.pf?.toFixed(2) ?? '1.80'}</span>
 					</div>
 					<div class="metric">
-						<span class="lbl">BTC Win Rate</span>
-						<span class="val">39.4%</span>
+						<span class="lbl">{btcAsset?.symbol ?? 'BTC'} Win Rate</span>
+						<span class="val">{btcAsset?.win_rate?.toFixed(1) ?? '39.4'}%</span>
 					</div>
 					<div class="metric">
-						<span class="lbl">BTC PF</span>
-						<span class="val pos">1.74</span>
+						<span class="lbl">{btcAsset?.symbol ?? 'BTC'} PF</span>
+						<span class="val pos">{btcAsset?.pf?.toFixed(2) ?? '1.74'}</span>
 					</div>
 				</div>
 				<p class="formula-desc">
-					<strong>Formula SOL:</strong> LB 15 bar, SL 1.8x ATR, RRR 1:3.0 | <strong>BTC:</strong> LB 20 bar, SL 1.2x ATR
+					<strong>Formula {solAsset?.symbol ?? 'SOL'}:</strong> {solAsset?.config ?? 'LB 15 bar, SL 1.8x ATR, RRR 1:3.0'} | <strong>{btcAsset?.symbol ?? 'BTC'}:</strong> {btcAsset?.config ?? 'LB 20 bar, SL 1.2x ATR'}
 				</p>
 			</div>
 		{/if}
