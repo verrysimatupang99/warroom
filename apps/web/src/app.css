@@ -425,8 +425,8 @@ html {
 
 /* mobile-responsive-global */
 html, body {
-	overflow-x: hidden;
-	max-width: 100vw;
+	overflow-x: clip;
+	max-width: 100%;
 }
 @media (max-width: 640px) {
 	table {

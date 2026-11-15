@@ -3,6 +3,7 @@
 	// yang benar-benar tersedia: IHSG publik, ringkasan pasar (penggerak + blue chip),
 	// dan pencarian saham. Yang belum ada tetap dinyatakan, bukan disembunyikan.
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import { urlApi } from '$lib/api/client';
@@ -10,6 +11,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import BatasPasar from '$lib/components/BatasPasar.svelte';
+	import TrackBar from '$lib/components/TrackBar.svelte';
 	import RunningTrade from '$lib/components/market/RunningTrade.svelte';
 
 	interface Candle { t: number; o: number; h: number; l: number; c: number; v: number }
@@ -69,14 +71,39 @@
 	let akumData = $state<{ start_date?: string; end_date?: string; series?: AkumSeries[] } | null>(null);
 	let analisaTeks = $state<string | null>(null);
 
+	const KODE_CEPAT = ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII', 'ADRO', 'ANTM', 'BRIS'];
+
 	// State tab Sinyal (Screener)
 	let screenerData = $state<{ date?: string; rows?: ScreenerRow[] } | null>(null);
 	let memuatScreener = $state(false);
 	let galatScreener = $state<string | null>(null);
+	let screenerKueri = $state('');
+	let screenerBucket = $state('SEMUA');
+
+	const screenerBuckets = $derived.by(() => {
+		const set = new Set<string>();
+		for (const r of screenerData?.rows ?? []) {
+			if (r.bucket) set.add(r.bucket);
+		}
+		return ['SEMUA', ...Array.from(set)];
+	});
+	const screenerRowsFiltered = $derived.by(() => {
+		const q = screenerKueri.trim().toUpperCase();
+		return (screenerData?.rows ?? []).filter((r) => {
+			if (screenerBucket !== 'SEMUA' && r.bucket !== screenerBucket) return false;
+			if (!q) return true;
+			return (
+				(r.stock_code ?? '').toUpperCase().includes(q) ||
+				(r.stock_name ?? '').toUpperCase().includes(q) ||
+				(r.summary ?? '').toUpperCase().includes(q)
+			);
+		});
+	});
 
 	// State tab Uji (Musiman & Riwayat Emiten)
 	const KODE_POPULER = ['BBCA', 'BBRI', 'BMRI', 'TLKM', 'ASII'];
 	let kodeUji = $state('BBCA');
+	let kodeInputUji = $state('');
 	let musimanData = $state<MusimanData | null>(null);
 	let riwayatRows = $state<RiwayatRow[]>([]);
 	let memuatUji = $state(false);
@@ -185,9 +212,20 @@
 			const r = await fetch(urlApi(`/api/v1/idx-edge/harga/${encodeURIComponent(kode)}`), { credentials: 'include' });
 			const isi = await r.json().catch(() => null);
 			detail = r.ok ? (isi?.hasil ?? null) : null;
+			if (detail && typeof document !== 'undefined') {
+				setTimeout(() => {
+					document.getElementById('panel-emiten')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}, 60);
+			}
 		} catch {
 			detail = null;
 		}
+	}
+
+	async function inspeksiScreener(kode?: string) {
+		if (!kode) return;
+		await goto('/idx?sub=ringkas');
+		await buka(kode);
 	}
 
 	async function pilihTabDetail(t: 'ringkasan' | 'broker' | 'akumulasi' | 'analisa') {
@@ -297,11 +335,23 @@
 				/>
 				<button
 					type="submit" disabled={memuatCari || kueri.trim().length < 2}
-					class="min-h-[44px] rounded-control border border-line px-3 font-mono text-11 text-text-2 hover:border-accent hover:text-accent disabled:opacity-40"
+					class="min-h-[44px] rounded-control border border-line px-3 font-mono text-11 text-text-2 hover:border-accent hover:text-accent disabled:opacity-40 cursor-pointer"
 				>
 					{memuatCari ? 'mencari…' : 'cari'}
 				</button>
 			</form>
+			<div class="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-10">
+				<span class="text-text-3">Akses cepat:</span>
+				{#each KODE_CEPAT as kc (kc)}
+					<button
+						type="button"
+						onclick={() => void buka(kc)}
+						class="rounded border px-2 py-0.5 cursor-pointer {detail?.code === kc ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line bg-surface-2 text-text-2 hover:border-accent hover:text-accent'}"
+					>
+						{kc}
+					</button>
+				{/each}
+			</div>
 
 			{#if hasilCari.length > 0}
 				<ul class="mt-2 divide-y divide-line-soft">
@@ -321,7 +371,7 @@
 			{/if}
 
 			{#if detail}
-				<div class="mt-3 rounded border border-line bg-surface-2 p-3">
+				<div id="panel-emiten" class="mt-3 rounded border border-line bg-surface-2 p-3">
 					<div class="flex flex-wrap items-center justify-between gap-2">
 						<div class="flex flex-wrap items-baseline gap-2">
 							<span class="font-mono text-14 font-bold text-text">{detail.code}</span>
@@ -538,13 +588,23 @@
 
 		<!-- Kuota & Batas jujur -->
 		{#if ringkas?.pemakaian}
+			{@const pakai = Number(ringkas.pemakaian.panggilan_hari_ini ?? 0)}
+			{@const anggaran = Number(ringkas.pemakaian.anggaran_harian ?? 100)}
 			<section class="rounded-card border border-line bg-surface p-4">
 				<h2 class="text-13 font-bold text-text">Kuota API idx-edge</h2>
-				<div class="mt-2 rounded border border-line bg-surface-2 p-2">
+				<div class="mt-2 rounded border border-line bg-surface-2 p-3 space-y-2">
+					<TrackBar
+						label="Pemakaian Harian Estimasi"
+						nilai={pakai}
+						maks={anggaran > 0 ? anggaran : 100}
+						ambang={anggaran * 0.8}
+						teksAmbang={`Batas 80% (${Math.round(anggaran * 0.8)})`}
+						nada={pakai >= anggaran * 0.85 ? 'bahaya' : pakai >= anggaran * 0.65 ? 'warn' : 'terkukur'}
+					/>
 					<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-11">
 						<span class="text-text-3">Panggilan keluar hari ini</span>
-						<span class="text-text font-bold">{ringkas.pemakaian.panggilan_hari_ini ?? 0}</span>
-						<span class="text-text-3">/ anggaran {ringkas.pemakaian.anggaran_harian ?? 0}</span>
+						<span class="text-text font-bold">{pakai}</span>
+						<span class="text-text-3">/ anggaran {anggaran}</span>
 						<span class="text-text-3">· sisa ± {ringkas.pemakaian.sisa_perkiraan ?? 0}</span>
 					</div>
 					<p class="mt-1 text-10 leading-relaxed text-text-3">
@@ -581,7 +641,29 @@
 						<EmptyState judul="Belum ada kandidat screener" pesan="Sumber idx-edge belum mengembalikan daftar saringan untuk hari ini." ringkas={true} />
 					</div>
 				{:else}
-					<div class="mt-3 overflow-x-auto">
+					<div class="mt-3 flex flex-wrap items-center justify-between gap-2 font-mono text-11">
+						<div class="flex flex-wrap items-center gap-1.5">
+							{#each screenerBuckets as b (b)}
+								<button
+									type="button"
+									onclick={() => (screenerBucket = b)}
+									class="rounded border px-2 py-1 text-10 cursor-pointer {screenerBucket === b ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line bg-surface-2 text-text-3 hover:text-text'}"
+								>
+									{b}
+								</button>
+							{/each}
+						</div>
+						<div class="flex items-center gap-2">
+							<input
+								type="text"
+								bind:value={screenerKueri}
+								placeholder="Filter kode / emiten…"
+								class="rounded border border-line bg-surface-2 px-2.5 py-1 text-11 text-text uppercase focus:border-accent focus:outline-hidden"
+							/>
+							<span class="text-10 text-text-3">{screenerRowsFiltered.length}/{screenerData.rows.length}</span>
+						</div>
+					</div>
+					<div class="mt-2 overflow-x-auto">
 						<table class="w-full text-11 text-left">
 							<thead class="border-b border-line text-10 text-text-3">
 								<tr>
@@ -590,14 +672,21 @@
 									<th class="px-2 py-1.5 text-right">WR Event</th>
 									<th class="px-2 py-1.5 text-right">Potensi</th>
 									<th class="px-2 py-1.5 text-right">Risiko DD</th>
-									<th class="px-2 py-1.5">Catatan & Ringkasan</th>
+									<th class="px-2 py-1.5">Catatan &amp; Ringkasan</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-line-soft">
-								{#each screenerData.rows as r (r.stock_code)}
+								{#each screenerRowsFiltered as r (r.stock_code)}
 									<tr class="hover:bg-surface-2/60">
 										<td class="px-2 py-1.5 font-mono">
-											<div class="font-bold text-text">{r.stock_code}</div>
+											<button
+												type="button"
+												onclick={() => void inspeksiScreener(r.stock_code)}
+												class="font-bold text-accent underline hover:text-text cursor-pointer"
+												title="Buka harga, broker & analisa emiten"
+											>
+												{r.stock_code}
+											</button>
 											<div class="text-10 text-text-3 truncate max-w-[160px]">{r.stock_name ?? ''}</div>
 										</td>
 										<td class="px-2 py-1.5 font-mono text-10 text-text-2">{r.bucket ?? '—'}</td>
@@ -635,10 +724,34 @@
 						</p>
 					</div>
 					<div class="flex flex-wrap items-center gap-1.5 font-mono text-11">
+						<form
+							class="flex items-center gap-1"
+							onsubmit={(e) => {
+								e.preventDefault();
+								if (kodeInputUji.trim()) {
+									void muatUjiEmiten(kodeInputUji);
+									kodeInputUji = '';
+								}
+							}}
+						>
+							<input
+								type="text"
+								bind:value={kodeInputUji}
+								placeholder="Kode lain (ANTM…)"
+								maxlength="8"
+								class="w-32 rounded border border-line bg-surface-2 px-2 py-1 text-11 uppercase text-text focus:border-accent focus:outline-hidden"
+							/>
+							<button
+								type="submit"
+								class="rounded border border-line bg-surface-2 px-2 py-1 text-10 text-text-2 hover:border-accent hover:text-accent cursor-pointer"
+							>
+								Uji
+							</button>
+						</form>
 						{#each KODE_POPULER as kp (kp)}
 							<button
 								type="button"
-								class="rounded border px-2.5 py-1 {kodeUji === kp ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line text-text-3 hover:text-text'}"
+								class="rounded border px-2.5 py-1 cursor-pointer {kodeUji === kp ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line text-text-3 hover:text-text'}"
 								onclick={() => void muatUjiEmiten(kp)}
 							>
 								{kp}

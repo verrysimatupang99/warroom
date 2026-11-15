@@ -137,7 +137,9 @@
 	.desktop-sidebar-slot {
 		position: sticky;
 		top: 0;
+		align-self: flex-start;
 		height: 100dvh;
+		max-height: 100dvh;
 		flex-shrink: 0;
 		z-index: 50;
 	}
@@ -147,7 +149,8 @@
 		left: 0;
 		right: 0;
 		height: 48px;
-		background: var(--color-surface);
+		background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+		backdrop-filter: blur(8px);
 		border-bottom: 1px solid var(--color-line);
 		display: flex;
 		align-items: center;

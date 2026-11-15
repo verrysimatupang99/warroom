@@ -112,7 +112,7 @@
 					category: s.venue ? `${s.venue} (${s.tipe})` : (s.pasar === 'forex' ? 'Forex Major' : 'Crypto Momentum'),
 					market: s.pasar,
 					win_rate: s.winrate_pct ?? 0,
-					pf: s.expectancy_r != null && s.expectancy_r > 0 ? Number((1 + s.expectancy_r).toFixed(2)) : 1.0,
+					pf: s.expectancy_r != null ? Number(Math.max(0.1, 1 + s.expectancy_r).toFixed(2)) : 1.0,
 					pnl: s.total_r != null ? Number(s.total_r.toFixed(2)) : 0,
 					max_dd: s.max_dd_pct ?? (s.max_dd_r ?? 0),
 					trades: s.n_samples ?? 0,
@@ -143,6 +143,9 @@
 		return rawAssets.filter((a) => a.market === filter);
 	});
 
+	const posCount = $derived(assets.filter((a) => a.pnl > 0).length);
+	const pnlUnit = $derived(isLive ? 'R' : '%');
+	const fmtSigned = (v: number, u: string) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(2)}${u}`;
 	const goldAsset = $derived(rawAssets.find((a) => a.symbol.includes('XAU') || a.name.includes('Gold')) ?? rawAssets[0]);
 	const solAsset = $derived(rawAssets.find((a) => a.symbol.includes('SOL')) ?? rawAssets.find((a) => a.market === 'crypto') ?? rawAssets[0]);
 	const btcAsset = $derived(rawAssets.find((a) => a.symbol.includes('BTC')) ?? rawAssets.find((a) => a.market === 'crypto') ?? rawAssets[0]);
@@ -171,7 +174,9 @@
 			{:else}
 				<span class="status-pill dim">FALLBACK BASELINE (0 RUNS)</span>
 			{/if}
-			<span class="status-pill pos">100% ASSET PROFITABLE</span>
+			{#if assets.length > 0}
+				<span class="status-pill {posCount === assets.length ? 'pos' : posCount > 0 ? 'warn' : 'neg'}">{posCount}/{assets.length} POSITIF</span>
+			{/if}
 		</div>
 	</div>
 
@@ -194,7 +199,7 @@
 					</div>
 					<div class="metric">
 						<span class="lbl">Net PnL</span>
-						<span class="val pos">+{goldAsset?.pnl?.toFixed(2) ?? '2.34'}%</span>
+						<span class="val {(goldAsset?.pnl ?? 0) >= 0 ? 'pos' : 'neg'}">{fmtSigned(goldAsset?.pnl ?? 2.34, pnlUnit)}</span>
 					</div>
 					<div class="metric">
 						<span class="lbl">Max DD</span>
@@ -216,7 +221,7 @@
 				<div class="stats-row">
 					<div class="metric">
 						<span class="lbl">{solAsset?.symbol ?? 'SOL'} Top PnL</span>
-						<span class="val pos">+{solAsset?.pnl?.toFixed(2) ?? '7.74'}%</span>
+						<span class="val {(solAsset?.pnl ?? 0) >= 0 ? 'pos' : 'neg'}">{fmtSigned(solAsset?.pnl ?? 7.74, pnlUnit)}</span>
 					</div>
 					<div class="metric">
 						<span class="lbl">{solAsset?.symbol ?? 'SOL'} PF</span>
@@ -268,8 +273,8 @@
 								<td><span class="cat-pill">{a.category}</span></td>
 								<td class="ka angka">{a.trades}</td>
 								<td class="ka angka">{a.win_rate.toFixed(1)}%</td>
-								<td class="ka angka bold pos">{a.pf.toFixed(2)}</td>
-								<td class="ka angka bold pos">+{a.pnl.toFixed(2)}%</td>
+								<td class="ka angka bold {a.pf >= 1.0 ? 'pos' : 'neg'}">{a.pf.toFixed(2)}</td>
+								<td class="ka angka bold {a.pnl >= 0 ? 'pos' : 'neg'}">{fmtSigned(a.pnl, pnlUnit)}</td>
 								<td class="ka angka dim">{a.max_dd.toFixed(2)}%</td>
 								<td class="dim code">{a.config}</td>
 							</tr>
@@ -318,6 +323,17 @@
 		color: var(--redup, var(--color-text-3));
 		margin: 0;
 	}
+	.status-pill.warn {
+		background: color-mix(in srgb, var(--kuning, var(--color-warn)) 15%, transparent);
+		color: var(--kuning, var(--color-warn));
+		border-color: color-mix(in srgb, var(--kuning, var(--color-warn)) 40%, transparent);
+	}
+	.status-pill.neg {
+		background: color-mix(in srgb, var(--merah, var(--color-neg)) 15%, transparent);
+		color: var(--merah, var(--color-neg));
+		border-color: color-mix(in srgb, var(--merah, var(--color-neg)) 40%, transparent);
+	}
+	.neg { color: var(--merah, var(--color-neg)); }
 	.status-pill {
 		font-size: 0.72rem;
 		font-weight: 700;

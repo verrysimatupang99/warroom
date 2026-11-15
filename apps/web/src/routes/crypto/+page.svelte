@@ -24,7 +24,7 @@
 	aktif={sub}
 	judul="Crypto"
 	tag="PAPER"
-	deskripsi="Paper trading momentum di 40 koin teratas menurut volume. Tanpa order nyata, hanya pencatatan."
+	deskripsi="Paper trading momentum di 65 koin teratas menurut volume OKX (universe 485+ pair). Tanpa order nyata, hanya pencatatan."
 	sumber="OKX + momentum_paper.json"
 	terverifikasi={true}
 >

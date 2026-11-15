@@ -19,6 +19,7 @@
 	let memuat = $state(true);
 	let galat = $state<string | null>(null);
 	let filter = $state<'all' | 'forex' | 'crypto'>('all');
+	let kueri = $state('');
 
 	const PILIHAN = [
 		{ nilai: 'all', label: 'Semua' },
@@ -26,7 +27,18 @@
 		{ nilai: 'crypto', label: 'Crypto' }
 	] as const;
 
-	const terfilter = $derived(filter === 'all' ? trades : trades.filter((t) => t.market === filter));
+	const terfilter = $derived.by(() => {
+		const q = kueri.trim().toUpperCase();
+		return trades.filter((t) => {
+			if (filter !== 'all' && t.market !== filter) return false;
+			if (!q) return true;
+			return (
+				(t.symbol ?? '').toUpperCase().includes(q) ||
+				(t.account ?? '').toUpperCase().includes(q) ||
+				(t.side ?? '').toUpperCase().includes(q)
+			);
+		});
+	});
 
 	// Paginasi: 25 baris per halaman supaya halaman tak terlalu panjang.
 	const PER_HALAMAN = 25;
@@ -53,7 +65,7 @@
 		return { total: terfilter.length, menang, rugi, totalR, wr };
 	});
 	// Reset ke halaman 0 saat filter berubah.
-	$effect(() => { void filter; halaman = 0; });
+	$effect(() => { void filter; void kueri; halaman = 0; });
 
 	async function muat() {
 		memuat = true;
@@ -81,6 +93,20 @@
 		const pad = (x: number) => String(x).padStart(2, '0');
 		return `${pad(d.getDate())} ${bulan[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 	}
+	function hasilNada(t: Trade): 'pos' | 'neg' | 'netral' {
+		if (t.market === 'crypto') {
+			if (t.r == null) return 'netral';
+			return t.r > 0 ? 'pos' : t.r < 0 ? 'neg' : 'netral';
+		}
+		const isCent = t.currency === 'USC' || t.account === '452009427';
+		const val = isCent
+			? (t.net_usc != null && String(t.net_usc) !== '' ? Number(t.net_usc) : (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) * 100 : null))
+			: (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) : null);
+		if (val != null && !isNaN(val)) return val > 0 ? 'pos' : val < 0 ? 'neg' : 'netral';
+		const num = parseFloat(t.pnl_pct ?? '');
+		return !isNaN(num) && num !== 0 ? (num > 0 ? 'pos' : 'neg') : 'netral';
+	}
+
 	function hasil(t: Trade) {
 		if (t.market === 'crypto') return t.r != null ? `${t.r > 0 ? '+' : ''}${t.r}R` : '—';
 		const isCent = t.currency === 'USC' || t.account === '452009427';
@@ -137,21 +163,38 @@
 </div>
 
 <div class="space-y-4">
-	<div
-		class="inline-flex flex-wrap gap-1 rounded-card border border-line bg-surface p-1"
-		role="tablist"
-		aria-label="Filter market"
-	>
-		{#each PILIHAN as p (p.nilai)}
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<div
+			class="inline-flex flex-wrap gap-1 rounded-card border border-line bg-surface p-1"
+			role="tablist"
+			aria-label="Filter market"
+		>
+			{#each PILIHAN as p (p.nilai)}
+				<button
+					type="button"
+					class="label-mikro transisi min-h-[34px] rounded-control border px-3 py-1 cursor-pointer {filter === p.nilai
+						? 'border-accent/60 bg-surface-2 text-accent'
+						: 'border-transparent text-text-3 hover:border-line hover:bg-surface-2/60 hover:text-text'}"
+					aria-pressed={filter === p.nilai}
+					onclick={() => (filter = p.nilai)}
+				>{p.label}</button>
+			{/each}
+		</div>
+		<div class="flex items-center gap-2">
+			<input
+				type="text"
+				bind:value={kueri}
+				placeholder="Cari simbol / akun…"
+				class="min-h-[36px] rounded-control border border-line bg-surface px-2.5 font-mono text-11 uppercase text-text focus:border-accent focus:outline-hidden"
+			/>
 			<button
 				type="button"
-				class="label-mikro transisi min-h-[34px] rounded-control border px-3 py-1 cursor-pointer {filter === p.nilai
-					? 'border-accent/60 bg-surface-2 text-accent'
-					: 'border-transparent text-text-3 hover:border-line hover:bg-surface-2/60 hover:text-text'}"
-				aria-pressed={filter === p.nilai}
-				onclick={() => (filter = p.nilai)}
-			>{p.label}</button>
-		{/each}
+				onclick={() => void muat()}
+				class="min-h-[36px] rounded-control border border-line bg-surface px-2.5 font-mono text-11 text-text-2 hover:border-accent hover:text-accent cursor-pointer"
+			>
+				Segarkan ⟳
+			</button>
+		</div>
 	</div>
 
 	{#if memuat}
@@ -204,13 +247,14 @@
 					</thead>
 					<tbody class="divide-y divide-line-soft">
 						{#each terpaginasi as t, i (t.ticket ?? (t.iso ? `${t.iso}-${t.symbol}-${i}` : i))}
+							{@const nada = hasilNada(t)}
 							<tr class="hover:bg-surface-2/60">
 								<td class="px-2.5 py-1.5 angka text-text-3 whitespace-nowrap">{fmtWaktu(t.iso)}</td>
 								<td class="px-2.5 py-1.5 uppercase font-mono text-11 text-text-3">{t.market ?? '—'}</td>
 								<td class="px-2.5 py-1.5 angka font-semibold text-text">{t.symbol ?? '—'}</td>
 								<td class="px-2.5 py-1.5 font-mono text-11 text-text-2">{t.side ?? '—'}</td>
 								<td class="px-2.5 py-1.5 text-right angka text-text">{t.price_filled ?? '—'}</td>
-								<td class="px-2.5 py-1.5 text-right angka text-text">{hasil(t)}</td>
+								<td class="px-2.5 py-1.5 text-right angka font-semibold" class:text-pos={nada === 'pos'} class:text-neg={nada === 'neg'} class:text-text={nada === 'netral'}>{hasil(t)}</td>
 								{#if filter === 'forex'}<td class="px-2.5 py-1.5 text-right angka text-text-3">{t.slippage_pts || '—'}</td>{/if}
 							</tr>
 						{/each}

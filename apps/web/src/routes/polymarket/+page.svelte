@@ -11,6 +11,7 @@
 	import PolyAltBtc5m from '$lib/components/PolyAltBtc5m.svelte';
 	import GateBlok from '$lib/components/GateBlok.svelte';
 	import DatasetExplorer from '$lib/components/DatasetExplorer.svelte';
+	import TrackBar from '$lib/components/TrackBar.svelte';
 
 	const area = AREAS.find((a) => a.kunci === 'polymarket')!;
 	const sub = $derived.by(() => {
@@ -21,10 +22,13 @@
 	let payload = $state<AreaPayload | null>(null);
 	let arming = $state<LiveArming | null>(null);
 	let memuat = $state(true);
+	let menyegarkan = $state(false);
 	let galat = $state<string | null>(null);
+	let eventFilter = $state<'semua' | 'masuk' | 'tolak'>('semua');
 
-	async function muat() {
-		memuat = true;
+	async function muat(senyap = false) {
+		if (senyap) menyegarkan = true;
+		else memuat = true;
 		galat = null;
 		const [a, l] = await Promise.allSettled([getAreaFakta('polymarket'), getLiveArming()]);
 		if (a.status === 'fulfilled') {
@@ -36,10 +40,13 @@
 			arming = l.value;
 		}
 		memuat = false;
+		menyegarkan = false;
 	}
 
 	onMount(() => {
 		void muat();
+		const timer = setInterval(() => void muat(true), 30_000);
+		return () => clearInterval(timer);
 	});
 
 	function cariFakta(kind: string, key: string): Fact | null {
@@ -84,6 +91,12 @@
 			const wins = typeof s.wins === 'number' ? s.wins : typeof tot.wins === 'number' ? tot.wins : null;
 			const losses = typeof s.losses === 'number' ? s.losses : typeof tot.losses === 'number' ? tot.losses : null;
 			const wr = settled && settled > 0 && wins != null ? (wins / settled) * 100 : null;
+			const initBal = typeof s.initialBalance === 'number' ? s.initialBalance : 20;
+			const pnlNum = typeof s.pnl === 'number' ? s.pnl : null;
+			const roiPct = initBal > 0 && pnlNum != null ? (pnlNum / initBal) * 100 : null;
+			const m400 = typeof v?.masuk_400_baris === 'number' ? v.masuk_400_baris : null;
+			const t400 = typeof v?.tolak_400_baris === 'number' ? v.tolak_400_baris : null;
+			const selPct = m400 != null && t400 != null && m400 + t400 > 0 ? (m400 / (m400 + t400)) * 100 : null;
 			return {
 				...item,
 				tersedia: Boolean(v),
@@ -94,14 +107,16 @@
 				windowSec: strat.decideWindowSeconds ?? '45-240',
 				invert: Boolean(strat.invert),
 				balance: typeof s.balance === 'number' ? s.balance : typeof s.equity === 'number' ? s.equity : null,
-				initialBalance: typeof s.initialBalance === 'number' ? s.initialBalance : null,
-				pnl: typeof s.pnl === 'number' ? s.pnl : null,
+				initialBalance: initBal,
+				pnl: pnlNum,
+				roiPct,
 				settled,
 				wins,
 				losses,
 				wr,
-				masuk400: v?.masuk_400_baris ?? null,
-				tolak400: v?.tolak_400_baris ?? null,
+				masuk400: m400,
+				tolak400: t400,
+				selPct,
 				mtime: v?.state_mtime ?? null
 			};
 		});
@@ -113,6 +128,14 @@
 	const agenHb = $derived((agen?.heartbeat ?? null) as Record<string, any> | null);
 	const settledList = $derived(((agen?.settled_terakhir ?? []) as Record<string, any>[]));
 	const eventsList = $derived(((agen?.events_terakhir ?? []) as Record<string, any>[]));
+	function isEventMasuk(ev: Record<string, any>): boolean {
+		const teks = `${ev.kind ?? ''} ${ev.reason ?? ''}`.toLowerCase();
+		return teks.includes('entry') || teks.includes('enter') || teks.includes('buy') || teks.includes('masuk') || teks.includes('order');
+	}
+	const filteredEvents = $derived.by(() => {
+		if (eventFilter === 'semua') return eventsList;
+		return eventsList.filter((ev) => (eventFilter === 'masuk' ? isEventMasuk(ev) : !isEventMasuk(ev)));
+	});
 	const diterapkanList = $derived(((agen?.diterapkan_200 ?? []) as Record<string, any>[]));
 	const ditolakList = $derived(((agen?.ditolak_200 ?? []) as Record<string, any>[]));
 	const polyAltLedger = $derived(((polyAlt?.ledger?.terakhir ?? []) as Record<string, any>[]));
@@ -164,9 +187,9 @@
 		<div class="space-y-4">
 			<!-- 4 Kartu KPI Utama (seragam dgn Forex, Crypto, IDX) -->
 			<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				<div class="rounded-card border border-line bg-surface p-4">
+				<div class="rounded-card border border-line bg-surface p-4 space-y-2">
 					<div class="label-mikro font-mono text-text-3">VERDICT FAVORIT (0.70–0.95)</div>
-					<div class="mt-1 flex items-baseline gap-2">
+					<div class="flex items-baseline gap-2">
 						<span class="font-mono text-17 font-bold text-pos">
 							{verdict?.winRate != null ? `${angka(verdict.winRate, 2)}%` : '—'}
 						</span>
@@ -176,7 +199,15 @@
 							</span>
 						{/if}
 					</div>
-					<div class="mt-1 font-mono text-11 text-text-3">
+					<TrackBar
+						label="Win Rate vs Break-Even"
+						nilai={verdict?.winRate ?? null}
+						maks={100}
+						ambang={verdict?.breakEven_pct ?? null}
+						teksAmbang={verdict?.breakEven_pct != null ? `BE ${angka(verdict.breakEven_pct, 1)}%` : null}
+						nada={(verdict?.evPerStake ?? 0) > 0 ? 'terkukur' : 'warn'}
+					/>
+					<div class="font-mono text-11 text-text-3">
 						{verdict?.win != null && verdict?.n != null
 							? `${verdict.win.toLocaleString('id-ID')}W / ${verdict.n.toLocaleString('id-ID')} sampel (${(verdict.windows ?? 0).toLocaleString('id-ID')} window)`
 							: 'menunggu verdict-sync'}
@@ -255,21 +286,30 @@
 							Perbandingan performa antar-arm di <code class="font-mono">/var/lib/poly-paper*</code> beserta keputusan 400 evaluasi terakhir.
 						</p>
 					</div>
-					<span class="font-mono text-10 text-text-3">sumber: job poly-sync</span>
+					<div class="flex items-center gap-2 font-mono text-10 text-text-3">
+						<span>sumber: job poly-sync · auto 30s</span>
+						<button
+							type="button"
+							onclick={() => void muat(true)}
+							class="rounded border border-line bg-surface-2 px-2 py-1 text-text-2 hover:border-accent hover:text-accent cursor-pointer"
+						>
+							{menyegarkan ? 'Menyegarkan…' : 'Segarkan ⟳'}
+						</button>
+					</div>
 				</div>
 
 				<div class="mt-3 overflow-x-auto">
 					<table class="w-full text-left text-11">
 						<thead class="border-b border-line font-mono text-10 text-text-3">
 							<tr>
-								<th class="px-2 py-1.5">Arm & Fokus</th>
+								<th class="px-2 py-1.5">Arm &amp; Fokus</th>
 								<th class="px-2 py-1.5">Band Odds</th>
 								<th class="px-2 py-1.5">Window</th>
 								<th class="px-2 py-1.5 text-right">Settled (W/L)</th>
 								<th class="px-2 py-1.5 text-right">Win Rate</th>
 								<th class="px-2 py-1.5 text-right">Saldo Paper</th>
-								<th class="px-2 py-1.5 text-right">PnL Bersih</th>
-								<th class="px-2 py-1.5 text-right">Ekor 400 (Masuk/Tolak)</th>
+								<th class="px-2 py-1.5 text-right">PnL / ROI</th>
+								<th class="px-2 py-1.5 text-right">Ekor 400 (Selektivitas)</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-line-soft font-mono">
@@ -299,9 +339,15 @@
 									<td class="px-2 py-2 text-right text-text">{usd(a.balance)}</td>
 									<td class="px-2 py-2 text-right font-bold {(a.pnl ?? 0) > 0 ? 'text-pos' : (a.pnl ?? 0) < 0 ? 'text-neg' : 'text-text-3'}">
 										{usdSigned(a.pnl)}
+										{#if a.roiPct != null}
+											<span class="block text-9 font-normal text-text-3">({a.roiPct > 0 ? '+' : a.roiPct < 0 ? '−' : ''}{angka(Math.abs(a.roiPct), 1)}%)</span>
+										{/if}
 									</td>
 									<td class="px-2 py-2 text-right text-text-2">
 										{a.masuk400 != null ? `${a.masuk400} / ${a.tolak400 ?? 0}` : '—'}
+										{#if a.selPct != null}
+											<span class="block text-9 text-text-3">{angka(a.selPct, 1)}% masuk</span>
+										{/if}
 									</td>
 								</tr>
 							{/each}
@@ -411,7 +457,18 @@
 								Keputusan per window 5 menit beserta alasan filter ketika sinyal ditahan.
 							</p>
 						</div>
-						<span class="font-mono text-10 text-text-3">{eventsList.length} event terakhir</span>
+						<div class="flex flex-wrap items-center gap-1.5 font-mono text-10">
+							{#each [['semua', 'Semua'], ['masuk', 'Masuk'], ['tolak', 'Ditolak']] as [k, lbl]}
+								<button
+									type="button"
+									onclick={() => (eventFilter = k as 'semua' | 'masuk' | 'tolak')}
+									class="rounded border px-2 py-0.5 cursor-pointer {eventFilter === k ? 'border-accent bg-accent/15 text-accent font-bold' : 'border-line bg-surface-2 text-text-3 hover:text-text'}"
+								>
+									{lbl}
+								</button>
+							{/each}
+							<span class="ml-1 text-text-3">{filteredEvents.length}/{eventsList.length}</span>
+						</div>
 					</div>
 					<div class="mt-2 overflow-x-auto">
 						<table class="w-full text-left font-mono text-11">
@@ -425,7 +482,7 @@
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-line-soft">
-								{#each eventsList.slice(0, 10) as ev, i (`${ev.key}-${i}`)}
+								{#each filteredEvents.slice(0, 15) as ev, i (`${ev.key}-${i}`)}
 									<tr>
 										<td class="px-2 py-1.5 text-text-3">{waktuTs(ev.ts)}</td>
 										<td class="px-2 py-1.5 font-bold uppercase text-text">{ev.coin ?? '—'}</td>
