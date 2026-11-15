@@ -21,7 +21,7 @@
 		},
 		{
 			q: 'Apakah ini sudah trading dengan uang nyata?',
-			a: 'Belum. Semua eksekusi berjalan mode paper. Live butuh tiga hal yang belum ada: dana terverifikasi, RPC on-chain, dan keputusan pemilik. Selama itu belum, gate menolak.',
+			a: 'Sebagian sudah: pasar Forex berjalan LIVE di 3 akun Exness MT5 melalui EA GOLD_Reaper_Hexa v3.0 & BTC_Reaper_Hexa v2.0 dengan telemetri langsung. Crypto momentum & Polymarket tetap berjalan dalam mode paper (tanpa eksekusi CLOB nyata saat ini).',
 			status: 'ada'
 		},
 		{
@@ -99,7 +99,7 @@
 	<section class="kartu">
 		<h2>Masih bingung?</h2>
 		<p>
-			Catatan teknis lengkap ada di <a href="/catatan">Catatan</a>. Untuk pertanyaan yang
+			Catatan teknis lengkap ada di <a href="/info?sub=catatan">Catatan</a>. Untuk pertanyaan yang
 			jawabannya belum ada di sini, tanyakan langsung lewat Telegram.
 		</p>
 	</section>

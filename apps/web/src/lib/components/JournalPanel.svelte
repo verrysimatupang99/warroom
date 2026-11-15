@@ -130,6 +130,20 @@
 		const pad = (x: number) => String(x).padStart(2, '0');
 		return `${pad(d.getDate())} ${bulan[d.getMonth()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 	}
+	function hasilPositifNegatif(t: Trade): 'pos' | 'neg' | 'netral' {
+		if (t.market === 'crypto') {
+			if (t.r == null) return 'netral';
+			return t.r > 0 ? 'pos' : t.r < 0 ? 'neg' : 'netral';
+		}
+		const isCent = t.currency === 'USC' || t.account === '452009427';
+		const val = isCent
+			? (t.net_usc != null ? Number(t.net_usc) : (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) * 100 : null))
+			: (t.pnl_usd != null && t.pnl_usd !== '' ? Number(t.pnl_usd) : null);
+		if (val != null && !isNaN(val)) return val > 0 ? 'pos' : val < 0 ? 'neg' : 'netral';
+		const num = parseFloat(t.pnl_pct ?? '');
+		return !isNaN(num) && num !== 0 ? (num > 0 ? 'pos' : 'neg') : 'netral';
+	}
+
 	// Pilih hasil: crypto pakai R, forex cent pakai USC ($...), forex USD pakai PnL/persen.
 	function hasil(t: Trade) {
 		if (t.market === 'crypto') return t.r != null ? `${t.r > 0 ? '+' : ''}${t.r}R` : '—';
@@ -158,30 +172,60 @@
 {:else}
 	<div class="space-y-4">
 		<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-			<div class="rounded-card border border-line bg-surface p-4">
-				<div class="label-mikro text-text-3 font-mono">FOREX · EKUITAS</div>
-				<div class="mt-1 text-17 font-bold font-mono text-text">{rp(stats?.ekuitas)}</div>
-				<div class="mt-1 text-11 text-text-3">saldo {rp(stats?.saldo)}</div>
-			</div>
-			<div class="rounded-card border border-line bg-surface p-4">
-				<div class="label-mikro text-text-3 font-mono">FOREX · PNL HARI INI</div>
-				<div class="mt-1 text-17 font-bold font-mono text-text">{formatPnl(stats?.pnl_hari_ini_usd)}</div>
-				<div class="mt-1 text-11 text-text-3">fill {stats?.n_fill_forex ?? 0}</div>
-			</div>
-			<div class="rounded-card border border-line bg-surface p-4">
-				<div class="label-mikro text-text-3 font-mono">CRYPTO · EKUITAS</div>
-				<div class="mt-1 text-17 font-bold font-mono text-text">{rp(stats?.crypto?.ekuitas)}</div>
-				<div class="mt-1 text-11 text-text-3">
-					{stats?.crypto?.aktif ? `${stats.crypto.koin ?? 0} koin · ${stats.crypto.posisi ?? 0} posisi` : 'paper trader belum jalan'}
+			{#if market !== 'crypto'}
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">FOREX · EKUITAS</div>
+					<div class="mt-1 text-17 font-bold font-mono text-text">{rp(stats?.ekuitas)}</div>
+					<div class="mt-1 text-11 text-text-3">saldo {rp(stats?.saldo)}</div>
 				</div>
-			</div>
-			<div class="rounded-card border border-line bg-surface p-4">
-				<div class="label-mikro text-text-3 font-mono">CRYPTO · RETURN</div>
-				<div class="mt-1 text-17 font-bold font-mono text-text">
-					{stats?.crypto?.return_pct == null ? '—' : `${stats.crypto.return_pct} %`}
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">FOREX · PNL HARI INI</div>
+					<div class="mt-1 text-17 font-bold font-mono {(stats?.pnl_hari_ini_usd ?? 0) > 0 ? 'text-pos' : (stats?.pnl_hari_ini_usd ?? 0) < 0 ? 'text-neg' : 'text-text'}">
+						{formatPnl(stats?.pnl_hari_ini_usd)}
+					</div>
+					<div class="mt-1 text-11 text-text-3">fill {stats?.n_fill_forex ?? 0}</div>
 				</div>
-				<div class="mt-1 text-11 text-text-3">trade {stats?.crypto?.trade ?? 0}</div>
-			</div>
+			{/if}
+			{#if market === 'forex'}
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">AKUN TELEMETRI</div>
+					<div class="mt-1 text-17 font-bold font-mono text-text">{stats?.akun ?? '—'}</div>
+					<div class="mt-1 text-11 text-text-3">{stats?.currency ?? 'USD'} {isCentAccount ? '(Akun Cent)' : '(Standard)'}</div>
+				</div>
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">TRADE TUNTAS</div>
+					<div class="mt-1 text-17 font-bold font-mono text-text">{trades.length}</div>
+					<div class="mt-1 text-11 text-text-3">rekaman tertutup MT5</div>
+				</div>
+			{/if}
+			{#if market !== 'forex'}
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">CRYPTO · EKUITAS</div>
+					<div class="mt-1 text-17 font-bold font-mono text-text">{stats?.crypto?.ekuitas != null ? `$${stats.crypto.ekuitas.toFixed(2)}` : '—'}</div>
+					<div class="mt-1 text-11 text-text-3">
+						{stats?.crypto?.aktif ? `${stats.crypto.koin ?? 0} koin · ${stats.crypto.posisi ?? 0} posisi` : 'paper trader belum jalan'}
+					</div>
+				</div>
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">CRYPTO · RETURN</div>
+					<div class="mt-1 text-17 font-bold font-mono {(stats?.crypto?.return_pct ?? 0) > 0 ? 'text-pos' : (stats?.crypto?.return_pct ?? 0) < 0 ? 'text-neg' : 'text-text'}">
+						{stats?.crypto?.return_pct == null ? '—' : `${stats.crypto.return_pct > 0 ? '+' : ''}${stats.crypto.return_pct}%`}
+					</div>
+					<div class="mt-1 text-11 text-text-3">trade {stats?.crypto?.trade ?? 0}</div>
+				</div>
+			{/if}
+			{#if market === 'crypto'}
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">MODE CRYPTO</div>
+					<div class="mt-1 text-17 font-bold font-mono text-warn">PAPER OKX</div>
+					<div class="mt-1 text-11 text-text-3">Breakout momentum 55 bar</div>
+				</div>
+				<div class="rounded-card border border-line bg-surface p-4">
+					<div class="label-mikro text-text-3 font-mono">TRADE TUNTAS</div>
+					<div class="mt-1 text-17 font-bold font-mono text-text">{trades.length}</div>
+					<div class="mt-1 text-11 text-text-3">riwayat tutup di ledger</div>
+				</div>
+			{/if}
 		</section>
 
 		<section class="rounded-card border border-line bg-surface p-4">
@@ -206,19 +250,20 @@
 								<th class="px-2 py-1.5">Simbol</th>
 								<th class="px-2 py-1.5">Sisi</th>
 								<th class="px-2 py-1.5 text-right">Harga</th>
-								<th class="px-2 py-1.5 text-right">{market === 'forex' ? 'P/L %' : 'Hasil'}</th>
+								<th class="px-2 py-1.5 text-right">Hasil</th>
 								{#if market === 'forex'}<th class="px-2 py-1.5 text-right">Slip</th>{/if}
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-line-soft">
 							{#each trades.slice(0, ringkas ? 8 : 60) as t}
+								{@const nada = hasilPositifNegatif(t)}
 								<tr class="hover:bg-surface-2/60">
 									<td class="px-2 py-1.5 font-mono text-text-3 whitespace-nowrap">{fmtWaktu(t.iso)}</td>
 									<td class="px-2 py-1.5 uppercase text-text-3">{t.market ?? '—'}</td>
 									<td class="px-2 py-1.5 font-mono text-text">{t.symbol ?? '—'}</td>
 									<td class="px-2 py-1.5 text-text">{t.side ?? '—'}</td>
 									<td class="px-2 py-1.5 text-right font-mono text-text">{t.price_filled ?? '—'}</td>
-									<td class="px-2 py-1.5 text-right font-mono text-text">{hasil(t)}</td>
+									<td class="px-2 py-1.5 text-right font-mono font-semibold" class:text-pos={nada === 'pos'} class:text-neg={nada === 'neg'} class:text-text={nada === 'netral'}>{hasil(t)}</td>
 									{#if market === 'forex'}<td class="px-2 py-1.5 text-right font-mono text-text-3">{t.slippage_pts || '—'}</td>{/if}
 								</tr>
 							{/each}

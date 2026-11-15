@@ -10,7 +10,7 @@
 	//   3. Baru rincian per pasar
 	//
 	// Ini halaman pratinjau: data nyata dari API, tidak ada yang dikarang.
-	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict, getKesiapan, getKesegaran } from '$lib/api/client';
+	import { getArea, getAreaFakta, getLiveArming, getPasarRingkas, getSinyalPerPasar, getSumber, getVerdict, getKesiapan, getKesegaran, urlApi } from '$lib/api/client';
 	import type { AreaPayload, MarketSignalList, LiveArming, MarketSummaryPayload, MarketSignal, SignalPayload, MarketVerdict, Readiness } from '$lib/api/types';
 	import { angka, umurDetik, waktuWIB } from '$lib/format';
 	import Istilah from '$lib/components/Istilah.svelte';
@@ -35,6 +35,29 @@
 	// Polymarket dari arm D (band favorit). GMGN berjalan di mesin terpisah (link).
 	let dompetCrypto = $state<Record<string, any> | null>(null);
 	let dompetPoly = $state<number | null>(null);
+	let mt5Accounts = $state<{
+		n: number;
+		accounts: Array<{
+			account: string;
+			broker?: string;
+			currency?: string;
+			cent_factor?: number;
+			primary?: boolean;
+			connected?: boolean;
+			seconds_ago?: number | null;
+			equity?: number | null;
+			floating_pnl?: number | null;
+			positions?: number;
+		}>;
+	} | null>(null);
+	let cryptoMom = $state<{
+		aktif?: boolean;
+		jumlah_koin?: number;
+		modal?: number;
+		ekuitas_perkiraan?: number;
+		return_pct?: number;
+		posisi_terbuka?: number;
+	} | null>(null);
 	// Mode eksekusi global dari API arming — SATU-SATUNYA sumber badge mode di header Home.
 	let arming = $state<LiveArming | null>(null);
 	// Kesiapan sistem (/api/v1/ready) — sumber strip kesehatan. `null` berarti belum
@@ -47,7 +70,7 @@
 	let memuatAwal = $state(true);
 async function muat() {
 	try {
-	const [s, k, a, sm, m, sys, poly, siap, segar] = await Promise.allSettled([
+	const [s, k, a, sm, m, sys, poly, siap, segar, mt5Res, momRes] = await Promise.allSettled([
 		getSinyalPerPasar(),
 		getArea('crypto'),
 		getPasarRingkas(),
@@ -56,7 +79,9 @@ async function muat() {
 		getAreaFakta('sistem'),
 		getArea('polymarket'),
 		getKesiapan(),
-		getKesegaran()
+		getKesegaran(),
+		fetch(urlApi('/api/v1/tencent/mt5/accounts'), { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)),
+		fetch(urlApi('/api/v1/tencent/crypto/momentum'), { credentials: 'include' }).then((r) => (r.ok ? r.json() : null))
 	]);
 	if (siap.status === 'fulfilled') {
 		kesiapan = siap.value;
@@ -92,6 +117,8 @@ async function muat() {
 		const d = arms.find((x) => x.nama === 'D favorit');
 		dompetPoly = d ? Number(d.balance ?? 20) : null;
 	} else dompetPoly = null;
+	mt5Accounts = mt5Res.status === 'fulfilled' && mt5Res.value?.accounts ? mt5Res.value : null;
+	cryptoMom = momRes.status === 'fulfilled' && momRes.value && !momRes.value.error ? momRes.value : null;
 	} finally {
 		memuatAwal = false;
 	}
@@ -279,6 +306,20 @@ async function muat() {
 		return null;
 	});
 
+	const mt5Summary = $derived.by(() => {
+		const accs = mt5Accounts?.accounts ?? [];
+		if (!accs.length) return null;
+		const connected = accs.filter((a) => a.connected).length;
+		let eqUsd = 0;
+		let pos = 0;
+		for (const a of accs) {
+			const cf = a.cent_factor && a.cent_factor > 0 ? a.cent_factor : (a.currency === 'USC' ? 100 : 1);
+			if (a.equity != null) eqUsd += a.equity / cf;
+			pos += Number(a.positions ?? 0);
+		}
+		return { total: accs.length, connected, eqUsd, pos };
+	});
+
 	const verdictTeratas = $derived(
 		sinyalTeratas?.autotrade_verdict ?? pasarTeratas?.autotrade_verdict ?? 'PANTAU'
 	);
@@ -362,6 +403,60 @@ async function muat() {
 
 		<!-- Strip kesehatan: membedakan "pasar sepi" dari "worker mati". -->
 		<HealthStrip {kesiapan} gagal={gagalKesiapan} />
+
+		<!-- Ringkasan eksekusi & modal lintas pasar (real-time dari API) -->
+		<section class="exec-grid" aria-label="Ringkasan eksekusi lintas pasar">
+			<a href="/forex" class="exec-card">
+				<div class="exec-head">
+					<span class="exec-k">FOREX · MT5 BRIDGE</span>
+					<span class="exec-tag tag-live">{mt5Summary ? `${mt5Summary.connected}/${mt5Summary.total} LIVE` : 'MT5'}</span>
+				</div>
+				<div class="exec-val angka">
+					{#if mt5Summary}${angka(mt5Summary.eqUsd)}{:else}—{/if}
+				</div>
+				<div class="exec-sub angka">
+					{#if mt5Summary}{mt5Summary.pos} posisi terbuka · Exness Multi-EA{:else}Menunggu telemetri MT5{/if}
+				</div>
+			</a>
+
+			<a href="/crypto" class="exec-card">
+				<div class="exec-head">
+					<span class="exec-k">CRYPTO · OKX MOMENTUM</span>
+					<span class="exec-tag tag-paper">PAPER</span>
+				</div>
+				<div class="exec-val angka">
+					{#if cryptoMom?.ekuitas_perkiraan != null}${angka(cryptoMom.ekuitas_perkiraan)}{:else if dompetCrypto?.equity != null}${angka(Number(dompetCrypto.equity))}{:else}—{/if}
+				</div>
+				<div class="exec-sub angka">
+					{#if cryptoMom}
+						<span class={(cryptoMom.return_pct ?? 0) >= 0 ? 'pos' : 'neg'}>{(cryptoMom.return_pct ?? 0) >= 0 ? '+' : ''}{angka(cryptoMom.return_pct ?? 0)}%</span>
+						· {cryptoMom.jumlah_koin ?? 65} koin · {cryptoMom.posisi_terbuka ?? 0} pos
+					{:else}
+						Universe OKX · 485 pair
+					{/if}
+				</div>
+			</a>
+
+			<a href="/polymarket" class="exec-card">
+				<div class="exec-head">
+					<span class="exec-k">POLYMARKET · ARM D + AGEN</span>
+					<span class="exec-tag tag-paper">PAPER</span>
+				</div>
+				<div class="exec-val angka">
+					{#if dompetPoly != null}${angka(dompetPoly)}{:else}—{/if}
+				</div>
+				<div class="exec-sub angka">4-Arm Eksperimen · 5m/15m Polymarket</div>
+			</a>
+
+			<a href="/idx" class="exec-card">
+				<div class="exec-head">
+					<span class="exec-k">SAHAM IDX · SCREENER</span>
+					<span class="exec-tag tag-ops">SCAN</span>
+				</div>
+				<div class="exec-val angka">IHSG · ARJUM</div>
+				<div class="exec-sub angka">Broker summary · Asing · Kuota harian</div>
+			</a>
+		</section>
 
 		<!-- 2. CARD GABUNGAN (revisi pemilik 7 Okt): "card status hari ini X peluang
 		     digabung sama card Akurasi & PnL per Market". Alasan di baliknya masuk akal:
@@ -628,13 +723,14 @@ async function muat() {
 		   dipertahankan agar diff halaman tetap kecil. */
 		--mint: var(--color-pos);
 		--amber: var(--color-accent);
-		--kuning: var(--color-accent);
 		--kuning: var(--color-warn);
 		--merah: var(--color-neg);
 		--latar: var(--color-bg);
 		--permukaan: var(--color-surface);
 		--garis: var(--color-line);
 		--tinta: var(--color-text);
+		--teks: var(--color-text);
+		--teks-2: var(--color-text-2);
 		--redup: var(--color-text-3);
 	}
 
@@ -850,12 +946,76 @@ async function muat() {
 	}
 
 	.isi {
-		max-width: 62rem;
-		margin: 0 auto;
-		padding: 1.5rem 1rem 3rem;
+		max-width: 100%;
+		margin: 0;
+		padding: 0.75rem 0 2.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 1.15rem;
+	}
+	.exec-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+		gap: 0.65rem;
+	}
+	.exec-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		background: var(--permukaan);
+		border: 1px solid var(--garis);
+		border-radius: var(--radius-card);
+		padding: 0.7rem 0.85rem;
+		text-decoration: none;
+		color: var(--tinta);
+		transition: border-color 140ms ease;
+	}
+	.exec-card:hover {
+		border-color: color-mix(in srgb, var(--amber) 45%, var(--garis));
+	}
+	.exec-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.4rem;
+	}
+	.exec-k {
+		font-family: var(--font-mono);
+		font-size: 0.64rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		color: var(--redup);
+	}
+	.exec-tag {
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		font-weight: 700;
+		padding: 1px 5px;
+		border-radius: 3px;
+		border: 1px solid var(--garis);
+	}
+	.exec-tag.tag-live {
+		color: var(--mint);
+		border-color: color-mix(in srgb, var(--mint) 40%, transparent);
+		background: color-mix(in srgb, var(--mint) 10%, transparent);
+	}
+	.exec-tag.tag-paper {
+		color: var(--kuning);
+		border-color: color-mix(in srgb, var(--kuning) 40%, transparent);
+		background: color-mix(in srgb, var(--kuning) 10%, transparent);
+	}
+	.exec-tag.tag-ops {
+		color: var(--teks-2);
+		background: var(--color-surface-2);
+	}
+	.exec-val {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--teks);
+	}
+	.exec-sub {
+		font-size: 0.7rem;
+		color: var(--redup);
 	}
 
 	.sumber-strip { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }

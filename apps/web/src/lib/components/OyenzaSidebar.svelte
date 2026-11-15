@@ -82,7 +82,7 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}" aria-hidden="true"></span>
 			<span class="text-10 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">FOREX LIVE · POLY PAPER</span>
+		<span class="tag-status">3 MT5 LIVE · MULTI-MKT</span>
 	</div>
 
 	<!-- Pilar 1: TRADING FLOOR -->
@@ -210,9 +210,7 @@
 <style>
 	.oy-sidebar {
 		width: var(--rail-w, 260px);
-		height: 100dvh;
-		position: sticky;
-		top: 0;
+		height: 100%;
 		background: var(--color-surface);
 		border-right: 1px solid var(--color-line);
 		padding: 0.65rem 0.7rem;

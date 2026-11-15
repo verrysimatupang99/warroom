@@ -58,13 +58,20 @@
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-13 font-bold text-text">Transaksi berjalan</h2>
 		<div class="flex items-center gap-2 font-mono text-10 text-text-3">
-			<span>stream</span>
-			<span class="font-mono text-10" class:text-pos={snap?.status_pendengar === 'hidup'} class:text-neg={snap?.status_pendengar !== 'hidup'}>
-				{snap?.status_pendengar ?? '—'}
+			<span class="rounded border border-line bg-surface-2 px-1.5 py-0.5 uppercase font-bold" class:text-pos={snap?.status_pendengar === 'hidup'} class:text-neg={snap?.status_pendengar !== 'hidup'}>
+				{snap?.status_pendengar === 'hidup' ? '● STREAM HIDUP' : `○ ${snap?.status_pendengar ?? 'MATI'}`}
 			</span>
 			{#if snap?.umur_detik != null}
-				<span>· {Math.round(snap.umur_detik)}s lalu</span>
+				<span>{Math.round(snap.umur_detik)}s lalu</span>
 			{/if}
+			<button
+				type="button"
+				onclick={() => void ambil()}
+				class="rounded border border-line bg-surface-2 px-1.5 py-0.5 text-text-2 hover:border-accent hover:text-accent cursor-pointer"
+				title="Segarkan snapshot running trade"
+			>
+				⟳
+			</button>
 		</div>
 	</div>
 

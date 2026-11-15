@@ -33,10 +33,10 @@
 	const metode = [
 		{
 			pasar: 'Crypto',
-			sumber: 'OKX',
-			strategi: 'SMC multi-timeframe',
-			isi: 'Scan 1D + 4H + 1H → cari POI (FVG/order block) → tunggu harga kembali ke area → susun entry/SL/TP. Enam aturan gate: mtf_alignment, poi_valid, freshness, sl_distance, atr_min, exposure.',
-			bukti: 'Pengukuran shadow (lolos vs ditolak) + walk-forward backtest + ledger R. Pakem: INSUFFICIENT → DIRECTIONAL → PRELIMINARY → TUNING.'
+			sumber: 'OKX Publik',
+			strategi: 'Paper Momentum 65 Koin + Kalkulasi Lokal',
+			isi: 'Paper trader momentum berjalan di 65 koin likuid OKX (breakout 55 bar), dilengkapi inspeksi lokal ATR-14, EMA-20, RSI-14, dan Swing Range pada 485+ pair OKX.',
+			bukti: 'State paper trader momentum_paper.json + ledger eksekusi R. Tanpa klaim SMC eksternal karena node lama tidak dipakai.'
 		},
 		{
 			pasar: 'Memecoin',
@@ -68,17 +68,17 @@
 		},
 		{
 			pasar: 'Forex',
-			sumber: 'TVC (TradingView)',
-			strategi: 'Bias struktur + sesi',
-			isi: 'Bias arah dari EMA/ATR pada seri TradingView, dikaitkan dengan sesi (Asia/London/NY) dan kalender dampak. Entry/SL/TP dari jurnal mesin.',
-			bukti: 'Ledger forex (4 trade), sampel masih INSUFFICIENT, jadi belum boleh diklaim.'
+			sumber: 'MT5 Bridge Exness + Yahoo Finance',
+			strategi: 'GOLD_Reaper_Hexa v3.0 & BTC_Reaper_Hexa v2.0 (Live)',
+			isi: 'Tiga terminal MT5 Exness Cent & Standard mengirim telemetri live (saldo, ekuitas, floating, posisi terbuka, riwayat deal) ke War Room setiap detik, digabung dengan level teknikal Yahoo Finance & kalender makro.',
+			bukti: 'Rekonsiliasi live MT5 Multi-EA + ledger eksekusi Cent (USC) dan Standard (USD) tercatat apa adanya.'
 		},
 		{
 			pasar: 'Polymarket',
-			sumber: 'Dokumentasi PM',
-			strategi: 'Arm B, favorit 0,70–0,95',
-			isi: 'Beli outcome favorit berharga 0,70–0,95 (menang kecil tapi sering benar). Arm A/C/D dibekukan; bukti tetap disimpan.',
-			bukti: 'Win-rate 81,56% dari 179 kandidat vs break-even 77,0%, TINGKAT TUNING, tetapi split beku belum ada sehingga belum "edge terbukti".'
+			sumber: 'poly-agent + favorite-live-verdict',
+			strategi: '4-Arm Paper Mirror + AI Agent Harness',
+			isi: 'Memantau window biner BTC & ETH 5m dalam 4 eksperimen paper (Arm D Favorit 0,70–0,95, Arm B Kandidat, Arm A Shadow, Arm C Fade) serta penilaian skor poly-agent; eksekusi live CLOB ditangguhkan sementara.',
+			bukti: 'Verdict statistik Wilson 95% CI vs break-even + jejak keputusan agent-events.jsonl dan pembelajaran otomatis.'
 		}
 	];
 
