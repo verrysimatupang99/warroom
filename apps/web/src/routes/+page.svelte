@@ -309,15 +309,24 @@ async function muat() {
 	const mt5Summary = $derived.by(() => {
 		const accs = mt5Accounts?.accounts ?? [];
 		if (!accs.length) return null;
-		const connected = accs.filter((a) => a.connected).length;
-		let eqUsd = 0;
-		let pos = 0;
-		for (const a of accs) {
-			const cf = a.cent_factor && a.cent_factor > 0 ? a.cent_factor : (a.currency === 'USC' ? 100 : 1);
-			if (a.equity != null) eqUsd += a.equity / cf;
-			pos += Number(a.positions ?? 0);
-		}
-		return { total: accs.length, connected, eqUsd, pos };
+		const liveAcc = accs.find((a) => a.primary || a.account === '452009427') ?? null;
+		const demos = accs.filter((a) => a.account !== '452009427' && !a.primary);
+		const demoConnected = demos.filter((a) => a.connected).length;
+		const liveIsCent = liveAcc?.currency === 'USC' || liveAcc?.account === '452009427';
+		const liveRawEq = liveAcc?.equity ?? null;
+		const liveUsd = liveRawEq != null ? liveRawEq / (liveIsCent ? 100 : 1) : null;
+		const demoUsd = demos.reduce((sum, a) => sum + (a.equity ?? 0), 0);
+		const pos = accs.reduce((sum, a) => sum + Number(a.positions ?? 0), 0);
+		return {
+			liveConnected: Boolean(liveAcc?.connected),
+			liveRawEq,
+			liveIsCent,
+			liveUsd,
+			demoTotal: demos.length,
+			demoConnected,
+			demoUsd,
+			pos
+		};
 	});
 
 	const verdictTeratas = $derived(
@@ -408,14 +417,20 @@ async function muat() {
 		<section class="exec-grid" aria-label="Ringkasan eksekusi lintas pasar">
 			<a href="/forex" class="exec-card">
 				<div class="exec-head">
-					<span class="exec-k">FOREX · MT5 BRIDGE</span>
-					<span class="exec-tag tag-live">{mt5Summary ? `${mt5Summary.connected}/${mt5Summary.total} LIVE` : 'MT5'}</span>
+					<span class="exec-k">FOREX · LIVE CENT + DEMO</span>
+					<span class="exec-tag tag-live">{mt5Summary ? (mt5Summary.liveConnected ? 'CENT LIVE' : 'CENT OFFLINE') : 'MT5'}</span>
 				</div>
 				<div class="exec-val angka">
-					{#if mt5Summary}${angka(mt5Summary.eqUsd)}{:else}—{/if}
+					{#if mt5Summary?.liveRawEq != null}
+						{mt5Summary.liveIsCent ? `${angka(mt5Summary.liveRawEq)} USC ($${angka(mt5Summary.liveUsd ?? 0)})` : `$${angka(mt5Summary.liveRawEq)}`}
+					{:else}—{/if}
 				</div>
 				<div class="exec-sub angka">
-					{#if mt5Summary}{mt5Summary.pos} posisi terbuka · Exness Multi-EA{:else}Menunggu telemetri MT5{/if}
+					{#if mt5Summary}
+						{mt5Summary.pos} pos · Demo USD ({mt5Summary.demoConnected}/{mt5Summary.demoTotal} on): ${angka(mt5Summary.demoUsd)}
+					{:else}
+						Menunggu telemetri MT5
+					{/if}
 				</div>
 			</a>
 

@@ -956,8 +956,8 @@ async def stream_forex_telemetry(account: str | None = Query(None)):
                 awal = {
                     "connected": False,
                     "account": target_account,
-                    "broker": "Exness-MT5Trial7 (Demo)" if target_account == "434446792" else "Exness Technologies Ltd",
-                    "currency": "USD" if target_account == "434446792" else "USC",
+                    "broker": "Exness-MT5Trial (Demo)" if target_account in ("434446792", "464202979") else "Exness Technologies Ltd",
+                    "currency": "USC" if target_account in ("452009427", "36525553") else "USD",
                     "offline": True,
                 }
             yield f"retry: 3000\ndata: {json.dumps(awal)}\n\n"
