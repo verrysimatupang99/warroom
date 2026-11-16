@@ -70,7 +70,7 @@
 			pasar: 'Forex',
 			sumber: 'MT5 Bridge Exness + Yahoo Finance',
 			strategi: 'GOLD_Reaper_Hexa v3.0 & BTC_Reaper_Hexa v2.0 (Live)',
-			isi: 'Tiga terminal MT5 Exness Cent & Standard mengirim telemetri live (saldo, ekuitas, floating, posisi terbuka, riwayat deal) ke War Room setiap detik, digabung dengan level teknikal Yahoo Finance & kalender makro.',
+			isi: 'Satu akun Real Cent (#452009427, satuan USC) berjalan LIVE dan dua akun Exness Demo Standard (#434446792 & #464202979, USD biasa bukan Cent) berjalan sebagai forward-test paper, mengirim telemetri ke War Room setiap detik, digabung dengan level teknikal Yahoo Finance & kalender makro.',
 			bukti: 'Rekonsiliasi live MT5 Multi-EA + ledger eksekusi Cent (USC) dan Standard (USD) tercatat apa adanya.'
 		},
 		{

@@ -82,7 +82,7 @@
 			<span class="live-dot {live.status === 'live' ? 'active' : ''}" aria-hidden="true"></span>
 			<span class="text-10 font-bold text-text">{live.status.toUpperCase()}</span>
 		</div>
-		<span class="tag-status">3 MT5 LIVE · MULTI-MKT</span>
+		<span class="tag-status">1 CENT LIVE · 2 DEMO</span>
 	</div>
 
 	<!-- Pilar 1: TRADING FLOOR -->

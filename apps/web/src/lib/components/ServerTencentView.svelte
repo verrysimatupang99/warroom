@@ -275,7 +275,7 @@
 			</div>
 			<div class="p-2 rounded bg-surface-2 border border-line">
 				<span class="text-text-3 block text-10">MT5 TERMINALS</span>
-				<span class="font-bold text-pos">{mt5List.filter((a) => a.connected).length}/{mt5List.length} Live</span>
+				<span class="font-bold text-pos">{mt5List.filter((a) => a.connected).length}/{mt5List.length} Online</span>
 			</div>
 		</div>
 	</div>
@@ -292,7 +292,7 @@
 					<thead class="text-10 text-text-3 border-b border-line">
 						<tr>
 							<th class="py-1.5 px-2">Akun</th>
-							<th class="py-1.5 px-2">Broker</th>
+							<th class="py-1.5 px-2">Tipe</th>
 							<th class="py-1.5 px-2">Status</th>
 							<th class="py-1.5 px-2 text-right">Saldo</th>
 							<th class="py-1.5 px-2 text-right">Ekuitas</th>
@@ -302,21 +302,28 @@
 					</thead>
 					<tbody class="divide-y divide-line-soft">
 						{#each mt5List as acc (acc.account)}
+							{@const isCent = acc.currency === 'USC' || acc.account === '452009427'}
 							<tr class="hover:bg-surface-2/60">
 								<td class="py-1.5 px-2 font-bold text-text">
 									{acc.account}
-									{#if acc.primary}<span class="ml-1 text-9 px-1 rounded bg-accent/15 text-accent">PRIMARY</span>{/if}
+									{#if acc.primary}<span class="ml-1 text-9 px-1 rounded bg-accent/15 text-accent">LIVE</span>{/if}
 								</td>
-								<td class="py-1.5 px-2 text-text-2">{acc.broker ?? '—'} · {acc.currency ?? 'USD'}</td>
+								<td class="py-1.5 px-2 text-text-2">
+									{isCent ? 'Real Cent (USC)' : 'Demo Standard (USD)'}
+								</td>
 								<td class="py-1.5 px-2">
 									<span class="px-1.5 py-0.5 rounded text-10 font-bold {acc.connected ? 'bg-pos/15 text-pos' : 'bg-neg/15 text-neg'}">
-										{acc.connected ? `LIVE (${acc.seconds_ago ?? 0}s)` : 'OFFLINE'}
+										{acc.connected ? `ONLINE (${acc.seconds_ago ?? 0}s)` : 'OFFLINE'}
 									</span>
 								</td>
-								<td class="py-1.5 px-2 text-right text-text">{acc.balance != null ? acc.balance.toFixed(2) : '—'}</td>
-								<td class="py-1.5 px-2 text-right font-bold text-text">{acc.equity != null ? acc.equity.toFixed(2) : '—'}</td>
+								<td class="py-1.5 px-2 text-right text-text">
+									{acc.balance != null ? (isCent ? `${acc.balance.toFixed(2)} USC ($${(acc.balance / 100).toFixed(2)})` : `$${acc.balance.toFixed(2)}`) : '—'}
+								</td>
+								<td class="py-1.5 px-2 text-right font-bold text-text">
+									{acc.equity != null ? (isCent ? `${acc.equity.toFixed(2)} USC ($${(acc.equity / 100).toFixed(2)})` : `$${acc.equity.toFixed(2)}`) : '—'}
+								</td>
 								<td class="py-1.5 px-2 text-right {(acc.floating_pnl ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
-									{acc.floating_pnl != null ? `${acc.floating_pnl >= 0 ? '+' : ''}${acc.floating_pnl.toFixed(2)}` : '—'}
+									{acc.floating_pnl != null ? (isCent ? `${acc.floating_pnl >= 0 ? '+' : ''}${acc.floating_pnl.toFixed(2)} USC` : `${acc.floating_pnl >= 0 ? '+' : ''}$${acc.floating_pnl.toFixed(2)}`) : '—'}
 								</td>
 								<td class="py-1.5 px-2 text-right text-text-2">{acc.positions ?? 0} / {acc.pending ?? 0}</td>
 							</tr>

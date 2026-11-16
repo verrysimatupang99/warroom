@@ -21,7 +21,7 @@
 		},
 		{
 			q: 'Apakah ini sudah trading dengan uang nyata?',
-			a: 'Sebagian sudah: pasar Forex berjalan LIVE di 3 akun Exness MT5 melalui EA GOLD_Reaper_Hexa v3.0 & BTC_Reaper_Hexa v2.0 dengan telemetri langsung. Crypto momentum & Polymarket tetap berjalan dalam mode paper (tanpa eksekusi CLOB nyata saat ini).',
+			a: 'Sebagian sudah: pasar Forex berjalan LIVE dengan uang nyata di 1 akun Exness Real Cent (#452009427, satuan USC) lewat GOLD_Reaper_Hexa v3.0, sementara 2 akun Exness Demo lainnya (#434446792 & #464202979) memakai akun Demo Standard USD biasa (bukan Cent) untuk forward-test. Crypto momentum & Polymarket tetap berjalan dalam mode paper (tanpa eksekusi CLOB nyata saat ini).',
 			status: 'ada'
 		},
 		{
