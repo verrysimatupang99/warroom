@@ -497,7 +497,7 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     # Instruksi otomatis untuk loop telemetry:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
     update_cmd = (
-        '$u="https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/source.raw"; '
+        '$u="https://polywarroom.vps.webdock.cloud/api/v1/tencent/mt5/source.raw"; '
         '$h=@{"X-Warroom-Token"=$env:WARROOM_EA_SYNC_TOKEN}; '
         '$c=Invoke-RestMethod -Uri $u -Headers $h -TimeoutSec 10; '
         '$files=Get-ChildItem -Path "C:\\" -Filter "WarRoom_AutoTrader.mq5" '

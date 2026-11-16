@@ -11,7 +11,7 @@
 #include <Trade\Trade.mqh>
 
 input group "=== KONEKSI WAR ROOM ==="
-input string InpApiBase         = "https://0xgunsl1ng3r.xyz";
+input string InpApiBase         = "https://polywarroom.vps.webdock.cloud";
 input string InpToken           = ""; // WARROOM_EA_SYNC_TOKEN
 input int    InpTelemetrySec    = 5;
 input string InpStrategyVersion = "demoB-trend-bounded-avg-v1";

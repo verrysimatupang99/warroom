@@ -37,7 +37,7 @@ from datetime import UTC, datetime
 try:
     from telethon import TelegramClient
 except ImportError:  # pragma: no cover
-    sys.exit("telethon belum terpasang. Jalankan: pip install telethon")
+    TelegramClient = None
 
 SESSION_NAME = os.environ.get("TG_SESSION_NAME", "trading_session")
 
@@ -99,6 +99,8 @@ def _parse_api_id(nilai: str) -> int:
 
 
 async def ambil_dialog() -> list[dict]:
+    if TelegramClient is None:
+        sys.exit("telethon belum terpasang. Jalankan: pip install telethon")
     api_id_int = _parse_api_id(_wajib_env("TG_API_ID"))
     api_hash = _wajib_env("TG_API_HASH")
 
