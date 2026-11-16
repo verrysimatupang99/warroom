@@ -20,9 +20,9 @@ menutup, atau mengubah order. Fungsinya hanya mengirim tiga hal ke War Room:
 1. Salin `WarRoom_TelemetryBridge.mq5` ke `MQL5/Experts/` terminal akun tujuan,
    lalu compile di MetaEditor (F7).
 2. Terminal → **Tools → Options → Expert Advisors → Allow WebRequest for listed URL**:
-   `https://0xgunsl1ng3r.xyz`
+   `https://polywarroom.vps.webdock.cloud`
 3. Tempel EA di satu chart (mis. XAUUSDm M5), isi:
-   - `InpApiBase = https://0xgunsl1ng3r.xyz`
+   - `InpApiBase = https://polywarroom.vps.webdock.cloud`
    - `InpToken` = token EA (`WARROOM_EA_SYNC_TOKEN` di `/etc/warroom/*.env`, 600).
      Jangan simpan token di repo, chat, atau screenshot.
    - `InpStrategyVersion = hsfx-onepiece`
@@ -34,16 +34,16 @@ menutup, atau mengubah order. Fungsinya hanya mengirim tiga hal ke War Room:
 
 ```bash
 # daftar akun (butuh cookie sesi operator)
-curl -sS -b /tmp/wr.cookie https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/accounts | jq
+curl -sS -b /tmp/wr.cookie https://polywarroom.vps.webdock.cloud/api/v1/tencent/mt5/accounts | jq
 
 # status akun kedua
 curl -sS -b /tmp/wr.cookie \
-  'https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/status?account=<nomor>' | jq \
+  'https://polywarroom.vps.webdock.cloud/api/v1/tencent/mt5/status?account=<nomor>' | jq \
   '{account,currency,cent_factor,balance,equity,positions,seconds_ago}'
 
 # kurva ekuitas akun itu (503 berarti belum ada riwayat, bukan nol)
 curl -sS -b /tmp/wr.cookie \
-  'https://0xgunsl1ng3r.xyz/api/v1/journal/performance?market=forex&account=<nomor>' | jq
+  'https://polywarroom.vps.webdock.cloud/api/v1/journal/performance?market=forex&account=<nomor>' | jq
 ```
 
 UI: `/forex?sub=ringkas` → panel **Akun MT5**. Kartu akun menampilkan balance,

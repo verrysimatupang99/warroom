@@ -4,7 +4,7 @@
 //
 // Syarat:
 //   1. Izinkan URL di Terminal > Options > Expert Advisors > Allow WebRequest:
-//      https://0xgunsl1ng3r.xyz
+//      https://polywarroom.vps.webdock.cloud
 //   2. Isi InpToken dengan token EA (env WARROOM_EA_SYNC_TOKEN di server).
 //   3. Akun cent (currency USC/EUC): InpNormalizeCent=true membagi nilai uang
 //      dengan 100 supaya dashboard menampilkan USD, bukan sen.
@@ -14,7 +14,7 @@
 #property version   "1.00"
 #property strict
 
-input string InpApiBase          = "https://0xgunsl1ng3r.xyz";
+input string InpApiBase          = "https://polywarroom.vps.webdock.cloud";
 input string InpToken            = "";
 input int    InpIntervalSec      = 5;      // kirim telemetri tiap N detik
 input int    InpDealPollSec      = 5;      // poll deal tertutup tiap N detik
