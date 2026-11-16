@@ -1,0 +1,16 @@
+InpApiBase=https://0xgunsl1ng3r.xyz
+InpToken=
+InpTelemetrySec=5
+InpStrategyVersion=demoB-trend-bounded-avg-v1
+InpMagic=464202
+InpFixedLot=0.01
+InpMaxLayers=4
+InpMinStepUsd=15.0
+InpStepAtrMult=2.2
+InpBasketTpUsd=12.0
+InpHardBasketSlUsd=45.0
+InpRsiLow=30.0
+InpRsiHigh=70.0
+InpRolloverStartHr=20
+InpMaxSpreadPts=350
+InpDailyMaxLossUsd=45.0
