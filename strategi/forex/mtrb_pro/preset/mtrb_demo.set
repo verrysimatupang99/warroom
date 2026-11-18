@@ -1,0 +1,5 @@
+InpLot=0.01
+InpMaxOpenRisk=50
+InpPortDailyLossPct=4.0
+InpDashboard=true
+InpUseNews=false

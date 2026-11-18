@@ -1,0 +1,31 @@
+# Manifest strategi — GOLD Reaper Hexa (forex, EA MT5)
+#
+# Sumber nilai: baris v1.strategy id=1 + inventaris ops/mt5-inventory.py.
+# Strategi ini dijalankan sebagai EA di terminal MT5, BUKAN oleh mesin Python,
+# jadi tidak punya blok variabel/entry/exit. Platform hanya membaca status JSON
+# yang ditulis EA (lihat _schema/status.schema.json).
+
+id: gold_reaper_hexa
+nama: GOLD Reaper Hexa
+versi: "3.00"
+market: forex
+venue: exness
+instrument: [XAUUSDc]
+executor: mt5-ea
+status: live
+owner: owner
+repo_ref: "sesi Antigravity (GOLD_Reaper_Hexa.mq5) — bukan dari repo mtrb-pro"
+publish: file-status-json
+
+ea:
+  file: GOLD_Reaper_Hexa.mq5
+  binary: GOLD_Reaper_Hexa.ex5
+  terminal: MT5-EX-Live
+  magic: 20261104
+  tf: M5
+  preset: gold_hexa_live.set
+
+# Catatan operasional:
+#  - Satu-satunya EA yang berjalan di terminal LIVE (uang nyata). Perubahan pada
+#    berkas ini menyentuh posisi berjalan — deploy hanya saat pasar tutup.
+#  - Status JSON dibaca platform sebagai feed mt5_live.

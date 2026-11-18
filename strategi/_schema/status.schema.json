@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://warroom.local/strategi/_schema/status.schema.json",
+  "title": "Kontrak status JSON dari EA/engine ke platform",
+  "description": "Bentuk berkas yang ditulis EA (atau engine) ke terminal Common/Files/<nama>_status.json dan dibaca platform sebagai feed telemetri. Platform TIDAK membaca interna EA: hanya berkas ini. Bentuk nyata mengacu MTRB_Pro_status.json v3.08. Kunci tambahan diizinkan agar EA boleh menambah diagnostik tanpa memecah platform.",
+  "type": "object",
+  "required": ["v", "ts", "account", "symbol"],
+  "additionalProperties": true,
+  "properties": {
+    "v": {
+      "type": "string",
+      "description": "Versi EA/engine yang menulis berkas ini."
+    },
+    "ts": {
+      "type": "integer",
+      "description": "Timestamp detak terakhir (epoch detik). Feed dianggap basi bila now()-ts > v1.feed.sla_seconds."
+    },
+    "written": { "type": "integer", "description": "Epoch saat berkas ditulis." },
+    "refreshed": { "type": "integer" },
+    "refresh_min": { "type": "number", "description": "Interval tulis yang dijanjikan EA (menit)." },
+    "account": {
+      "type": "object",
+      "required": ["server", "currency", "connected"],
+      "properties": {
+        "server": { "type": "string" },
+        "login_tail": { "type": "string", "description": "3 digit terakhir login (bukan login penuh — jangan bocorkan)." },
+        "demo": { "type": "boolean" },
+        "currency": { "type": "string" },
+        "balance": { "type": "number" },
+        "equity": { "type": "number" },
+        "free_margin": { "type": "number" },
+        "margin_level": { "type": "number" },
+        "leverage": { "type": "number" },
+        "connected": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "symbol": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "bid": { "type": "number" },
+        "ask": { "type": "number" },
+        "spread": { "type": "number" },
+        "digits": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "bias": { "type": "object", "additionalProperties": true },
+    "risk": {
+      "type": "object",
+      "properties": {
+        "open_risk": { "type": "number" },
+        "max_open_risk": { "type": "number" },
+        "day_start_equity": { "type": "number" },
+        "day_pl": { "type": "number" },
+        "daily_loss_pct": { "type": "number" },
+        "locked": { "type": "boolean" },
+        "paused": { "type": "boolean" },
+        "news_blocked": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "sessions": { "type": "object", "additionalProperties": true },
+    "flow": { "type": "object", "additionalProperties": true },
+    "engines": { "type": "object", "additionalProperties": true },
+    "positions": { "type": "array", "items": { "type": "object" } },
+    "closed": { "type": "array", "items": { "type": "object" } },
+    "news": { "type": "object", "additionalProperties": true }
+  }
+}

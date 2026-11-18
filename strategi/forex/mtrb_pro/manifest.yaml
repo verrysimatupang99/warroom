@@ -1,0 +1,44 @@
+# Manifest strategi — MTRB Pro (forex, EA MT5)
+#
+# Sumber nilai: baris v1.strategy id=2 + repo github.com/Darkwinter777/mtrb-pro
+# + ops/mt5-inventory.py (2026-11-18).
+# Dijalankan sebagai EA di terminal MT5 DEMO (paper), bukan oleh mesin Python.
+
+id: mtrb_pro
+nama: MTRB Pro
+versi: "3.08"
+market: forex
+venue: exness
+instrument: [XAUUSDm]
+executor: mt5-ea
+status: paper
+owner: owner
+repo_ref: "github.com/Darkwinter777/mtrb-pro"
+publish: file-status-json
+
+ea:
+  # Sumber yang diedit manusia:
+  source: MTRB_Pro.mq5
+  # Varian yang BENAR-BENAR dipasang di terminal:
+  # `build-ea.sh` menyalin MTRB_Pro.mq5 -> MTRB_Fix.mq5 lalu menyuntikkan
+  # DashTick() tiap 2 detik di OnTick. Tanpa itu dashboard /mtrb/ tidak
+  # ter-update karena timer Wine tidak andal. Jadi MTRB_Fix BUKAN varian iseng.
+  file: MTRB_Fix.mq5
+  binary: MTRB_Fix.ex5
+  build: build-ea.sh
+  terminal: MT5-EX-Demo
+  magic: 772001
+  tf: M5
+  preset: mtrb_demo.set
+  include:
+    - MTRB_SMC_Core.mqh
+    - MTRB_SMC.mqh
+
+# Catatan operasional:
+#  - `ea/` memuat sumber (MTRB_Pro.mq5 + include + .ex5 hasil build).
+#  - `build-ea.sh` = proses build resmi (inject DashTick + compile MetaEditor
+#    headless + backup .ex5 lama + restart mt5-ex-demo + verifikasi status JSON).
+#  - `arsip/` memuat MTRB_Fix/MTRB_Dbg lama untuk jejak; jangan dipakai
+#    sebagai acuan versi — sumber kebenaran tetap MTRB_Pro.mq5 + build-ea.sh.
+#  - Drift yang ditemukan 2026-11-18 (biner berbeda di MT5-Demo/Demo2 tanpa
+#    sumber .mq5): lihat arsip/drift-20261118.md.
