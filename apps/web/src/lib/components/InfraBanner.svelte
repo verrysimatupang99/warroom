@@ -40,10 +40,9 @@
 		const out: string[] = [];
 		const m = snap.memoh_runtime ?? {};
 		if (m.active !== 'active') out.push('Memoh runtime mati');
-		for (const [nama, nilai] of Object.entries(snap.mt5 ?? {})) {
-			if (nilai !== 'up') out.push(`MT5 ${nama} mati`);
-		}
-		if ((snap.instabox_watchdog ?? {}).timer !== 'active') out.push('watchdog instabox mati');
+		// instabox (box-2aacb3, mt5-paper-1/2) sudah bukan host EA live (pindah ke
+		// webdock mt5-ex-live), jadi statusnya dikeluarkan dari banner agar tidak
+		// menampilkan peringatan yang tidak relevan. (opsi C, 2026-11-18)
 		if (typeof snap.umur_s === 'number' && snap.umur_s > 1800) {
 			out.push(`snapshot basi (${Math.round(snap.umur_s / 60)} menit)`);
 		}

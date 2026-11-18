@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""notify-hq (webdock) — pengganti notify-hq cyber1.
+
+Membaca kredensial Telegram dari telegram.env dan mengirim pesan ke Telegram HQ
+via Bot API langsung. Antarmuka sama dengan notify-hq cyber1: terima teks sebagai
+argumen, kirim, exit 0 bila sukses. Dipakai script War Room yang dimigrasi ke webdock.
+"""
+from __future__ import annotations
+
+import json
+import sys
+import urllib.request
+from pathlib import Path
+
+TG_ENV = Path("/home/admin/.config/warroom/telegram.env")
+
+
+def _muat() -> tuple[str, str, str | None]:
+    token = chat = thread = ""
+    if TG_ENV.exists():
+        for line in TG_ENV.read_text().splitlines():
+            if line.startswith("TG_BOT_TOKEN="):
+                token = line.split("=", 1)[1].strip()
+            elif line.startswith("TG_CHAT_ID="):
+                chat = line.split("=", 1)[1].strip()
+            elif line.startswith("TG_THREAD_ID="):
+                thread = line.split("=", 1)[1].strip()
+    return token, chat, thread or None
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: notify-hq <pesan>", file=sys.stderr)
+        return 2
+    pesan = sys.argv[1]
+    token, chat, thread = _muat()
+    if not token or not chat:
+        print("kredensial telegram tidak lengkap", file=sys.stderr)
+        return 1
+    payload: dict[str, object] = {"chat_id": chat, "text": pesan, "parse_mode": "HTML"}
+    if thread:
+        payload["message_thread_id"] = int(thread)
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return 0 if r.status == 200 else 1
+    except Exception as e:  # noqa: BLE001
+        print(f"gagal kirim: {e}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

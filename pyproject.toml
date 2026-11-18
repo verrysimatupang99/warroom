@@ -76,4 +76,10 @@ select = ["E", "F", "I", "UP", "B"]
 # F3: repo gabungan punya dua tests/ bernama sama (test_config.py). Mode importlib
 # membuat pytest memakai path modul, bukan basename — tidak ada tabrakan lagi.
 addopts = "-q --import-mode=importlib"
-testpaths = ["packages", "services"]
+testpaths = ["packages", "services", "tests"]
+markers = [
+    "tier1: Tier 1 Core Feature Coverage tests",
+    "tier2: Tier 2 Boundary & Negative tests",
+    "tier3: Tier 3 Cross-Feature Combination tests",
+    "tier4: Tier 4 Real-World Application Scenarios",
+]
