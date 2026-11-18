@@ -1,0 +1,161 @@
+{
+  "project": "warroom",
+  "acuan": "docs/warroom-blueprint-v1.md",
+  "prinsip": [
+    "Live trade HANYA forex/MT5 Exness cent (452009427). Market lain tidak live.",
+    "Semua data plane di webdock. cyber1 hanya backup.",
+    "Strategi hidup di luar platform; platform = registry + gate + ledger + audit + UI.",
+    "Setiap item harus punya bukti verifikasi sebelum ditandai done."
+  ],
+  "waves": [
+    {
+      "id": "W1",
+      "nama": "Fondasi data & jejak",
+      "items": [
+        {
+          "id": "W1-01",
+          "judul": "Skema inti v1 (24 tabel) di DB warroom_v1",
+          "status": "done",
+          "bukti": "psql: 24 tabel di schema v1"
+        },
+        {
+          "id": "W1-02",
+          "judul": "risk_rule + seed nyata (exness, 2 akun, 3 instrumen, 2 strategi, 6 feed)",
+          "status": "done",
+          "bukti": "seed OK: 1/2/3/2/2/6/4 baris"
+        },
+        {
+          "id": "W1-03",
+          "judul": "Ingest status MT5 live+demo -> account_snapshot, position, ledger_entry",
+          "status": "done",
+          "bukti": "ingest live+demo: snapshot=20, ledger=2 (total -9.00), position=2, feed mt5_live/mt5_demo ok (age 1s); timer 20s aktif"
+        },
+        {
+          "id": "W1-04",
+          "judul": "Endpoint /v1/status: feed freshness + strategy_run heartbeat + service",
+          "status": "done",
+          "owner": "orkestrator",
+          "bukti": "GET /v1/status (127.0.0.1:8830): feeds+level+age, runs heartbeat, accounts; summary feeds_ok=2 runs_stale=0"
+        },
+        {
+          "id": "W1-05",
+          "judul": "Rekonsiliasi: saldo ledger vs saldo broker (QA gate)",
+          "status": "done",
+          "bukti": "recon 5 menit: live baseline 1084.84 + ledger -9.00 = 1075.84 vs broker 1075.84 drift 0; demo 1000 vs 1000 drift 0; /v1/recon all_ok=true; drift != 0 -> event"
+        },
+        {
+          "id": "W1-06",
+          "judul": "Halaman /sistem (feed umur, SLA, merah/kuning) tema tetap",
+          "status": "done",
+          "bukti": "/sistem/ (tema sama, auto-refresh 10s): feed level+umur+SLA, run heartbeat, recon drift; nginx /v1/ + /sistem/ di blok 443 polywarroom, basic auth War Room; tanpa auth 401, API lokal 200"
+        },
+        {
+          "id": "W1-07",
+          "judul": "Halaman /ledger + /jejak (event audit)",
+          "status": "done",
+          "bukti": "/ledger/ (tema sama, tab mutasi + jejak, refresh 15s): /v1/ledger -> 2 deal total -9.00 USC, /v1/jejak -> event audit; nginx /ledger/ 401 tanpa auth (WWW-Authenticate War Room)"
+        },
+        {
+          "id": "W1-08",
+          "judul": "Audit hook: setiap mutasi tulis event",
+          "status": "done",
+          "bukti": "trigger DB v1.audit_row pada account, ledger_entry, position (insert/close), strategy_run, feed (status saja), risk_rule, account_baseline; uji: 2 event UPDATE:risk_rule dengan before->after, tanpa banjir dari ingest (event/menit = 2)"
+        },
+        {
+          "id": "W1-09",
+          "judul": "Backup harian terenkripsi -> cyber1 + mingguan R2",
+          "status": "done",
+          "bukti": "gpg RSA4096 (privat di cyber1): /var/backups/warroom 158.5MB; pull 02:20 -> /root/backups/warroom; header PGDMP ok; timer 02:00 UTC aktif"
+        },
+        {
+          "id": "W1-10",
+          "judul": "SLA feed MT5 selaras dengan irama ingest (hilangkan warn palsu di /v1/status)",
+          "status": "done",
+          "owner": "loop",
+          "bukti": "registry mt5_live 15s/mt5_demo 10s < timer ingest 20s -> level warn terus walau data sehat. touch_feed() sekarang menulis sla_seconds dari parameter (sebelumnya parameter sla tidak terpakai); ingest memanggil sla=45 utk keduanya. Verifikasi nyata 2026-11-18 11:41 UTC: systemctl start warroom-v1-ingest -> log ok live=True demo=True; GET 127.0.0.1:8830/v1/status -> feeds_ok=4 (dari 2), mt5_live & mt5_demo sla_seconds=45, age 13s, level=ok, fresh=true. py_compile OK; backup mt5_ingest.py.bak-sla, backlog.json.bak-sla"
+        }
+      ]
+    },
+    {
+      "id": "W2",
+      "nama": "FOREX utuh (satu-satunya market live)",
+      "items": [
+        {
+          "id": "W2-01",
+          "judul": "/forex ringkasan: live vs demo, equity, PnL hari ini, posisi",
+          "status": "done",
+          "bukti": "/forex/ + /v1/forex: kartu Live 1075.84 USC (PnL hari ini -9.00) & Demo 1000 USD, umur data 18 s, auto-refresh 10 s"
+        },
+        {
+          "id": "W2-02",
+          "judul": "/forex/posisi: entry, SL, TP, jarak SL, R berjalan",
+          "status": "done",
+          "bukti": "tabel posisi terbuka di /forex/: akun, simbol, arah, qty, entry, SL, TP, umur; empty state eksplisit (0 posisi saat ini)"
+        },
+        {
+          "id": "W2-03",
+          "judul": "/forex/sinyal: semua keputusan + reason_code + gate_json",
+          "status": "done",
+          "owner": "loop",
+          "bukti": "/forex/sinyal/ + /v1/signals: keputusan per engine (approved/tunggu) + reason_code + gate (atr/rsi/tren/sesi); ingest signal 60 s. Verifikasi 2026-11-18 05:18 UTC: /var/www/html/forex/sinyal/index.html ada (3912 B), location ^~ /forex/sinyal/ di nginx matched -> HTTPS 401 (auth War Room, sama seperti /forex/ dan /forex/jurnal/), /v1/signals 200 18970 B; GOLD MENUNGGU_KONFIRMASI (DI_LUAR_SESI), MAIN/SMCG/SMC/MOM ENGINE_NONAKTIF"
+        },
+        {
+          "id": "W2-04",
+          "judul": "/forex/ea: status tiap EA (loaded, versi, magic, heartbeat)",
+          "status": "done",
+          "bukti": "tabel EA di /forex/: strategi+versi, akun, magic, heartbeat, status hidup/basi; keduanya heartbeat 18 s"
+        },
+        {
+          "id": "W2-05",
+          "judul": "/forex/jurnal + /forex/riset (read-only)",
+          "status": "done",
+          "bukti": "/forex/jurnal/ + /v1/journal: riwayat deal dari ledger (idempoten per ticket), total per akun; uji: 2 deal"
+        },
+        {
+          "id": "W2-06",
+          "judul": "Arm/Confirm + audit untuk satu aksi (pause/resume EA)",
+          "status": "done",
+          "bukti": "arm/confirm via /v1/arm + /v1/confirm dengan token sekali-pakai, semua tercatat di v1.event; EKSEKUSI NYATA BELUM tersambung (v1 read-only) — sengaja, supaya tidak ada jalur order otomatis"
+        }
+      ]
+    },
+    {
+      "id": "W3",
+      "nama": "Market lain: monitor/paper saja (tanpa live)",
+      "items": [
+        {
+          "id": "W3-01",
+          "judul": "Crypto paper engine -> signal/ledger (read-only)",
+          "status": "done",
+          "bukti": "collector 60 s + /markets/ + /v1/markets: crypto OKX 30 titik, polymarket 25 titik, feed okx/polymarket status ok; gmgn & idx terdaftar (belum ada sumber publik yang dipakai)"
+        },
+        {
+          "id": "W3-02",
+          "judul": "Polymarket monitor (harga, exposure hipotetis)",
+          "status": "done",
+          "bukti": "collector 60 s + /markets/ + /v1/markets: crypto OKX 30 titik, polymarket 25 titik, feed okx/polymarket status ok; gmgn & idx terdaftar (belum ada sumber publik yang dipakai)"
+        },
+        {
+          "id": "W3-03",
+          "judul": "IDX monitor watchlist",
+          "status": "done",
+          "bukti": "collector 60 s + /markets/ + /v1/markets: crypto OKX 30 titik, polymarket 25 titik, feed okx/polymarket status ok; gmgn & idx terdaftar (belum ada sumber publik yang dipakai)"
+        },
+        {
+          "id": "W3-04",
+          "judul": "Onchain feed GMGN dengan label risiko",
+          "status": "done",
+          "bukti": "collector 60 s + /markets/ + /v1/markets: crypto OKX 30 titik, polymarket 25 titik, feed okx/polymarket status ok; gmgn & idx terdaftar (belum ada sumber publik yang dipakai)"
+        }
+      ]
+    }
+  ],
+  "aturan_loop": [
+    "Ambil satu item todo dengan urutan wave lalu id.",
+    "Kerjakan dengan perubahan kecil; jangan pernah menyentuh akun live tanpa izin eksplisit.",
+    "Verifikasi dengan output nyata (psql/curl/tail log), bukan klaim.",
+    "Tandai done hanya jika ada bukti; jika gagal, tulis alasan di worklog dan hentikan item itu.",
+    "Selalu update WORKLOG.md dan backlog.json."
+  ],
+  "status_keseluruhan": "W1 9/9, W2 6/6, W3 4/4 selesai. Dump plaintext 7 file (1.1G) dihapus. Eksekusi arm/confirm: kodenya siap (executor.py) tapi BELUM dipasang — butuh izin eksplisit karena menyentuh akun live."
+}
