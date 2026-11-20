@@ -123,10 +123,18 @@ def run_feed(cur, code: str, market: str, provider: str, url: str, parser_name: 
         return []
 
 
+SLA_MIN = {"okx": 90}  # collector 60s -> SLA < 60s bikin warn palsu di /v1/status
+
+
 def main() -> int:
     with psycopg.connect(DSN, connect_timeout=5) as conn:
         with conn.cursor() as cur:
             cur.execute("set search_path to v1, public")
+            for code, sla in SLA_MIN.items():
+                cur.execute(
+                    "update v1.feed set sla_seconds=%s where code=%s and (sla_seconds is null or sla_seconds < %s)",
+                    (sla, code, sla),
+                )
             for code, (market, provider, url, parser) in FEEDS.items():
                 cur.execute("select id from v1.venue where code=%s", (code,))
                 v = cur.fetchone()

@@ -75,7 +75,7 @@ def main() -> int:
                     cur.execute(
                         """insert into v1.event (actor, action, target_table, target_id, after_json)
                            values ('recon.py','recon_drift','account',%s,
-                                   jsonb_build_object('broker',%s,'expected',%s,'drift',%s,'currency',%s))""",
+                                   jsonb_build_object('broker',%s::text,'expected',%s::text,'drift',%s::text,'currency',%s::text))""",
                         (acct_id, str(bal), str(expected), str(drift), ccy),
                     )
                 log(f"{label}: broker={bal} expected={expected} drift={drift} ok={ok}")

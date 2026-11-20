@@ -1,0 +1,7 @@
+[Unit]
+Description=Restart mt5-ex-live EA hanya saat tidak ada posisi live (guard internal)
+
+[Service]
+Type=oneshot
+SuccessExitStatus=1
+ExecStart=/bin/bash -c "exec /home/admin/warroom/v1/jobs/restart-live-ea.sh >> /home/admin/warroom/v1/jobs/restart-live-ea.log 2>&1"

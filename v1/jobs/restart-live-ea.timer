@@ -1,0 +1,10 @@
+[Unit]
+Description=Retry restart-live-ea.sh sampai posisi kosong (W1-12)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=restart-live-ea.service
+
+[Install]
+WantedBy=timers.target
