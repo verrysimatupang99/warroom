@@ -18,6 +18,11 @@ from warroom_api.app import app
 from warroom_api.auth_ea import get_expected_service_token
 
 
+# Token sintetis untuk CI / mesin tanpa /etc/warroom. Bukan kredensial nyata:
+# hanya dipakai tes TestClient in-process, tidak pernah keluar jaringan.
+CI_FALLBACK_TOKEN = "ci-test-token-not-a-secret"
+
+
 def _load_service_token() -> str:
     """Dynamically resolve the production service token without hardcoding secrets."""
     token = get_expected_service_token()
@@ -31,7 +36,9 @@ def _load_service_token() -> str:
             if line.startswith("WARROOM_SERVICE_TOKEN="):
                 val = line.split("=", 1)[1].strip()
                 return val.strip(chr(39)).strip(chr(34))
-    return ""
+    # CI / developer tanpa file env: pakai token sintetis agar tes TestClient
+    # (in-process, tanpa jaringan) tidak menggantung pada rahasia produksi.
+    return CI_FALLBACK_TOKEN
 
 
 def _ensure_test_db() -> None:
