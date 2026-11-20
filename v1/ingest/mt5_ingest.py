@@ -170,14 +170,30 @@ def ingest_live(cur) -> bool:
         tel.get("balance"), tel.get("equity"), tel.get("margin"),
         tel.get("free_margin"), tel.get("floating_pnl"),
     )
+    seen = []
     for p in tel.get("positions") or []:
         inst = instrument_id(cur, p.get("symbol", ""), p.get("open_price") or p.get("price"))
+        ext_id = str(p.get("ticket") or p.get("id"))
+        seen.append(ext_id)
         upsert_position(
-            cur, acct_id, inst, p.get("ticket") or p.get("id"),
+            cur, acct_id, inst, ext_id,
             "buy" if str(p.get("side", "")).upper().startswith("B") else "sell",
-            p.get("volume") or p.get("qty"), p.get("open_price") or p.get("price"),
+            p.get("volume") or p.get("qty") or p.get("lot") or 0, p.get("open_price") or p.get("open") or p.get("price"),
             p.get("sl"), p.get("tp"), ts(p.get("open_time")) or datetime.now(timezone.utc),
             p.get("profit"),
+        )
+    # posisi live yang hilang dari snapshot broker -> tutup barisnya (hanya snapshot segar)
+    if age <= 60 and seen:
+        cur.execute(
+            """update v1.position set closed_at=now(), qty_closed=qty_open
+               where account_id=%s and closed_at is null and ext_id <> all(%s)""",
+            (acct_id, seen),
+        )
+    else:
+        cur.execute(
+            """update v1.position set closed_at=now(), qty_closed=qty_open
+               where account_id=%s and closed_at is null""",
+            (acct_id,),
         )
     touch_feed(cur, "mt5_live", age <= 30, f"umur {int(age)}s", sla=45)
     touch_run(cur, 20261104)
@@ -234,6 +250,34 @@ def ingest_live_deals(cur) -> int:
     return n
 
 
+def demo_deal_ref(d) -> int:
+    """ref_id deterministik untuk deal demo (tanpa ticket): hash field unik deal."""
+    import hashlib
+    key = "|".join(str(d.get(k, "")) for k in ("engine", "side", "open_time", "close", "pl", "reason"))
+    return int(hashlib.md5(key.encode()).hexdigest()[:15], 16)
+
+
+def ingest_demo_deals(cur, acct_id, ccy, st) -> int:
+    """Deal demo dari MTRB_Pro_status.json closed[] -> ledger_entry (idempoten)."""
+    n = 0
+    for d in st.get("closed") or []:
+        if not isinstance(d, dict):
+            continue
+        pl = d.get("pl")
+        if pl is None:
+            continue
+        cur.execute(
+            """insert into v1.ledger_entry
+                 (account_id, ts, kind, amount, currency, ref_table, ref_id, note)
+               values (%s, coalesce(%s::timestamptz, now()), 'trade', %s, %s, 'demo_close', %s, %s)
+               on conflict do nothing""",
+            (acct_id, ts(d.get("time")), float(pl), ccy, demo_deal_ref(d),
+             "demo %s %s %s %s" % (d.get("engine"), d.get("side"), d.get("lot"), d.get("reason"))),
+        )
+        n += 1
+    return n
+
+
 def ingest_demo(cur) -> bool:
     st = read_json(DEMO_STATUS)
     if not st:
@@ -252,9 +296,10 @@ def ingest_demo(cur) -> bool:
         inst = instrument_id(cur, p.get("symbol", ""), p.get("open_price") or p.get("price"))
         upsert_position(cur, acct_id, inst, p.get("ticket") or p.get("id"),
                         "buy" if str(p.get("side", "")).upper().startswith("B") else "sell",
-                        p.get("volume") or p.get("qty"), p.get("open_price") or p.get("price"),
+                        p.get("volume") or p.get("qty") or p.get("lot") or 0, p.get("open_price") or p.get("open") or p.get("price"),
                         p.get("sl"), p.get("tp"),
                         ts(p.get("open_time")) or datetime.now(timezone.utc))
+    demo_deals = ingest_demo_deals(cur, acct_id, cur_ccy, st)
     touch_feed(cur, "mt5_demo", age <= 60, f"umur {int(age)}s", sla=45)
     touch_run(cur, 772001)
     return age <= 60

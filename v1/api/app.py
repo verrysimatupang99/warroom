@@ -77,11 +77,21 @@ def status():
 
     accounts = q(
         """
-        select label, right(coalesce(login_ext, ''), 3) as login_tail, mode, currency,
-               kind, status, status_at
-        from v1.account
-        where active
-        order by mode desc, label
+        select a.label, right(coalesce(a.login_ext, ''), 3) as login_tail,
+               a.mode, a.currency, a.kind,
+               coalesce(s.status, a.status) as status,
+               coalesce(s.status_at, a.status_at) as status_at
+        from v1.account a
+        left join lateral (
+            select case when extract(epoch from (now() - x.ts))::int <= 120
+                        then 'ok' else 'stale' end as status,
+                   x.ts as status_at
+            from v1.account_snapshot x
+            where x.account_id = a.id
+            order by x.ts desc limit 1
+        ) s on true
+        where a.active
+        order by a.mode desc, a.label
         """
     )
 
