@@ -309,7 +309,7 @@ def _render(rows, orphans, warnings, errors, apply_mode) -> None:
     print()
     print(f"{'id':<26} {'market':<10} {'status':<8} {'versi':<8} {'venue':<11} keadaan")
     print("-" * 96)
-    for code, nama, market, version, status, venue, state in sorted(rows):
+    for code, _nama, market, version, status, venue, state in sorted(rows):
         print(f"{code[:26]:<26} {market:<10} {status:<8} {version:<8} {venue[:11]:<11} {state}")
 
     if orphans:

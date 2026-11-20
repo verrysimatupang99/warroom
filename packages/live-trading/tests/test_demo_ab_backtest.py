@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from live_trading.demo_ab_backtest import (
     Bar15m,
     simulate_bounded_averaging,
@@ -9,7 +10,7 @@ from live_trading.demo_ab_backtest import (
 
 
 def _mk_bars(closes: list[float], start_hour: int = 8) -> list[Bar15m]:
-    base_ts = int(datetime(2026, 11, 10, start_hour, 0, tzinfo=timezone.utc).timestamp() * 1000)
+    base_ts = int(datetime(2026, 11, 10, start_hour, 0, tzinfo=UTC).timestamp() * 1000)
     bars: list[Bar15m] = []
     for idx, c in enumerate(closes):
         bars.append(

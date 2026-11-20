@@ -9,7 +9,6 @@ import sys
 import time
 import traceback
 import urllib.request
-from datetime import datetime, timezone
 
 import psycopg
 

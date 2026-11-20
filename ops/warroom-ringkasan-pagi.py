@@ -80,24 +80,24 @@ def _login_cookie() -> str | None:
         method="POST",
     )
     try:
-    	with urllib.request.urlopen(req, timeout=15) as r:
-    		set_cookie = r.headers.get("Set-Cookie", "")
-    		sid = None
-    		for part in set_cookie.split(";"):
-    			part = part.strip()
-    			if part.startswith("wr_session="):
-    				sid = part.split("=", 1)[1]
-    				break
-    		if sid:
-    			# Simpan sesi (cache) — bila gagal tulis, tetap kembalikan sid.
-    			try:
-    				SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
-    				SESSION_FILE.write_text(sid)
-    			except OSError:
-    				pass
-    			return sid
+        with urllib.request.urlopen(req, timeout=15) as r:
+            set_cookie = r.headers.get("Set-Cookie", "")
+            sid = None
+            for part in set_cookie.split(";"):
+                part = part.strip()
+                if part.startswith("wr_session="):
+                    sid = part.split("=", 1)[1]
+                    break
+            if sid:
+                # Simpan sesi (cache) — bila gagal tulis, tetap kembalikan sid.
+                try:
+                    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    SESSION_FILE.write_text(sid)
+                except OSError:
+                    pass
+                return sid
     except Exception as e:  # noqa: BLE001
-    	print(f"WARN login gagal: {e}")
+        print(f"WARN login gagal: {e}")
     return None
 
 
@@ -131,7 +131,9 @@ def _mt5_blok() -> list[str]:
     if eq is not None:
         eq_usd = eq / factor
         bal_usd = bal / factor if bal is not None else None
-        baris.append(f"• Equity: ${eq_usd:,.2f}" + (f" (balance ${bal_usd:,.2f})" if bal_usd else "") + (" (USC)" if is_cent else ""))
+        bal_txt = f" (balance ${bal_usd:,.2f})" if bal_usd else ""
+        usc_txt = " (USC)" if is_cent else ""
+        baris.append(f"• Equity: ${eq_usd:,.2f}" + bal_txt + usc_txt)
     if pnl is not None:
         pnl_usd = pnl / factor
         tanda = "+" if pnl_usd >= 0 else ""
@@ -209,15 +211,15 @@ def main() -> int:
 
     t = transport_from_env()
     res = t.send(
-    	"War Room ringkasan pagi",
-    	pesan,
-    	"info",
-    	{"jenis": "ringkasan-pagi"},
+        "War Room ringkasan pagi",
+        pesan,
+        "info",
+        {"jenis": "ringkasan-pagi"},
     )
     if not res.ok:
-    	# Bila kirim gagal (mis. transport belum terkonfigurasi), cetak pesan ke
-    	# journal supaya ringkasan tetap tercatat dan bisa diaudit.
-    	print(pesan)
+        # Bila kirim gagal (mis. transport belum terkonfigurasi), cetak pesan ke
+        # journal supaya ringkasan tetap tercatat dan bisa diaudit.
+        print(pesan)
     print(f"KIRIM ok={res.ok} transport={getattr(t, 'name', '?')} detail={res.detail}")
     return 0
 

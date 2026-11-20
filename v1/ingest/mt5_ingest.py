@@ -12,7 +12,7 @@ import os
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import psycopg
@@ -27,7 +27,7 @@ LOG = Path("/var/log/wr-ingest.log")
 
 
 def log(msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} {msg}"
+    line = f"{datetime.now(UTC).isoformat(timespec='seconds')} {msg}"
     print(line)
     try:
         with LOG.open("a") as fh:
@@ -45,7 +45,7 @@ def ts(val):
     txt = str(val).strip().replace(".", "-")
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
-            return datetime.strptime(txt[:19], fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(txt[:19], fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
     return None
@@ -178,8 +178,9 @@ def ingest_live(cur) -> bool:
         upsert_position(
             cur, acct_id, inst, ext_id,
             "buy" if str(p.get("side", "")).upper().startswith("B") else "sell",
-            p.get("volume") or p.get("qty") or p.get("lot") or 0, p.get("open_price") or p.get("open") or p.get("price"),
-            p.get("sl"), p.get("tp"), ts(p.get("open_time")) or datetime.now(timezone.utc),
+            p.get("volume") or p.get("qty") or p.get("lot") or 0,
+            p.get("open_price") or p.get("open") or p.get("price"),
+            p.get("sl"), p.get("tp"), ts(p.get("open_time")) or datetime.now(UTC),
             p.get("profit"),
         )
     # posisi live yang hilang dari snapshot broker -> tutup barisnya (hanya snapshot segar)
@@ -272,7 +273,7 @@ def ingest_demo_deals(cur, acct_id, ccy, st) -> int:
                values (%s, coalesce(%s::timestamptz, now()), 'trade', %s, %s, 'demo_close', %s, %s)
                on conflict do nothing""",
             (acct_id, ts(d.get("time")), float(pl), ccy, demo_deal_ref(d),
-             "demo %s %s %s %s" % (d.get("engine"), d.get("side"), d.get("lot"), d.get("reason"))),
+             f'demo {d.get("engine")} {d.get("side")} {d.get("lot")} {d.get("reason")}'),
         )
         n += 1
     return n
@@ -296,10 +297,11 @@ def ingest_demo(cur) -> bool:
         inst = instrument_id(cur, p.get("symbol", ""), p.get("open_price") or p.get("price"))
         upsert_position(cur, acct_id, inst, p.get("ticket") or p.get("id"),
                         "buy" if str(p.get("side", "")).upper().startswith("B") else "sell",
-                        p.get("volume") or p.get("qty") or p.get("lot") or 0, p.get("open_price") or p.get("open") or p.get("price"),
+                        p.get("volume") or p.get("qty") or p.get("lot") or 0,
+            p.get("open_price") or p.get("open") or p.get("price"),
                         p.get("sl"), p.get("tp"),
-                        ts(p.get("open_time")) or datetime.now(timezone.utc))
-    demo_deals = ingest_demo_deals(cur, acct_id, cur_ccy, st)
+                        ts(p.get("open_time")) or datetime.now(UTC))
+    ingest_demo_deals(cur, acct_id, cur_ccy, st)
     touch_feed(cur, "mt5_demo", age <= 60, f"umur {int(age)}s", sla=45)
     touch_run(cur, 772001)
     return age <= 60

@@ -6,7 +6,7 @@ niat + jejak ke v1.event dan TIDAK mengeksekusi apa pun di akun trading.
 """
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import psycopg
 from fastapi import FastAPI
@@ -102,7 +102,7 @@ def status():
     }
     return {
         "ok": True,
-        "now": datetime.now(timezone.utc),
+        "now": datetime.now(UTC),
         "db": {"ok": True, "latency_ms": int((time.time() - t0) * 1000)},
         "summary": summary,
         "feeds": feeds,

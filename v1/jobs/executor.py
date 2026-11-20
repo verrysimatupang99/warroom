@@ -9,12 +9,11 @@ Aksi yang diizinkan (whitelist):
   restart_instance-> systemctl restart <unit>
 Unit dipetakan dari nama target, TIDAK dari input bebas.
 """
-import json
 import os
 import subprocess
 import sys
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import psycopg
 
@@ -42,7 +41,7 @@ ACTION_CMD = {
 
 
 def log(msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} {msg}"
+    line = f"{datetime.now(UTC).isoformat(timespec='seconds')} {msg}"
     print(line)
     try:
         with open(LOG, "a") as fh:

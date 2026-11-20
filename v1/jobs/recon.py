@@ -11,7 +11,7 @@ Kalau drift != 0, itu berarti ada mutasi uang yang tidak tercatat.
 """
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import psycopg
@@ -22,7 +22,7 @@ TOL = Decimal("0.01")
 
 
 def log(msg: str) -> None:
-    line = f"{datetime.now(timezone.utc).isoformat(timespec='seconds')} {msg}"
+    line = f"{datetime.now(UTC).isoformat(timespec='seconds')} {msg}"
     print(line)
     try:
         with open(LOG, "a") as fh:
@@ -44,11 +44,12 @@ def main() -> int:
             )
             rows = cur.fetchall()
 
-            for acct_id, label, mode, ccy, bal, led in rows:
+            for acct_id, label, _mode, ccy, bal, led in rows:
                 if bal is None:
                     log(f"skip {label}: belum ada snapshot")
                     continue
-                bal = Decimal(str(bal)); led = Decimal(str(led))
+                bal = Decimal(str(bal))
+                led = Decimal(str(led))
                 cur.execute("select amount from v1.account_baseline where account_id=%s", (acct_id,))
                 b = cur.fetchone()
                 if b is None:
