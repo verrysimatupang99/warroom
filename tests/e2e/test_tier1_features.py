@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import statistics
 
 import httpx
 import pytest
+from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 from live_trading.demo_ab_backtest import _finalize
 from live_trading.risk_guardrails import calculate_risk_position_size
+from warroom_api.routers.tencent import latest_mt5_by_account, stream_forex_telemetry
 from warroom_core.trades_forex import ke_trade
 
 from tests.e2e.fixtures.account_samples import (
@@ -200,56 +203,90 @@ def test_t1_f3_account_status_snapshot(live_client: httpx.Client, auth_headers: 
 # ==============================================================================
 # F4: SSE Real-Time Streaming
 # ==============================================================================
+# Catatan: `TestClient.stream` (starlette ASGITransport) mem-buffer SELURUH body.
+# SSE tidak pernah selesai, jadi kelima tes ini dulu menggantung sampai job CI
+# timeout. Sekarang diuji di level respons/generator: media type diperiksa dari
+# `StreamingResponse`, isi baris diambil dari `body_iterator` lalu ditutup.
 
 
-def test_t1_f4_sse_connection_and_content_type(test_client: TestClient, auth_headers: dict[str, str]) -> None:
-    """T1.4.1: GET /api/v1/tencent/forex/stream establishes text/event-stream response."""
-    with test_client.stream("GET", "/api/v1/tencent/forex/stream", headers=auth_headers) as resp:
-        assert resp.status_code == 200
-        assert "text/event-stream" in resp.headers.get("content-type", "")
+def _ambil_baris_sse(respons: StreamingResponse, batas: int) -> list[str]:
+    """Ambil sampai ``batas`` potongan SSE pertama, lalu tutup generator-nya."""
 
-
-def test_t1_f4_sse_reconnection_preamble(test_client: TestClient, auth_headers: dict[str, str]) -> None:
-    """T1.4.2: Initial connection preamble includes retry: 3000 for auto-reconnection."""
-    with test_client.stream("GET", "/api/v1/tencent/forex/stream", headers=auth_headers) as resp:
-        lines = []
-        for line in resp.iter_lines():
-            lines.append(line)
-            if len(lines) >= 4:
+    async def _baca() -> list[str]:
+        keluar: list[str] = []
+        iterator = respons.body_iterator
+        async for potongan in iterator:
+            keluar.append(potongan if isinstance(potongan, str) else potongan.decode())
+            if len(keluar) >= batas:
                 break
-        combined = "\n".join(lines)
-        assert "retry: 3000" in combined
+        tutup = getattr(iterator, "aclose", None)
+        if tutup is not None:
+            await tutup()
+        return keluar
+
+    return asyncio.run(_baca())
 
 
-def test_t1_f4_sse_initial_snapshot_delivered(test_client: TestClient, auth_headers: dict[str, str]) -> None:
-    """T1.4.3: Stream immediately delivers current account telemetry snapshot."""
-    url = f"/api/v1/tencent/forex/stream?account={ACCOUNT_LIVE_CENT}"
-    with test_client.stream("GET", url, headers=auth_headers) as resp:
-        snapshot = None
-        for line in resp.iter_lines():
-            if line.startswith("data: "):
-                snapshot = json.loads(line[6:])
+def test_t1_f4_sse_connection_and_content_type() -> None:
+    """T1.4.1: Endpoint stream mengembalikan text/event-stream + header anti-buffer."""
+    respons = asyncio.run(stream_forex_telemetry(None))
+    assert respons.media_type == "text/event-stream"
+    assert respons.headers.get("x-accel-buffering") == "no"
+    assert respons.headers.get("cache-control") == "no-cache"
+
+
+def test_t1_f4_sse_reconnection_preamble() -> None:
+    """T1.4.2: Preamble awal berisi retry: 3000 untuk auto-reconnect."""
+    respons = asyncio.run(stream_forex_telemetry(None))
+    baris = _ambil_baris_sse(respons, 2)
+    assert "retry: 3000" in "\n".join(baris)
+
+
+def test_t1_f4_sse_initial_snapshot_delivered(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T1.4.3: Stream langsung mengirim snapshot telemetri akun saat ini."""
+    monkeypatch.setitem(
+        latest_mt5_by_account,
+        ACCOUNT_LIVE_CENT,
+        {"account": ACCOUNT_LIVE_CENT, "equity": 1000.0, "balance": 1000.0},
+    )
+    respons = asyncio.run(stream_forex_telemetry(ACCOUNT_LIVE_CENT))
+    baris = _ambil_baris_sse(respons, 3)
+    data = None
+    for item in baris:
+        for satu in item.splitlines():
+            if satu.startswith("data: "):
+                data = json.loads(satu[6:])
                 break
-        assert snapshot is not None
-        assert snapshot.get("account") == ACCOUNT_LIVE_CENT
-        assert "equity" in snapshot
+        if data is not None:
+            break
+    assert data is not None
+    assert data.get("account") == ACCOUNT_LIVE_CENT
+    assert "equity" in data
 
 
-def test_t1_f4_sse_specific_account_filter(test_client: TestClient, auth_headers: dict[str, str]) -> None:
-    """T1.4.4: Subscribing to ?account=464202979 delivers Demo 2 snapshot data."""
-    url = f"/api/v1/tencent/forex/stream?account={ACCOUNT_DEMO_2}"
-    with test_client.stream("GET", url, headers=auth_headers) as resp:
-        snapshot = None
-        for line in resp.iter_lines():
-            if line.startswith("data: "):
-                snapshot = json.loads(line[6:])
+def test_t1_f4_sse_specific_account_filter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T1.4.4: Berlangganan ?account=464202979 mengirim snapshot Demo 2."""
+    monkeypatch.setitem(
+        latest_mt5_by_account,
+        ACCOUNT_DEMO_2,
+        {"account": ACCOUNT_DEMO_2, "equity": 500.0, "balance": 500.0},
+    )
+    respons = asyncio.run(stream_forex_telemetry(ACCOUNT_DEMO_2))
+    baris = _ambil_baris_sse(respons, 3)
+    data = None
+    for item in baris:
+        for satu in item.splitlines():
+            if satu.startswith("data: "):
+                data = json.loads(satu[6:])
                 break
-        assert snapshot is not None
-        assert snapshot.get("account") == ACCOUNT_DEMO_2
+        if data is not None:
+            break
+    assert data is not None
+    assert data.get("account") == ACCOUNT_DEMO_2
 
 
 def test_t1_f4_sse_keepalive_ping_format() -> None:
-    """T1.4.5: Idle SSE keepalive format matches ': ping\\n\\n'."""
+    """T1.4.5: Format keepalive SSE saat idle adalah ': ping\\n\\n'."""
     ping_comment = ": ping\n\n"
     assert ping_comment.startswith(":")
     assert "ping" in ping_comment

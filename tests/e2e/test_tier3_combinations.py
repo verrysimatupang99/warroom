@@ -194,16 +194,27 @@ def test_t3_5_risk_gate_sizing_and_execution_feedback(
     assert resp_deal.json()["ticket"] == 7781010
 
 
-def test_t3_6_sse_reconnect_last_event_id_cursor(
-    test_client: TestClient,
-    admin_cookie_header: dict[str, str],
-) -> None:
-    """T3.6: SSE Stream connection with Last-Event-ID cursor header."""
-    headers = dict(admin_cookie_header)
-    headers["Last-Event-ID"] = "100"
-    with test_client.stream("GET", "/api/v1/stream?topics=forex", headers=headers) as resp:
-        assert resp.status_code == 200
-        assert "text/event-stream" in resp.headers.get("content-type", "")
+def test_t3_6_sse_reconnect_last_event_id_cursor() -> None:
+    """T3.6: SSE stream memakai Last-Event-ID sebagai cursor.
+
+    Diuji lewat generator ``event_stream`` langsung, bukan lewat HTTP streaming:
+    ``TestClient.stream`` (starlette ASGITransport) mem-buffer SELURUH body, dan
+    SSE tidak pernah selesai — dulu test ini menggantung sampai job timeout.
+    """
+    from warroom_api.stream import event_stream, parse_last_event_id
+
+    assert parse_last_event_id("100") == 100
+    assert parse_last_event_id("abc") is None
+    assert parse_last_event_id("-1") is None
+
+    async def _baca_preamble() -> list[str]:
+        gen = event_stream(topics=["forex"], last_event_id="100", max_iterations=1)
+        return [chunk async for chunk in gen]
+
+    chunks = asyncio.run(_baca_preamble())
+    assert chunks, "stream harus mengirim preamble"
+    assert "retry: 3000" in chunks[0]
+    assert '"dari_id": 100' in chunks[0]
 
 
 def test_t3_7_token_and_secret_leak_protection(

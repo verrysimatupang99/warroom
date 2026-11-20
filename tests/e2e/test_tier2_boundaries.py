@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import statistics
 
 import httpx
@@ -12,6 +13,7 @@ from live_trading.risk_guardrails import (
     calculate_risk_position_size,
     evaluate_entry_guardrails,
 )
+from warroom_api.routers.tencent import stream_forex_telemetry
 
 from tests.e2e.fixtures.deal_payloads import (
     corrupt_deal_non_numeric_profit,
@@ -249,16 +251,27 @@ async def test_t2_f4_sse_multi_account_filtering_isolation() -> None:
             _telemetry_subscribers.remove(queue)
 
 
-def test_t2_f4_sse_malformed_account_param_fallback(
-    test_client: TestClient,
-    auth_headers: dict[str, str],
-) -> None:
+def _sse_pembuka(respons) -> str:
+    """Ambil potongan SSE pertama lalu tutup generator-nya (avoid hang pada SSE tak selesai)."""
+
+    async def _baca() -> str:
+        potongan = ""
+        async for item in respons.body_iterator:
+            potongan = item if isinstance(item, str) else item.decode()
+            break
+        tutup = getattr(respons.body_iterator, "aclose", None)
+        if tutup is not None:
+            await tutup()
+        return potongan
+
+    return asyncio.run(_baca())
+
+
+def test_t2_f4_sse_malformed_account_param_fallback() -> None:
     """T2.4.5: Malformed query parameter ?account=invalid_chars_!@# falls back safely."""
-    url = "/api/v1/tencent/forex/stream?account=invalid_chars_!@#"
-    with test_client.stream("GET", url, headers=auth_headers) as resp:
-        assert resp.status_code == 200
-        first_line = next(resp.iter_lines())
-        assert first_line.startswith("retry: 3000")
+    respons = asyncio.run(stream_forex_telemetry("invalid_chars_!@#"))
+    first_line = _sse_pembuka(respons).splitlines()[0]
+    assert first_line.startswith("retry: 3000")
 
 
 # ==============================================================================
