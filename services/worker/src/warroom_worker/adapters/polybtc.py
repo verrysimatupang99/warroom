@@ -18,6 +18,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+
 def _pilih_skill_dir() -> Path:
     env_dir = os.environ.get("POLYBTC_SKILL_DIR")
     if env_dir:

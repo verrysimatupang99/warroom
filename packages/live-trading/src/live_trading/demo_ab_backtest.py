@@ -4,16 +4,18 @@ Membandingkan 4 metode secara deterministik (anti-lookahead, hari kerja saja,
 spread $0.30/oz, aturan ragu SL-dulu) pada data historis 15m emas/PAXG:
   1. martingale_2x            : grid $6, lot 0.01 * 2^k, tanpa SL keras -> ukur blowup.
   2. bounded_avg_counter      : flat 0.01 counter-trend RSI, Basket SL -$60.
-  3. trend_bounded_avg (Demo2): flat 0.01 searah EMA200 + pullback RSI, spacing max($15, 2.2*ATR), maks 4 layer, TP +$12 / Hard Basket SL -$45.
-  4. trend_twin_order  (Demo1): Twin-Order 0.01+0.01 (Scalp +1.0R & Runner +3.0R + BE Lock + ATR Trail), Daily Cap -$30.
+  3. trend_bounded_avg (Demo2): flat 0.01 searah EMA200 + pullback RSI,
+     spacing max($15, 2.2*ATR), maks 4 layer, TP +$12 / Hard Basket SL -$45.
+  4. trend_twin_order  (Demo1): Twin-Order 0.01+0.01
+     (Scalp +1.0R & Runner +3.0R + BE Lock + ATR Trail), Daily Cap -$30.
 """
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Sequence
 
 
 @dataclass(frozen=True)
@@ -26,7 +28,7 @@ class Bar15m:
 
     @property
     def dt_utc(self) -> datetime:
-        return datetime.fromtimestamp(self.ts_ms / 1000.0, tz=timezone.utc)
+        return datetime.fromtimestamp(self.ts_ms / 1000.0, tz=UTC)
 
 
 @dataclass
@@ -55,18 +57,18 @@ def load_bars_15m(csv_path: Path, *, weekdays_only: bool = True, max_bars: int |
         reader = csv.DictReader(f)
         for row in reader:
             ts = int(float(row["timestamp"]))
-            dt = datetime.fromtimestamp(ts / 1000.0, tz=timezone.utc)
+            dt = datetime.fromtimestamp(ts / 1000.0, tz=UTC)
             if weekdays_only and dt.weekday() >= 5:
                 continue
             o = float(row["open"])
             h = float(row["high"])
-            l = float(row["low"])
+            low_px = float(row["low"])
             c = float(row["close"])
-            if o <= 0 or h <= 0 or l <= 0 or c <= 0:
+            if o <= 0 or h <= 0 or low_px <= 0 or c <= 0:
                 continue
-            if (h - l) / o > 0.08:
+            if (h - low_px) / o > 0.08:
                 continue
-            bars.append(Bar15m(ts_ms=ts, open=o, high=h, low=l, close=c))
+            bars.append(Bar15m(ts_ms=ts, open=o, high=h, low=low_px, close=c))
     if max_bars is not None and len(bars) > max_bars:
         bars = bars[-max_bars:]
     return bars
@@ -258,8 +260,8 @@ def simulate_bounded_averaging(
         if basket:
             worst_price = b.low if side == 1 else b.high
             best_price = b.high if side == 1 else b.low
-            worst_flt = sum(((worst_price - p) * side - spread) * (l * 100.0) for p, l in basket)
-            best_flt = sum(((best_price - p) * side - spread) * (l * 100.0) for p, l in basket)
+            worst_flt = sum(((worst_price - p) * side - spread) * (lot * 100.0) for p, lot in basket)
+            best_flt = sum(((best_price - p) * side - spread) * (lot * 100.0) for p, lot in basket)
 
             peak_eq = max(peak_eq, equity)
             dd_bar = max(0.0, peak_eq - (equity + worst_flt))
@@ -301,6 +303,12 @@ def simulate_bounded_averaging(
             max_layers_used = max(max_layers_used, 1)
 
     return _finalize("bounded_avg_counter", deposit, equity, pnls, max_dd_usd, max_dd_pct, blown, max_layers_used)
+
+
+def _worst_floating(leg, bar, spread):
+    """Estimasi floating P/L terburuk untuk satu leg, pakai low/high bar."""
+    open_px = bar.low if leg.side == 1 else bar.high
+    return ((open_px - leg.entry) * leg.side - spread) * (leg.lot * 100.0)
 
 
 def simulate_trend_bounded_averaging(
@@ -433,7 +441,7 @@ def simulate_trend_twin_order(
             daily_pnl = 0.0
 
         if legs:
-            worst_flt = sum((((b.low if l.side == 1 else b.high) - l.entry) * l.side - spread) * (l.lot * 100.0) for l in legs)
+            worst_flt = sum(_worst_floating(leg, b, spread) for leg in legs)
             peak_eq = max(peak_eq, equity)
             dd_bar = max(0.0, peak_eq - (equity + worst_flt))
             if dd_bar > max_dd_usd:
@@ -442,27 +450,28 @@ def simulate_trend_twin_order(
 
             remaining: list[_Leg] = []
             scalp_hit_tp = False
-            for l in legs:
-                hit_sl = (b.low <= l.sl) if l.side == 1 else (b.high >= l.sl)
-                hit_tp = (b.high >= l.tp) if l.side == 1 else (b.low <= l.tp)
+            for leg in legs:
+                hit_sl = (b.low <= leg.sl) if leg.side == 1 else (b.high >= leg.sl)
+                hit_tp = (b.high >= leg.tp) if leg.side == 1 else (b.low <= leg.tp)
                 if hit_sl:
-                    realized = ((l.sl - l.entry) * l.side - spread) * (l.lot * 100.0)
+                    realized = ((leg.sl - leg.entry) * leg.side - spread) * (leg.lot * 100.0)
                     equity += realized
                     daily_pnl += realized
                     setup_pnl += realized
                 elif hit_tp:
-                    realized = ((l.tp - l.entry) * l.side - spread) * (l.lot * 100.0)
+                    realized = ((leg.tp - leg.entry) * leg.side - spread) * (leg.lot * 100.0)
                     equity += realized
                     daily_pnl += realized
                     setup_pnl += realized
-                    if l.is_scalp:
+                    if leg.is_scalp:
                         scalp_hit_tp = True
                 else:
-                    if not l.is_scalp and ((l.side == 1 and l.sl >= l.entry) or (l.side == -1 and l.sl <= l.entry)):
-                        trail = b.close - atrs[i - 1] * 1.5 * l.side
-                        if (l.side == 1 and trail > l.sl) or (l.side == -1 and trail < l.sl):
-                            l.sl = trail
-                    remaining.append(l)
+                    be_ok = (leg.side == 1 and leg.sl >= leg.entry) or (leg.side == -1 and leg.sl <= leg.entry)
+                    if not leg.is_scalp and be_ok:
+                        trail = b.close - atrs[i - 1] * 1.5 * leg.side
+                        if (leg.side == 1 and trail > leg.sl) or (leg.side == -1 and trail < leg.sl):
+                            leg.sl = trail
+                    remaining.append(leg)
 
             legs = remaining
             if scalp_hit_tp and legs:

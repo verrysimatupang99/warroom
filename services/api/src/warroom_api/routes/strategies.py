@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
-
 from live_trading.strategies import StrategyRegistry
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/strategies", tags=["strategies"])
 _registry = StrategyRegistry()

@@ -29,7 +29,7 @@ import json
 import os
 import re
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 # Pola nama EA milik sendiri. Bisa ditambah lewat --match.
@@ -159,33 +159,6 @@ def scan_terminal(term: Terminal, patterns: tuple[str, ...]) -> None:
             )
         )
     term.ea_total = total
-
-
-def find_units_using(term: Terminal) -> list[str]:
-    """Cari unit systemd yang (langsung atau lewat skrip launcher) menyebut terminal ini."""
-    needles = {
-        term.name,
-        term.name.replace(" ", ""),
-        term.name.lower().replace(" ", "-"),
-        term.experts_dir.replace("/MQL5/Experts", ""),
-    }
-    needles = {n for n in needles if n}
-
-    found: list[str] = []
-    unit_dir = Path("/etc/systemd/system")
-    if not unit_dir.is_dir():
-        return found
-
-    for unit in sorted(unit_dir.rglob("*.service")):
-        try:
-            text = unit.read_text(errors="ignore")
-        except OSError:
-            continue
-
-        haystack = text + " " + " ".join(_follow_execstart_scripts(text))
-        if any(n in haystack for n in needles):
-            found.append(unit.name)
-    return found
 
 
 EXEC_LINE = re.compile(r"^ExecStart=\s*(.+)$", re.MULTILINE)

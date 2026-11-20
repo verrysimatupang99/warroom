@@ -39,7 +39,7 @@ packages = ["src/live_trading"]
 # Jalankan dari akar repo: `uv run pytest packages/live-trading -q`.
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
 # crypto/ + vendor/ = kode warisan Tencent. idx616/ (mesin kanonik IDX 616) dikecualikan
 # sementara dari lint karena membawa format legacy (semicolon, non-PEP8) hingga sprint IDX.

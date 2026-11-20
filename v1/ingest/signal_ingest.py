@@ -13,7 +13,7 @@ import os
 import sys
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import psycopg
@@ -31,7 +31,7 @@ LIVE_TEL = Path(
 def bar_ts():
     """Awal bar M5 saat ini (UTC)."""
     now = int(time.time())
-    return datetime.fromtimestamp(now - (now % 300), timezone.utc)
+    return datetime.fromtimestamp(now - (now % 300), UTC)
 
 
 def norm_reason(txt: str) -> str:

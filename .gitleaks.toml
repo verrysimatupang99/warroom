@@ -66,3 +66,20 @@ paths = [
   '''^\.gh-config/.*''',
 ]
 
+[[allowlists]]
+# Berkas preset MT5 (.set): field InpToken= kosong (nilainya diisi saat load
+# di terminal, tidak pernah disimpan ke berkas). Gitleaks generic-api-key
+# menandai InpToken= karena pola token= tanpa nilai tetap kena. Bukan rahasia.
+description = "preset MT5 .set - InpToken selalu kosong (diisi runtime)"
+paths = [
+  '''ops/mt5/.*\.set$''',
+  '''strategi/.*\.set$''',
+]
+
+[[allowlists]]
+# Dokumen arsip ringkasan yang MENYEBUT pola secret=... sebagai contoh
+# temuan gitleaks di masa lalu (bukan rahasia).
+description = "arsip catatan lama yang menyebut pola secret= sebagai contoh"
+paths = [
+  '''docs/arsip/catatan-lama/.*''',
+]

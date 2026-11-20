@@ -42,7 +42,7 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
 # vendor/ + crypto/ = kode warisan Tencent. idx616/ kini IKUT lint (14 Okt 2026) —
 # sebelumnya dikecualikan dan menyembunyikan bug nyata (F821 `SCALP_TIMEOUT` yang tak
