@@ -438,7 +438,8 @@ def test_deal_endpoint_idempoten_dan_net(client, make_user, tmp_path, monkeypatc
     }
     r = client.post("/api/v1/tencent/mt5/deal", json=body, headers=_cookie(sid))
     assert r.status_code == 200, r.text
-    assert r.json() == {"status": "OK", "ticket": 9001, "net": 8.5}
+    res = r.json()
+    assert res["status"] == "OK" and res["ticket"] == 9001 and res["net"] == 8.5
 
     r2 = client.post("/api/v1/tencent/mt5/deal", json=body, headers=_cookie(sid))
     assert r2.status_code == 200

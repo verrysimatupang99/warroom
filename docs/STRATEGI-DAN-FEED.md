@@ -18,6 +18,40 @@ Lavensi/liveness: job `denyut` (tiap 6 jam) mengirim ringkasan ke Telegram
 sebagai bukti worker hidup. Alert palsu tidak dibuat: tidak ada data →
 tulis `unavailable` + alasan, bukan angka karangan.
 
+---
+
+## Registry strategi (mulai 2026-11-18)
+
+Sejak 2026-11-18 setiap strategi punya **manifest berkas** di
+`strategi/<market>/<id>/manifest.yaml`. Manifest itu sumber kebenaran; tabel
+`v1.strategy` hanya cermin yang diisi `ops/strategi-sync.py`.
+Batas lengkap platform vs strategi: **`docs/PLATFORM-VS-STRATEGI.md`**.
+
+| Market | Strategi | Manifest | Venue | Executor | Status |
+|---|---|---|---|---|---|
+| Crypto | Breakout Donchian | `strategi/crypto/breakout_donchian_crypto/manifest.yaml` | okx | python-engine | paper |
+| Crypto | RSI Mean-Reversion | `strategi/crypto/rsi_meanrevert_crypto/manifest.yaml` | okx | python-engine | paper |
+| Crypto | Memecoin Momentum | `strategi/crypto/memecoin_momentum/manifest.yaml` | gmgn | python-engine | draft |
+| OpenMarket | Breakout Donchian 40+ venue | `strategi/openmarket/openmarket_breakout/manifest.yaml` | okx | python-engine | draft |
+| Forex | GOLD Reaper Hexa | `strategi/forex/gold_reaper_hexa/manifest.yaml` | exness | mt5-ea | **live** |
+| Forex | MTRB Pro | `strategi/forex/mtrb_pro/manifest.yaml` | exness | mt5-ea | paper |
+| Prediction | — | (belum ada) | polymarket | — | — |
+| Equity | — | (belum ada) | idx | — | — |
+
+Pemetaan ke enum DB (`ops/strategi-sync.py`): `memecoin`→`onchain`,
+`openmarket`→`crypto`, `dihentikan`→`retired`.
+
+Nama lama `strategi/<id>.yaml` tetap ada sebagai **symlink** ke manifest, supaya
+perintah CLI lama (`--config strategi/breakout_donchian_crypto.yaml`) tidak pecah.
+
+```bash
+# bandingkan manifest vs DB (tidak menulis)
+sudo sh -c 'set -a; . /etc/warroom/strategi-sync.env; set +a; \
+  cd /home/admin/warroom && ./.venv/bin/python ops/strategi-sync.py --check'
+```
+
+---
+
 ## Live feed sinyal dari Telegram (AKTIF, 3 Nov 2026)
 
 Sumber: 24 channel terverifikasi milik akun pemilik (daftar:

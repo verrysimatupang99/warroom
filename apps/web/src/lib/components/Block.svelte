@@ -49,8 +49,8 @@
 	});
 </script>
 
-<section class="kartu p-3" aria-label={judul} data-testid="blok">
-	<header class="mb-3 flex flex-wrap items-start justify-between gap-2">
+<section class="kartu p-3.5" aria-label={judul} data-testid="blok">
+	<header class="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-line-soft pb-2.5">
 		<div>
 			{#if lipat}
 				<button
@@ -59,11 +59,11 @@
 					aria-expanded={terbuka}
 					onclick={() => (terbuka = !terbuka)}
 				>
-					<span class="label-mikro">{judul}</span>
-					<span class="text-11 text-text-3">{terbuka ? '▾ tutup' : '▸ buka'}</span>
+					<span class="label-mikro text-text-2">{judul}</span>
+					<span class="text-11 font-mono text-text-3">{terbuka ? '▾ tutup' : '▸ buka'}</span>
 				</button>
 			{:else}
-				<h2 class="label-mikro">{judul}</h2>
+				<h2 class="label-mikro text-text-2">{judul}</h2>
 			{/if}
 			{#if deskripsi}<p class="mt-0.5 text-12 text-text-3">{deskripsi}</p>{/if}
 		</div>

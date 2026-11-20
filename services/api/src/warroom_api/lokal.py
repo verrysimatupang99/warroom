@@ -348,6 +348,14 @@ def _baca_momentum() -> dict[str, Any] | None:
     return st if isinstance(st, dict) else None
 
 
+def _angka(v: Any) -> float:
+    """Konversi nilai state jadi float tanpa meledak kalau isinya bool/str kotor."""
+    try:
+        return float(v or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _ringkas_momentum() -> dict[str, Any]:
     """Ringkas dompet paper crypto. State disimpan per koin, bukan sebagai total."""
     st = _baca_momentum()
@@ -355,22 +363,27 @@ def _ringkas_momentum() -> dict[str, Any]:
         return {"aktif": False}
     ekuitas = 0.0
     posisi = 0
+    koin = 0
     for p in st.values():
-        harga = p.get("harga") or p.get("entry") or 0.0
-        ekuitas += float(p.get("kas") or 0.0) + float(p.get("qty") or 0.0) * float(harga)
-        if float(p.get("qty") or 0.0) > 0:
+        # State bisa berisi metadata (bool/str/int), bukan hanya dict per koin.
+        if not isinstance(p, dict):
+            continue
+        koin += 1
+        harga = _angka(p.get("harga")) or _angka(p.get("entry"))
+        kas = _angka(p.get("kas"))
+        qty = _angka(p.get("qty"))
+        ekuitas += kas + qty * harga
+        if qty > 0:
             posisi += 1
-    modal = 500.0 * len(st)
+    modal = 500.0 * koin
     return {
         "aktif": True,
-        "koin": len(st),
+        "koin": koin,
         "modal": round(modal, 2),
         "ekuitas": round(ekuitas, 2),
         "return_pct": round((ekuitas / modal - 1) * 100, 2) if modal else 0.0,
         "posisi": posisi,
     }
-
-
 def _baca_csv(p: Path) -> list[dict[str, Any]]:
     if not p.exists():
         return []

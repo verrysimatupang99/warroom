@@ -27,6 +27,16 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
     hasil: list[dict[str, Any]] = []
     try:
         with session_scope() as s:
+            s.execute(text("""
+                UPDATE trades
+                SET pnl_usd = ROUND((pnl_usd / 100.0)::numeric, 4)
+                WHERE venue = 'forex'
+                  AND mode = 'live'
+                  AND ((evidence_json::jsonb->>'account') IN ('452009427', '36525553')
+                       OR (evidence_json::jsonb->>'currency') = 'USC')
+                  AND pnl_usd IS NOT NULL
+                  AND ABS(pnl_usd) > 0.5
+            """))
             rows = s.execute(
                 text(
                     "select ext_id, side, qty, price, pnl_usd, opened_at, closed_at, "
@@ -45,6 +55,12 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
                 ev = json.loads(r.evidence_json or "{}")
             except (TypeError, ValueError):
                 ev = {}
+        account_val = str(ev.get("account") or "unknown")
+        is_cent = ev.get("currency") == "USC" or account_val in ("452009427", "36525553")
+        net_usc_val = ev.get("net_usc")
+        if net_usc_val is None and r.pnl_usd is not None and is_cent:
+            net_usc_val = round(float(r.pnl_usd) * 100.0, 2)
+
         hasil.append(
             {
                 "iso": str(r.closed_at or "")[:19].replace("T", " "),
@@ -56,9 +72,12 @@ def dari_db(batas: int = 200) -> list[dict[str, Any]]:
                 "slippage_pts": "",
                 "latency_ms": "",
                 "pnl_usd": "" if r.pnl_usd is None else str(r.pnl_usd),
+                "net_usc": "" if net_usc_val is None else str(net_usc_val),
+                "currency": "USC" if is_cent else "USD",
+                "cent_factor": 100.0 if is_cent else 1.0,
                 "pnl_pct": "",
                 "ticket": str(r.ext_id or ""),
-                "account": str(ev.get("account") or "unknown"),
+                "account": account_val,
                 "strategy_version": str(ev.get("strategy_version") or "unknown"),
                 "currency": str(ev.get("currency") or "USD"),
                 "cent_factor": float(ev.get("cent_factor", 100.0 if ev.get("currency") == "USC" else 1.0)),

@@ -497,7 +497,7 @@ async def report_mt5_telemetry(payload: MT5TelemetryPayload):
     # Instruksi otomatis untuk loop telemetry:
     # Memerintahkan VM untuk mengunduh kode EA v2.0 dan mengompilasinya via MetaEditor.
     update_cmd = (
-        '$u="https://0xgunsl1ng3r.xyz/api/v1/tencent/mt5/source.raw"; '
+        '$u="https://polywarroom.vps.webdock.cloud/api/v1/tencent/mt5/source.raw"; '
         '$h=@{"X-Warroom-Token"=$env:WARROOM_EA_SYNC_TOKEN}; '
         '$c=Invoke-RestMethod -Uri $u -Headers $h -TimeoutSec 10; '
         '$files=Get-ChildItem -Path "C:\\" -Filter "WarRoom_AutoTrader.mq5" '
@@ -947,7 +947,19 @@ async def stream_forex_telemetry(account: str | None = Query(None)):
             # Kirim direktif retry standar SSE agar browser otomatis rekoneksi dalam 3 detik
             yield "retry: 3000\n\n"
             # Kirim snapshot terkini saat koneksi pertama kali tersambung
-            awal = dict(latest_mt5_by_account.get(target_account) or latest_mt5_telemetry)
+            snap = latest_mt5_by_account.get(target_account)
+            if snap:
+                awal = dict(snap)
+            elif not target_account and latest_mt5_telemetry:
+                awal = dict(latest_mt5_telemetry)
+            else:
+                awal = {
+                    "connected": False,
+                    "account": target_account,
+                    "broker": "Exness-MT5Trial (Demo)" if target_account in ("434446792", "464202979") else "Exness Technologies Ltd",
+                    "currency": "USC" if target_account in ("452009427", "36525553") else "USD",
+                    "offline": True,
+                }
             yield f"retry: 3000\ndata: {json.dumps(awal)}\n\n"
             while True:
                 try:
@@ -1078,6 +1090,8 @@ async def get_momentum_paper() -> dict[str, Any]:
     ekuitas = 0.0
     posisi: list[dict[str, Any]] = []
     for sym, p in st.items():
+        if not isinstance(p, dict):
+            continue
         harga = p.get("harga") or p["entry"] or 0.0
         nilai = p["kas"] + p["qty"] * harga
         ekuitas += nilai

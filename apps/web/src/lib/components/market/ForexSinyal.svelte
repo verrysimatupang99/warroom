@@ -28,6 +28,11 @@
 	let bias = $state<Bias | null>(null);
 	let galat = $state<string | null>(null);
 	let memuat = $state(true);
+	let selectedAccount = $state<'452009427' | '434446792' | '464202979'>('452009427');
+	async function gantiAkun(acc: '452009427' | '434446792' | '464202979') {
+		selectedAccount = acc;
+		mt5 = await j<Mt5>(`/api/v1/tencent/mt5/status?account=${acc}`);
+	}
 
 	async function j<T>(jalur: string): Promise<T | null> {
 		try {
@@ -150,7 +155,12 @@
 
 		<section class="rounded-card border border-line bg-surface p-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
-				<h2 class="text-13 font-bold text-text">Pasar saat ini</h2>
+				<div class="flex flex-wrap items-center gap-2">
+					<h2 class="text-13 font-bold text-text">Pasar saat ini</h2>
+					<button type="button" onclick={() => gantiAkun('452009427')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '452009427' ? 'border-pos text-pos bg-pos/10' : 'border-line text-text-3'}`}>Live #452009427</button>
+					<button type="button" onclick={() => gantiAkun('434446792')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '434446792' ? 'border-warn text-warn bg-warn/10' : 'border-line text-text-3'}`}>Paper-1 #434446792</button>
+					<button type="button" onclick={() => gantiAkun('464202979')} class={`px-2 py-0.5 rounded text-10 font-mono border cursor-pointer ${selectedAccount === '464202979' ? 'border-accent text-accent bg-accent/10' : 'border-line text-text-3'}`}>Paper-2 #464202979</button>
+				</div>
 				<span class="font-mono text-11 text-text-3">
 					{mt5?.connected ? 'MT5 tersambung' : 'MT5 tidak tersambung'}{mt5?.account ? ` · ${mt5.account}` : ''}
 				</span>

@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://warroom.local/strategi/_schema/strategy.schema.json",
+  "title": "Manifest strategi War Room",
+  "description": "Satu berkas manifest = satu strategi. Berkas ini adalah SATU-SATUNYA sumber kebenaran untuk registri strategi (v1.strategy) dan sekaligus spec yang dibaca mesin Python (warroom_core.strategi_config.muat_config). Strategi yang dijalankan sebagai EA MT5 memakai executor=mt5-ea dan tidak wajib punya blok variabel/entry.",
+  "type": "object",
+  "required": ["id", "nama", "market", "executor", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{3,64}$",
+      "description": "Identitas unik strategi. Sama dengan kolom v1.strategy.code."
+    },
+    "nama": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Nama tampilan. Sama dengan kolom v1.strategy.name."
+    },
+    "versi": {
+      "type": "string",
+      "description": "Versi strategi, bebas format (mis. 3.08). Sama dengan kolom v1.strategy.version."
+    },
+    "market": {
+      "type": "string",
+      "enum": ["forex", "crypto", "memecoin", "openmarket", "prediction", "equity"],
+      "description": "Market mesin. Untuk sinkronisasi DB, dipetakan ke enum v1 (lihat ops/strategi-sync.py)."
+    },
+    "venue": {
+      "type": "string",
+      "description": "Sumber eksekusi/data: kode di v1.venue (exness, okx, polymarket, idx) atau kode feed di v1.feed (gmgn)."
+    },
+    "instrument": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Simbol yang dipakai. Dicocokkan dengan v1.instrument (peringatan bila belum terdaftar)."
+    },
+    "executor": {
+      "type": "string",
+      "enum": ["python-engine", "mt5-ea"],
+      "description": "python-engine: dijalankan warroom_core.strategi_config. mt5-ea: dijalankan EA di terminal MT5."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["live", "paper", "draft", "dihentikan"],
+      "description": "live: uang nyata. paper: tanpa uang. draft: belum jalan. dihentikan: bukti negatif."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Penanggung jawab strategi (manusia/agent)."
+    },
+    "repo_ref": {
+      "type": "string",
+      "description": "Asal kode: URL repo, commit, atau catatan sumber. Sama dengan v1.strategy.repo_ref."
+    },
+    "publish": {
+      "type": "string",
+      "description": "Cara strategi mengeluarkan status: file-status-json | api | none."
+    },
+    "ea": {
+      "type": "object",
+      "description": "Wajib untuk executor=mt5-ea.",
+      "properties": {
+        "file": { "type": "string", "description": "Nama berkas EA di MQL5/Experts." },
+        "terminal": { "type": "string", "description": "Nama terminal MT5 target." },
+        "magic": { "type": "integer", "description": "Magic number EA." },
+        "tf": { "type": "string", "description": "Timeframe kerja." },
+        "preset": { "type": "string", "description": "Nama berkas .set di MQL5/Presets." }
+      },
+      "additionalProperties": true
+    },
+    "waktu": { "type": "string", "description": "Timeframe (crypto/python-engine)." },
+    "simbol": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Simbol mesin Python (crypto/openmarket)."
+    },
+    "variabel": { "type": "object", "additionalProperties": { "type": "string" } },
+    "filter": { "type": "array", "items": { "type": "string" } },
+    "entry_long": { "type": "array", "items": { "type": "string" } },
+    "entry_short": { "type": "array", "items": { "type": "string" } },
+    "exit": {
+      "type": "object",
+      "properties": {
+        "sl_atr": { "type": "number" },
+        "tp_rrr": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "risiko": {
+      "type": "object",
+      "properties": {
+        "risiko_per_trade_pct": { "type": "number" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "executor": { "const": "mt5-ea" } } },
+      "then": {
+        "required": ["ea"],
+        "description": "Strategi EA wajib mendeklarasikan blok ea."
+      }
+    },
+    {
+      "if": { "properties": { "executor": { "const": "python-engine" } } },
+      "then": {
+        "required": ["simbol", "waktu", "variabel", "exit", "risiko"],
+        "anyOf": [
+          { "required": ["entry_long"] },
+          { "required": ["entry_short"] }
+        ],
+        "description": "Strategi python-engine wajib lengkap agar muat_config() lolos."
+      }
+    }
+  ]
+}

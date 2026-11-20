@@ -38,25 +38,26 @@
 	const nada = $derived(delta == null ? '' : delta >= 0 ? 'text-pos' : 'text-neg');
 </script>
 
-<div class="kartu transisi p-3" data-testid="metric-tile">
+<div class="kartu transisi p-3.5 hover:border-text-3/40" data-testid="metric-tile">
 	<div class="flex items-start justify-between gap-2">
 		<p class="label-mikro">{label}</p>
 		<FreshnessBadge {status} {age_s} source={sumber} ringkas />
 	</div>
-	<div class="mt-1 flex items-end gap-2">
-		<span class="angka text-26 text-text" aria-live="polite">
+	<div class="mt-1.5 flex items-baseline gap-2">
+		<span class="angka text-24 font-bold text-text leading-none" aria-live="polite">
 			{#if sah}{angka(n, { desimal })}{:else}—{/if}
 		</span>
-		{#if satuan}<span class="angka text-12 text-text-3">{satuan}</span>{/if}
+		{#if satuan}<span class="angka text-11 text-text-3">{satuan}</span>{/if}
 		{#if delta != null}
-			<span class="angka text-12 {nada}" title="perubahan"> {delta >= 0 ? '▲' : '▼'}
-				{angka(Math.abs(delta), { desimal })}</span
-			>
+			<span class="angka text-11 font-semibold {nada}" title="perubahan">
+				{delta >= 0 ? '▲' : '▼'}
+				{angka(Math.abs(delta), { desimal })}
+			</span>
 		{/if}
-		<div class="ml-auto"><Sparkline {seri} {warna} judul={`seri ${label}`} /></div>
+		<div class="ml-auto self-end"><Sparkline {seri} {warna} judul={`seri ${label}`} /></div>
 	</div>
-	<p class="mt-1 text-11 text-text-3">
-		{#if !sah}{alasanKosong}{:else if sumber}sumber: <span class="angka">{sumber}</span>{:else}—{/if}
+	<p class="mt-2 border-t border-line-soft pt-1.5 text-11 text-text-3 font-mono">
+		{#if !sah}{alasanKosong}{:else if sumber}sumber: <span class="angka text-text-2">{sumber}</span>{:else}—{/if}
 		{#if sah && age_s != null}· umur {umurDetik(age_s)}{/if}
 	</p>
 </div>

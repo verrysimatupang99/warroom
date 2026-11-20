@@ -145,6 +145,12 @@ export const masuk = (username: string, password: string, totp?: string) =>
 		body: JSON.stringify({ username, password, totp: totp ?? null })
 	});
 
+/** Logout: mencabut sesi di database dan menghapus cookie sesi di browser. */
+export const keluar = async () => {
+	await minta<{ ok: boolean }>('/api/v1/auth/logout', { method: 'POST' });
+	window.location.href = '/masuk';
+};
+
 /** Metrik Prometheus (teks) lewat jalur ber-sesi `/api/v1/metrics` — `/metrics` sengaja
  * tidak diekspos reverse proxy ke publik (berisi nama job & hitungan). */
 export async function getMetrikTeks(): Promise<string> {

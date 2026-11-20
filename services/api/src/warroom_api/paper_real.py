@@ -60,6 +60,14 @@ def ringkas_real(trades: list[dict[str, Any]]) -> dict[str, Any]:
         pnl = _angka(t.get("pnl_usd"))
         if pnl is None:
             continue
+        # Normalisasi cent jika sumber masih membawa angka belum ternormalisasi
+        is_cent = t.get("currency") == "USC" or str(t.get("account")) in ("452009427", "36525553")
+        if is_cent:
+            if t.get("net_raw") is not None and t.get("net_raw") == t.get("pnl_usd"):
+                pnl = pnl / 100.0
+            elif abs(pnl) > 0.5:
+                # Heuristic pembagian aman untuk micro-lot unmigrated rows
+                pnl = pnl / 100.0
         ada_pnl = True
         net += pnl
         if pnl > 0:
