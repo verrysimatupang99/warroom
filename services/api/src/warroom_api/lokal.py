@@ -322,8 +322,8 @@ def _jalur_env(nama: str, bawaan: str) -> Path:
     return Path(v) if v else Path(bawaan)
 
 
-FILLS = Path("/var/lib/warroom/fills.csv")
-DEALS = Path("/var/lib/warroom/deals.csv")
+FILLS = _jalur_env("WARROOM_FILL_LOG", "/var/lib/warroom/fills.csv")
+DEALS = _jalur_env("WARROOM_DEAL_LOG", "/var/lib/warroom/deals.csv")
 VERDICTS = Path("/home/admin/live-trading/state/verdicts.jsonl")
 # Bisa dioverride (CI/e2e menunjuk ke berkas sintetis; produksi tetap /var/lib).
 JURNAL_SINYAL = _jalur_env("WARROOM_JURNAL_SINYAL", "/var/lib/warroom/jurnal_sinyal.json")

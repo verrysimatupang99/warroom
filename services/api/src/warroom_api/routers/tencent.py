@@ -545,7 +545,7 @@ class MT5FillPayload(BaseModel):
     equity: float = 0.0
 
 
-FILL_LOG = Path("/var/lib/warroom/fills.csv")
+FILL_LOG = Path(os.environ.get("WARROOM_FILL_LOG") or "/var/lib/warroom/fills.csv")
 
 
 @router.post("/mt5/fill", dependencies=[Depends(verify_mt5_or_admin)])
@@ -608,7 +608,7 @@ class MT5DealPayload(BaseModel):
     cent_factor: float = 1.0
 
 
-DEAL_LOG = Path("/var/lib/warroom/deals.csv")
+DEAL_LOG = Path(os.environ.get("WARROOM_DEAL_LOG") or "/var/lib/warroom/deals.csv")
 _DEAL_HEADER = [
     "ts", "iso", "ticket", "position", "symbol", "side", "volume",
     "open_time", "open_price", "close_time", "close_price",
