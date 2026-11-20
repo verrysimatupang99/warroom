@@ -102,8 +102,9 @@ async function muat() {
 		return () => clearInterval(t);
 	});
 
-	const daftar = $derived(sinyal?.sinyal ?? []);
-	const pasarDaftar = $derived(sinyal?.pasar ?? []);
+	const PASAR_FOKUS = new Set(['forex', 'polymarket', 'idx', 'crypto']);
+	const daftar = $derived((sinyal?.sinyal ?? []).filter((r) => PASAR_FOKUS.has(r.pasar)));
+	const pasarDaftar = $derived((sinyal?.pasar ?? []).filter((p) => PASAR_FOKUS.has(p.pasar)));
 	// Kejujuran per kartu: MarketSignal (daftar) membawa `terverifikasi`, `catatan_kejujuran`,
 	// `umur_sinyal_s`, `dibuat_pada` — MarketSignalList (pasar) belum. Gabungkan per pasar supaya
 	// tiap kartu menampilkan status verifikasi + umur SINYALNYA (bukan umur fakta crypto).
@@ -334,12 +335,10 @@ async function muat() {
 
 	<div class="isi">
 		{#if sumber.length}
-			<!-- Sumber data: pemilik menyebutkannya eksplisit (Crypto OKX, IDX Stock Arjum,
-			     Forex TVC, Polymarket Dokumentasi PM, Meme GMGN/FOMO, LP Meteora & Uniswap) —
-			     sekarang tertulis di halaman, bukan tersembunyi di kepala orang. -->
+			<!-- Sumber data: fokus 4 pasar aktif (Forex, Polymarket, IDX, Crypto) -->
 			<div class="sumber-strip" aria-label="Sumber data tiap pasar">
 				<span class="sumber-judul">Sumber data</span>
-				{#each sumber as s (s.pasar)}
+				{#each sumber.filter((s) => PASAR_FOKUS.has(s.pasar)) as s (s.pasar)}
 					<span class="sumber-chip" title={s.keterangan}>
 						<span class="sumber-pasar">{s.label}</span>
 						<span class="sumber-nama">{s.sumber}</span>
@@ -354,8 +353,8 @@ async function muat() {
 		<PageHeader
 			eyebrow="War Room · Beranda"
 			title="Ringkasan hari ini"
-			tag={arming ? (arming.armed ? 'LIVE' : 'PAPER') : null}
-			description={`Multi-market · ${daftar.length} pasar · data terakhir ${umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu`}
+			tag={arming ? (arming.armed ? 'LIVE' : 'FOREX LIVE · POLY PAPER') : 'FOREX LIVE · POLY PAPER'}
+			description={`Multi-market · ${daftar.length} pasar fokus · data terakhir ${umurDetik(kripto?.facts?.[0]?.age_s ?? null)} lalu`}
 			sumber="ringkasan pasar + sinyal per pasar"
 			terverifikasi={true}
 		/>

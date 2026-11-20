@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import MarketShell from '$lib/components/MarketShell.svelte';
+	import StrategyRunnerForm from '$lib/components/StrategyRunnerForm.svelte';
+	import MarketStrategiesPanel from '$lib/components/MarketStrategiesPanel.svelte';
 	import ForexCockpitExness from '$lib/components/ForexCockpitExness.svelte';
 	import ForexSinyal from '$lib/components/market/ForexSinyal.svelte';
 	import ForexAlat from '$lib/components/market/ForexAlat.svelte';
@@ -34,6 +36,7 @@
 >
 	{#if sub === 'ringkas'}
 		<div class="space-y-4">
+			<MarketStrategiesPanel market="forex" />
 			<ForexCockpitExness />
 			<AkunMT5 />
 			<JamTerbaikCard />
@@ -43,6 +46,7 @@
 		<ForexSinyal />
 	{:else if sub === 'uji'}
 		<div class="space-y-4">
+			<StrategyRunnerForm market="forex" defaultSymbol="XAUUSD" />
 			<PerbandinganEA />
 			<PasarUji filter="forex" />
 		</div>

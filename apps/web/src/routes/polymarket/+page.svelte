@@ -5,6 +5,7 @@
 	import { getAreaFakta, getLiveArming } from '$lib/api/client';
 	import type { AreaPayload, Fact, LiveArming } from '$lib/api/types';
 	import MarketShell from '$lib/components/MarketShell.svelte';
+	import StrategyRunnerForm from '$lib/components/StrategyRunnerForm.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import BatasPasar from '$lib/components/BatasPasar.svelte';
@@ -499,6 +500,7 @@
 		</div>
 
 	{:else if sub === 'uji'}
+		<StrategyRunnerForm market="polymarket" defaultSymbol="BTC-5M" />
 		<div class="space-y-4">
 			<!-- Gate Evaluasi Statistik Wilson 95% + deff -->
 			{#if payload}

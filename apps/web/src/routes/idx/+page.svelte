@@ -7,6 +7,7 @@
 	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import { urlApi } from '$lib/api/client';
 	import MarketShell from '$lib/components/MarketShell.svelte';
+	import StrategyRunnerForm from '$lib/components/StrategyRunnerForm.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import BatasPasar from '$lib/components/BatasPasar.svelte';
@@ -81,6 +82,26 @@
 	let riwayatRows = $state<RiwayatRow[]>([]);
 	let memuatUji = $state(false);
 	let galatUji = $state<string | null>(null);
+
+	// Kalkulator Lot & Risiko Saham IDX (tab Eksekusi)
+	let calcHargaBeli = $state(9500);
+	let calcStopLoss = $state(9200);
+	let calcTakeProfit = $state(10200);
+	let calcLot = $state(10);
+	const FEE_BELI = 0.0015; // 0.15%
+	const FEE_JUAL = 0.0025; // 0.25%
+	const calcHasil = $derived.by(() => {
+		const lembar = Math.max(1, calcLot) * 100;
+		const nilaiBeli = calcHargaBeli * lembar;
+		const totalModal = nilaiBeli * (1 + FEE_BELI);
+		const bePrice = calcHargaBeli * (1 + FEE_BELI) / (1 - FEE_JUAL);
+		const nilaiSlNet = calcStopLoss * lembar * (1 - FEE_JUAL);
+		const nilaiTpNet = calcTakeProfit * lembar * (1 - FEE_JUAL);
+		const risikoRp = totalModal - nilaiSlNet;
+		const profitRp = nilaiTpNet - totalModal;
+		const rrr = risikoRp > 0 ? profitRp / risikoRp : 0;
+		return { lembar, nilaiBeli, totalModal, bePrice, risikoRp, profitRp, rrr };
+	});
 
 	const area = AREAS.find((a) => a.kunci === 'idx')!;
 	// Sub-nav standar (Ringkas/Sinyal/Uji/Eksekusi) — samakan ritme dgn crypto/forex.
@@ -625,6 +646,7 @@
 			</section>
 		</div>
 	{:else if sub === 'uji'}
+		<StrategyRunnerForm market="idx" defaultSymbol="BBCA.JK" />
 		<div class="space-y-4">
 			<section class="rounded-card border border-line bg-surface p-4">
 				<div class="flex flex-wrap items-center justify-between gap-2">
@@ -723,10 +745,60 @@
 			</section>
 		</div>
 	{:else if sub === 'eksekusi'}
-		<EmptyState
-			judul="IDX belum punya eksekusi"
-			pesan="Belum ada eksekusi otomatis atau jurnal trade untuk IDX. Halaman ini menampilkan data pasar, screener, dan bandarmologi sebagai alat bantu riset."
-		/>
+		<div class="space-y-4">
+			<div class="rounded-card border border-warn/30 bg-warn/10 p-3 text-11 text-text-2">
+				<strong class="text-warn">Mode Riset &amp; Kalkulasi Manual:</strong> Routing order otomatis ke sekuritas IDX belum diaktifkan. Gunakan kalkulator di bawah untuk menghitung ukuran lot, fee transaksi (0,15% beli / 0,25% jual), dan Risk-to-Reward sebelum eksekusi manual di aplikasi sekuritas.
+			</div>
+
+			<section class="rounded-card border border-line bg-surface p-4 space-y-4">
+				<div class="flex flex-wrap items-center justify-between gap-2">
+					<h2 class="text-13 font-bold text-text">Kalkulator Lot, Risiko &amp; Biaya Saham IDX</h2>
+					<span class="font-mono text-10 text-text-3">1 Lot = 100 Lembar · Fee 0,15% / 0,25%</span>
+				</div>
+
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 font-mono text-12">
+					<label class="block space-y-1">
+						<span class="text-10 text-text-3">HARGA BELI (Rp)</span>
+						<input type="number" min="50" step="25" bind:value={calcHargaBeli} class="w-full rounded-control border border-line bg-surface-2 px-3 py-2 text-text" />
+					</label>
+					<label class="block space-y-1">
+						<span class="text-10 text-text-3">STOP LOSS (Rp)</span>
+						<input type="number" min="50" step="25" bind:value={calcStopLoss} class="w-full rounded-control border border-line bg-surface-2 px-3 py-2 text-neg" />
+					</label>
+					<label class="block space-y-1">
+						<span class="text-10 text-text-3">TARGET TP (Rp)</span>
+						<input type="number" min="50" step="25" bind:value={calcTakeProfit} class="w-full rounded-control border border-line bg-surface-2 px-3 py-2 text-pos" />
+					</label>
+					<label class="block space-y-1">
+						<span class="text-10 text-text-3">JUMLAH LOT</span>
+						<input type="number" min="1" step="1" bind:value={calcLot} class="w-full rounded-control border border-line bg-surface-2 px-3 py-2 text-text" />
+					</label>
+				</div>
+
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 font-mono">
+					<div class="rounded-lg border border-line-soft bg-surface-2 p-3">
+						<span class="text-10 text-text-3 block">MODAL + FEE BELI</span>
+						<span class="text-14 font-bold text-text">Rp {Math.round(calcHasil.totalModal).toLocaleString('id-ID')}</span>
+						<span class="text-10 text-text-3 block">{calcHasil.lembar.toLocaleString('id-ID')} lembar</span>
+					</div>
+					<div class="rounded-lg border border-line-soft bg-surface-2 p-3">
+						<span class="text-10 text-text-3 block">HARGA BREAK-EVEN</span>
+						<span class="text-14 font-bold text-accent">Rp {Math.ceil(calcHasil.bePrice).toLocaleString('id-ID')}</span>
+						<span class="text-10 text-text-3 block">+{(((calcHasil.bePrice / Math.max(1, calcHargaBeli)) - 1) * 100).toFixed(2)}% dari entry</span>
+					</div>
+					<div class="rounded-lg border border-line-soft bg-surface-2 p-3">
+						<span class="text-10 text-text-3 block">RISIKO BERSIH (SL)</span>
+						<span class="text-14 font-bold text-neg">-Rp {Math.round(calcHasil.risikoRp).toLocaleString('id-ID')}</span>
+						<span class="text-10 text-text-3 block">Termasuk fee beli + jual</span>
+					</div>
+					<div class="rounded-lg border border-line-soft bg-surface-2 p-3">
+						<span class="text-10 text-text-3 block">POTENSI PROFIT (TP)</span>
+						<span class="text-14 font-bold text-pos">+Rp {Math.round(calcHasil.profitRp).toLocaleString('id-ID')}</span>
+						<span class="text-10 text-text-3 block">RRR: {calcHasil.rrr.toFixed(2)} : 1</span>
+					</div>
+				</div>
+			</section>
+		</div>
 	{/if}
 </div>
 </MarketShell>

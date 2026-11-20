@@ -350,7 +350,7 @@
 						<span class="text-[11px] text-text-3 block mb-0.5">WIN RATE & DEALS</span>
 						<span class="text-lg font-bold text-text">{winRateDisplay}%</span>
 						<span class="text-[10px] text-text-3 block mt-0.5">
-							{winsDisplay}W / {lossesDisplay}L ({totalTradesDisplay} Trades)
+							Hari Ini: {winsDisplay}W / {lossesDisplay}L ({totalTradesDisplay} Trades)
 						</span>
 					</div>
 				</div>

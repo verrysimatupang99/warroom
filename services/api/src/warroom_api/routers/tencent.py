@@ -830,16 +830,8 @@ async def get_panel_sim() -> dict[str, Any]:
 
 
 def _muat_forex_history() -> list[dict[str, Any]]:
-    """Baca riwayat transaksi EA MT5 dari file data lokal (kosong bila belum ada)."""
-    history_file = Path(__file__).resolve().parent.parent / "data_forex_history.json"
-    if not history_file.exists():
-        return []
-    try:
-        records = json.loads(history_file.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        log.warning("Gagal membaca history MT5 (%s): %s", history_file.name, exc)
-        return []
-    return records if isinstance(records, list) else []
+    """Kembalikan riwayat kosong: data_forex_history.json berisi data sintetis lama (ADR-005)."""
+    return []
 
 
 def _statistik_forex(records: list[dict[str, Any]]) -> dict[str, Any]:

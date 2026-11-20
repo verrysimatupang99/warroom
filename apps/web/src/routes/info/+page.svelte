@@ -16,7 +16,15 @@
 
 <svelte:head><title>Info | War Room</title></svelte:head>
 
-<MarketShell {area} aktif={sub} tanpaKepala={true}>
+<MarketShell
+	{area}
+	aktif={sub}
+	judul="Info & Dokumentasi"
+	tag="DOCS"
+	deskripsi="Catatan proyek, berita RSS publik, arsitektur cara kerja, dan tanya-jawab perilaku nyata sistem."
+	sumber="docs/belajar + RSS + kode produksi"
+	terverifikasi={true}
+>
 	{#if sub === 'catatan'}
 		<CatatanView />
 	{:else if sub === 'berita'}

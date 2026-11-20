@@ -58,12 +58,18 @@
 	<div class="flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-13 font-bold text-text">Transaksi berjalan</h2>
 		<div class="flex items-center gap-2 font-mono text-10 text-text-3">
-			<span>stream</span>
-			<span class="font-mono text-10" class:text-pos={snap?.status_pendengar === 'hidup'} class:text-neg={snap?.status_pendengar !== 'hidup'}>
-				{snap?.status_pendengar ?? '—'}
-			</span>
-			{#if snap?.umur_detik != null}
-				<span>· {Math.round(snap.umur_detik)}s lalu</span>
+			{#if snap?.market?.status === 'tutup' || snap?.market?.label?.toLowerCase().includes('tutup')}
+				<span class="rounded border border-warn/40 bg-warn/10 px-1.5 py-0.5 font-mono text-10 font-bold text-warn">
+					MARKET TUTUP
+				</span>
+			{:else}
+				<span>stream</span>
+				<span class="font-mono text-10" class:text-pos={snap?.status_pendengar === 'hidup'} class:text-neg={snap?.status_pendengar !== 'hidup'}>
+					{snap?.status_pendengar ?? '—'}
+				</span>
+				{#if snap?.umur_detik != null}
+					<span>· {Math.round(snap.umur_detik)}s lalu</span>
+				{/if}
 			{/if}
 		</div>
 	</div>

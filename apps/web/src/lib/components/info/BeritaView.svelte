@@ -5,7 +5,6 @@
 	import { getArea } from '$lib/api/client';
 	import type { AreaPayload, Fact } from '$lib/api/types';
 	import { umurDetik, waktuWIB } from '$lib/format';
-	import PageHeader from '$lib/components/PageHeader.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ErrorState from '$lib/components/ErrorState.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -46,16 +45,6 @@
 <svelte:head><title>Berita, War Room</title></svelte:head>
 
 <div class="space-y-4">
-	<PageHeader
-		eyebrow="INFORMASI / BERITA"
-		title="Berita"
-		tag={news?.sumber_data ?? 'RSS'}
-		terverifikasi={Boolean(news?.tersedia && items.length > 0)}
-		sumber={news?.sumber_data ?? 'RSS publik'}
-		alasan="feed publik belum merespons"
-		description="Judul + tautan dari feed publik. Ringkasan tidak disalin, klik untuk baca di sumbernya."
-	/>
-
 	{#if galat && !forex}
 		<ErrorState pesan={galat} onulang={muat} />
 	{:else if memuat && !forex}

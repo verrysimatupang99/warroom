@@ -24,7 +24,8 @@
 			if (!r.ok) {
 				galat = isi?.error?.message ?? `HTTP ${r.status}`;
 			} else {
-				daftar = isi?.strategi ?? [];
+				const raw: Strategi[] = isi?.strategi ?? [];
+				daftar = raw.filter((s) => s.pasar !== 'gmgn' && s.pasar !== 'lp');
 			}
 		} catch (e) {
 			galat = e instanceof Error ? e.message : 'gagal menghubungi API';

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
 	// Cara kerja — padanan /system algentis. Menjelaskan aliran War Room apa adanya,
 	// bukan aspirasi: alur yang benar-benar jalan (domain → worker → API → web).
 	// Ditulis dari kode, bukan dari rencana.
@@ -68,17 +67,17 @@
 		},
 		{
 			pasar: 'Forex',
-			sumber: 'TVC (TradingView)',
-			strategi: 'Bias struktur + sesi',
-			isi: 'Bias arah dari EMA/ATR pada seri TradingView, dikaitkan dengan sesi (Asia/London/NY) dan kalender dampak. Entry/SL/TP dari jurnal mesin.',
-			bukti: 'Ledger forex (4 trade), sampel masih INSUFFICIENT, jadi belum boleh diklaim.'
+			sumber: 'Exness MT5 Real Cent (#452009427)',
+			strategi: 'GOLD_Reaper_Hexa M5 (EMA+RSI+ATR)',
+			isi: 'Eksekusi live Twin-Order 2×0.01 lot di XAUUSDm pada sesi London (15:00–16:59 WIB) & NY (20:15–22:59 WIB) dengan validasi M15/H1, Scalp +0.7R & Runner +2.0R.',
+			bukti: 'Telemetri real-time SSE + audit broker Exness langsung ke Ledger.'
 		},
 		{
 			pasar: 'Polymarket',
-			sumber: 'Dokumentasi PM',
-			strategi: 'Arm B, favorit 0,70–0,95',
-			isi: 'Beli outcome favorit berharga 0,70–0,95 (menang kecil tapi sering benar). Arm A/C/D dibekukan; bukti tetap disimpan.',
-			bukti: 'Win-rate 81,56% dari 179 kandidat vs break-even 77,0%, TINGKAT TUNING, tetapi split beku belum ada sehingga belum "edge terbukti".'
+			sumber: 'Poly-Agent + Gamma API',
+			strategi: '4-Arm Multi-Strategi + Self-Tuning Agent',
+			isi: 'Arm A/B/C/D berjalan paralel pada market aktif dengan kontrol arming live dan auto-tuning parameter berbasis hasil settled.',
+			bukti: 'Ledger settled trades + win rate terukur per siklus.'
 		}
 	];
 
@@ -94,16 +93,6 @@
 <svelte:head><title>Cara kerja, War Room</title></svelte:head>
 
 <div class="space-y-4">
-	<PageHeader
-		eyebrow="DOKUMEN / CARA-KERJA"
-		title="Cara Kerja"
-		tag="arsitektur"
-		terverifikasi={true}
-		sumber="fakta & kode produksi"
-		alasan="dokumentasi arsitektur nyata"
-		description="Aliran yang benar-benar jalan, bukan rencana. Angka hanya dari tabel fakta."
-	/>
-
 	<section class="kartu">
 		<h2 class="judul">Aliran</h2>
 		<ol class="alur">

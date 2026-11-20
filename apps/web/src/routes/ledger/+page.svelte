@@ -6,7 +6,8 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import ExportLedgerCsv from '$lib/components/ExportLedgerCsv.svelte';
-import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
+	import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
+	import JournalPanel from '$lib/components/JournalPanel.svelte';
 
 	type Angka = number | null;
 	interface Trade {
@@ -18,11 +19,13 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	let trades = $state<Trade[]>([]);
 	let memuat = $state(true);
 	let galat = $state<string | null>(null);
-	let filter = $state<'all' | 'forex' | 'crypto'>('all');
+	let mode = $state<'ledger' | 'jurnal'>('ledger');
+	let filter = $state<'all' | 'forex' | 'polymarket' | 'crypto'>('all');
 
 	const PILIHAN = [
 		{ nilai: 'all', label: 'Semua' },
 		{ nilai: 'forex', label: 'Forex' },
+		{ nilai: 'polymarket', label: 'Polymarket' },
 		{ nilai: 'crypto', label: 'Crypto' }
 	] as const;
 
@@ -59,13 +62,33 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 		memuat = true;
 		galat = null;
 		try {
-			const r = await fetch(urlApi('/api/v1/journal/trades?market=all'), { credentials: 'include' });
+			const [r, rp] = await Promise.all([
+				fetch(urlApi('/api/v1/journal/trades?market=all'), { credentials: 'include' }),
+				fetch(urlApi('/api/v1/areas/polymarket'), { credentials: 'include' }).catch(() => null)
+			]);
 			const isi = await r.json().catch(() => null);
 			if (!r.ok) {
 				galat = isi?.error?.message ?? isi?.detail ?? `HTTP ${r.status}`;
 				return;
 			}
-			trades = isi?.closed ?? [];
+			const baseTrades: Trade[] = isi?.closed ?? [];
+			if (rp && rp.ok) {
+				const poly = await rp.json().catch(() => null);
+				const agenFact = poly?.facts?.find((f: { key?: string }) => f.key === 'ringkas' || f.key === 'agen')?.value;
+				const settled = Array.isArray(agenFact?.settled_terakhir) ? agenFact.settled_terakhir : [];
+				const polyTrades: Trade[] = settled.map((s: Record<string, unknown>, idx: number) => ({
+					iso: String(s.settled_at ?? s.ts ?? ''),
+					symbol: String(s.market_slug ?? s.slug ?? s.question ?? 'Polymarket'),
+					side: String(s.side ?? s.outcome ?? 'YES'),
+					market: 'polymarket',
+					price_filled: s.entry_price != null ? String(s.entry_price) : undefined,
+					pnl_usd: s.pnl != null ? Number(s.pnl) : undefined,
+					ticket: `poly-${idx}-${String(s.settled_at ?? '')}`
+				}));
+				trades = [...baseTrades, ...polyTrades];
+			} else {
+				trades = baseTrades;
+			}
 		} catch (e) {
 			galat = e instanceof Error ? e.message : 'gagal menghubungi API';
 		} finally {
@@ -112,12 +135,12 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	void muat();
 </script>
 
-<svelte:head><title>Ledger | War Room</title></svelte:head>
+<svelte:head><title>Jurnal & Ledger | War Room</title></svelte:head>
 <PageHeader
-	eyebrow="War Room · Eksekusi"
-	title="Ledger eksekusi"
+	eyebrow="War Room · Audit & Eksekusi"
+	title="Jurnal & Ledger"
 	tag="LOKAL"
-	description="Seluruh catatan eksekusi lintas market dalam satu buku besar: forex dari telemetri MT5, crypto dari paper trader. Bisa diekspor ke CSV untuk audit."
+	description="Konsolidasi catatan eksekusi lintas market (Forex MT5, Polymarket, Crypto Paper) dalam satu buku besar, lengkap dengan ekspor CSV dan jurnal slippage."
 	terverifikasi={true}
 	sumber="/api/v1/journal/trades"
 >
@@ -126,11 +149,31 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 	{/snippet}
 </PageHeader>
 
+<div class="mb-4 flex flex-wrap gap-1.5 border-b border-line pb-3">
+	<button
+		type="button"
+		class="min-h-[38px] rounded-control border px-3 py-1.5 text-12 font-mono font-bold transition-colors cursor-pointer {mode === 'ledger' ? 'border-accent bg-accent/15 text-accent' : 'border-line text-text-3 hover:text-text'}"
+		onclick={() => (mode = 'ledger')}
+	>
+		Buku Besar &amp; CSV
+	</button>
+	<button
+		type="button"
+		class="min-h-[38px] rounded-control border px-3 py-1.5 text-12 font-mono font-bold transition-colors cursor-pointer {mode === 'jurnal' ? 'border-accent bg-accent/15 text-accent' : 'border-line text-text-3 hover:text-text'}"
+		onclick={() => (mode = 'jurnal')}
+	>
+		Jurnal Kinerja &amp; Slippage
+	</button>
+</div>
+
 <!-- Paling atas: penjaga agar win-rate paper tidak dikira hasil uang nyata. -->
 <div class="mb-4">
 	<PaperVsRealCard />
 </div>
 
+{#if mode === 'jurnal'}
+	<JournalPanel market={filter === 'polymarket' ? 'all' : filter} />
+{:else}
 <div class="space-y-4">
 	<div class="flex flex-wrap gap-1" role="tablist" aria-label="Filter market">
 		{#each PILIHAN as p (p.nilai)}
@@ -216,3 +259,4 @@ import PaperVsRealCard from '$lib/components/market/PaperVsRealCard.svelte';
 		</section>
 	{/if}
 </div>
+{/if}

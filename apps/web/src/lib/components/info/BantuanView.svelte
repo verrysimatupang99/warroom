@@ -1,5 +1,4 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
 	// Bantuan — padanan /faq algentis, ditulis dari produk kita sendiri.
 	// Setiap jawaban mengacu ke perilaku nyata (bukan janji). Pertanyaan yang
 	// jawabannya "belum ada" ditulis apa adanya, bukan dijawab seolah sudah ada.
@@ -21,7 +20,7 @@
 		},
 		{
 			q: 'Apakah ini sudah trading dengan uang nyata?',
-			a: 'Belum. Semua eksekusi berjalan mode paper. Live butuh tiga hal yang belum ada: dana terverifikasi, RPC on-chain, dan keputusan pemilik. Selama itu belum, gate menolak.',
+			a: 'Forex berjalan live di akun Exness Real Cent (#452009427) dengan EA GOLD_Reaper_Hexa. Sementara itu, Polymarket dan Crypto masih berjalan dalam mode paper (simulasi) sambil menunggu validasi metrik.',
 			status: 'ada'
 		},
 		{
@@ -62,16 +61,6 @@
 <svelte:head><title>Bantuan, War Room</title></svelte:head>
 
 <div class="space-y-4">
-	<PageHeader
-		eyebrow="DOKUMEN / BANTUAN"
-		title="Bantuan"
-		tag={`${tanya.length} Tanya Jawab`}
-		terverifikasi={true}
-		sumber="perilaku nyata sistem"
-		alasan="basis tanya jawab tervalidasi"
-		description="Jawaban dari perilaku nyata sistem. Yang belum ada ditulis belum ada."
-	/>
-
 	<ul class="daftar">
 		{#each tanya as t, i (t.q)}
 			<li>

@@ -123,22 +123,12 @@ export const AREAS: Area[] = [
 		anak: TAB_DASAR(['crypto_sinyal', 'kandidat'], ['ledger', 'posisi'])
 	},
 	{
-		kunci: 'gmgn',
-		label: 'GMGN',
-		rute: '/gmgn',
-		ikon: 'gmgn',
-		kategori: 'floor',
-		status: 'STANDBY',
-		anak: []
-	},
-	{
 		kunci: 'signals',
 		label: 'Sinyal Telegram',
-		rute: '/signals/',
+		rute: '/sinyal-telegram',
 		ikon: 'lonceng',
 		kategori: 'intel',
 		status: 'AKTIF',
-		eksternal: true,
 		anak: []
 	},
 	{
@@ -168,17 +158,8 @@ export const AREAS: Area[] = [
 		]
 	},
 	{
-		kunci: 'jurnal',
-		label: 'Jurnal Forex',
-		rute: '/jurnal',
-		ikon: 'forex',
-		kategori: 'audit',
-		status: 'AKTIF',
-		anak: []
-	},
-	{
 		kunci: 'ledger',
-		label: 'Ledger Audit',
+		label: 'Jurnal & Ledger',
 		rute: '/ledger',
 		ikon: 'forex',
 		kategori: 'audit',
@@ -197,25 +178,10 @@ export const AREAS: Area[] = [
 			{ slug: 'data', label: 'Data & Kesegaran', kunci: [], catatan: 'Sumber data, endpoint, umur data, dan mode lokal/upstream' },
 			{ slug: 'event', label: 'Event & Audit', kunci: [], catatan: 'Umpan kejadian dan riwayat perubahan' },
 			{ slug: 'kebijakan', label: 'Kebijakan', kunci: [], catatan: 'Gate, batas risiko, dan biaya berjalan' },
-			{ slug: 'vault', label: 'Vault Kredensial', kunci: [], catatan: 'Simpan endpoint + API key platform (salin-tempel manual)' },
-			{ slug: 'pengaturan', label: 'Pengaturan', kunci: [], catatan: 'Sakelar fitur: Laya AI hidup/mati' },
+			{ slug: 'vault', label: 'Vault API', kunci: [], catatan: 'Simpan endpoint + API key platform (salin-tempel manual)' },
+			{ slug: 'mt5-vault', label: 'MT5 Vault', kunci: [], catatan: 'Gudang terenkripsi detail akun login MT5 (investor/master)' },
+			{ slug: 'pengaturan', label: 'Pengaturan', kunci: [], catatan: 'Sakelar fitur: Laya AI hidup/mati' }
 		]
-	},
-	{
-		kunci: 'vault',
-		label: 'Vault API',
-		rute: '/vault',
-		ikon: 'sistem',
-		kategori: 'system',
-		anak: []
-	},
-	{
-		kunci: 'mt5-vault',
-		label: 'MT5 Vault',
-		rute: '/mt5-vault',
-		ikon: 'forex',
-		kategori: 'system',
-		anak: []
 	}
 ];
 
@@ -250,11 +216,13 @@ export const SLUG_LAMA: Record<string, string> = {
 };
 
 /** Bottom tab mobile: 5 slot utama. */
-export const TAB_MOBILE = ['/', '/crypto', '/forex', '/jurnal', '/sistem'];
+export const TAB_MOBILE = ['/', '/forex', '/polymarket', '/ledger', '/sistem'];
 
 export function areaDariJalur(jalur: string): Area | null {
 	const bersih = jalur.length > 1 ? jalur.replace(/\/$/, '') : jalur;
 	if (bersih === '/') return AREAS[0];
+	if (bersih === '/jurnal') return AREAS.find((a) => a.rute === '/ledger') ?? null;
+	if (bersih === '/vault' || bersih === '/mt5-vault') return AREAS.find((a) => a.rute === '/sistem') ?? null;
 	return AREAS.find((a) => a.rute === bersih) ?? null;
 }
 

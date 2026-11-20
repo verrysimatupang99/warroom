@@ -271,28 +271,31 @@
 		<div class="rounded-card border border-line bg-surface p-4 space-y-3 font-mono">
 			<div class="flex items-center justify-between border-b border-line pb-2">
 				<span class="text-13 font-bold text-text">Live Ticker Stats</span>
-				<span class="text-10 text-text-3">FEED: {tickerResult?.source?.toUpperCase() ?? 'TENCENT'}</span>
+				<span class="text-10 text-text-3">FEED: {tickerResult?.source?.toUpperCase() ?? 'OKX LOKAL'}</span>
 			</div>
 
 			{#if tickerResult}
+				{@const chg24 = tickerResult.change_pct_24h ?? tickerResult.change_pct_}
+				{@const hi24 = tickerResult.high_24h ?? tickerResult.high_}
+				{@const lo24 = tickerResult.low_24h ?? tickerResult.low_}
 				<div class="grid grid-cols-2 gap-2 text-11">
 					<div class="p-2.5 rounded bg-surface-2 border border-line">
 						<span class="text-text-3 block text-10">LAST PRICE</span>
-						<span class="font-bold text-text text-14">${tickerResult.last_price?.toLocaleString()}</span>
+						<span class="font-bold text-text text-14">${tickerResult.last_price?.toLocaleString() ?? '—'}</span>
 					</div>
 					<div class="p-2.5 rounded bg-surface-2 border border-line">
 						<span class="text-text-3 block text-10">24H CHANGE</span>
-						<span class="font-bold text-14 {tickerResult.change_pct_24h >= 0 ? 'text-pos' : 'text-neg'}">
-							{tickerResult.change_pct_24h > 0 ? '+' : ''}{tickerResult.change_pct_24h}%
+						<span class="font-bold text-14 {(chg24 ?? 0) >= 0 ? 'text-pos' : 'text-neg'}">
+							{chg24 != null ? `${chg24 > 0 ? '+' : ''}${chg24}%` : '—'}
 						</span>
 					</div>
 					<div class="p-2.5 rounded bg-surface-2 border border-line">
 						<span class="text-text-3 block text-10">24H HIGH</span>
-						<span class="text-text">${tickerResult.high_24h?.toLocaleString()}</span>
+						<span class="text-text">${hi24?.toLocaleString() ?? '—'}</span>
 					</div>
 					<div class="p-2.5 rounded bg-surface-2 border border-line">
 						<span class="text-text-3 block text-10">24H LOW</span>
-						<span class="text-text">${tickerResult.low_24h?.toLocaleString()}</span>
+						<span class="text-text">${lo24?.toLocaleString() ?? '—'}</span>
 					</div>
 				</div>
 			{:else}
@@ -308,7 +311,7 @@
 		<div class="flex items-center justify-between border-b border-line pb-2">
 			<div>
 				<h3 class="text-13 font-bold text-text">Candles OHLCV Feed ({activeMarket.toUpperCase()})</h3>
-				<span class="text-11 text-text-3">15 Lilin Candle Terakhir Langsung dari Node Tencent</span>
+				<span class="text-11 text-text-3">15 Lilin Candle Terakhir Langsung dari Feed Lokal (OKX / Yahoo)</span>
 			</div>
 			<span class="text-11 text-accent">{selectedSymbol}</span>
 		</div>

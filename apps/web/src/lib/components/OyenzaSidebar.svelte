@@ -4,10 +4,25 @@
 	 * Sidebar 272px fixed kiri terinspirasi langsung dari Oyenza Trade (StockMap by Oyenza).
 	 * Mengelompokkan Pasar (Markets), Sistem & Transparansi Data (1001Startup), serta status bot.
 	 */
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { live } from '$lib/api/live.svelte';
 	import { AREAS } from '$lib/nav';
 	import Ikon from './Ikon.svelte';
+
+	let tema = $state<'gelap' | 'terang'>('gelap');
+	onMount(() => {
+		const saved = localStorage.getItem('warroom_tema');
+		if (saved === 'terang' || saved === 'gelap') {
+			tema = saved;
+			document.documentElement.dataset.tema = saved;
+		}
+	});
+	function toggleTema() {
+		tema = tema === 'gelap' ? 'terang' : 'gelap';
+		document.documentElement.dataset.tema = tema;
+		localStorage.setItem('warroom_tema', tema);
+	}
 
 	interface Props {
 		onclose?: () => void;
@@ -54,6 +69,8 @@
 
 	function isAktif(rute: string): boolean {
 		if (rute === '/') return jalur === '/';
+		if (rute === '/ledger' && jalur.startsWith('/jurnal')) return true;
+		if (rute === '/sistem' && (jalur.startsWith('/vault') || jalur.startsWith('/mt5-vault'))) return true;
 		if (rute.includes('?sub=')) {
 			const [path, query] = rute.split('?sub=');
 			return jalur === path && sub === query;
@@ -190,8 +207,16 @@
 		</nav>
 	</div>
 
-	<!-- Sidebar Footer / Provenance Transparency Note -->
-	<div class="sidebar-foot font-mono text-10">
+	<!-- Sidebar Footer / Provenance & Theme Toggle -->
+	<div class="sidebar-foot font-mono text-10 space-y-2">
+		<button
+			type="button"
+			onclick={toggleTema}
+			class="flex w-full items-center justify-between rounded-control border border-line bg-surface-2 px-2.5 py-1.5 text-10 font-bold text-text-2 hover:border-accent hover:text-accent transition-colors"
+		>
+			<span>TEMA TAMPILAN</span>
+			<span>{tema === 'gelap' ? '🌙 DARK' : '☀️ LIGHT'}</span>
+		</button>
 		<div class="flex items-center justify-between text-text-3">
 			<span>PROVENANCE</span>
 			<span class="text-pos">1001STARTUP OK</span>

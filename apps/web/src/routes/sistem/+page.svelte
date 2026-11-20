@@ -8,6 +8,8 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import InfraHealth from '$lib/components/InfraHealth.svelte';
+	import VaultPage from '../vault/+page.svelte';
+	import Mt5VaultPage from '../mt5-vault/+page.svelte';
 	
 	const area = AREAS.find((a) => a.kunci === 'sistem')!;
 	const sub = $derived.by(() => {
@@ -120,6 +122,7 @@
 		if (!kejadian.length) galatEvent = 'Belum ada kejadian terekam.';
 		params = await ambil<Record<string, unknown>>('/api/v1/params');
 		laya = await ambil<LayaPengaturan>('/api/v1/pengaturan/laya');
+		killStatus = await ambil<{ kill_switch?: boolean; reason?: string }>('/api/v1/ai/status');
 		void ukurLatensi();
 		void ambilInfra();
 		memuat = false;
@@ -134,6 +137,34 @@
 	let laya = $state<LayaPengaturan | null>(null);
 	let layaPesan = $state<string | null>(null);
 	let layaSibuk = $state(false);
+	let killStatus = $state<{ kill_switch?: boolean; reason?: string } | null>(null);
+	let killSibuk = $state(false);
+	let killPesan = $state<string | null>(null);
+
+	async function toggleKillSwitch() {
+		if (killSibuk) return;
+		killSibuk = true;
+		killPesan = null;
+		const aktifBaru = !(killStatus?.kill_switch ?? false);
+		try {
+			const r = await fetch(urlApi('/api/v1/ai/kill-switch'), {
+				method: 'POST',
+				credentials: 'include',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ active: aktifBaru, reason: aktifBaru ? 'Manual dari UI Sistem' : 'Reset dari UI Sistem' })
+			});
+			const isi = await r.json().catch(() => null);
+			if (!r.ok) {
+				killPesan = (isi?.detail as string) ?? `HTTP ${r.status}`;
+			} else {
+				killStatus = { kill_switch: aktifBaru, reason: isi?.reason ?? '' };
+				killPesan = aktifBaru ? 'Kill switch DIAKTIFKAN.' : 'Kill switch DINONAKTIFKAN.';
+			}
+		} catch (e) {
+			killPesan = e instanceof Error ? e.message : 'gagal menghubungi API';
+		}
+		killSibuk = false;
+	}
 
 	async function toggleLaya() {
 		if (layaSibuk) return;
@@ -381,19 +412,38 @@
 					<p class="mt-1 text-11 text-text-3">{laya.catatan}</p>
 				{/if}
 			</section>
+
+			<section class="rounded-card border border-line bg-surface p-4">
+				<h2 class="text-13 font-bold text-text">Emergency Kill Switch</h2>
+				<p class="mt-2 text-12 text-text-2">
+					Sakelar darurat global untuk menghentikan seluruh eksekusi otomatis otonom jika terjadi anomali.
+				</p>
+				<div class="mt-3 flex flex-wrap items-center gap-3">
+					<span
+						class="rounded px-2 py-0.5 text-10 font-mono font-bold border {killStatus?.kill_switch
+							? 'bg-neg/15 text-neg border-neg/30'
+							: 'bg-pos/15 text-pos border-pos/30'}"
+					>
+						{killStatus == null ? 'MEMUAT…' : killStatus.kill_switch ? 'TERKUNCI (STOP)' : 'NORMAL'}
+					</span>
+					<button
+						type="button"
+						class="rounded-control border px-3 py-2 text-12 font-bold disabled:opacity-50 cursor-pointer {killStatus?.kill_switch ? 'border-line bg-surface-2 text-text' : 'border-neg/40 bg-neg/15 text-neg'}"
+						disabled={killSibuk}
+						onclick={() => void toggleKillSwitch()}
+					>
+						{killSibuk ? 'Menyimpan…' : killStatus?.kill_switch ? 'Nonaktifkan Kill Switch' : 'Aktifkan Kill Switch'}
+					</button>
+				</div>
+				{#if killPesan}
+					<p class="mt-2 text-12 text-text-2">{killPesan}</p>
+				{/if}
+			</section>
 		</div>
 	{:else if sub === 'vault'}
-		<section class="rounded-card border border-line bg-surface p-4">
-			<h2 class="text-13 font-bold text-text">Vault Kredensial</h2>
-			<p class="mt-2 text-12 text-text-2">
-				Simpan endpoint + API key platform manapun (Binance, Bybit, OKX, dan lainnya).
-				Vault hanya menyimpan, salin-tempel manual, tidak ada auto-login.
-				Polymarket tidak didukung.
-			</p>
-			<p class="mt-3">
-				<a class="text-12 font-bold underline text-text" href="/vault">Buka Vault Kredensial →</a>
-			</p>
-		</section>
+		<VaultPage />
+	{:else if sub === 'mt5-vault'}
+		<Mt5VaultPage />
 	{:else}
 		<p class="text-12 text-text-3">Tab tidak dikenal: {sub}</p>
 	{/if}

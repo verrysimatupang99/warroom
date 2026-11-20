@@ -116,7 +116,7 @@ describe('QuantStrategyCard', () => {
 		render(QuantStrategyCard);
 
 		await waitFor(() => {
-			expect(screen.getByText(/FALLBACK BASELINE/)).toBeTruthy();
+			expect(screen.getByText(/BELUM ADA DATA BACKTEST/)).toBeTruthy();
 		});
 
 		// Fallback baseline assets tetap tampil

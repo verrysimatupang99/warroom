@@ -214,4 +214,4 @@ export async function getLiveArming(): Promise<LiveArming | null> {
 }
 
 /** Leaderboard performa strategi kuantitatif lintas instrumen. */
-export const getLeaderboard = () => minta<LeaderboardPayload>('/api/v1/leaderboard');
+export const getLeaderboard = () => minta<LeaderboardPayload>('/api/v1/leaderboard/strategi');

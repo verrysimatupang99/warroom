@@ -135,7 +135,9 @@ def sambung(detik_maks: float = 600.0, saat_pesan=None) -> int:
 def _simpan(data: dict[str, Any]) -> None:
     try:
         SIMPAN.parent.mkdir(parents=True, exist_ok=True)
-        SIMPAN.write_text(json.dumps({"ts": time.time(), "data": data}, ensure_ascii=False))
+        tmp = SIMPAN.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"ts": time.time(), "data": data}, ensure_ascii=False))
+        tmp.replace(SIMPAN)
     except OSError:
         pass
 

@@ -137,7 +137,7 @@
 		void muatLive();
 	});
 
-	const rawAssets = $derived(isLive && liveAssets.length > 0 ? liveAssets : fallbackAssets);
+	const rawAssets = $derived(isLive && liveAssets.length > 0 ? liveAssets : []);
 	const assets = $derived.by(() => {
 		if (filter === 'all') return rawAssets;
 		return rawAssets.filter((a) => a.market === filter);
@@ -166,16 +166,19 @@
 			</p>
 		</div>
 		<div class="head-right flex items-center gap-2">
-			{#if isLive}
+			{#if isLive && liveAssets.length > 0}
 				<span class="status-pill pos">LIVE API ({liveAssets.length} STRATEGI{totalRuns > 0 ? ` · ${totalRuns} RUNS` : ''})</span>
+				{#if liveAssets.every((a) => (a.pf ?? 0) > 1.0)}
+					<span class="status-pill pos">100% ASSET PROFITABLE</span>
+				{/if}
 			{:else}
-				<span class="status-pill dim">FALLBACK BASELINE (0 RUNS)</span>
+				<span class="status-pill dim">BELUM ADA DATA BACKTEST (0 RUNS)</span>
 			{/if}
-			<span class="status-pill pos">100% ASSET PROFITABLE</span>
 		</div>
 	</div>
 
 	<!-- Bento Highlights: Gold & Top Crypto -->
+	{#if rawAssets.length > 0}
 	<div class="bento-grid">
 		{#if filter === 'forex' || filter === 'all'}
 			<div class="bento-item gold-box">
@@ -237,8 +240,11 @@
 			</div>
 		{/if}
 	</div>
-
-	<!-- Papan Klasemen Tabel Multi-Asset -->
+	{:else}
+		<div class="rounded-card border border-dashed border-line bg-surface-2 p-6 text-center font-mono text-12 text-dim">
+			Belum ada data backtest yang tersedia dari API (<code class="text-text">/api/v1/leaderboard/strategi</code>). Jalankan riset/backtest untuk menampilkan performa strategi.
+		</div>
+	{/if}
 	{#if assets.length > 0}
 		<div class="table-container">
 			<div class="table-label">

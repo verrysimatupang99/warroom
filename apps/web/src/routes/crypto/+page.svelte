@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { AREAS, SLUG_LAMA } from '$lib/nav';
 	import MarketShell from '$lib/components/MarketShell.svelte';
+	import StrategyRunnerForm from '$lib/components/StrategyRunnerForm.svelte';
 	import PasarUji from '$lib/components/market/PasarUji.svelte';
 	import CryptoSinyal from '$lib/components/market/CryptoSinyal.svelte';
 	import CryptoRingkas from '$lib/components/market/CryptoRingkas.svelte';
@@ -40,6 +41,7 @@
 			<JurnalSinyal />
 		</div>
 	{:else if sub === 'uji'}
+		<StrategyRunnerForm market="crypto" defaultSymbol="BTCUSDT" />
 		<PasarUji filter="crypto" />
 	{:else if sub === 'eksekusi'}
 		<JournalPanel market="crypto" />
