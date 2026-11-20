@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["scripts/*.mjs"],
+  "entry": ["scripts/*.mjs", "rekam-demo.cjs", "rekam-demo.js"],
   // Primitif design-system yang sengaja belum dipakai halaman mana pun.
   // DESIGN-USULAN 16 Okt: halaman dibangun dari "kartu keputusan"; adopsi
   // bertahap per halaman, jadi komponen HARUS ada di repo walau belum dirender.
@@ -9,6 +9,11 @@
   // Telemetry) yang belum dirender. Daftar ini harus ditinjau di akhir Sprint 4:
   // komponen yang tidak jadi dipakai dihapus, yang dipakai dikeluarkan dari sini.
   "ignore": [
+    // Komponen siap pakai tapi belum dirender halaman mana pun:
+    //   NavInfo     -> strip nav 4 halaman penjelas (Catatan/Berita/Cara kerja/Bantuan)
+    //   StandbyPasar -> halaman "market belum aktif" (dipakai saat market baru dinyalakan)
+    "src/lib/components/NavInfo.svelte",
+    "src/lib/components/StandbyPasar.svelte",
     "src/lib/components/AkurasiPasar.svelte",
     "src/lib/components/BentoMetrics4Box.svelte",
     "src/lib/components/Block.svelte",
