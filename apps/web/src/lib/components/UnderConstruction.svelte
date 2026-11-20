@@ -39,9 +39,9 @@
 					<span>Fokus Saat Ini: Forex · Polymarket · IDX · Crypto</span>
 				</div>
 
-				<h2 class="text-22 sm:text-26 font-bold text-text tracking-tight font-display">
+				<h1 class="text-22 sm:text-26 font-bold text-text tracking-tight font-display">
 					{marketTitle} Sedang Dalam Pengerjaan
-				</h2>
+				</h1>
 
 				<p class="text-14 leading-relaxed text-text-2">
 					{detail}
