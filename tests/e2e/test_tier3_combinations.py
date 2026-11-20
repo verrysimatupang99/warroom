@@ -92,8 +92,10 @@ async def test_t3_2_telemetry_cache_facts_sse_broadcast_pipeline(
         cached = tencent.latest_mt5_by_account[ACCOUNT_LIVE_CENT]
         assert cached["balance"] == payload["balance"]
 
-        # 4. Check facts DB key generation
-        key_primary = snapshot_key(ACCOUNT_LIVE_CENT)
+        # 4. Check facts DB key generation (akun utama = "ringkas", akun lain bersufiks)
+        from warroom_core.mt5_accounts import PRIMARY_ACCOUNT
+
+        key_primary = snapshot_key(PRIMARY_ACCOUNT)
         key_demo = snapshot_key(ACCOUNT_DEMO_1)
         assert key_primary == "ringkas"
         assert key_demo == f"ringkas:{ACCOUNT_DEMO_1}"

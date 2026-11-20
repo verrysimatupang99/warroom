@@ -476,12 +476,15 @@ def test_telemetry_menyimpan_alasan_skip(client, make_user, monkeypatch) -> None
 def test_telemetri_multi_akun_tidak_saling_menimpa(client, make_user, monkeypatch) -> None:
     """Akun cent HSFX tidak boleh mengganti state/status akun Reaper."""
     from warroom_api.routers import tencent
+    from warroom_core.mt5_accounts import PRIMARY_ACCOUNT
 
     monkeypatch.setattr(tencent, "_catat_telemetri", lambda t: None)
     monkeypatch.setattr(tencent, "_simpan_snapshot_mt5", lambda t, **k: None)
     monkeypatch.setattr(tencent, "latest_mt5_by_account", {})
     monkeypatch.setattr(tencent, "latest_mt5_telemetry", dict(tencent.latest_mt5_telemetry))
     _, sid = make_user("ea-multi", role="operator")
+
+    lain = "999001"
 
     def kirim(akun: str, balance: float) -> None:
         body = {
@@ -491,14 +494,14 @@ def test_telemetri_multi_akun_tidak_saling_menimpa(client, make_user, monkeypatc
         r = client.post("/api/v1/tencent/mt5/telemetry", json=body, headers=_cookie(sid))
         assert r.status_code == 200, r.text
 
-    kirim("416510164", 1000.0)
-    kirim("999001", 10.0)
-    assert tencent.latest_mt5_telemetry["account"] == "416510164"
-    assert tencent.latest_mt5_by_account["999001"]["balance"] == 10.0
+    kirim(PRIMARY_ACCOUNT, 1000.0)
+    kirim(lain, 10.0)
+    assert tencent.latest_mt5_telemetry["account"] == PRIMARY_ACCOUNT
+    assert tencent.latest_mt5_by_account[lain]["balance"] == 10.0
 
     acc = client.get("/api/v1/tencent/mt5/accounts", headers=_cookie(sid)).json()
-    assert acc["primary"] == "416510164"
-    assert {a["account"] for a in acc["accounts"]} == {"416510164", "999001"}
+    assert acc["primary"] == PRIMARY_ACCOUNT
+    assert {a["account"] for a in acc["accounts"]} == {PRIMARY_ACCOUNT, lain}
     assert next(a for a in acc["accounts"] if a["account"] == "416510164")["primary"] is True
 
     utama = client.get("/api/v1/tencent/mt5/status", headers=_cookie(sid)).json()
