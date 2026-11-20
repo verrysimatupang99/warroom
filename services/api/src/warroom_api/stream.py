@@ -19,7 +19,9 @@ from warroom_core.db import Event, session_scope
 
 __all__ = ["event_stream", "parse_last_event_id", "topic_matches"]
 
-# Topik → prefiks tipe event. Topik tak dikenal → tidak ada yang cocok (jujur, bukan kirim semua).
+# Topik -> prefiks tipe event. Topik tak dikenal -> tidak ada yang cocok (jujur, bukan kirim semua).
+# Sentinel non-cocok SENGAJA bukan byte NUL: nilai ini bisa menjadi parameter SQL, dan
+# Postgres menolak NUL di kolom text (psycopg.DataError).
 TOPICS: dict[str, tuple[str, ...]] = {
     "signals": ("signal.",),
     "verdicts": ("verdict.", "gate."),
@@ -33,6 +35,12 @@ TOPICS: dict[str, tuple[str, ...]] = {
 
 POLL_S = 1.5
 HEARTBEAT_S = 15.0
+
+# Sentinel "tidak ada yang cocok" untuk topik tak dikenal. Nilainya ikut menjadi
+# parameter SQL LIKE, jadi TIDAK boleh mengandung byte NUL: Postgres menolak NUL di
+# kolom text (psycopg.DataError) — dulu sentinel-nya "\0tidak-ada-topik-ini" dan
+# membuat request `/api/v1/stream?topics=<tak dikenal>` gagal 500.
+_TAK_COCOK = "~tidak-ada-topik-ini"
 
 
 def parse_last_event_id(raw: str | None) -> int | None:
@@ -50,7 +58,7 @@ def topic_matches(tipe: str, topics: list[str] | None) -> bool:
     if not topics:
         return True
     for t in topics:
-        if tipe.startswith(TOPICS.get(t, ("\0tidak-ada-topik-ini",))):
+        if tipe.startswith(TOPICS.get(t, (_TAK_COCOK,))):
             return True
     return False
 
@@ -83,7 +91,7 @@ def _fetch(after_id: int, topics: list[str] | None, limit: int = 200) -> tuple[l
         if topics:
             pola: list[str] = []
             for t in topics:
-                pola.extend(TOPICS.get(t, ("\0tidak-ada-topik-ini",)))
+                pola.extend(TOPICS.get(t, (_TAK_COCOK,)))
             q = q.where(or_(*[Event.type.startswith(p.rstrip(".")) for p in pola]))
         rows = s.scalars(q).all()
         id_tertinggi = after_id

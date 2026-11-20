@@ -23,21 +23,31 @@ CI_FALLBACK_TOKEN = "ci-test-token-not-a-secret"
 
 
 def _load_service_token() -> str:
-    """Dynamically resolve the production service token without hardcoding secrets."""
+    """Resolve the service token; fall back to the CI synthetic token.
+
+    The resolved value is also exported through ``WARROOM_SERVICE_TOKEN`` so the
+    in-process app under test validates the *same* token the fixtures send. Without
+    this, CI has no ``/etc/warroom/service_token.env``, ``get_expected_service_token()``
+    returns an empty string, every ``X-Warroom-Token`` is rejected, and tests that
+    expect 200/404/422 fail with a misleading 403.
+    """
     token = get_expected_service_token()
-    if token:
-        return token
-    # Secondary fallback to systemd service env file
-    env_file = Path("/etc/warroom/service_token.env")
-    if env_file.exists():
-        for line in env_file.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line.startswith("WARROOM_SERVICE_TOKEN="):
-                val = line.split("=", 1)[1].strip()
-                return val.strip(chr(39)).strip(chr(34))
-    # CI / developer tanpa file env: pakai token sintetis agar tes TestClient
-    # (in-process, tanpa jaringan) tidak menggantung pada rahasia produksi.
-    return CI_FALLBACK_TOKEN
+    if not token:
+        # Secondary fallback to systemd service env file
+        env_file = Path("/etc/warroom/service_token.env")
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("WARROOM_SERVICE_TOKEN="):
+                    val = line.split("=", 1)[1].strip()
+                    token = val.strip(chr(39)).strip(chr(34))
+                    break
+    if not token:
+        # CI / developer tanpa file env: token sintetis. Bukan kredensial nyata —
+        # hanya dipakai TestClient in-process dan tidak pernah keluar jaringan.
+        token = CI_FALLBACK_TOKEN
+    os.environ.setdefault("WARROOM_SERVICE_TOKEN", token)
+    return token
 
 
 def _ensure_test_db() -> None:
@@ -49,6 +59,32 @@ def _ensure_test_db() -> None:
                 if line.startswith("WARROOM_TEST_DB_URL="):
                     os.environ["WARROOM_DB_URL"] = line.split("=", 1)[1].strip()
     os.environ.setdefault("WARROOM_COOKIE_SECURE", "0")
+
+
+def _layanan_hidup(url: str) -> bool:
+    """True bila ada proses yang MENJAWAB di ``url`` (status apa pun, termasuk 401/403)."""
+    try:
+        httpx.get(url, timeout=2.0)
+    except httpx.HTTPError:
+        return False
+    return True
+
+
+def _wajib_layanan(nama: str, url: str) -> None:
+    """Skip (bukan gagal) bila layanan live yang dibutuhkan tidak berjalan.
+
+    Tes tier1..tier4 menguji sistem yang benar-benar jalan (API :8800, web :3100).
+    Job CI `platform` hanya menyediakan Postgres, jadi tanpa guard ini setiap tes
+    live gagal `httpx.ConnectError` dan platform CI merah karena alasan yang salah.
+    Set ``WARROOM_LIVE_API=0`` untuk memaksa skip, atau ``=1`` untuk memaksa jalan.
+    """
+    paksa = os.environ.get("WARROOM_LIVE_API")
+    if paksa == "0":
+        pytest.skip(f"WARROOM_LIVE_API=0 — {nama} live tidak diuji")
+    if paksa == "1":
+        return
+    if not _layanan_hidup(url):
+        pytest.skip(f"{nama} live tidak berjalan di {url} (set WARROOM_LIVE_API=1 untuk memaksa)")
 
 
 @pytest.fixture(scope="session")
@@ -87,6 +123,7 @@ def cloud_base_url() -> str:
 @pytest.fixture
 def live_client(api_base_url: str) -> Iterator[httpx.Client]:
     """Synchronous HTTP client configured for live warroom-api endpoints."""
+    _wajib_layanan("API", api_base_url)
     with httpx.Client(base_url=api_base_url, timeout=10.0) as client:
         yield client
 
@@ -94,6 +131,7 @@ def live_client(api_base_url: str) -> Iterator[httpx.Client]:
 @pytest.fixture
 async def live_async_client(api_base_url: str) -> AsyncIterator[httpx.AsyncClient]:
     """Asynchronous HTTP client configured for live warroom-api endpoints."""
+    _wajib_layanan("API", api_base_url)
     async with httpx.AsyncClient(base_url=api_base_url, timeout=10.0) as client:
         yield client
 
@@ -101,6 +139,7 @@ async def live_async_client(api_base_url: str) -> AsyncIterator[httpx.AsyncClien
 @pytest.fixture
 def live_web_client(web_base_url: str) -> Iterator[httpx.Client]:
     """Synchronous HTTP client configured for live warroom-web endpoints."""
+    _wajib_layanan("web", web_base_url)
     with httpx.Client(base_url=web_base_url, timeout=10.0) as client:
         yield client
 

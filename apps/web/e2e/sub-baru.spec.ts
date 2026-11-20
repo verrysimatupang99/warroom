@@ -13,11 +13,12 @@ test.describe('sub dataset & kebijakan', () => {
 		expect(await loginLewat(page)).toBe(true);
 	});
 
-	test('polymarket menampilkan status standby, bukan galat', async ({ page }) => {
+	test('polymarket render tanpa galat', async ({ page }) => {
 		await page.goto('/polymarket');
 		await tungguSiap(page);
+		// Halaman kini penuh (bukan standby); data arming opsional di stack e2e.
+		// Yang wajib: halaman benar-benar termuat dan tidak ada galat fatal.
 		await expect(page.getByText('Polymarket', { exact: false }).first()).toBeVisible();
-		await expect(page.getByText(/ditangguhkan sementara/)).toBeVisible();
 		expect(await page.locator('body').innerText()).not.toContain('GAGAL MEMUAT');
 	});
 
