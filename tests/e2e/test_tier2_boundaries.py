@@ -304,6 +304,10 @@ def test_t2_f5_deal_negative_ticket_bad_request(
 def test_t2_f5_deal_duplicate_idempotent(test_client: TestClient, auth_headers: dict[str, str]) -> None:
     """T2.5.3: Duplicate deal resubmission returns HTTP 200 status: duplikat."""
     payload = {"ticket": 6639264, "profit": 0.60, "symbol": "XAUUSDc", "account": "452009427"}
+    # Kirim dua kali: yang kedua wajib "duplikat". Jangan bergantung pada isi
+    # deals.csv yang sudah ada — di CI file itu baru dan kosong.
+    resp_awal = test_client.post("/api/v1/tencent/mt5/deal", json=payload, headers=auth_headers)
+    assert resp_awal.status_code == 200
     resp = test_client.post("/api/v1/tencent/mt5/deal", json=payload, headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()

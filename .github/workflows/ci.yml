@@ -67,6 +67,12 @@ jobs:
       WARROOM_DB_URL: postgresql+psycopg://warroom:warroom@127.0.0.1:5432/warroom_ci
       WARROOM_TEST_DB_URL: postgresql+psycopg://warroom:warroom@127.0.0.1:5432/warroom_test
       CHECK_DB_HEAD_REQUIRED: "1"
+      # Runner CI bukan root: /var/lib/warroom tidak bisa dibuat, sehingga endpoint
+      # /mt5/deal balas 500 (PermissionError). Arahkan jurnal deal ke /tmp.
+      WARROOM_DEAL_LOG: /tmp/warroom-ci-deals.csv
+      WARROOM_FILL_LOG: /tmp/warroom-ci-fills.csv
+      # Tes e2e memakai #452009427 sebagai akun utama; default kode berbeda.
+      WARROOM_MT5_PRIMARY_ACCOUNT: "452009427"
 
     steps:
       - uses: actions/checkout@v4
@@ -238,6 +244,10 @@ jobs:
       # /var/lib/..., jadi seed menulis jurnal SINTETIS ke path ini dan API
       # membacanya lewat override yang sama. Produksi tidak menyetel env ini.
       WARROOM_JURNAL_SINYAL: /tmp/e2e-jurnal-sinyal.json
+      # Runner bukan root: jurnal deal default /var/lib/warroom tidak bisa ditulis.
+      WARROOM_DEAL_LOG: /tmp/e2e-deals.csv
+      WARROOM_FILL_LOG: /tmp/e2e-fills.csv
+      WARROOM_MT5_PRIMARY_ACCOUNT: "452009427"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
