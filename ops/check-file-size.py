@@ -27,6 +27,11 @@ DIKECUALIKAN = {
         "router gabungan proxy data eksternal + MT5 EA runner bridge "
         "(telemetri, fills, deals, panels, SSE stream)"
     ),
+    "services/api/src/warroom_api/lokal.py": (
+        "kumpulan endpoint baca-lokal (forex/crypto/IDX journal, scanner, "
+        "momentum, candles); 40+ handler kecil, fungsi terbesar 66 baris. "
+        "Pemecahan per-domain = PR tersendiri (butuh ubah router include + tes)"
+    ),
 }
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -31,9 +31,6 @@
     "src/lib/components/PasarIdx.svelte",
     "src/lib/components/PasarPolymarket.svelte",
     "src/lib/components/Penjelasan.svelte",
-    "src/lib/components/StatisticalEdgeCard.svelte",
-    "src/lib/components/UnderConstruction.svelte",
-    "src/lib/components/ZonaAktif.svelte",
     "src/lib/nilai.ts"
   ]
 }
