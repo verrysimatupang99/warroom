@@ -17,7 +17,6 @@ from warroom_api import auth
 from warroom_api.app import app
 from warroom_api.auth_ea import get_expected_service_token
 
-
 # Token sintetis untuk CI / mesin tanpa /etc/warroom. Bukan kredensial nyata:
 # hanya dipakai tes TestClient in-process, tidak pernah keluar jaringan.
 CI_FALLBACK_TOKEN = "ci-test-token-not-a-secret"
