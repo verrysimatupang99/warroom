@@ -618,6 +618,29 @@ _DEAL_HEADER = [
 _DEAL_LOCK = threading.Lock()
 
 
+def _pastikan_header_deal_log() -> bool:
+    """Pastikan header `deals.csv` cocok dengan `_DEAL_HEADER`; kembalikan True bila file baru.
+
+    Kenapa perlu: berkas bisa diwarisi dari skema lama (header 11 kolom) sementara writer
+    sekarang menulis 21 kolom. Menempel baris 21 kolom di bawah header lama membuat SEMUA
+    baris bergeser saat dibaca `csv.DictReader` — bug nyata 20 Nov 2026: 149 dari 248 baris
+    jurnal rusak (`account` berisi timestamp, `strategy_version` berisi harga).
+
+    Bila header tidak cocok, berkas diarsipkan (bukan dihapus) lalu writer mulai berkas baru
+    dengan header kanonik. Data lama tetap utuh untuk migrasi manual.
+    """
+    if not DEAL_LOG.exists() or DEAL_LOG.stat().st_size == 0:
+        return True
+    with DEAL_LOG.open(newline="", encoding="utf-8") as f:
+        baris = f.readline().strip()
+    if baris.split(",") == _DEAL_HEADER:
+        return False
+    arsip = DEAL_LOG.with_name(f"{DEAL_LOG.name}.lama-{int(time.time())}")
+    os.replace(DEAL_LOG, arsip)
+    log.warning("header deals.csv tidak cocok; diarsipkan ke %s", arsip)
+    return True
+
+
 @router.post("/mt5/deal", dependencies=[Depends(verify_mt5_or_admin)])
 async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
     """Catat deal tertutup (satu baris per posisi) untuk jurnal forex.
@@ -649,7 +672,7 @@ async def report_mt5_deal(payload: MT5DealPayload) -> dict[str, Any]:
 
     with _DEAL_LOCK:
         sudah: set[int] = set()
-        baru = not DEAL_LOG.exists()
+        baru = _pastikan_header_deal_log()
         if not baru:
             try:
                 with DEAL_LOG.open(newline="") as f:
